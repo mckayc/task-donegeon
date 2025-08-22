@@ -4,6 +4,7 @@ import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
+import { logger } from '../utils/logger';
 import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI } from '../api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
@@ -78,6 +79,7 @@ const initialState: SystemState = {
 };
 
 const systemReducer = (state: SystemState, action: SystemAction): SystemState => {
+    logger.log('[SystemReducer] Action:', action.type, 'Payload:', action.payload);
     switch (action.type) {
         case 'SET_AI_CONFIGURED':
             return { ...state, isAiConfigured: action.payload };
@@ -87,6 +89,8 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof SystemState;
+                if (!action.payload[typedKey]) continue;
+
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
                     (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
@@ -103,6 +107,8 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof SystemState;
+                if (!action.payload[typedKey]) continue;
+
                 if (Array.isArray(stateWithRemoved[typedKey])) {
                     const idsToRemove = new Set(action.payload[typedKey] as string[]);
                     (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));

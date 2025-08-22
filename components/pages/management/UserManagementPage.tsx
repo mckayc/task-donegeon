@@ -11,6 +11,7 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import Input from '../../user-interface/Input';
 import UserTable from '../../users/UserTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { logger } from '../../../utils/logger';
 
 const UserManagementPage: React.FC = () => {
     const { settings } = useSystemState();
@@ -27,6 +28,12 @@ const UserManagementPage: React.FC = () => {
     const [adjustingUser, setAdjustingUser] = useState<User | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (debouncedSearchTerm) {
+            logger.log(`[ManageUsers] Search term updated: "${debouncedSearchTerm}"`);
+        }
+    }, [debouncedSearchTerm]);
     
     const pageUsers = useMemo(() => {
         let filteredUsers = [...users];
@@ -55,9 +62,40 @@ const UserManagementPage: React.FC = () => {
     useEffect(() => {
         setSelectedUsers([]);
     }, [debouncedSearchTerm, sortBy]);
+    
+    const handleSortChange = (value: typeof sortBy) => {
+        logger.log(`[ManageUsers] Sort changed to: ${value}`);
+        setSortBy(value);
+    };
+
+    const handleOpenAddDialog = () => {
+        logger.log('[ManageUsers] Opening add user dialog');
+        setIsAddUserDialogOpen(true);
+    };
+
+    const handleOpenEditDialog = (user: User) => {
+        logger.log('[ManageUsers] Opening edit dialog for user', { id: user.id, name: user.gameName });
+        setEditingUser(user);
+    };
+
+    const handleOpenAdjustDialog = (user: User) => {
+        logger.log('[ManageUsers] Opening adjust dialog for user', { id: user.id, name: user.gameName });
+        setAdjustingUser(user);
+    };
+
+    const handleCloneUser = (userId: string) => {
+        logger.log('[ManageUsers] Cloning user', { id: userId });
+        cloneUser(userId);
+    };
+
+    const handleDeleteRequest = (ids: string[]) => {
+        logger.log(`[ManageUsers] Staging delete action for ${ids.length} users`, { ids });
+        setDeletingIds(ids);
+    };
 
     const handleConfirmDelete = async () => {
         if (deletingIds.length === 0) return;
+        logger.log('[ManageUsers] Confirming delete action', { ids: deletingIds });
         deleteUsers(deletingIds);
         setDeletingIds([]);
         setSelectedUsers([]);
@@ -77,14 +115,14 @@ const UserManagementPage: React.FC = () => {
             <Card
                 title={`All ${settings.terminology.group} Members`}
                 headerAction={
-                    <Button onClick={() => setIsAddUserDialogOpen(true)} size="sm">
+                    <Button onClick={handleOpenAddDialog} size="sm">
                         Add New Member
                     </Button>
                 }
             >
                 <div className="flex flex-wrap gap-4 mb-4">
                     <Input placeholder="Search by name or username..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
+                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSortChange(e.target.value as any)}>
                         <option value="gameName-asc">Name (A-Z)</option>
                         <option value="gameName-desc">Name (Z-A)</option>
                         <option value="username-asc">Username (A-Z)</option>
@@ -95,9 +133,9 @@ const UserManagementPage: React.FC = () => {
                     {selectedUsers.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedUsers.length} selected</span>
-                            <Button size="sm" variant="secondary" onClick={() => setEditingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Edit</Button>
-                            <Button size="sm" variant="secondary" onClick={() => setAdjustingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Adjust</Button>
-                            <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedUsers)}>Delete</Button>
+                            <Button size="sm" variant="secondary" onClick={() => handleOpenEditDialog(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Edit</Button>
+                            <Button size="sm" variant="secondary" onClick={() => handleOpenAdjustDialog(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Adjust</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(selectedUsers)}>Delete</Button>
                         </div>
                     )}
                 </div>
@@ -107,10 +145,10 @@ const UserManagementPage: React.FC = () => {
                     selectedUsers={selectedUsers}
                     setSelectedUsers={setSelectedUsers}
                     roleName={roleName}
-                    onEdit={setEditingUser}
-                    onClone={cloneUser}
-                    onAdjust={setAdjustingUser}
-                    onDeleteRequest={(id) => setDeletingIds([id])}
+                    onEdit={handleOpenEditDialog}
+                    onClone={handleCloneUser}
+                    onAdjust={handleOpenAdjustDialog}
+                    onDeleteRequest={(id) => handleDeleteRequest([id])}
                 />
             </Card>
 

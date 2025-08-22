@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, Role } from '../users/types';
 import { Page, AppMode } from '../../types/app';
@@ -10,6 +11,7 @@ import RewardDisplay from '../user-interface/RewardDisplay';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useSyncStatus } from '../../context/DataProvider';
+import { logger } from '../../utils/logger';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -51,6 +53,7 @@ const Header: React.FC = () => {
   const [guildDropdownOpen, setGuildDropdownOpen] = useState(false);
 
   const handleLogout = () => {
+    logger.log('[Header] User logged out.');
     localStorage.removeItem('lastUserId');
     localStorage.removeItem('isAppUnlocked');
     setCurrentUser(null);
@@ -60,16 +63,19 @@ const Header: React.FC = () => {
   
   const handleSwitchUser = (e: React.MouseEvent) => {
     e.preventDefault();
+    logger.log('[Header] User initiated "Switch User".');
     setIsSwitchingUser(true);
     setProfileDropdownOpen(false);
   };
 
   const navigateTo = (page: Page) => {
+    logger.log(`[Header] Navigating to page from profile dropdown: ${page}`);
     setActivePage(page);
     setProfileDropdownOpen(false);
   }
   
   const handleModeChange = (mode: AppMode) => {
+    logger.log('[Header] App mode changed to:', mode);
     setAppMode(mode);
     setGuildDropdownOpen(false);
     // Always navigate to the dashboard when switching modes for a consistent experience.
@@ -100,83 +106,57 @@ const Header: React.FC = () => {
                 Personal
             </button>
             <div className="relative">
-                <button
-                    data-log-id="header-mode-guild-dropdown"
-                    onClick={() => {
-                        if (userGuilds.length === 1) {
-                            handleModeChange({ mode: 'guild', guildId: userGuilds[0].id });
-                        } else {
-                            setGuildDropdownOpen(p => !p);
-                        }
-                    }}
-                    disabled={userGuilds.length === 0}
-                    className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors flex items-center gap-1 ${appMode.mode === 'guild' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700 disabled:opacity-50'}`}
-                >
+                <button data-log-id="header-mode-guild-toggle" onClick={() => setGuildDropdownOpen(!guildDropdownOpen)} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors flex items-center gap-2 ${appMode.mode === 'guild' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
                     <span>{currentGuildName}</span>
-                    {userGuilds.length > 1 && <ChevronDownIcon className="w-4 h-4" />}
+                    <ChevronDownIcon className="w-4 h-4" />
                 </button>
-                 {guildDropdownOpen && userGuilds.length > 1 && (
-                    <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-                        <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Select a {settings.terminology.group}</div>
-                         {userGuilds.map(guild => (
-                            <a href="#" key={guild.id} data-log-id={`header-mode-guild-select-${guild.id}`} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
-                        ))}
+                {guildDropdownOpen && (
+                    <div className="absolute left-0 mt-2 w-56 bg-stone-900 border border-stone-700 rounded-md shadow-lg z-20">
+                        <div className="py-1">
+                            {userGuilds.map(guild => (
+                                <a href="#" key={guild.id} onClick={(e) => { e.preventDefault(); handleModeChange({ mode: 'guild', guildId: guild.id }); }} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-700">
+                                    {guild.name}
+                                </a>
+                            ))}
+                            {userGuilds.length === 0 && <span className="block px-4 py-2 text-sm text-stone-400">No guilds joined.</span>}
+                        </div>
                     </div>
-                 )}
+                )}
             </div>
         </div>
       </div>
-
-      {/* Center Group */}
-      <div className="flex-grow flex items-center justify-center mx-2 md:mx-4 min-w-0">
-          <div className="border-l border-stone-600/80 h-6 flex-shrink-0 hidden md:block" />
-          <div className="overflow-x-auto scrollbar-hide mx-2 py-2">
-            <RewardDisplay />
-          </div>
-          <div className="border-r border-stone-600/80 h-6 flex-shrink-0 hidden md:block" />
-      </div>
-      
       {/* Right Group */}
-      <div className="flex items-center gap-4">
-        <FullscreenToggle />
+      <div className="flex items-center gap-2 md:gap-4">
+        <RewardDisplay />
         <Clock />
-        {settings.sharedMode.enabled && (
-            <button
-                onClick={exitToSharedView}
-                data-log-id="header-exit-shared-view"
-                className="bg-amber-600 text-white px-4 py-1.5 rounded-full font-bold text-lg hover:bg-amber-500"
-                title="Exit to Shared View"
-            >
-                Exit
-            </button>
-        )}
+        <FullscreenToggle />
         <div className="relative">
-            <button onClick={() => setProfileDropdownOpen(p => !p)} data-log-id="header-profile-dropdown" className="flex items-center gap-2">
-                <Avatar user={currentUser} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600" />
-                <div className="hidden md:block text-left">
-                    <p className="font-semibold text-stone-100">{currentUser.gameName}</p>
-                    <p className="text-xs text-stone-400">{currentUser.role}</p>
-                </div>
-                <ChevronDownIcon className="w-5 h-5 text-stone-400 hidden md:block" />
-            </button>
-            {profileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-                    <div className="px-4 py-3 border-b border-stone-700">
-                        <p className="font-semibold text-stone-100">{currentUser.gameName}</p>
-                        <p className="text-sm text-stone-400">{currentUser.email}</p>
-                    </div>
-                    <div className="py-1">
-                        <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
-                        <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
-                    </div>
-                    <div className="py-1 border-t border-stone-700">
-                        <a href="#" onClick={handleLogout} data-log-id="header-profile-link-logout" className="block px-4 py-2 text-red-400 hover:bg-stone-700">Log Out</a>
-                    </div>
-                </div>
-            )}
+          <button data-log-id="header-profile-dropdown-toggle" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center gap-2 p-1 rounded-full hover:bg-stone-800/50">
+            <Avatar user={currentUser} className="w-10 h-10 rounded-full" />
+            <div className="hidden md:block text-left">
+              <p className="font-semibold text-stone-200">{currentUser.gameName}</p>
+              <p className="text-xs text-stone-400">{currentUser.role}</p>
+            </div>
+            <ChevronDownIcon className="w-5 h-5 text-stone-400 hidden md:block" />
+          </button>
+          {profileDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-stone-900 border border-stone-700 rounded-md shadow-lg z-20">
+              <div className="py-1">
+                <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-700">My Profile</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Settings'); }} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-700">Settings</a>
+                {settings.sharedMode.enabled && (
+                    <a href="#" onClick={(e) => { e.preventDefault(); exitToSharedView(); }} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-700">Exit to Kiosk</a>
+                )}
+                <a href="#" onClick={handleSwitchUser} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-700">Switch User</a>
+                <div className="border-t border-stone-700 my-1"></div>
+                <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} className="block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Logout</a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
   );
 };
+
 export default Header;

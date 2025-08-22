@@ -1,10 +1,8 @@
-
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Rank, Trophy, UserTrophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addTrophyAPI, updateTrophyAPI, setRanksAPI } from '../src/api';
+import { addTrophyAPI, updateTrophyAPI, setRanksAPI } from '../api';
 import { logger } from '../utils/logger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
@@ -89,18 +87,9 @@ export const ProgressionProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, [addNotification]);
     
     const actions = useMemo<ProgressionDispatch>(() => ({
-        addTrophy: (data) => {
-            logger.log('[ProgressionDispatch] addTrophy', data);
-            return apiAction(() => addTrophyAPI(data), 'Trophy created!');
-        },
-        updateTrophy: (data) => {
-            logger.log('[ProgressionDispatch] updateTrophy', data);
-            return apiAction(() => updateTrophyAPI(data), 'Trophy updated!');
-        },
-        setRanks: (ranks) => {
-            logger.log('[ProgressionDispatch] setRanks', { count: ranks.length });
-            return apiAction(() => setRanksAPI(ranks));
-        },
+        addTrophy: (data) => apiAction(() => addTrophyAPI(data), 'Trophy created!'),
+        updateTrophy: (data) => apiAction(() => updateTrophyAPI(data), 'Trophy updated!'),
+        setRanks: (ranks) => apiAction(() => setRanksAPI(ranks)),
     }), [apiAction]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);

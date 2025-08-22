@@ -1,9 +1,9 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
 import { addUserAPI, updateUserAPI, deleteUsersAPI, completeFirstRunAPI } from '../src/api';
+import { logger } from '../utils/logger';
 
 // State managed by this context
 interface AuthState {
@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isFirstRun = users.length === 0;
 
   const setCurrentUser = useCallback((user: User | null) => {
+      logger.log('[AuthDispatch] setCurrentUser called with:', user?.gameName || 'null');
       _setCurrentUser(prevUser => {
           if (JSON.stringify(prevUser) === JSON.stringify(user)) {
               return prevUser;
@@ -70,6 +71,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {
+    logger.log('[AuthDispatch] updateUser called for:', userId, 'with updates:', update);
     if (bugLogger.isRecording()) {
         bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
     }
@@ -102,20 +104,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   }, [addNotification]);
   
-  const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
+  const markUserAsOnboarded = useCallback((userId: string) => {
+    logger.log('[AuthDispatch] markUserAsOnboarded called for:', userId);
+    updateUser(userId, { hasBeenOnboarded: true })
+  }, [updateUser]);
 
   const setAppUnlocked = useCallback((isUnlocked: boolean) => {
+      logger.log('[AuthDispatch] setAppUnlocked called with:', isUnlocked);
       localStorage.setItem('isAppUnlocked', String(isUnlocked));
       _setAppUnlocked(isUnlocked);
   }, []);
 
   const exitToSharedView = useCallback(() => {
+      logger.log('[AuthDispatch] exitToSharedView called.');
       _setCurrentUser(null);
       setIsSharedViewActive(true);
       localStorage.removeItem('lastUserId');
   }, []);
 
   const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
+      logger.log('[AuthDispatch] addUser called with:', userData);
       if (bugLogger.isRecording()) {
           bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
       }
@@ -129,6 +137,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const deleteUsers = useCallback(async (userIds: string[]) => {
       if (userIds.length === 0) return;
+      logger.log('[AuthDispatch] deleteUsers called for:', userIds);
       if (bugLogger.isRecording()) {
           bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
       }
@@ -141,6 +150,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [addNotification]);
   
   const completeFirstRun = useCallback(async (adminUserData: any) => {
+      logger.log('[AuthDispatch] completeFirstRun called.');
       try {
           await completeFirstRunAPI(adminUserData);
           addNotification({ type: 'success', message: 'Setup complete! The app will now reload.' });

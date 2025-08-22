@@ -7,6 +7,7 @@ import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+import { logger } from '../../../utils/logger';
 
 interface LocalGalleryImage {
     url: string;
@@ -56,6 +57,7 @@ const AssetManagerPage: React.FC = () => {
     }, [localGallery]);
 
     const handleCreateFromGallery = (image: LocalGalleryImage) => {
+        logger.log('[AssetManager] Creating new asset from gallery image', { url: image.url, name: image.name });
         const assetName = image.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ');
         setAssetToCreateData({
             url: image.url,

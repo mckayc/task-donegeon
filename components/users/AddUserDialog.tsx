@@ -8,6 +8,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { SparklesIcon } from '../user-interface/Icons';
 import { GenerateContentResponse } from '@google/genai';
 import { useSystemState } from '../../context/SystemContext';
+import { logger } from '../../utils/logger';
 
 interface AddUserDialogProps {
   onClose: () => void;
@@ -42,6 +43,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
 
   const handleSuggestGameName = async () => {
     setIsSuggesting(true);
+    logger.log('[AddUserDialog] Requesting AI game name suggestion');
     const { firstName, lastName, birthday, adminNotes } = formData;
     if (!firstName.trim()) {
         addNotification({ type: 'error', message: 'Please enter a first name before suggesting a game name.' });
@@ -61,6 +63,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
       const suggestedAdjective = (result.text || '').trim().replace(/"/g, '');
       if (suggestedAdjective) {
         const suggestedName = `${firstName} the ${suggestedAdjective}`;
+        logger.log('[AddUserDialog] AI suggestion received', { suggestedName });
         setFormData(p => ({ ...p, gameName: suggestedName }));
       }
     } catch (error) {
@@ -72,6 +75,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    logger.log('[AddUserDialog] Attempting to add new user', { username: formData.username, role: formData.role });
     
     if (formData.password && formData.password !== formData.confirmPassword) {
         addNotification({ type: 'error', message: "Passwords do not match." });

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -16,6 +17,7 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import { logger } from '../../utils/logger';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     if (quest.type === QuestType.Journey) {
@@ -244,9 +246,20 @@ const QuestsPage: React.FC = () => {
 
     if (!currentUser) return null;
 
+    const handleFilterChange = (newFilter: 'all' | QuestType) => {
+        logger.log(`[QuestsPage] Filter changed to: ${newFilter}`);
+        setFilter(newFilter);
+    };
+
+    const handleQuestSelect = (quest: Quest) => {
+        logger.log('[QuestsPage] Viewing quest details', { id: quest.id, title: quest.title });
+        setSelectedQuest(quest);
+    };
+    
     const handleToggleTodo = (quest: Quest) => {
         if (!currentUser || quest.type !== QuestType.Venture) return;
         const isTodo = quest.todoUserIds?.includes(currentUser.id);
+        logger.log(`[QuestsPage] Toggling 'To-Do' for quest "${quest.title}" to ${!isTodo}`);
         if (isTodo) {
             unmarkQuestAsTodo(quest.id, currentUser.id);
         } else {
@@ -255,6 +268,7 @@ const QuestsPage: React.FC = () => {
     };
 
     const handleStartCompletion = (quest: Quest) => {
+        logger.log('[QuestsPage] Initiating completion for quest', { id: quest.id, title: quest.title });
         setCompletingQuest(quest);
         setSelectedQuest(null);
     };
@@ -273,10 +287,10 @@ const QuestsPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="max-w-md mx-auto p-1 bg-stone-900/50 rounded-lg border border-stone-700/60 flex gap-1">
-                <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
-                <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
-                <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
-                <FilterButton type={QuestType.Journey} activeFilter={filter} setFilter={setFilter}>{settings.terminology.journeys}</FilterButton>
+                <FilterButton type="all" activeFilter={filter} setFilter={handleFilterChange}>All Quests</FilterButton>
+                <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={handleFilterChange}>{settings.terminology.recurringTasks}</FilterButton>
+                <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={handleFilterChange}>{settings.terminology.singleTasks}</FilterButton>
+                <FilterButton type={QuestType.Journey} activeFilter={filter} setFilter={handleFilterChange}>{settings.terminology.journeys}</FilterButton>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -285,7 +299,7 @@ const QuestsPage: React.FC = () => {
                         key={quest.id} 
                         quest={quest} 
                         now={now} 
-                        onSelect={setSelectedQuest} 
+                        onSelect={handleQuestSelect} 
                         onImagePreview={setPreviewImageUrl}
                     />
                 ))}

@@ -24,7 +24,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 }
 
-const HelpPage: React.FC = () => {
+export const HelpPage: React.FC = () => {
     const { settings } = useSystemState();
     const { terminology } = settings;
 
@@ -190,5 +190,3 @@ const HelpPage: React.FC = () => {
         </div>
     );
 };
-
-export default HelpPage;

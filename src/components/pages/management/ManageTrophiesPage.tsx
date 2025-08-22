@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '../../types';
 import Button from '../../user-interface/Button';

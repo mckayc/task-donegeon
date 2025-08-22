@@ -10,7 +10,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Quests': lazy(() => import('../pages/QuestsPage')),
     'Marketplace': lazy(() => import('../pages/MarketplacePage')),
     'Calendar': lazy(() => import('../pages/CalendarPage')),
-    'Progress': lazy(() => import('../pages/ProgressPage').then(module => ({ default: module.default }))),
+    'Progress': lazy(() => import('../pages/ProgressPage')),
     'Trophies': lazy(() => import('../pages/TrophiesPage')),
     'Ranks': lazy(() => import('../pages/RanksPage')),
     'Chronicles': lazy(() => import('../pages/ChroniclesPage')),
@@ -37,7 +37,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Asset Library': lazy(() => import('../pages/management/AssetLibraryPage')),
     'Profile': lazy(() => import('../pages/ProfilePage')),
     'About': lazy(() => import('../pages/AboutPage').then(module => ({ default: module.AboutPage }))),
-    'Help Guide': lazy(() => import('../pages/HelpPage')),
+    'Help Guide': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.HelpPage }))),
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
 };

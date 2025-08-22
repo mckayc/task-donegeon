@@ -6,6 +6,7 @@ import UserFormFields from '../users/UserFormFields';
 import Avatar from '../user-interface/Avatar';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
+import { logger } from '../../utils/logger';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) => {
     const { users } = useAuthState();
@@ -17,6 +18,7 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) =>
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
+        logger.log('[AuthPage] Login attempt', { identifier });
         setError('');
 
         const user = users.find(u =>
@@ -97,6 +99,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        logger.log('[AuthPage] Registration attempt', { username: formData.username, email: formData.email });
         setError('');
 
         if (formData.password || formData.confirmPassword) {
@@ -172,9 +175,9 @@ const AuthPage: React.FC = () => {
                 </div>
 
                 {isLoginMode ? (
-                    <LoginForm onSwitchMode={() => setIsLoginMode(false)} />
+                    <LoginForm onSwitchMode={() => { logger.log('[AuthPage] Switched to Register mode'); setIsLoginMode(false); }} />
                 ) : (
-                    <RegisterForm onSwitchMode={() => setIsLoginMode(true)} />
+                    <RegisterForm onSwitchMode={() => { logger.log('[AuthPage] Switched to Login mode'); setIsLoginMode(true); }} />
                 )}
 
                 <div className="relative my-6">

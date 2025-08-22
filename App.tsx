@@ -58,6 +58,7 @@ const App: React.FC = () => {
     // Find the theme definition and apply its styles
     const theme = themes.find((t: ThemeDefinition) => t.id === activeThemeId);
     if (theme) {
+        logger.log(`[App] Applying theme: ${theme.name}`);
         Object.entries(theme.styles).forEach(([key, value]) => {
             document.documentElement.style.setProperty(key, value as string);
         });
@@ -136,6 +137,8 @@ const App: React.FC = () => {
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
       </div>
     );
+  } else {
+    logger.log("[App] Initial data loaded. Rendering application.");
   }
 
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;

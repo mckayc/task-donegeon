@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
+import { logger } from '../../utils/logger';
 
 const AiImagePromptHelper: React.FC = () => {
     const { addNotification } = useNotificationsDispatch();
@@ -30,10 +31,12 @@ const AiImagePromptHelper: React.FC = () => {
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(finalPrompt).then(() => {
+            logger.log('[AIPromptHelper] Copied prompt to clipboard', { prompt: finalPrompt });
             addNotification({ type: 'success', message: 'Prompt copied to clipboard!' });
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
         }, () => {
+            logger.error('[AIPromptHelper] Failed to copy prompt to clipboard');
             addNotification({ type: 'error', message: 'Failed to copy prompt.'});
         });
     };

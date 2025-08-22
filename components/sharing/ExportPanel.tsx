@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../user-interface/Button';
@@ -10,6 +9,7 @@ import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import { logger } from '../../utils/logger';
 
 const ExportPanel: React.FC = () => {
     const systemState = useSystemState();
@@ -100,6 +100,7 @@ const ExportPanel: React.FC = () => {
             alert('Please provide a name for your Blueprint.');
             return;
         }
+        logger.log('[ExportPanel] Exporting blueprint', { name: blueprintName, selected: selected });
 
         const fullAppData: IAppData = {
             ...systemState,

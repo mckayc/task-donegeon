@@ -6,6 +6,7 @@ import Keypad from '../user-interface/Keypad';
 import Avatar from '../user-interface/Avatar';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
+import { logger } from '../../utils/logger';
 
 const SwitchUser: React.FC = () => {
     const { users, currentUser: anyCurrentUser, targetedUserForLogin } = useAuthState();
@@ -18,6 +19,7 @@ const SwitchUser: React.FC = () => {
     const [error, setError] = useState('');
 
     const handleUserSelect = (user: User) => {
+        logger.log('[SwitchUser] User selected', { gameName: user.gameName, id: user.id });
         setError('');
         setPin('');
         setPassword('');
@@ -26,6 +28,7 @@ const SwitchUser: React.FC = () => {
 
         // Case 1: Admin/Gatekeeper needs a password
         if (isAdminOrGatekeeper && settings.security.requirePasswordForAdmin) {
+            logger.log('[SwitchUser] Admin password required.');
             setSelectedUser(user);
             setNeedsPassword(true); // Show password form
             return;
@@ -34,9 +37,11 @@ const SwitchUser: React.FC = () => {
         // Case 2: Any user needs a PIN
         if (settings.security.requirePinForUsers) {
             if (user.pin) {
+                logger.log('[SwitchUser] User PIN required.');
                 setSelectedUser(user);
                 setNeedsPassword(false); // Show PIN form
             } else {
+                logger.warn('[SwitchUser] User needs PIN, but none is set.', { gameName: user.gameName });
                 setError(`${user.gameName} does not have a PIN set up. An admin must set one.`);
                 setSelectedUser(null);
                 setNeedsPassword(false);
@@ -45,6 +50,7 @@ const SwitchUser: React.FC = () => {
         }
 
         // Case 3: No security for this user, log in directly.
+        logger.log('[SwitchUser] No security required, logging in directly.');
         setCurrentUser(user);
         setIsSwitchingUser(false);
     };
@@ -59,6 +65,7 @@ const SwitchUser: React.FC = () => {
     }, [targetedUserForLogin]);
 
     const handlePinSubmit = () => {
+        logger.log('[SwitchUser] PIN submitted for user', { gameName: selectedUser?.gameName });
         if (selectedUser && selectedUser.pin === pin) {
             setCurrentUser(selectedUser);
             setIsSwitchingUser(false);
@@ -69,6 +76,7 @@ const SwitchUser: React.FC = () => {
     };
 
     const handlePasswordSubmit = () => {
+        logger.log('[SwitchUser] Password submitted for user', { gameName: selectedUser?.gameName });
         if (selectedUser && selectedUser.password === password) {
             setCurrentUser(selectedUser);
             setIsSwitchingUser(false);
@@ -79,6 +87,7 @@ const SwitchUser: React.FC = () => {
     };
     
     const goBack = () => {
+        logger.log('[SwitchUser] "Go Back" action triggered.');
         if (anyCurrentUser) {
             setIsSwitchingUser(false);
         } else {

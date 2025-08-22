@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Market } from '../../types';
-import Button from '../user-interface/Button';
-import Card from '../user-interface/Card';
-import EditMarketDialog from '../markets/EditMarketDialog';
-import ConfirmDialog from '../user-interface/ConfirmDialog';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
+import EditMarketDialog from '../../markets/EditMarketDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
-import EmptyState from '../user-interface/EmptyState';
-import { MarketplaceIcon } from '../user-interface/Icons';
-import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
+import EmptyState from '../../user-interface/EmptyState';
+import { MarketplaceIcon } from '../../user-interface/Icons';
+import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
-import MarketTable from '../markets/MarketTable';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
-import { logger } from '../../utils/logger';
+import MarketTable from '../../markets/MarketTable';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { logger } from '../../../utils/logger';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();

@@ -12,6 +12,7 @@ import EmojiPicker from '../user-interface/EmojiPicker';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Card from '../user-interface/Card';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
+import { logger } from '../../utils/logger';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onToggle?: (isOpen: boolean) => void; }> = ({ title, children, defaultOpen = false, onToggle }) => {
@@ -164,12 +165,14 @@ export const SettingsPage: React.FC = () => {
     };
 
     const handleSave = () => {
+        logger.log('[Settings] Attempting to save settings', formState);
         updateSettings(formState);
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
     };
 
     const handleConfirm = () => {
         if (!confirmation) return;
+        logger.log(`[Settings] Confirming danger zone action: ${confirmation}`);
         switch(confirmation) {
             case 'resetSettings': resetSettings(); break;
             case 'applyUpdates': applySettingsUpdates(); break;
@@ -216,7 +219,7 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             <Card className="p-0 overflow-hidden">
-                <CollapsibleSection title="General">
+                <CollapsibleSection title="General" onToggle={(isOpen) => logger.log(`[Settings] Toggled General section to ${isOpen ? 'open' : 'closed'}`)}>
                     <div className="p-6 space-y-4">
                         <Input label="Application Name" value={formState.terminology.appName} onChange={handleTerminologyChange} name="appName" />
                         <div className="flex items-end gap-4">
@@ -249,7 +252,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </CollapsibleSection>
 
-                <CollapsibleSection title="Security">
+                <CollapsibleSection title="Security" onToggle={(isOpen) => logger.log(`[Settings] Toggled Security section to ${isOpen ? 'open' : 'closed'}`)}>
                     <div className="p-6 space-y-4">
                          <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
                          <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
@@ -261,7 +264,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </CollapsibleSection>
                 
-                <CollapsibleSection title="Shared / Kiosk Mode">
+                <CollapsibleSection title="Shared / Kiosk Mode" onToggle={(isOpen) => logger.log(`[Settings] Toggled Shared / Kiosk Mode section to ${isOpen ? 'open' : 'closed'}`)}>
                     <div className="p-6 space-y-4">
                         <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'enabled', val)} label="Enable Shared Mode" />
                         {formState.sharedMode.enabled && (
@@ -277,7 +280,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </CollapsibleSection>
 
-                 <CollapsibleSection title="Game Rules">
+                 <CollapsibleSection title="Game Rules" onToggle={(isOpen) => logger.log(`[Settings] Toggled Game Rules section to ${isOpen ? 'open' : 'closed'}`)}>
                     <div className="p-6 space-y-4">
                         <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val: boolean) => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
                         <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, setbacks are only applied if a quest is incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
@@ -292,7 +295,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </CollapsibleSection>
 
-                 <CollapsibleSection title="Economy & Valuation">
+                 <CollapsibleSection title="Economy & Valuation" onToggle={(isOpen) => logger.log(`[Settings] Toggled Economy & Valuation section to ${isOpen ? 'open' : 'closed'}`)}>
                     <div className="p-6 space-y-4">
                         <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val: boolean) => handleRewardValuationChange('enabled', val)} label="Enable Reward Valuation & Exchange" />
                         {formState.rewardValuation.enabled && (
@@ -310,7 +313,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </CollapsibleSection>
                 
-                <CollapsibleSection title="Integrations">
+                <CollapsibleSection title="Integrations" onToggle={(isOpen) => logger.log(`[Settings] Toggled Integrations section to ${isOpen ? 'open' : 'closed'}`)}>
                      <div className="p-6 space-y-4">
                          <ToggleSwitch enabled={formState.googleCalendar.enabled} setEnabled={(val: boolean) => handleSettingChange('googleCalendar', 'enabled', val)} label="Enable Google Calendar Integration" />
                           {formState.googleCalendar.enabled && (
@@ -342,57 +345,57 @@ export const SettingsPage: React.FC = () => {
                     </div>
                 </CollapsibleSection>
 
-                <CollapsibleSection title="Terminology">
+                <CollapsibleSection title="Terminology" onToggle={(isOpen) => logger.log(`[Settings] Toggled Terminology section to ${isOpen ? 'open' : 'closed'}`)}>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {Object.entries(terminologyLabels).map(([key, label]) => (
                             <Input key={key} label={label} name={key} value={formState.terminology[key as keyof Terminology]} onChange={handleTerminologyChange} />
                         ))}
                     </div>
                 </CollapsibleSection>
-                <CollapsibleSection title="Maintenance">
+                <CollapsibleSection title="Maintenance" onToggle={(isOpen) => logger.log(`[Settings] Toggled Maintenance section to ${isOpen ? 'open' : 'closed'}`)}>
                      <div className="p-6 space-y-4">
                         <div className="p-4 border border-stone-600 bg-stone-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                             <div>
                                 <h4 className="font-bold text-emerald-300">Apply Feature Updates</h4>
                                 <p className="text-sm text-stone-300 mt-1 max-w-xl">Safely adds new features and settings from the latest app version without overwriting your customizations. Use this if new sidebar links or options are not appearing after an update.</p>
                             </div>
-                            <Button onClick={() => setConfirmation('applyUpdates')} className="flex-shrink-0">
+                            <Button onClick={() => { logger.log('[Settings] Staging action: Apply Feature Updates'); setConfirmation('applyUpdates'); }} className="flex-shrink-0">
                                 Apply Updates
                             </Button>
                         </div>
                     </div>
                 </CollapsibleSection>
-                <CollapsibleSection title="Danger Zone">
+                <CollapsibleSection title="Danger Zone" onToggle={(isOpen) => logger.log(`[Settings] Toggled Danger Zone section to ${isOpen ? 'open' : 'closed'}`)}>
                      <div className="p-6 space-y-4">
                          <DangerZoneAction
                             title="Reset All Settings"
                             description="Reverts all application settings to their defaults. User-created content (quests, items, users) will not be affected."
                             buttonText="Reset Settings"
-                            onAction={() => setConfirmation('resetSettings')}
+                            onAction={() => { logger.log('[Settings] Staging action: Reset All Settings'); setConfirmation('resetSettings'); }}
                          />
                          <DangerZoneAction
                             title="Clear All History"
                             description="Permanently deletes all historical records like quest completions and purchases. User accounts and created content are not affected."
                             buttonText="Clear History"
-                            onAction={() => setConfirmation('clearHistory')}
+                            onAction={() => { logger.log('[Settings] Staging action: Clear All History'); setConfirmation('clearHistory'); }}
                          />
                          <DangerZoneAction
                             title="Reset All Player Data"
                             description="Resets progress for all non-admin users. Their currency, XP, and owned items will be cleared. User accounts will not be deleted."
                             buttonText="Reset Player Data"
-                            onAction={() => setConfirmation('resetPlayers')}
+                            onAction={() => { logger.log('[Settings] Staging action: Reset All Player Data'); setConfirmation('resetPlayers'); }}
                          />
                          <DangerZoneAction
                             title="Delete All Custom Content"
                             description="Permanently deletes all content you created: quests, items, markets, rewards, ranks, and trophies. User accounts are not affected."
                             buttonText="Delete Custom Content"
-                            onAction={() => setConfirmation('deleteContent')}
+                            onAction={() => { logger.log('[Settings] Staging action: Delete All Custom Content'); setConfirmation('deleteContent'); }}
                          />
                           <DangerZoneAction
                             title="Factory Reset Application"
                             description="The ultimate reset. Wipes ALL data (users, quests, settings) and returns the app to its initial setup state. This cannot be undone."
                             buttonText="Factory Reset"
-                            onAction={() => setConfirmation('factoryReset')}
+                            onAction={() => { logger.log('[Settings] Staging action: Factory Reset Application'); setConfirmation('factoryReset'); }}
                          />
                     </div>
                 </CollapsibleSection>

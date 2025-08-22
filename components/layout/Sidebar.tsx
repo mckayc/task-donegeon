@@ -12,6 +12,7 @@ import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';
+import { logger } from '../../utils/logger';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean; totalApprovals?: number }> = ({ title, items, isVisible, totalApprovals }) => {
     const { settings } = useSystemState();
@@ -27,7 +28,7 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
                      <a
                         key={item.id}
                         href="#"
-                        onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
+                        onClick={(e) => { e.preventDefault(); logger.log(`[Sidebar] Navigating (flyout): ${item.id}`); setActivePage(item.id); }}
                         className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700"
                         data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
                      >
@@ -60,7 +61,7 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (p
           href="#"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
+          onClick={(e) => { e.preventDefault(); logger.log(`[Sidebar] Navigating: ${linkName}`); setActivePage(item.id); }}
           data-log-id={`sidebar-link-${item.id.toLowerCase().replace(' ', '-')}`}
           className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'pl-12' : 'px-4'} ${ isCollapsed ? 'justify-center' : ''} ${
             isActive
@@ -105,7 +106,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
                 onMouseLeave={() => setIsHovered(false)}
             >
                 <button
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={() => { logger.log(`[Sidebar] Toggling group (collapsed): ${header.title}`); setIsOpen(!isOpen); }}
                     data-log-id={`sidebar-group-toggle-collapsed-${header.id}`}
                     className="relative w-full flex flex-col items-center justify-center py-2 text-lg rounded-lg text-stone-400 hover:bg-stone-700/50 hover:text-white"
                     title={header.title}
@@ -140,7 +141,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
     return (
         <div className="border-t border-stone-700/60 my-2 pt-2">
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => { logger.log(`[Sidebar] Toggling group: ${header.title}`); setIsOpen(!isOpen); }}
                 data-log-id={`sidebar-group-toggle-${header.id}`}
                 className="w-full flex items-center justify-between px-4 py-3 text-lg rounded-lg text-stone-300 hover:bg-stone-700/50 hover:text-white"
             >
@@ -272,7 +273,7 @@ const Sidebar: React.FC = () => {
                       key={item.id}
                       href="#"
                       data-log-id="sidebar-chat-toggle"
-                      onClick={(e) => { e.preventDefault(); toggleChat(); }}
+                      onClick={(e) => { e.preventDefault(); logger.log(`[Sidebar] Toggling chat panel. Current state: ${isChatOpen ? 'open' : 'closed'}`); toggleChat(); }}
                       className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${isSidebarCollapsed ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
                       title={isSidebarCollapsed ? linkName : ''}
                     >
@@ -311,7 +312,7 @@ const Sidebar: React.FC = () => {
   return (
     <div className={`flex flex-col flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
       <button 
-        onClick={() => setActivePage('Dashboard')} 
+        onClick={() => { logger.log('[Sidebar] Navigating to Dashboard via logo'); setActivePage('Dashboard'); }} 
         data-log-id="sidebar-header-logo"
         className="flex items-center justify-center h-20 border-b cursor-pointer hover:bg-stone-800/50 transition-colors" 
         style={{ borderColor: 'hsl(var(--color-border))' }}
@@ -323,7 +324,7 @@ const Sidebar: React.FC = () => {
       </nav>
       <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
          <button 
-            onClick={toggleSidebar}
+            onClick={() => { logger.log(`[Sidebar] Toggling collapse. Current state: ${isSidebarCollapsed ? 'collapsed' : 'expanded'}`); toggleSidebar(); }}
             data-log-id="sidebar-toggle-collapse"
             title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             className="w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors"

@@ -18,6 +18,7 @@ import TradeDialog from '../trading/TradeDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyDispatch, useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import { logger } from '../../utils/logger';
 
 const GuildPage: React.FC = () => {
     const { settings } = useSystemState();
@@ -58,11 +59,13 @@ const GuildPage: React.FC = () => {
     }, [guilds, currentUser.id, appMode]);
 
     const handleSwitchView = (guildId: string) => {
+        logger.log('[GuildPage] Switching to guild view', { guildId });
         setAppMode({ mode: 'guild', guildId: guildId });
         setActivePage('Dashboard');
     };
 
     const handleProposeTrade = async (recipient: User, guild: Guild) => {
+        logger.log('[GuildPage] Proposing trade with user', { recipientId: recipient.id, guildId: guild.id });
         const newTrade = await proposeTrade(recipient.id, guild.id);
         if (newTrade) {
             setTradeToView(newTrade);
@@ -95,7 +98,7 @@ const GuildPage: React.FC = () => {
             <div className="p-6 border-t border-stone-700/60">
                 <div className="flex justify-between items-center">
                     <h4 className="font-bold text-lg text-stone-200">Guild Treasury</h4>
-                    <Button variant="secondary" size="sm" onClick={() => setDonatingToGuild(guild)}>Donate</Button>
+                    <Button variant="secondary" size="sm" onClick={() => { logger.log('[GuildPage] Opening donate dialog for guild', { guildId: guild.id }); setDonatingToGuild(guild); }}>Donate</Button>
                 </div>
                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -154,19 +157,19 @@ const GuildPage: React.FC = () => {
                                         const isCurrentUser = member.id === currentUser.id;
                                         return (
                                             <div key={member.id} className="relative flex flex-col items-center text-center p-2 rounded-lg hover:bg-stone-700/50 transition-colors group">
-                                                <button onClick={() => setViewingMember({ user: member, guild })}>
+                                                <button onClick={() => { logger.log('[GuildPage] Viewing member profile', { userId: member.id, guildId: guild.id }); setViewingMember({ user: member, guild }); }}>
                                                     <Avatar user={member} className="w-20 h-20 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors" />
                                                 </button>
                                                 <p className="mt-2 text-md font-semibold text-stone-200">{member.gameName}</p>
                                                 <p className="text-xs text-stone-400">{member.role}</p>
                                                 {!isCurrentUser && (
                                                     <div className="absolute top-1 right-1">
-                                                        <button onClick={() => setOpenDropdownId(openDropdownId === member.id ? null : member.id)} className="p-2 rounded-full hover:bg-stone-800/80">
+                                                        <button onClick={() => { const newId = openDropdownId === member.id ? null : member.id; logger.log(`[GuildPage] Toggling member actions dropdown for ${member.gameName}`, { isOpen: !!newId }); setOpenDropdownId(newId); }} className="p-2 rounded-full hover:bg-stone-800/80">
                                                             <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
                                                         </button>
                                                         {openDropdownId === member.id && (
                                                             <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                                <button onClick={() => { setGiftingToUser({ user: member, guild }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Send Gift</button>
+                                                                <button onClick={() => { logger.log('[GuildPage] Opening gift dialog for user', { userId: member.id, guildId: guild.id }); setGiftingToUser({ user: member, guild }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Send Gift</button>
                                                                 <button onClick={() => { handleProposeTrade(member, guild); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Propose Trade</button>
                                                             </div>
                                                         )}

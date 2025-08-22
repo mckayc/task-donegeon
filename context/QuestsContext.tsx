@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -12,6 +13,7 @@ import {
 import { useAuthDispatch } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
 import { useSystemReducerDispatch } from './SystemContext';
+import { logger } from '../utils/logger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -60,6 +62,7 @@ const initialState: QuestsState = {
 };
 
 const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState => {
+    logger.log('[QuestsReducer] Action:', action.type, 'Payload:', action.payload);
     let newState: QuestsState;
 
     switch (action.type) {
@@ -70,6 +73,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
+                if (!action.payload[typedKey]) continue;
 
                 if (typedKey === 'allTags') {
                     continue; // Skip allTags, it is derived from quests
@@ -77,10 +81,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
 
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    const itemsToUpdate = action.payload[typedKey];
-                    if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
-                    }
+                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -91,6 +92,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
+                 if (!action.payload[typedKey]) continue;
                 
                 if (typedKey === 'allTags') {
                     continue; // Skip allTags
@@ -137,13 +139,28 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, [addNotification]);
     
     const actions = useMemo<QuestsDispatch>(() => ({
-        addQuest: (data) => apiAction(() => addQuestAPI(data), 'Quest created!'),
-        updateQuest: (data) => apiAction(() => updateQuestAPI(data), 'Quest updated!'),
-        cloneQuest: (id) => apiAction(() => cloneQuestAPI(id), 'Quest cloned!'),
-        updateQuestsStatus: (ids, isActive) => apiAction(() => updateQuestsStatusAPI(ids, isActive)),
-        bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
-        
+        addQuest: (data) => {
+            logger.log('[QuestsDispatch] addQuest', { title: data.title, type: data.type });
+            return apiAction(() => addQuestAPI(data), 'Quest created!');
+        },
+        updateQuest: (data) => {
+            logger.log('[QuestsDispatch] updateQuest', { id: data.id, title: data.title });
+            return apiAction(() => updateQuestAPI(data), 'Quest updated!');
+        },
+        cloneQuest: (id) => {
+            logger.log('[QuestsDispatch] cloneQuest', { id });
+            return apiAction(() => cloneQuestAPI(id), 'Quest cloned!');
+        },
+        updateQuestsStatus: (ids, isActive) => {
+            logger.log('[QuestsDispatch] updateQuestsStatus', { ids, isActive });
+            return apiAction(() => updateQuestsStatusAPI(ids, isActive));
+        },
+        bulkUpdateQuests: (ids, updates) => {
+            logger.log('[QuestsDispatch] bulkUpdateQuests', { ids, updates });
+            return apiAction(() => bulkUpdateQuestsAPI(ids, updates));
+        },
         completeQuest: async (completionData) => {
+            logger.log('[QuestsDispatch] completeQuest', completionData);
             const result = await apiAction(() => completeQuestAPI(completionData));
             if (result) {
                 const { updatedUser, newCompletion } = result as any;
@@ -153,6 +170,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         approveQuestCompletion: async (id, approverId, note) => {
+            logger.log('[QuestsDispatch] approveQuestCompletion', { id, approverId, note });
             const result = await apiAction(() => approveQuestCompletionAPI(id, approverId, note));
             if (result) {
                 const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
@@ -164,6 +182,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         rejectQuestCompletion: async (id, rejecterId, note) => {
+            logger.log('[QuestsDispatch] rejectQuestCompletion', { id, rejecterId, note });
             const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
             if (result) {
                 const { updatedCompletion } = result as any;
@@ -171,14 +190,17 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         markQuestAsTodo: async (questId, userId) => {
+            logger.log('[QuestsDispatch] markQuestAsTodo', { questId, userId });
             const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
         unmarkQuestAsTodo: async (questId, userId) => {
+            logger.log('[QuestsDispatch] unmarkQuestAsTodo', { questId, userId });
             const result = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
         completeCheckpoint: async (questId, userId) => {
+            logger.log('[QuestsDispatch] completeCheckpoint', { questId, userId });
             const result = await apiAction(() => completeCheckpointAPI(questId, userId));
             if (result) {
                 const { updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications } = result as any;
@@ -190,12 +212,28 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 addNotification({ type: 'success', message: 'Checkpoint completed!' });
             }
         },
-        addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data)),
-        updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data)),
-        assignQuestGroupToUsers: (groupId, userIds) => apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds)),
-        addRotation: (data) => apiAction(() => addRotationAPI(data)),
-        updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
+        addQuestGroup: (data) => {
+            logger.log('[QuestsDispatch] addQuestGroup', data);
+            return apiAction(() => addQuestGroupAPI(data));
+        },
+        updateQuestGroup: (data) => {
+            logger.log('[QuestsDispatch] updateQuestGroup', data);
+            return apiAction(() => updateQuestGroupAPI(data));
+        },
+        assignQuestGroupToUsers: (groupId, userIds) => {
+            logger.log('[QuestsDispatch] assignQuestGroupToUsers', { groupId, userIds });
+            return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds));
+        },
+        addRotation: (data) => {
+            logger.log('[QuestsDispatch] addRotation', data);
+            return apiAction(() => addRotationAPI(data));
+        },
+        updateRotation: (data) => {
+            logger.log('[QuestsDispatch] updateRotation', data);
+            return apiAction(() => updateRotationAPI(data));
+        },
         runRotation: async (id) => {
+            logger.log('[QuestsDispatch] runRotation', { id });
             const result = await apiAction(() => runRotationAPI(id));
             if (result) addNotification({ type: 'success', message: (result as any).message });
         },

@@ -9,6 +9,7 @@ import Input from '../user-interface/Input';
 import UserFormFields from '../users/UserFormFields';
 import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
+import { logger } from '../../utils/logger';
 
 const StatusCheck: React.FC<{
   title: string;
@@ -66,11 +67,14 @@ const FirstRunWizard: React.FC = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
+        logger.log('[FirstRunWizard] Checking system status...');
         const response = await fetch('/api/system/status');
         if (!response.ok) throw new Error('Failed to fetch system status');
         const data: SystemStatus = await response.json();
+        logger.log('[FirstRunWizard] System status fetched successfully', data);
         setStatus(data);
       } catch (err) {
+        logger.error('[FirstRunWizard] Failed to fetch system status', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
@@ -80,6 +84,7 @@ const FirstRunWizard: React.FC = () => {
   }, []);
 
   const handleSkipToggle = (key: keyof typeof skip) => {
+    logger.log(`[FirstRunWizard] Toggled skip for: ${key}`);
     setSkip(prev => ({ ...prev, [key]: !prev[key] }));
   };
   
@@ -89,6 +94,7 @@ const FirstRunWizard: React.FC = () => {
 
   const handleAdminSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    logger.log('[FirstRunWizard] Attempting to create Donegeon Master account', { username: formData.username, email: formData.email });
     if (formData.password !== formData.confirmPassword) { setError("Passwords do not match."); return; }
     if (formData.password.length < 6) { setError("Password must be at least 6 characters long."); return; }
     if (formData.pin !== formData.confirmPin) { setError("PINs do not match."); return; }

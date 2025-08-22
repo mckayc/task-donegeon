@@ -5,6 +5,7 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import Avatar from '../user-interface/Avatar';
 import { useSystemState } from '../../context/SystemContext';
+import { logger } from '../../utils/logger';
 
 const AppLockScreen: React.FC = () => {
   const { users } = useAuthState();
@@ -28,6 +29,7 @@ const AppLockScreen: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    logger.log('[AppLockScreen] Unlock attempt for admin', { adminId: selectedAdminId });
     setIsChecking(true);
     setError('');
 

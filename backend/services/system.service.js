@@ -3,96 +3,116 @@
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
-    GiftEntity, TradeOfferEntity, AppliedModifierEntity, UserEntity, QuestEntity, GameAssetEntity, 
-    MarketEntity, RewardTypeDefinitionEntity, RankEntity, TrophyEntity, QuestGroupEntity, 
-    SettingEntity, LoginHistoryEntity, SystemLogEntity, ChatMessageEntity, SystemNotificationEntity,
-    ScheduledEventEntity, BugReportEntity, ModifierDefinitionEntity, RotationEntity, GuildEntity
+    UserEntity, QuestEntity, SettingEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
-const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_REWARD_TYPES, INITIAL_TROPHIES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
+const { INITIAL_SETTINGS } = require('../initialData');
 const { In, IsNull } = require('typeorm');
 
-
 const getChronicles = async (req, res) => {
-    const { userId, guildId, viewMode, page = 1, limit = 50 } = req.query;
+    const { userId, guildId, viewMode, page = 1, limit = 50, startDate, endDate } = req.query;
     const manager = dataSource.manager;
     const skip = (parseInt(page) - 1) * parseInt(limit);
-
     let allEvents = [];
+
+    // --- Quest Completions ---
+    const qcQb = manager.createQueryBuilder(QuestCompletionEntity, "qc")
+        .leftJoinAndSelect("qc.user", "user")
+        .leftJoinAndSelect("qc.quest", "quest");
     
-    const buildWhereClause = (entityConfig = { hasDirectUserId: false }) => {
-        const where = {};
-        if (guildId === 'null') {
-            where.guildId = IsNull();
-        } else if (guildId) {
-            where.guildId = guildId;
-        }
+    if (viewMode === 'personal' && userId) qcQb.where("user.id = :userId", { userId });
+    
+    if (guildId === 'null') qcQb.andWhere("qc.guildId IS NULL");
+    else if (guildId) qcQb.andWhere("qc.guildId = :guildId", { guildId });
+    
+    if (startDate && endDate) {
+        qcQb.andWhere("qc.completedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+        qcQb.andWhere("qc.completedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+    }
 
-        if (viewMode === 'personal' && userId) {
-            if (entityConfig.hasDirectUserId) {
-                where.userId = userId;
-            } else {
-                where.user = { id: userId };
-            }
-        }
-        return where;
-    };
-
-    // Quest Completions
-    const completions = await manager.find(QuestCompletionEntity, {
-        where: buildWhereClause({ hasDirectUserId: false }),
-        relations: ['user', 'quest'],
-        order: { completedAt: 'DESC' }
-    });
+    const completions = await qcQb.orderBy("qc.completedAt", "DESC").getMany();
     allEvents.push(...completions.map(c => ({
         id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: `${c.user.gameName} completed: ${c.quest?.title || 'Unknown Quest'}`, note: c.note, status: c.status,
-        icon: c.quest?.icon || '📜', color: '#10b981', userId: c.user.id
+        title: `${c.user?.gameName || 'Unknown User'} completed: ${c.quest?.title || 'Unknown Quest'}`,
+        note: c.note, status: c.status, icon: c.quest?.icon || '📜', color: '#10b981',
+        userId: c.user?.id
     })));
 
-    // Purchase Requests
-    const purchases = await manager.find(PurchaseRequestEntity, {
-        where: buildWhereClause({ hasDirectUserId: true }),
-        relations: ['user'],
-        order: { requestedAt: 'DESC' }
-    });
+    // --- Purchase Requests ---
+    const prQb = manager.createQueryBuilder(PurchaseRequestEntity, "pr")
+        .leftJoinAndSelect("pr.user", "user");
+    
+    if (viewMode === 'personal' && userId) prQb.where("user.id = :userId", { userId });
+
+    if (guildId === 'null') prQb.andWhere("pr.guildId IS NULL");
+    else if (guildId) prQb.andWhere("pr.guildId = :guildId", { guildId });
+
+    if (startDate && endDate) {
+        prQb.andWhere("pr.requestedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+        prQb.andWhere("pr.requestedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+    }
+    
+    const purchases = await prQb.orderBy("pr.requestedAt", "DESC").getMany();
     allEvents.push(...purchases.map(p => ({
         id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-        title: `${p.user.gameName} requested: ${p.assetDetails.name}`, note: p.assetDetails.description, status: p.status,
-        icon: '💰', color: '#f59e0b', userId: p.userId
+        title: `${p.user?.gameName || 'Unknown User'} requested: ${p.assetDetails.name}`,
+        note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b',
+        userId: p.user?.id
     })));
 
-    // User Trophies
-    const trophies = await manager.find(UserTrophyEntity, {
-        where: buildWhereClause({ hasDirectUserId: true }),
-        relations: ['user', 'trophy'],
-        order: { awardedAt: 'DESC' }
-    });
+    // --- User Trophies ---
+    const utQb = manager.createQueryBuilder(UserTrophyEntity, "ut")
+        .leftJoinAndSelect("ut.user", "user")
+        .leftJoinAndSelect("ut.trophy", "trophy");
+    
+    if (viewMode === 'personal' && userId) utQb.where("user.id = :userId", { userId });
+
+    if (guildId === 'null') utQb.andWhere("ut.guildId IS NULL");
+    else if (guildId) utQb.andWhere("ut.guildId = :guildId", { guildId });
+
+    if (startDate && endDate) {
+        utQb.andWhere("ut.awardedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+        utQb.andWhere("ut.awardedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+    }
+
+    const trophies = await utQb.orderBy("ut.awardedAt", "DESC").getMany();
     allEvents.push(...trophies.map(t => ({
         id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
-        title: `${t.user.gameName} earned: ${t.trophy.name}`, note: t.trophy.description, status: 'Awarded',
-        icon: t.trophy.icon, color: '#ca8a04', userId: t.userId
+        title: `${t.user?.gameName || 'Unknown User'} earned: ${t.trophy?.name || 'Unknown Trophy'}`,
+        note: t.trophy?.description, status: 'Awarded', icon: t.trophy?.icon || '🏆', color: '#ca8a04',
+        userId: t.user?.id
     })));
 
-    // Admin Adjustments
-    const adjustments = await manager.find(AdminAdjustmentEntity, {
-        where: buildWhereClause({ hasDirectUserId: true }),
-        relations: ['user'],
-        order: { adjustedAt: 'DESC' }
-    });
+    // --- Admin Adjustments ---
+    const aaQb = manager.createQueryBuilder(AdminAdjustmentEntity, "aa")
+        .leftJoinAndSelect("aa.user", "user");
+    
+    if (viewMode === 'personal' && userId) aaQb.where("user.id = :userId", { userId });
+
+    if (guildId === 'null') aaQb.andWhere("aa.guildId IS NULL");
+    else if (guildId) aaQb.andWhere("aa.guildId = :guildId", { guildId });
+
+    if (startDate && endDate) {
+        aaQb.andWhere("aa.adjustedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+        aaQb.andWhere("aa.adjustedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+    }
+    
+    const adjustments = await aaQb.orderBy("aa.adjustedAt", "DESC").getMany();
     allEvents.push(...adjustments.map(a => ({
         id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
-        title: `Admin Adjustment for ${a.user.gameName}: ${a.type}`, note: a.reason, status: a.type,
-        icon: '⚖️', color: '#a855f7', userId: a.userId
+        title: `Admin Adjustment for ${a.user?.gameName || 'Unknown User'}: ${a.type}`,
+        note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7',
+        userId: a.user?.id
     })));
     
     // Sort all collected events by date
     allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    const paginatedEvents = allEvents.slice(skip, skip + parseInt(limit));
+    const total = allEvents.length;
+    const paginatedEvents = (startDate || endDate) ? allEvents : allEvents.slice(skip, skip + parseInt(limit));
 
-    res.json({ events: paginatedEvents, total: allEvents.length });
+    res.json({ events: paginatedEvents, total });
 };
 
 const applySettingsUpdates = async (req, res) => {

@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -102,36 +103,42 @@ const bulkUpdate = async (ids, updates) => {
 
 const complete = async (completionData) => {
     return await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: completionData.userId });
+        const quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
+        if (!user || !quest) throw new Error('User or Quest not found');
+
+        const newCompletionData = { ...completionData, user, quest };
+        delete newCompletionData.userId;
+        delete newCompletionData.questId;
+
         const newCompletion = manager.create(QuestCompletionEntity, {
-            ...completionData,
+            ...newCompletionData,
             id: `qc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         });
         const savedCompletion = await manager.save(updateTimestamps(newCompletion, true));
         
         let updatedUser = null;
         if (completionData.status === 'Approved') {
-            const user = await manager.findOneBy(UserEntity, { id: completionData.userId });
-            const quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
-            if (user && quest) {
-                const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
-                const isGuildScope = !!completionData.guildId;
-                const balances = isGuildScope ? user.guildBalances[completionData.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
-                
-                quest.rewards.forEach(reward => {
-                    const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                    if (rewardDef) {
-                        const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                        target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
-                    }
-                });
+            const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+            const isGuildScope = !!completionData.guildId;
+            const balances = isGuildScope ? user.guildBalances[completionData.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+            
+            quest.rewards.forEach(reward => {
+                const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                if (rewardDef) {
+                    const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                    target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            });
 
-                if(isGuildScope) user.guildBalances[completionData.guildId] = balances;
+            if(isGuildScope) user.guildBalances[completionData.guildId] = balances;
 
-                updatedUser = await manager.save(updateTimestamps(user));
-            }
+            updatedUser = await manager.save(updateTimestamps(user));
         }
+
+        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: savedCompletion.id }, relations: ['user', 'quest'] });
         updateEmitter.emit('update');
-        return { updatedUser, newCompletion: savedCompletion };
+        return { updatedUser, newCompletion: finalCompletion };
     });
 };
 
@@ -174,9 +181,10 @@ const approveCompletion = async (id, approverId, note) => {
 
             const updatedUser = await manager.save(updateTimestamps(user));
             const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
-            
+            const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: ['user', 'quest'] });
+
             updateEmitter.emit('update');
-            return { updatedUser, updatedCompletion, newUserTrophies, newNotifications };
+            return { updatedUser, updatedCompletion: finalCompletion, newUserTrophies, newNotifications };
         } else {
             updateEmitter.emit('update');
             return { updatedCompletion };
@@ -185,7 +193,7 @@ const approveCompletion = async (id, approverId, note) => {
 };
 
 const rejectCompletion = async (id, rejecterId, note) => {
-    const completion = await completionRepo.findOneBy({ id });
+    const completion = await completionRepo.findOne({ where: { id }, relations: ['user', 'quest'] });
     if (!completion || completion.status !== 'Pending') return null;
     
     completion.status = 'Rejected';

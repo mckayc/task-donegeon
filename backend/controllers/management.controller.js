@@ -1,4 +1,3 @@
-
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
@@ -25,16 +24,12 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
-const restoreUpload = multer({ dest: '/tmp/' });
-
 
 // --- Scheduled Backups ---
-const runScheduledBackups = async () => {
-    try {
-        await backupService.runScheduled();
-    } catch (err) {
+const runScheduledBackups = () => {
+    backupService.runScheduled().catch(err => {
         console.error("[Controller] Error during automated backup execution:", err);
-    }
+    });
 };
 
 
@@ -224,6 +219,7 @@ const restoreFromBackup = async (req, res) => {
     res.json({ message: 'Restore successful! The application will now reload.' });
 };
 
+
 // --- Media ---
 const getLocalGallery = async (req, res) => {
     const gallery = [];
@@ -259,15 +255,18 @@ const uploadMedia = async (req, res) => {
 };
 
 module.exports = {
-    runScheduledBackups,
+    // Other exports for different routers
     upload: upload.single('file'),
-    restoreUpload: restoreUpload.single('backupFile'),
     discoverAssetPacks: asyncMiddleware(discoverAssetPacks),
     getAssetPack: asyncMiddleware(getAssetPack),
     fetchRemoteAssetPack: asyncMiddleware(fetchRemoteAssetPack),
     discoverImagePacks: asyncMiddleware(discoverImagePacks),
     getImagePackDetails: asyncMiddleware(getImagePackDetails),
     importImagePack: asyncMiddleware(importImagePack),
+    getLocalGallery: asyncMiddleware(getLocalGallery),
+    uploadMedia: asyncMiddleware(uploadMedia),
+    // Backup exports
+    runScheduledBackups,
     getBackups: asyncMiddleware(getBackups),
     createJsonBackup: asyncMiddleware(createJsonBackup),
     createSqliteBackup: asyncMiddleware(createSqliteBackup),
@@ -275,6 +274,4 @@ module.exports = {
     deleteBackup: asyncMiddleware(deleteBackup),
     bulkDeleteBackups: asyncMiddleware(bulkDeleteBackups),
     restoreFromBackup: asyncMiddleware(restoreFromBackup),
-    getLocalGallery: asyncMiddleware(getLocalGallery),
-    uploadMedia: asyncMiddleware(uploadMedia),
 };

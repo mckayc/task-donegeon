@@ -1,4 +1,3 @@
-
 import { useRef, useCallback } from 'react';
 
 // Custom hook for shift-selection logic on checkboxes
@@ -8,7 +7,7 @@ export function useShiftSelect<T extends string | number>(
   // The current list of selected item IDs.
   selectedItems: T[],
   // The setter function for the selected items state.
-  setSelectedItems: (newSelection: T[]) => void
+  setSelectedItems: (newSelection: T[] | ((prev: T[]) => T[])) => void
 ) {
   // Ref to store the ID of the last clicked checkbox.
   const lastCheckedId = useRef<T | null>(null);
@@ -29,31 +28,33 @@ export function useShiftSelect<T extends string | number>(
         const end = Math.max(lastIndex, currentIndex);
         const rangeIds = allItems.slice(start, end + 1);
         
-        const newSelectedItems = new Set(selectedItems);
-        
-        // Apply the state of the currently clicked checkbox to the entire range.
-        if (isChecked) {
-          rangeIds.forEach(id => newSelectedItems.add(id));
-        } else {
-          rangeIds.forEach(id => newSelectedItems.delete(id));
-        }
-        
-        setSelectedItems(Array.from(newSelectedItems));
+        setSelectedItems(prevSelected => {
+          const newSelectedItems = new Set(prevSelected);
+          // Apply the state of the currently clicked checkbox to the entire range.
+          if (isChecked) {
+            rangeIds.forEach(id => newSelectedItems.add(id));
+          } else {
+            rangeIds.forEach(id => newSelectedItems.delete(id));
+          }
+          return Array.from(newSelectedItems);
+        });
       }
     } else {
       // Normal click behavior
-      const newSelectedItems = new Set(selectedItems);
-      if (isChecked) {
-        newSelectedItems.add(clickedId);
-      } else {
-        newSelectedItems.delete(clickedId);
-      }
-      setSelectedItems(Array.from(newSelectedItems));
+      setSelectedItems(prevSelected => {
+        const newSelectedItems = new Set(prevSelected);
+        if (isChecked) {
+          newSelectedItems.add(clickedId);
+        } else {
+          newSelectedItems.delete(clickedId);
+        }
+        return Array.from(newSelectedItems);
+      });
     }
 
     // Update the last checked ID for the next shift-click operation.
     lastCheckedId.current = clickedId;
-  }, [allItems, selectedItems, setSelectedItems]);
+  }, [allItems, setSelectedItems]);
 
   return handleCheckboxClick;
 }

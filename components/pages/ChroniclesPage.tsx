@@ -128,28 +128,33 @@ const ChroniclesPage: React.FC = () => {
                     <>
                         <ul className="space-y-4">
                             {events.map(activity => (
-                                <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg border-l-4" style={{ borderColor: activity.color }}>
-                                    <div className="w-8 flex-shrink-0 text-center text-2xl pt-1">
-                                        {activity.icon}
-                                    </div>
-                                    <div className="flex-grow min-w-0">
-                                        <p className="font-semibold text-stone-200" title={activity.title}>
-                                           {activity.title}
-                                        </p>
-                                        <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
+                                <li key={activity.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-3 bg-stone-800/60 rounded-lg border-l-4" style={{ borderColor: activity.color }}>
+                                    {/* Column 1: Title & Icon */}
+                                    <p className="font-semibold text-stone-100 flex items-center gap-3 truncate md:col-span-1" title={activity.title}>
+                                        <span className="text-2xl flex-shrink-0">{activity.icon}</span>
+                                        <span className="truncate">{activity.title}</span>
+                                    </p>
+
+                                    {/* Column 2: Note */}
+                                    <div className="md:col-span-1 md:text-center min-w-0">
                                         {activity.note && (
-                                            <p className="text-sm text-stone-400 italic mt-2 whitespace-pre-wrap" title={activity.note}>
+                                            <p className="text-sm text-stone-400 italic truncate" title={activity.note}>
                                                 "{activity.note}"
                                             </p>
                                         )}
                                     </div>
-                                    <div className={`w-32 flex-shrink-0 text-right font-semibold flex items-center justify-end gap-2 ${statusColor(activity.status)}`}>
-                                        <span>{activity.status}</span>
-                                         {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
-                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>
-                                                Cancel
-                                            </Button>
-                                        )}
+                                    
+                                    {/* Column 3: Status & Date */}
+                                    <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
+                                        <div className={`font-semibold flex items-center justify-end gap-2 ${statusColor(activity.status)}`}>
+                                            <span>{activity.status}</span>
+                                            {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
+                                                <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>
+                                                    Cancel
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
                                     </div>
                                 </li>
                             ))}

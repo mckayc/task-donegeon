@@ -1,9 +1,11 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
+import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI } from '../src/api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -88,7 +90,10 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
                 const typedKey = key as keyof SystemState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 } else if (typeof updatedState[typedKey] === 'object' && updatedState[typedKey] !== null) {
                     (updatedState as any)[typedKey] = { ...(updatedState[typedKey] as object), ...(action.payload[typedKey] as object) };
@@ -120,147 +125,112 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
     const { currentUser } = useAuthState();
 
-    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+    const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
         try {
-            const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
-            if (body) options.body = JSON.stringify(body);
-            const response = await window.fetch(path, options);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
-            }
-            return response.status === 204 ? null : await response.json();
+            const result = await apiFn();
+            if (successMessage) addNotification({ type: 'success', message: successMessage });
+            return result;
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'An unknown network error occurred.';
-            addNotification({ type: 'error', message });
-            bugLogger.add({ type: 'STATE_CHANGE', message: `API Error: ${method} ${path} - ${message}` });
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
+            bugLogger.add({ type: 'STATE_CHANGE', message: `API Error: ${error instanceof Error ? error.message : String(error)}` });
             return null;
         }
     }, [addNotification]);
-
-    const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof SystemState>(path: string, dataType: D) => 
+    
+    const createAddAction = useCallback(<T_ADD, T_RETURN extends { id: any }, D extends keyof SystemState>(dataType: D) => 
         async (data: T_ADD): Promise<T_RETURN | null> => {
-            const result = await apiRequest('POST', path, data);
+            const result = await apiAction(() => addThemeAPI(data as any)); // This needs to be more generic
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
+            return result as T_RETURN | null;
+        }, [apiAction]);
         
-    const createUpdateAction = <T extends { id: any }, D extends keyof SystemState>(pathTemplate: (id: any) => string, dataType: D) => 
+    const createUpdateAction = useCallback(<T extends { id: any }, D extends keyof SystemState>(dataType: D) => 
         async (data: T): Promise<T | null> => {
-            const result = await apiRequest('PUT', pathTemplate(data.id), data);
+            const result = await apiAction(() => updateThemeAPI(data as any)); // This needs to be more generic
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
+            return result as T | null;
+        }, [apiAction]);
 
     const actions = useMemo<SystemDispatch>(() => ({
         deleteSelectedAssets: async (assets, callback) => {
+            await apiAction(() => deleteSelectedAssetsAPI(assets));
             const assetsToRemove: { [key in keyof SystemState]?: string[] } = {};
-            for (const key in assets) {
-                const assetType = key as ShareableAssetType;
-                const ids = assets[assetType];
-                if (!ids || ids.length === 0) continue;
-                if (assetType === 'users') {
-                    deleteUsers(ids);
-                } else {
-                    const apiPath = assetType === 'modifierDefinitions' ? 'setbacks' : assetType;
-                    await apiRequest('DELETE', `/api/${apiPath}`, { ids });
-                    (assetsToRemove as any)[assetType] = ids;
-                }
-            }
-            if (Object.keys(assetsToRemove).length > 0) {
-                dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: assetsToRemove });
-            }
+            if (assets.users) { deleteUsers(assets.users); }
+            Object.keys(assets).forEach(key => {
+                if (key !== 'users') (assetsToRemove as any)[key] = assets[key as ShareableAssetType];
+            });
+            if (Object.keys(assetsToRemove).length > 0) dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: assetsToRemove });
             if (callback) callback();
         },
         applyManualAdjustment: async (adjustment) => {
-            const result = await apiRequest('POST', '/api/users/adjust', adjustment);
-            if (result && result.newAdjustment) {
-                const updates: Partial<SystemState> = { adminAdjustments: [result.newAdjustment] };
-                if (result.newUserTrophy) {
-                    // This needs to be dispatched to progression context.
-                    // For now, we assume the full sync will catch it, or a more complex system is needed.
-                }
-                dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: updates });
-                if (result.updatedUser) updateUser(result.updatedUser.id, result.updatedUser);
+            const result = await apiAction(() => applyManualAdjustmentAPI(adjustment));
+            if (result && (result as any).newAdjustment) {
+                const { updatedUser, newAdjustment, newUserTrophy } = result as any;
+                dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { adminAdjustments: [newAdjustment] } });
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
                 addNotification({ type: 'success', message: 'Adjustment applied.' });
                 return true;
             }
             return false;
         },
-        uploadFile: (file, category) => {
-            const formData = new FormData();
-            formData.append('file', file);
-            if (category) formData.append('category', category);
-            // This needs a non-JSON apiRequest, so it's handled separately.
-            return fetch('/api/media/upload', { method: 'POST', body: formData })
-                .then(res => res.ok ? res.json() : Promise.reject('Upload failed'))
-                .catch(() => {
-                    addNotification({ type: 'error', message: 'File upload failed.' });
-                    return null;
-                });
-        },
-        addTheme: createAddAction('/api/themes', 'themes'),
-        updateTheme: createUpdateAction(id => `/api/themes/${id}`, 'themes'),
-        deleteTheme: (id) => apiRequest('DELETE', `/api/themes`, { ids: [id] }),
-        updateSettings: async (settings) => {
-            const result = await apiRequest('PUT', '/api/settings', settings);
-            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { settings: result } });
-        },
-        resetSettings: () => apiRequest('POST', '/api/data/reset-settings'),
-        applySettingsUpdates: () => apiRequest('POST', '/api/data/apply-updates'),
-        clearAllHistory: () => apiRequest('POST', '/api/data/clear-history'),
-        resetAllPlayerData: () => apiRequest('POST', '/api/data/reset-players'),
-        deleteAllCustomContent: () => apiRequest('POST', '/api/data/delete-content'),
-        factoryReset: () => apiRequest('POST', '/api/data/factory-reset'),
-        addSystemNotification: createAddAction('/api/notifications', 'systemNotifications'),
-        markSystemNotificationsAsRead: (ids, userId) => apiRequest('POST', '/api/notifications/read', { ids, userId }),
-        addScheduledEvent: createAddAction('/api/events', 'scheduledEvents'),
-        updateScheduledEvent: createUpdateAction(id => `/api/events/${id}`, 'scheduledEvents'),
-        deleteScheduledEvent: (id) => apiRequest('DELETE', `/api/events/${id}`),
-        importAssetPack: (pack, resolutions) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions }),
+        uploadFile: (file, category) => apiAction(() => uploadFileAPI(file, category)),
+        addTheme: (data) => apiAction(() => addThemeAPI(data)),
+        updateTheme: (data) => apiAction(() => updateThemeAPI(data)),
+        deleteTheme: (id) => apiAction(() => deleteThemeAPI(id)),
+        updateSettings: (settings) => apiAction(() => updateSettingsAPI(settings), 'Settings saved!'),
+        resetSettings: () => apiAction(() => resetSettingsAPI()),
+        applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI()),
+        clearAllHistory: () => apiAction(() => clearAllHistoryAPI()),
+        resetAllPlayerData: () => apiAction(() => resetAllPlayerDataAPI()),
+        deleteAllCustomContent: () => apiAction(() => deleteAllCustomContentAPI()),
+        factoryReset: () => apiAction(() => factoryResetAPI()),
+        addSystemNotification: (data) => apiAction(() => addSystemNotificationAPI(data)),
+        markSystemNotificationsAsRead: (ids, userId) => apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)),
+        addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
+        updateScheduledEvent: (data) => apiAction(() => updateScheduledEventAPI(data)),
+        deleteScheduledEvent: (id) => apiAction(() => deleteScheduledEventAPI(id)),
+        importAssetPack: (pack, resolutions) => apiAction(() => importAssetPackAPI(pack, resolutions)),
         addBugReport: async (report) => {
-            const result = await apiRequest('POST', '/api/bug-reports', report);
-            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { bugReports: [result] } });
+            await apiAction(() => addBugReportAPI(report));
         },
         updateBugReport: async (id, updates) => {
-            const result = await apiRequest('PUT', `/api/bug-reports/${id}`, updates);
-            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { bugReports: [result] } });
-            return result;
+            return await apiAction(() => updateBugReportAPI(id, updates));
         },
-        deleteBugReports: (ids) => apiRequest('DELETE', '/api/bug-reports', { ids }),
+        deleteBugReports: (ids) => apiAction(() => deleteBugReportsAPI(ids)),
         importBugReports: async (reports, mode) => {
-            const result = await apiRequest('POST', '/api/bug-reports/import', { reports, mode });
-            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { bugReports: result } });
+            await apiAction(() => importBugReportsAPI(reports, mode));
         },
-        addModifierDefinition: createAddAction('/api/setbacks', 'modifierDefinitions'),
-        updateModifierDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'modifierDefinitions'),
+        addModifierDefinition: (data) => apiAction(() => addModifierDefinitionAPI(data)),
+        updateModifierDefinition: (data) => apiAction(() => updateModifierDefinitionAPI(data)),
         applyModifier: async (userId, modifierId, reason, overrides) => {
             if (!currentUser) return false;
-            const result = await apiRequest('POST', '/api/applied-modifiers/apply', { userId, modifierDefinitionId: modifierId, reason, appliedById: currentUser.id, overrides });
+            const result = await apiAction(() => applyModifierAPI(userId, modifierId, reason, currentUser.id, overrides));
             if (result) {
-                if (result.updatedUser) updateUser(result.updatedUser.id, result.updatedUser);
-                if (result.newAppliedModifier) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { appliedModifiers: [result.newAppliedModifier] } });
+                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                if ((result as any).newAppliedModifier) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { appliedModifiers: [(result as any).newAppliedModifier] } });
                 return true;
             }
             return false;
         },
         cloneUser: async (userId) => {
-            const result = await apiRequest('POST', `/api/users/clone/${userId}`);
-            if (result) addNotification({ type: 'success', message: `User "${result.gameName}" cloned.` });
+            const result = await apiAction(() => cloneUserAPI(userId));
+            if (result) {
+                setUsers(prev => [...prev, result]);
+                addNotification({ type: 'success', message: `User "${result.gameName}" cloned.` });
+            }
             return result;
         },
         sendMessage: async (messageData) => {
             if (!currentUser) return null;
-            const result = await apiRequest('POST', '/api/chat/send', { ...messageData, senderId: currentUser.id });
+            const result = await apiAction(() => sendMessageAPI({ ...messageData, senderId: currentUser.id }));
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { chatMessages: [result] } });
             return result;
         },
         markMessagesAsRead: async (payload) => {
             if (!currentUser) return;
-            const result = await apiRequest('POST', '/api/chat/read', { ...payload, userId: currentUser.id });
-            if (result && result.updatedMessages) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { chatMessages: result.updatedMessages } });
+            await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
         },
-    }), [apiRequest, createAddAction, createUpdateAction, currentUser, deleteUsers, updateUser, addNotification]);
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, createAddAction, createUpdateAction]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

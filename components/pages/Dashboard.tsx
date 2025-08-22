@@ -99,8 +99,6 @@ const Dashboard: React.FC = () => {
         if (!currentUser || questToToggle.type !== QuestType.Venture) return;
         const isTodo = questToToggle.todoUserIds?.includes(currentUser.id);
         
-        console.log(`[Dashboard] Toggling To-Do for quest: ${questToToggle.id}. Is currently To-Do: ${isTodo}`);
-        
         if (isTodo) {
             unmarkQuestAsTodo(questToToggle.id, currentUser.id);
         } else {

@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Guild } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
+import { addGuildAPI, updateGuildAPI, deleteGuildAPI } from '../api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -38,7 +40,10 @@ const communityReducer = (state: CommunityState, action: CommunityAction): Commu
                 const typedKey = key as keyof CommunityState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -63,49 +68,44 @@ const communityReducer = (state: CommunityState, action: CommunityAction): Commu
 export const CommunityProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(communityReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
-
-    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
-        try {
-            const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
-            if (body) options.body = JSON.stringify(body);
-            const response = await window.fetch(path, options);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
-            }
-            return response.status === 204 ? null : await response.json();
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'An unknown network error occurred.';
-            addNotification({ type: 'error', message });
-            bugLogger.add({ type: 'STATE_CHANGE', message: `API Error: ${method} ${path} - ${message}` });
-            return null;
-        }
-    }, [addNotification]);
     
-    const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof CommunityState>(path: string, dataType: D) => 
-        async (data: T_ADD): Promise<T_RETURN | null> => {
-            const result = await apiRequest('POST', path, data);
-            if (result) dispatch({ type: 'UPDATE_COMMUNITY_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
-        
-    const createUpdateAction = <T extends { id: any }, D extends keyof CommunityState>(pathTemplate: (id: any) => string, dataType: D) => 
-        async (data: T): Promise<T | null> => {
-            const result = await apiRequest('PUT', pathTemplate(data.id), data);
-            if (result) dispatch({ type: 'UPDATE_COMMUNITY_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
-
     const actions = useMemo<CommunityDispatch>(() => ({
-        addGuild: createAddAction('/api/guilds', 'guilds'),
-        updateGuild: createUpdateAction(id => `/api/guilds/${id}`, 'guilds'),
-        deleteGuild: async (id) => {
-            const result = await apiRequest('DELETE', `/api/guilds/${id}`);
-            if (result === null) {
-                dispatch({ type: 'REMOVE_COMMUNITY_DATA', payload: { guilds: [id] } });
+        addGuild: async (data) => {
+            try {
+                const result = await addGuildAPI(data);
+                if (result) {
+                    dispatch({ type: 'UPDATE_COMMUNITY_DATA', payload: { guilds: [result] } });
+                    addNotification({ type: 'success', message: 'Guild created!' });
+                }
+                return result;
+            } catch (error) {
+                addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to create guild.' });
+                return null;
             }
         },
-    }), [apiRequest, createAddAction, createUpdateAction]);
+        updateGuild: async (data) => {
+            try {
+                const result = await updateGuildAPI(data);
+                if (result) {
+                    dispatch({ type: 'UPDATE_COMMUNITY_DATA', payload: { guilds: [result] } });
+                    addNotification({ type: 'success', message: 'Guild updated!' });
+                }
+                return result;
+            } catch (error) {
+                addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to update guild.' });
+                return null;
+            }
+        },
+        deleteGuild: async (id) => {
+            try {
+                await deleteGuildAPI(id);
+                dispatch({ type: 'REMOVE_COMMUNITY_DATA', payload: { guilds: [id] } });
+                addNotification({ type: 'info', message: 'Guild deleted.' });
+            } catch (error) {
+                addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete guild.' });
+            }
+        },
+    }), [addNotification]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

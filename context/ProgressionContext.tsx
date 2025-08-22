@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Rank, Trophy, UserTrophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
+import { addTrophyAPI, updateTrophyAPI, setRanksAPI } from '../src/api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -42,7 +44,10 @@ const progressionReducer = (state: ProgressionState, action: ProgressionAction):
                 const typedKey = key as keyof ProgressionState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -68,48 +73,22 @@ export const ProgressionProvider: React.FC<{ children: ReactNode }> = ({ childre
     const [state, dispatch] = useReducer(progressionReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
 
-    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+    const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
         try {
-            const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
-            if (body) options.body = JSON.stringify(body);
-            const response = await window.fetch(path, options);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
-            }
-            return response.status === 204 ? null : await response.json();
+            const result = await apiFn();
+            if (successMessage) addNotification({ type: 'success', message: successMessage });
+            return result;
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'An unknown network error occurred.';
-            addNotification({ type: 'error', message });
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
             return null;
         }
     }, [addNotification]);
     
-    const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof ProgressionState>(path: string, dataType: D) => 
-        async (data: T_ADD): Promise<T_RETURN | null> => {
-            const result = await apiRequest('POST', path, data);
-            if (result) dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
-
-    const createUpdateAction = <T extends { id: any }, D extends keyof ProgressionState>(pathTemplate: (id: any) => string, dataType: D) => 
-        async (data: T): Promise<T | null> => {
-            const result = await apiRequest('PUT', pathTemplate(data.id), data);
-            if (result) dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
-
     const actions = useMemo<ProgressionDispatch>(() => ({
-        addTrophy: createAddAction('/api/trophies', 'trophies'),
-        updateTrophy: createUpdateAction(id => `/api/trophies/${id}`, 'trophies'),
-        setRanks: async (ranks) => {
-            const result = await apiRequest('POST', '/api/ranks/bulk-update', { ranks });
-            if (result === null) {
-                // Since this is a full replacement, we optimistically update the state.
-                dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { ranks } });
-            }
-        },
-    }), [apiRequest, createAddAction, createUpdateAction]);
+        addTrophy: (data) => apiAction(() => addTrophyAPI(data), 'Trophy created!'),
+        updateTrophy: (data) => apiAction(() => updateTrophyAPI(data), 'Trophy updated!'),
+        setRanks: (ranks) => apiAction(() => setRanksAPI(ranks)),
+    }), [apiAction]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

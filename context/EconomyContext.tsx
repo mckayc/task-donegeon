@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -76,7 +77,10 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
                 const typedKey = key as keyof EconomyState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -148,7 +152,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId));
-            if (result) {
+            if (result && systemDispatch) {
                  if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
                  if ((result as any).newAdjustment) {
                     systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { adminAdjustments: [(result as any).newAdjustment] } });

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import MarkVentureAsTodoTestCase from '../dev/test-cases/MarkVentureAsTodo.testcase';
 import MarkVentureAsTodoIntegrationTestCase from '../dev/test-cases/MarkVentureAsTodo.integration.testcase';
-import ChronicleInjectorTestCase from '../dev/test-cases/ChronicleInjector.testcase';
+import ChronicleInjectorTestCase from '../dev/test-cases/ChroniclesDataIntegrity.testcase';
 
 const testCases = [
   { id: 'chronicle-injector', name: 'Chronicle Injector', component: ChronicleInjectorTestCase },

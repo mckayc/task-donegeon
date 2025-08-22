@@ -10,7 +10,7 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 interface QuestTableProps {
     quests: Quest[];
     selectedQuests: string[];
-    setSelectedQuests: (ids: string[]) => void;
+    setSelectedQuests: React.Dispatch<React.SetStateAction<string[]>>;
     onEdit: (quest: Quest) => void;
     onClone: (questId: string) => void;
     onDeleteRequest: (ids: string[]) => void;

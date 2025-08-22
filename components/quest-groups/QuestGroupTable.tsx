@@ -9,7 +9,7 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 interface QuestGroupTableProps {
     questGroups: QuestGroup[];
     selectedGroups: string[];
-    setSelectedGroups: (ids: string[]) => void;
+    setSelectedGroups: React.Dispatch<React.SetStateAction<string[]>>;
     onEdit: (group: QuestGroup) => void;
     onAssign: (group: QuestGroup) => void;
     onDeleteRequest: (ids: string[]) => void;

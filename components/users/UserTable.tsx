@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { User, Role } from '../../types';
 import Button from '../user-interface/Button';
@@ -7,7 +8,7 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 interface UserTableProps {
     users: User[];
     selectedUsers: string[];
-    setSelectedUsers: (ids: string[]) => void;
+    setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
     roleName: (role: Role) => string;
     onEdit: (user: User) => void;
     onClone: (userId: string) => void;

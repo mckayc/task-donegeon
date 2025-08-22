@@ -58,7 +58,7 @@ export const generateAssetPack = (
     // Add selected quests, markets, and quest groups, filtering out runtime-specific properties
     assetPack.assets.quests = allAssets.quests
         .filter(q => selectedAssets.quests.includes(q.id))
-        .map(({ isRedemptionFor, checkpointCompletions, ...quest }) => quest); // Exclude runtime/user-specific data
+        .map(({ isRedemptionFor, checkpointCompletionTimestamps, ...quest }) => quest); // Exclude runtime/user-specific data
         
     assetPack.assets.markets = allAssets.markets.filter(m => selectedAssets.markets.includes(m.id));
     assetPack.assets.questGroups = allAssets.questGroups.filter(qg => selectedAssets.questGroups.includes(qg.id));

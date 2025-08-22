@@ -52,7 +52,7 @@ export interface Quest {
   totalCompletionsLimit?: number; // How many times it can be completed in total. 0 for unlimited.
   completionGoal?: number; // For collaborative quests
   checkpoints?: Checkpoint[]; // For Journeys
-  checkpointCompletions?: { [userId: string]: number }; // For Journeys. Tracks number of *completed* checkpoints.
+  checkpointCompletionTimestamps?: { [userId: string]: { [checkpointId: string]: string } }; // For Journeys
   contributions?: { userId: string, contributedAt: string }[]; // For collaborative quests
 
   rewards: RewardItem[];

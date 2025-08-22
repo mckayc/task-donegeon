@@ -44,7 +44,7 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
             return ((quest.contributions?.length || 0) / (quest.completionGoal || 1)) * 100;
         }
         if (isJourney && currentUser) {
-            const completed = quest.checkpointCompletions?.[currentUser.id] || 0;
+            const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
             const total = quest.checkpoints?.length || 1;
             return (completed / total) * 100;
         }
@@ -56,7 +56,7 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
             return `Team Progress: ${(quest.contributions?.length || 0)} / ${quest.completionGoal || 1}`;
         }
         if (isJourney && currentUser) {
-            const completed = quest.checkpointCompletions?.[currentUser.id] || 0;
+            const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
             const total = quest.checkpoints?.length || 0;
             return `Checkpoint: ${completed + 1} / ${total}`;
         }

@@ -244,7 +244,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         requiresApproval: formData.requiresApproval,
         todoUserIds: formData.todoUserIds,
         checkpoints: formData.type === QuestType.Journey ? (formData.checkpoints || []) : undefined,
-        checkpointCompletions: formData.type === QuestType.Journey ? (formData.checkpointCompletions || {}) : undefined,
+        checkpointCompletionTimestamps: formData.type === QuestType.Journey ? (formData.checkpointCompletionTimestamps || {}) : undefined,
     };
 
     if (onSave) {

@@ -76,7 +76,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     
     const journeyProgress = useMemo(() => {
         if (quest.type !== QuestType.Journey || !currentUser) return { completed: 0, total: 0, currentIdx: 0 };
-        const completed = quest.checkpointCompletions?.[currentUser.id] || 0;
+        const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
         const total = quest.checkpoints?.length || 0;
         return { completed, total, currentIdx: completed };
     }, [quest, currentUser]);

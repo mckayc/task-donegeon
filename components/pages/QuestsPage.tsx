@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -132,7 +133,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     
     const progressHeader = useMemo(() => {
         if (quest.type !== QuestType.Journey || !quest.checkpoints || quest.checkpoints.length === 0) return null;
-        const completed = quest.checkpointCompletions?.[currentUser.id] || 0;
+        const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
         const total = quest.checkpoints.length;
         return `Checkpoint ${completed + 1} / ${total}`;
     }, [quest, currentUser]);

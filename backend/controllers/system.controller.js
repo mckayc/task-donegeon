@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { isAiConfigured } = require('./ai.controller');
 const systemService = require('../services/system.service');
@@ -50,8 +49,13 @@ const injectChronicleEvent = async (req, res) => {
     await systemService.injectChronicleEvent(req, res);
 };
 
+const getWeeklyProgress = async (req, res) => {
+    await systemService.getWeeklyProgress(req, res);
+};
+
 module.exports = {
     getSystemStatus,
     startServerLogging,
     injectChronicleEvent,
+    getWeeklyProgress,
 };

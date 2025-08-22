@@ -1,16 +1,14 @@
 
-
-
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
     UserEntity, QuestEntity, TrophyEntity,
-    SettingEntity
+    SettingEntity, RewardTypeDefinitionEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 const { INITIAL_SETTINGS } = require('../initialData');
-const { In, IsNull } = require('typeorm');
+const { In, IsNull, MoreThanOrEqual } = require('typeorm');
 
 
 const getChronicles = async (req, res) => {
@@ -23,9 +21,12 @@ const getChronicles = async (req, res) => {
     const allQuests = await manager.find(QuestEntity);
     const allUsers = await manager.find(UserEntity);
     const allTrophies = await manager.find(TrophyEntity);
+    const allRewardTypes = await manager.find(RewardTypeDefinitionEntity);
     const questMap = new Map(allQuests.map(q => [q.id, q]));
     const userMap = new Map(allUsers.map(u => [u.id, u]));
     const trophyMap = new Map(allTrophies.map(t => [t.id, t]));
+    const rewardTypeMap = new Map(allRewardTypes.map(rt => [rt.id, rt]));
+
 
     // --- Fetch Quest Completions with QueryBuilder for robust joins ---
     const completionsQB = manager.createQueryBuilder(QuestCompletionEntity, "completion")
@@ -64,22 +65,37 @@ const getChronicles = async (req, res) => {
     // --- Map to Common Format ---
     let allEvents = [];
     allEvents.push(...completions.map(c => {
+        const quest = questMap.get(c.quest?.id);
         const userName = c.user?.gameName || 'Unknown User';
-        const questTitle = c.quest?.title || 'Unknown Quest';
-        const questIcon = c.quest?.icon || '❓';
+        const questTitle = quest?.title || 'Unknown Quest';
+        const questIcon = quest?.icon || '❓';
+        
+        let rewardsText = '';
+        if (c.status === 'Approved' && quest && quest.rewards.length > 0) {
+            rewardsText = quest.rewards.map(r => {
+                const info = rewardTypeMap.get(r.rewardTypeId);
+                return `+${r.amount} ${info ? info.icon : '?'}`;
+            }).join(' ');
+        }
+
         return {
             id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
             title: `${userName} completed "${questTitle}"`,
-            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.user?.id, actorName: userName
+            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.user?.id, actorName: userName,
+            rewardsText: rewardsText || undefined
         };
     }));
 
     allEvents.push(...purchases.map(p => {
         const userName = userMap.get(p.userId)?.gameName ?? 'Unknown User';
+        const costText = p.assetDetails?.cost.map(r => {
+            const info = rewardTypeMap.get(r.rewardTypeId);
+            return `-${r.amount} ${info ? info.icon : '?'}`;
+        }).join(' ');
         return {
             id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
             title: `${userName} purchased "${p.assetDetails?.name ?? 'an item'}"`,
-            note: p.assetDetails?.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: userName
+            note: costText, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: userName
         };
     }));
 
@@ -113,6 +129,71 @@ const getChronicles = async (req, res) => {
     
     res.json({ events: paginatedEvents, total: filteredByDate.length });
 };
+
+const getWeeklyProgress = async (req, res) => {
+    const { userId, guildId } = req.query;
+    const manager = dataSource.manager;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required.' });
+    }
+
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 6); // Include today, so go back 6 days
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const isPersonalScope = !guildId || guildId === 'null' || guildId === 'undefined';
+
+    const qb = manager.createQueryBuilder(QuestCompletionEntity, "completion")
+        .select("completion.completedAt", "completedAt")
+        .addSelect("quest.rewards", "rewards")
+        .leftJoin("completion.quest", "quest")
+        .where("completion.userId = :userId", { userId })
+        .andWhere("completion.status = :status", { status: 'Approved' })
+        .andWhere("completion.completedAt >= :startDate", { startDate: sevenDaysAgo.toISOString() });
+
+    if (isPersonalScope) {
+        qb.andWhere("completion.guildId IS NULL");
+    } else {
+        qb.andWhere("completion.guildId = :guildId", { guildId });
+    }
+
+    const completions = await qb.getRawMany();
+    
+    const xpRewardTypes = await manager.find(RewardTypeDefinitionEntity, { where: { category: 'XP' } });
+    const xpRewardTypeIds = new Set(xpRewardTypes.map(rt => rt.id));
+
+    const progressByDay = {};
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dateKey = date.toISOString().split('T')[0];
+        progressByDay[dateKey] = 0;
+    }
+
+    completions.forEach(comp => {
+        const dateKey = comp.completedAt.split('T')[0];
+        if (progressByDay.hasOwnProperty(dateKey)) {
+            const rewards = typeof comp.rewards === 'string' ? JSON.parse(comp.rewards) : comp.rewards;
+            const xpForThisQuest = (rewards || [])
+                .filter(r => xpRewardTypeIds.has(r.rewardTypeId))
+                .reduce((sum, r) => sum + r.amount, 0);
+            progressByDay[dateKey] += xpForThisQuest;
+        }
+    });
+
+    const weeklyProgressData = Object.entries(progressByDay)
+        .map(([date, value]) => ({
+            date,
+            label: new Date(date + 'T00:00:00').toLocaleDateString('default', { weekday: 'short' }),
+            value
+        }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    res.json(weeklyProgressData);
+};
+
 
 const applySettingsUpdates = async (req, res) => {
     const manager = dataSource.manager;
@@ -318,6 +399,7 @@ const injectChronicleEvent = async (req, res) => {
 
 module.exports = {
     getChronicles,
+    getWeeklyProgress,
     applySettingsUpdates,
     clearAllHistory,
     resetAllPlayerData,

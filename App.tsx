@@ -18,6 +18,7 @@ import { useCommunityState } from './context/CommunityContext';
 import { useSystemState } from './context/SystemContext';
 import { useIsDataLoaded } from './context/DataProvider';
 import ErrorBoundary from './components/layout/ErrorBoundary';
+import { logger } from './utils/logger';
 
 const App: React.FC = () => {
   const { settings, themes } = useSystemState();
@@ -27,6 +28,11 @@ const App: React.FC = () => {
   const { isRecording, isPickingElement } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
   const isDataLoaded = useIsDataLoaded();
+  
+  // Initialize the logger based on developer mode settings.
+  useEffect(() => {
+    logger.init(settings.developerMode.enabled);
+  }, [settings.developerMode.enabled]);
 
   useEffect(() => {
     // If we are on a page that handles its own theme preview, don't apply the global theme.

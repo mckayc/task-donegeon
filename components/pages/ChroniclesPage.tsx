@@ -7,6 +7,7 @@ import { ChronicleEvent } from '../chronicles/types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';
+import { logger } from '../../utils/logger';
 
 const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
@@ -43,7 +44,7 @@ const ChroniclesPage: React.FC = () => {
                 setEvents(data.events || []);
                 setTotalEvents(data.total || 0);
             } catch (error) {
-                console.error(error);
+                logger.error(error);
                 setEvents([]);
                 setTotalEvents(0);
             } finally {

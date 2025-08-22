@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -17,30 +18,34 @@ const getChronicles = async (req, res) => {
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const isPersonalScope = guildId === 'null' || !guildId || guildId === 'undefined';
 
+    // --- Fetch Quest Completions with QueryBuilder for robust joins ---
+    const completionsQB = manager.createQueryBuilder(QuestCompletionEntity, "completion")
+        .innerJoinAndSelect("completion.user", "user")
+        .innerJoinAndSelect("completion.quest", "quest")
+        .orderBy("completion.completedAt", "DESC");
+
+    if (isPersonalScope) {
+        completionsQB.where("completion.guildId IS NULL");
+    } else {
+        completionsQB.where("completion.guildId = :guildId", { guildId });
+    }
+
+    if (viewMode === 'personal') {
+        completionsQB.andWhere("completion.userId = :userId", { userId });
+    }
+    const completionsPromise = completionsQB.getMany();
+
+
+    // --- Fetch Other Event Types Concurrently ---
     const whereClauseBase = {
         guildId: isPersonalScope ? IsNull() : guildId,
     };
-    if (viewMode === 'personal') {
+     if (viewMode === 'personal') {
         whereClauseBase.user = { id: userId };
     }
-
-    // --- Fetch All Event Types Concurrently ---
-    const completionsPromise = manager.find(QuestCompletionEntity, {
-        relations: ['quest', 'user'],
-        where: {
-            guildId: isPersonalScope ? IsNull() : guildId,
-            ...(viewMode === 'personal' && { user: { id: userId } }),
-        },
-        order: { completedAt: "DESC" }
-    });
-
-    const buildOtherQuery = (entity, relations = ['user']) => {
-        const where = { ...whereClauseBase };
-        return manager.find(entity, { relations, where });
-    };
-
-    const purchasesPromise = buildOtherQuery(PurchaseRequestEntity);
-    const adjustmentsPromise = buildOtherQuery(AdminAdjustmentEntity);
+    
+    const purchasesPromise = manager.find(PurchaseRequestEntity, { relations: ['user'], where: whereClauseBase });
+    const adjustmentsPromise = manager.find(AdminAdjustmentEntity, { relations: ['user'], where: whereClauseBase });
 
     const trophiesPromise = manager.find(UserTrophyEntity, {
         relations: ['trophy', 'user'],
@@ -66,7 +71,7 @@ const getChronicles = async (req, res) => {
         return {
             id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
             title: `${userName} completed "${questTitle}"`,
-            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.userId, actorName: userName
+            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.user.id, actorName: userName
         };
     }));
 
@@ -75,7 +80,7 @@ const getChronicles = async (req, res) => {
         return {
             id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
             title: `${userName} purchased "${p.assetDetails?.name ?? 'an item'}"`,
-            note: p.assetDetails?.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: userName
+            note: p.assetDetails?.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.user.id, actorName: userName
         };
     }));
 
@@ -84,7 +89,7 @@ const getChronicles = async (req, res) => {
         return {
             id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
             title: `${userName} earned: "${t.trophy?.name ?? 'a trophy'}"`,
-            note: t.trophy?.description, status: 'Awarded', icon: t.trophy?.icon || '🏆', color: '#ca8a04', userId: t.userId, actorName: userName
+            note: t.trophy?.description, status: 'Awarded', icon: t.trophy?.icon || '🏆', color: '#ca8a04', userId: t.user.id, actorName: userName
         };
     }));
 
@@ -93,7 +98,7 @@ const getChronicles = async (req, res) => {
         return {
             id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
             title: `Admin Adjustment for ${userName}`,
-            note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7', userId: a.userId, actorName: userName
+            note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7', userId: a.user.id, actorName: userName
         };
     }));
     

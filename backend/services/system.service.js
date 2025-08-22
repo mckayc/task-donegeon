@@ -1,9 +1,10 @@
 
 
+
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
-    UserEntity, QuestEntity,
+    UserEntity, QuestEntity, TrophyEntity,
     SettingEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
@@ -18,10 +19,18 @@ const getChronicles = async (req, res) => {
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const isPersonalScope = guildId === 'null' || !guildId || guildId === 'undefined';
 
+    // --- Pre-fetch all necessary data to avoid N+1 queries ---
+    const allQuests = await manager.find(QuestEntity);
+    const allUsers = await manager.find(UserEntity);
+    const allTrophies = await manager.find(TrophyEntity);
+    const questMap = new Map(allQuests.map(q => [q.id, q]));
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    const trophyMap = new Map(allTrophies.map(t => [t.id, t]));
+
     // --- Fetch Quest Completions with QueryBuilder for robust joins ---
     const completionsQB = manager.createQueryBuilder(QuestCompletionEntity, "completion")
-        .innerJoinAndSelect("completion.user", "user")
-        .innerJoinAndSelect("completion.quest", "quest")
+        .leftJoinAndSelect("completion.user", "user")
+        .leftJoinAndSelect("completion.quest", "quest")
         .orderBy("completion.completedAt", "DESC");
 
     if (isPersonalScope) {
@@ -37,29 +46,19 @@ const getChronicles = async (req, res) => {
 
 
     // --- Fetch Other Event Types Concurrently ---
-    const whereClauseBase = {
-        guildId: isPersonalScope ? IsNull() : guildId,
-    };
-     if (viewMode === 'personal') {
-        whereClauseBase.user = { id: userId };
-    }
+    const whereClauseBase = {};
+    if (isPersonalScope) { whereClauseBase.guildId = IsNull(); } else { whereClauseBase.guildId = guildId; }
+    if (viewMode === 'personal') { whereClauseBase.userId = userId; }
     
-    const purchasesPromise = manager.find(PurchaseRequestEntity, { relations: ['user'], where: whereClauseBase });
-    const adjustmentsPromise = manager.find(AdminAdjustmentEntity, { relations: ['user'], where: whereClauseBase });
-
-    const trophiesPromise = manager.find(UserTrophyEntity, {
-        relations: ['trophy', 'user'],
-        where: {
-            guildId: isPersonalScope ? IsNull() : guildId,
-            ...(viewMode === 'personal' && { user: { id: userId } }),
-        }
-    });
+    const purchasesPromise = manager.find(PurchaseRequestEntity, { where: whereClauseBase });
+    const adjustmentsPromise = manager.find(AdminAdjustmentEntity, { where: whereClauseBase });
+    const userTrophiesPromise = manager.find(UserTrophyEntity, { where: whereClauseBase });
 
     const [completions, purchases, adjustments, userTrophies] = await Promise.all([
         completionsPromise,
         purchasesPromise,
         adjustmentsPromise,
-        trophiesPromise
+        userTrophiesPromise
     ]);
 
     // --- Map to Common Format ---
@@ -71,34 +70,35 @@ const getChronicles = async (req, res) => {
         return {
             id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
             title: `${userName} completed "${questTitle}"`,
-            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.user.id, actorName: userName
+            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.user?.id, actorName: userName
         };
     }));
 
     allEvents.push(...purchases.map(p => {
-        const userName = p.user?.gameName ?? 'Unknown User';
+        const userName = userMap.get(p.userId)?.gameName ?? 'Unknown User';
         return {
             id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
             title: `${userName} purchased "${p.assetDetails?.name ?? 'an item'}"`,
-            note: p.assetDetails?.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.user.id, actorName: userName
+            note: p.assetDetails?.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: userName
         };
     }));
 
     allEvents.push(...userTrophies.map(t => {
-        const userName = t.user?.gameName ?? 'Unknown User';
+        const trophy = trophyMap.get(t.trophyId);
+        const userName = userMap.get(t.userId)?.gameName ?? 'Unknown User';
         return {
             id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
-            title: `${userName} earned: "${t.trophy?.name ?? 'a trophy'}"`,
-            note: t.trophy?.description, status: 'Awarded', icon: t.trophy?.icon || '🏆', color: '#ca8a04', userId: t.user.id, actorName: userName
+            title: `${userName} earned: "${trophy?.name ?? 'a trophy'}"`,
+            note: trophy?.description, status: 'Awarded', icon: trophy?.icon || '🏆', color: '#ca8a04', userId: t.userId, actorName: userName
         };
     }));
 
     allEvents.push(...adjustments.map(a => {
-        const userName = a.user?.gameName ?? 'Unknown User';
+        const userName = userMap.get(a.userId)?.gameName ?? 'Unknown User';
         return {
             id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
             title: `Admin Adjustment for ${userName}`,
-            note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7', userId: a.user.id, actorName: userName
+            note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7', userId: a.userId, actorName: userName
         };
     }));
     
@@ -275,6 +275,47 @@ const firstRun = async (req, res) => {
     res.status(201).json({ message: 'First run completed successfully.' });
 };
 
+const injectChronicleEvent = async (req, res) => {
+    const { userId, questId, note } = req.body;
+    const manager = dataSource.manager;
+
+    const user = await manager.findOneBy(UserEntity, { id: userId });
+    const quest = await manager.findOneBy(QuestEntity, { id: questId });
+    if (!user || !quest) {
+        return res.status(404).json({ error: 'User or Quest not found.' });
+    }
+
+    const completionData = {
+        questId: quest.id, userId: user.id, completedAt: new Date().toISOString(),
+        status: 'Approved', note: `INJECTED: ${note || 'Test Event'}`, guildId: quest.guildId,
+        actedById: 'system-injector', actedAt: new Date().toISOString(),
+    };
+    const newCompletion = manager.create(QuestCompletionEntity, {
+        ...completionData,
+        id: `qc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+    await manager.save(updateTimestamps(newCompletion, true));
+
+    const rewardTypes = await manager.find('RewardTypeDefinition');
+    const isGuildScope = !!quest.guildId;
+    const balances = isGuildScope ? user.guildBalances[quest.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+    
+    quest.rewards.forEach(reward => {
+        const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+        if (rewardDef) {
+            const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+            target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+        }
+    });
+
+    if (isGuildScope) user.guildBalances[quest.guildId] = balances;
+    
+    await manager.save(updateTimestamps(user));
+    
+    updateEmitter.emit('update');
+    res.status(201).json({ message: 'Chronicle event injected successfully.' });
+};
+
 module.exports = {
     getChronicles,
     applySettingsUpdates,
@@ -282,5 +323,6 @@ module.exports = {
     resetAllPlayerData,
     deleteAllCustomContent,
     factoryReset,
-    firstRun
+    firstRun,
+    injectChronicleEvent,
 };

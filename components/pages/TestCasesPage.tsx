@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import MarkVentureAsTodoTestCase from '../dev/test-cases/MarkVentureAsTodo.testcase';
 import MarkVentureAsTodoIntegrationTestCase from '../dev/test-cases/MarkVentureAsTodo.integration.testcase';
-import ChroniclesDataIntegrityTestCase from '../dev/test-cases/ChroniclesDataIntegrity.testcase';
+import ChronicleInjectorTestCase from '../dev/test-cases/ChronicleInjector.testcase';
 
 const testCases = [
-  { id: 'chronicles-data-integrity', name: 'Chronicles Data Integrity', component: ChroniclesDataIntegrityTestCase },
+  { id: 'chronicle-injector', name: 'Chronicle Injector', component: ChronicleInjectorTestCase },
   { id: 'mark-venture-todo', name: 'Mark Venture as To-Do (Unit)', component: MarkVentureAsTodoTestCase },
   { id: 'mark-venture-todo-integration', name: 'Mark Venture as To-Do (Integration)', component: MarkVentureAsTodoIntegrationTestCase },
   // Future test cases can be added here

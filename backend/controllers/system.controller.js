@@ -1,6 +1,8 @@
 
+
 const { dataSource } = require('../data-source');
 const { isAiConfigured } = require('./ai.controller');
+const systemService = require('../services/system.service');
 
 const getSystemStatus = (req, res) => {
     const geminiConnected = isAiConfigured();
@@ -44,7 +46,12 @@ const startServerLogging = (req, res) => {
     res.status(200).json({ message: `Server-side logging enabled for ${duration} seconds.` });
 };
 
+const injectChronicleEvent = async (req, res) => {
+    await systemService.injectChronicleEvent(req, res);
+};
+
 module.exports = {
     getSystemStatus,
     startServerLogging,
+    injectChronicleEvent,
 };

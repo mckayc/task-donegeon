@@ -1,0 +1,275 @@
+
+
+import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
+import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
+import { useNotificationsDispatch } from './NotificationsContext';
+import { useAuthDispatch, useAuthState } from './AuthContext';
+import { bugLogger } from '../utils/bugLogger';
+import { SystemAction, useSystemReducerDispatch } from './SystemContext';
+import { logger } from '../utils/logger';
+import { 
+    addMarketAPI, updateMarketAPI, cloneMarketAPI, updateMarketsStatusAPI, 
+    addRewardTypeAPI, updateRewardTypeAPI, cloneRewardTypeAPI, 
+    addGameAssetAPI, updateGameAssetAPI, cloneGameAssetAPI, 
+    purchaseMarketItemAPI, approvePurchaseRequestAPI, rejectPurchaseRequestAPI, cancelPurchaseRequestAPI, 
+    executeExchangeAPI, proposeTradeAPI, updateTradeOfferAPI, acceptTradeAPI, cancelOrRejectTradeAPI, 
+    sendGiftAPI, useItemAPI, craftItemAPI 
+} from '../src/api';
+
+// --- STATE & CONTEXT DEFINITIONS ---
+
+export interface EconomyState {
+    markets: Market[];
+    gameAssets: GameAsset[];
+    purchaseRequests: PurchaseRequest[];
+    rewardTypes: RewardTypeDefinition[];
+    tradeOffers: TradeOffer[];
+    gifts: Gift[];
+}
+
+export type EconomyAction = 
+  | { type: 'SET_ECONOMY_DATA', payload: Partial<EconomyState> }
+  | { type: 'UPDATE_ECONOMY_DATA', payload: Partial<EconomyState> }
+  | { type: 'REMOVE_ECONOMY_DATA', payload: { [key in keyof EconomyState]?: string[] } };
+
+export interface EconomyDispatch {
+  addMarket: (marketData: Omit<Market, 'id'>) => Promise<Market | null>;
+  updateMarket: (marketData: Market) => Promise<Market | null>;
+  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => Promise<void>;
+  cloneMarket: (marketId: string) => Promise<Market | null>;
+  addRewardType: (rewardTypeData: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<RewardTypeDefinition | null>;
+  updateRewardType: (rewardTypeData: RewardTypeDefinition) => Promise<RewardTypeDefinition | null>;
+  cloneRewardType: (rewardTypeId: string) => Promise<RewardTypeDefinition | null>;
+  addGameAsset: (assetData: Omit<GameAsset, 'id' | 'creatorId' | 'purchaseCount'>) => Promise<GameAsset | null>;
+  updateGameAsset: (assetData: GameAsset) => Promise<GameAsset | null>;
+  cloneGameAsset: (assetId: string) => Promise<GameAsset | null>;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void>;
+  approvePurchaseRequest: (requestId: string, approverId: string) => Promise<void>;
+  rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void>;
+  cancelPurchaseRequest: (requestId: string) => Promise<void>;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
+  proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
+  updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
+  acceptTrade: (tradeId: string) => Promise<void>;
+  cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<void>;
+  sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void>;
+  useItem: (assetId: string) => Promise<void>;
+  craftItem: (assetId: string) => Promise<void>;
+}
+
+const EconomyStateContext = createContext<EconomyState | undefined>(undefined);
+export const EconomyDispatchContext = createContext<{ dispatch: React.Dispatch<EconomyAction>, actions: EconomyDispatch } | undefined>(undefined);
+
+const initialState: EconomyState = {
+    markets: [],
+    gameAssets: [],
+    purchaseRequests: [],
+    rewardTypes: [],
+    tradeOffers: [],
+    gifts: [],
+};
+
+const economyReducer = (state: EconomyState, action: EconomyAction): EconomyState => {
+    logger.log('[EconomyReducer] Action:', action.type, 'Payload:', action.payload);
+    switch (action.type) {
+        case 'SET_ECONOMY_DATA':
+            return { ...state, ...action.payload };
+        case 'UPDATE_ECONOMY_DATA': {
+            const updatedState = { ...state };
+            for (const key in action.payload) {
+                const typedKey = key as keyof EconomyState;
+                if (!action.payload[typedKey]) continue;
+
+                if (Array.isArray(updatedState[typedKey])) {
+                    const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
+                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    (updatedState as any)[typedKey] = Array.from(existingItems.values());
+                }
+            }
+            return updatedState;
+        }
+        case 'REMOVE_ECONOMY_DATA': {
+            const stateWithRemoved = { ...state };
+            for (const key in action.payload) {
+                const typedKey = key as keyof EconomyState;
+                if (!action.payload[typedKey]) continue;
+                
+                if (Array.isArray(stateWithRemoved[typedKey])) {
+                    const idsToRemove = new Set(action.payload[typedKey] as string[]);
+                    (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
+                }
+            }
+            return stateWithRemoved;
+        }
+        default:
+            return state;
+    }
+};
+
+export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [state, dispatch] = useReducer(economyReducer, initialState);
+    const { addNotification } = useNotificationsDispatch();
+    const systemDispatch = useSystemReducerDispatch();
+    const { updateUser } = useAuthDispatch();
+    const { currentUser } = useAuthState();
+
+    const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
+        try {
+            const result = await apiFn();
+            if (successMessage) addNotification({ type: 'success', message: successMessage });
+            return result;
+        } catch (error) {
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
+            return null;
+        }
+    }, [addNotification]);
+    
+    const actions = useMemo<EconomyDispatch>(() => ({
+        addMarket: (data) => {
+            logger.log('[EconomyDispatch] addMarket', data);
+            return apiAction(() => addMarketAPI(data), 'Market created!');
+        },
+        updateMarket: (data) => {
+            logger.log('[EconomyDispatch] updateMarket', data);
+            return apiAction(() => updateMarketAPI(data), 'Market updated!');
+        },
+        updateMarketsStatus: (ids, statusType) => {
+            logger.log('[EconomyDispatch] updateMarketsStatus', { ids, statusType });
+            return apiAction(() => updateMarketsStatusAPI(ids, statusType));
+        },
+        cloneMarket: (id) => {
+            logger.log('[EconomyDispatch] cloneMarket', { id });
+            return apiAction(() => cloneMarketAPI(id), 'Market cloned!');
+        },
+        
+        addRewardType: (data) => {
+            logger.log('[EconomyDispatch] addRewardType', data);
+            return apiAction(() => addRewardTypeAPI(data), 'Reward type created!');
+        },
+        updateRewardType: (data) => {
+            logger.log('[EconomyDispatch] updateRewardType', data);
+            return apiAction(() => updateRewardTypeAPI(data), 'Reward type updated!');
+        },
+        cloneRewardType: (id) => {
+            logger.log('[EconomyDispatch] cloneRewardType', { id });
+            return apiAction(() => cloneRewardTypeAPI(id), 'Reward type cloned!');
+        },
+        
+        addGameAsset: (data) => {
+            logger.log('[EconomyDispatch] addGameAsset', { name: data.name, category: data.category });
+            return apiAction(() => addGameAssetAPI(data), 'Asset created!');
+        },
+        updateGameAsset: (data) => {
+            logger.log('[EconomyDispatch] updateGameAsset', { id: data.id, name: data.name });
+            return apiAction(() => updateGameAssetAPI(data), 'Asset updated!');
+        },
+        cloneGameAsset: (id) => {
+            logger.log('[EconomyDispatch] cloneGameAsset', { id });
+            return apiAction(() => cloneGameAssetAPI(id), 'Asset cloned!');
+        },
+
+        purchaseMarketItem: async (assetId, marketId, user, costGroupIndex) => {
+            logger.log('[EconomyDispatch] purchaseMarketItem', { assetId, marketId, userId: user.id, costGroupIndex });
+            const result = await apiAction(() => purchaseMarketItemAPI(assetId, marketId, user, costGroupIndex));
+            if (result) {
+                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                addNotification({ type: 'success', message: `Purchase successful!` });
+            }
+        },
+        approvePurchaseRequest: async (requestId, approverId) => {
+            logger.log('[EconomyDispatch] approvePurchaseRequest', { requestId, approverId });
+            await apiAction(() => approvePurchaseRequestAPI(requestId, approverId));
+        },
+        rejectPurchaseRequest: async (requestId, rejecterId) => {
+            logger.log('[EconomyDispatch] rejectPurchaseRequest', { requestId, rejecterId });
+            await apiAction(() => rejectPurchaseRequestAPI(requestId, rejecterId));
+        },
+        cancelPurchaseRequest: async (requestId) => {
+            logger.log('[EconomyDispatch] cancelPurchaseRequest', { requestId });
+             await apiAction(() => cancelPurchaseRequestAPI(requestId));
+        },
+        executeExchange: async (userId, payItem, receiveItem, guildId) => {
+            logger.log('[EconomyDispatch] executeExchange', { userId, payItem, receiveItem, guildId });
+            const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId));
+            if (result && systemDispatch) {
+                 if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                 if ((result as any).newAdjustment) {
+                    systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { adminAdjustments: [(result as any).newAdjustment] } });
+                 }
+                addNotification({ type: 'success', message: 'Exchange successful!' });
+            }
+        },
+        proposeTrade: (recipientId, guildId) => {
+            if (!currentUser) return Promise.resolve(null);
+            logger.log('[EconomyDispatch] proposeTrade', { recipientId, guildId, initiatorId: currentUser.id });
+            return apiAction(() => proposeTradeAPI(recipientId, guildId, currentUser.id), 'Trade proposed!');
+        },
+        updateTradeOffer: (id, updates) => {
+            logger.log('[EconomyDispatch] updateTradeOffer', { id, updates });
+            return apiAction(() => updateTradeOfferAPI(id, updates));
+        },
+        acceptTrade: (id) => {
+            logger.log('[EconomyDispatch] acceptTrade', { id });
+            return apiAction(() => acceptTradeAPI(id));
+        },
+        cancelOrRejectTrade: (id, action) => {
+            logger.log('[EconomyDispatch] cancelOrRejectTrade', { id, action });
+            return apiAction(() => cancelOrRejectTradeAPI(id, action));
+        },
+        sendGift: (recipientId, assetId, guildId) => {
+            if (!currentUser) return Promise.resolve();
+            logger.log('[EconomyDispatch] sendGift', { recipientId, assetId, guildId, senderId: currentUser.id });
+            return apiAction(() => sendGiftAPI(recipientId, assetId, guildId, currentUser.id), 'Gift sent!');
+        },
+        useItem: async (assetId) => {
+            if (!currentUser) return;
+            logger.log('[EconomyDispatch] useItem', { assetId, userId: currentUser.id });
+            const result = await apiAction(() => useItemAPI(assetId, currentUser.id));
+            if (result) {
+                 if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                 addNotification({ type: 'success', message: 'Item used!' });
+            }
+        },
+        craftItem: async (assetId) => {
+            if (!currentUser) return;
+            logger.log('[EconomyDispatch] craftItem', { assetId, userId: currentUser.id });
+            const result = await apiAction(() => craftItemAPI(assetId, currentUser.id));
+            if (result) {
+                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                addNotification({ type: 'success', message: 'Item crafted!' });
+            }
+        },
+
+    }), [apiAction, currentUser, systemDispatch, updateUser, addNotification]);
+    
+    const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
+
+    return (
+        <EconomyStateContext.Provider value={state}>
+            <EconomyDispatchContext.Provider value={contextValue}>
+                {children}
+            </EconomyDispatchContext.Provider>
+        </EconomyStateContext.Provider>
+    );
+};
+
+export const useEconomyState = (): EconomyState => {
+    const context = useContext(EconomyStateContext);
+    if (context === undefined) throw new Error('useEconomyState must be used within an EconomyProvider');
+    return context;
+};
+
+export const useEconomyDispatch = (): EconomyDispatch => {
+    const context = useContext(EconomyDispatchContext);
+    if (context === undefined) throw new Error('useEconomyDispatch must be used within an EconomyProvider');
+    return context.actions;
+};
+
+// Hook to get the dispatch for the economy reducer directly
+export const useEconomyReducerDispatch = (): React.Dispatch<EconomyAction> => {
+  const context = useContext(EconomyDispatchContext);
+  if (!context) {
+    throw new Error('useEconomyReducerDispatch must be used within an EconomyProvider');
+  }
+  return context.dispatch;
+};

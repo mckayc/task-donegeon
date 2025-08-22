@@ -1,5 +1,4 @@
-import { GenerateContentResponse } from "@google/genai";
-// Import types ONLY for use within this file's interfaces.
+
 import type { User, UserTemplate, AdminAdjustment } from './components/users/types';
 import type { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from './components/items/types';
 import type { Quest, QuestGroup, QuestCompletion } from './components/quests/types';

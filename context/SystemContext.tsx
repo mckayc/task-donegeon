@@ -1,0 +1,264 @@
+
+import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
+import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User } from '../types';
+import { INITIAL_SETTINGS } from '../data/initialData';
+import { useNotificationsDispatch } from './NotificationsContext';
+import { useAuthDispatch, useAuthState } from './AuthContext';
+import { bugLogger } from '../utils/bugLogger';
+import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI } from '../src/api';
+
+// --- STATE & CONTEXT DEFINITIONS ---
+
+export interface SystemState {
+    settings: AppSettings;
+    themes: ThemeDefinition[];
+    isAiConfigured: boolean;
+    systemLogs: SystemLog[];
+    adminAdjustments: AdminAdjustment[];
+    systemNotifications: SystemNotification[];
+    scheduledEvents: ScheduledEvent[];
+    chatMessages: ChatMessage[];
+    bugReports: BugReport[];
+    modifierDefinitions: ModifierDefinition[];
+    appliedModifiers: AppliedModifier[];
+}
+
+export type SystemAction = 
+  | { type: 'SET_SYSTEM_DATA', payload: Partial<SystemState> }
+  | { type: 'UPDATE_SYSTEM_DATA', payload: Partial<SystemState> }
+  | { type: 'REMOVE_SYSTEM_DATA', payload: { [key in keyof SystemState]?: string[] } }
+  | { type: 'SET_AI_CONFIGURED', payload: boolean };
+
+export interface SystemDispatch {
+  deleteSelectedAssets: (assets: { [key in ShareableAssetType]?: string[] }, callback?: () => void) => Promise<void>;
+  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<boolean>;
+  uploadFile: (file: File, category?: string) => Promise<{url: string} | null>;
+  addTheme: (themeData: Omit<ThemeDefinition, 'id'>) => Promise<ThemeDefinition | null>;
+  updateTheme: (themeData: ThemeDefinition) => Promise<ThemeDefinition | null>;
+  deleteTheme: (themeId: string) => Promise<void>;
+  updateSettings: (newSettings: IAppData['settings']) => Promise<void>;
+  resetSettings: () => Promise<void>;
+  applySettingsUpdates: () => Promise<void>;
+  clearAllHistory: () => Promise<void>;
+  resetAllPlayerData: () => Promise<void>;
+  deleteAllCustomContent: () => Promise<void>;
+  factoryReset: () => Promise<void>;
+  addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<SystemNotification | null>;
+  markSystemNotificationsAsRead: (notificationIds: string[], userId: string) => Promise<void>;
+  addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | null>;
+  updateScheduledEvent: (eventData: ScheduledEvent) => Promise<ScheduledEvent | null>;
+  deleteScheduledEvent: (eventId: string) => Promise<void>;
+  importAssetPack: (pack: any, resolutions: any) => Promise<void>;
+  addBugReport: (reportData: Partial<BugReport>) => Promise<void>;
+  updateBugReport: (reportId: string, updates: Partial<BugReport>) => Promise<BugReport | null>;
+  deleteBugReports: (reportIds: string[]) => Promise<void>;
+  importBugReports: (reports: BugReport[], mode: 'merge' | 'replace') => Promise<void>;
+  addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
+  updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
+  applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
+  cloneUser: (userId: string) => Promise<User | null>;
+  sendMessage: (messageData: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => Promise<ChatMessage | null>;
+  markMessagesAsRead: (payload: { partnerId?: string; guildId?: string }) => Promise<void>;
+}
+
+const SystemStateContext = createContext<SystemState | undefined>(undefined);
+export const SystemDispatchContext = createContext<{ dispatch: React.Dispatch<SystemAction>, actions: SystemDispatch } | undefined>(undefined);
+
+const initialState: SystemState = {
+    settings: INITIAL_SETTINGS,
+    themes: [],
+    isAiConfigured: false,
+    systemLogs: [],
+    adminAdjustments: [],
+    systemNotifications: [],
+    scheduledEvents: [],
+    chatMessages: [],
+    bugReports: [],
+    modifierDefinitions: [],
+    appliedModifiers: [],
+};
+
+const systemReducer = (state: SystemState, action: SystemAction): SystemState => {
+    switch (action.type) {
+        case 'SET_AI_CONFIGURED':
+            return { ...state, isAiConfigured: action.payload };
+        case 'SET_SYSTEM_DATA':
+            return { ...state, ...action.payload };
+        case 'UPDATE_SYSTEM_DATA': {
+            const updatedState = { ...state };
+            for (const key in action.payload) {
+                const typedKey = key as keyof SystemState;
+                if (Array.isArray(updatedState[typedKey])) {
+                    const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
+                    (updatedState as any)[typedKey] = Array.from(existingItems.values());
+                } else if (typeof updatedState[typedKey] === 'object' && updatedState[typedKey] !== null) {
+                    (updatedState as any)[typedKey] = { ...(updatedState[typedKey] as object), ...(action.payload[typedKey] as object) };
+                } else {
+                    (updatedState as any)[typedKey] = action.payload[typedKey];
+                }
+            }
+            return updatedState;
+        }
+        case 'REMOVE_SYSTEM_DATA': {
+            const stateWithRemoved = { ...state };
+            for (const key in action.payload) {
+                const typedKey = key as keyof SystemState;
+                if (Array.isArray(stateWithRemoved[typedKey])) {
+                    const idsToRemove = new Set(action.payload[typedKey] as string[]);
+                    (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
+                }
+            }
+            return stateWithRemoved;
+        }
+        default:
+            return state;
+    }
+};
+
+export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [state, dispatch] = useReducer(systemReducer, initialState);
+    const { addNotification } = useNotificationsDispatch();
+    const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
+    const { currentUser } = useAuthState();
+
+    const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
+        try {
+            const result = await apiFn();
+            if (successMessage) addNotification({ type: 'success', message: successMessage });
+            return result;
+        } catch (error) {
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
+            bugLogger.add({ type: 'STATE_CHANGE', message: `API Error: ${error instanceof Error ? error.message : String(error)}` });
+            return null;
+        }
+    }, [addNotification]);
+    
+    const createAddAction = useCallback(<T_ADD, T_RETURN extends { id: any }, D extends keyof SystemState>(dataType: D) => 
+        async (data: T_ADD): Promise<T_RETURN | null> => {
+            const result = await apiAction(() => addThemeAPI(data as any)); // This needs to be more generic
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
+            return result as T_RETURN | null;
+        }, [apiAction]);
+        
+    const createUpdateAction = useCallback(<T extends { id: any }, D extends keyof SystemState>(dataType: D) => 
+        async (data: T): Promise<T | null> => {
+            const result = await apiAction(() => updateThemeAPI(data as any)); // This needs to be more generic
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
+            return result as T | null;
+        }, [apiAction]);
+
+    const actions = useMemo<SystemDispatch>(() => ({
+        deleteSelectedAssets: async (assets, callback) => {
+            await apiAction(() => deleteSelectedAssetsAPI(assets));
+            const assetsToRemove: { [key in keyof SystemState]?: string[] } = {};
+            if (assets.users) { deleteUsers(assets.users); }
+            Object.keys(assets).forEach(key => {
+                if (key !== 'users') (assetsToRemove as any)[key] = assets[key as ShareableAssetType];
+            });
+            if (Object.keys(assetsToRemove).length > 0) dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: assetsToRemove });
+            if (callback) callback();
+        },
+        applyManualAdjustment: async (adjustment) => {
+            const result = await apiAction(() => applyManualAdjustmentAPI(adjustment));
+            if (result && (result as any).newAdjustment) {
+                const { updatedUser, newAdjustment, newUserTrophy } = result as any;
+                dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { adminAdjustments: [newAdjustment] } });
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                addNotification({ type: 'success', message: 'Adjustment applied.' });
+                return true;
+            }
+            return false;
+        },
+        uploadFile: (file, category) => apiAction(() => uploadFileAPI(file, category)),
+        addTheme: (data) => apiAction(() => addThemeAPI(data)),
+        updateTheme: (data) => apiAction(() => updateThemeAPI(data)),
+        deleteTheme: (id) => apiAction(() => deleteThemeAPI(id)),
+        updateSettings: (settings) => apiAction(() => updateSettingsAPI(settings), 'Settings saved!'),
+        resetSettings: () => apiAction(() => resetSettingsAPI()),
+        applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI()),
+        clearAllHistory: () => apiAction(() => clearAllHistoryAPI()),
+        resetAllPlayerData: () => apiAction(() => resetAllPlayerDataAPI()),
+        deleteAllCustomContent: () => apiAction(() => deleteAllCustomContentAPI()),
+        factoryReset: () => apiAction(() => factoryResetAPI()),
+        addSystemNotification: (data) => apiAction(() => addSystemNotificationAPI(data)),
+        markSystemNotificationsAsRead: (ids, userId) => apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)),
+        addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
+        updateScheduledEvent: (data) => apiAction(() => updateScheduledEventAPI(data)),
+        deleteScheduledEvent: (id) => apiAction(() => deleteScheduledEventAPI(id)),
+        importAssetPack: (pack, resolutions) => apiAction(() => importAssetPackAPI(pack, resolutions)),
+        addBugReport: async (report) => {
+            await apiAction(() => addBugReportAPI(report));
+        },
+        updateBugReport: async (id, updates) => {
+            return await apiAction(() => updateBugReportAPI(id, updates));
+        },
+        deleteBugReports: (ids) => apiAction(() => deleteBugReportsAPI(ids)),
+        importBugReports: async (reports, mode) => {
+            await apiAction(() => importBugReportsAPI(reports, mode));
+        },
+        addModifierDefinition: (data) => apiAction(() => addModifierDefinitionAPI(data)),
+        updateModifierDefinition: (data) => apiAction(() => updateModifierDefinitionAPI(data)),
+        applyModifier: async (userId, modifierId, reason, overrides) => {
+            if (!currentUser) return false;
+            const result = await apiAction(() => applyModifierAPI(userId, modifierId, reason, currentUser.id, overrides));
+            if (result) {
+                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                if ((result as any).newAppliedModifier) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { appliedModifiers: [(result as any).newAppliedModifier] } });
+                return true;
+            }
+            return false;
+        },
+        cloneUser: async (userId) => {
+            const result = await apiAction(() => cloneUserAPI(userId));
+            if (result) {
+                setUsers(prev => [...prev, result]);
+                addNotification({ type: 'success', message: `User "${result.gameName}" cloned.` });
+            }
+            return result;
+        },
+        sendMessage: async (messageData) => {
+            if (!currentUser) return null;
+            const result = await apiAction(() => sendMessageAPI({ ...messageData, senderId: currentUser.id }));
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { chatMessages: [result] } });
+            return result;
+        },
+        markMessagesAsRead: async (payload) => {
+            if (!currentUser) return;
+            await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
+        },
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, createAddAction, createUpdateAction]);
+
+    const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
+
+    return (
+        <SystemStateContext.Provider value={state}>
+            <SystemDispatchContext.Provider value={contextValue}>
+                {children}
+            </SystemDispatchContext.Provider>
+        </SystemStateContext.Provider>
+    );
+};
+
+export const useSystemState = (): SystemState => {
+    const context = useContext(SystemStateContext);
+    if (context === undefined) throw new Error('useSystemState must be used within a SystemProvider');
+    return context;
+};
+
+export const useSystemDispatch = (): SystemDispatch => {
+    const context = useContext(SystemDispatchContext);
+    if (context === undefined) throw new Error('useSystemDispatch must be used within a SystemProvider');
+    return context.actions;
+};
+
+export const useSystemReducerDispatch = (): React.Dispatch<SystemAction> => {
+    const context = useContext(SystemDispatchContext);
+    if (!context) {
+        throw new Error('useSystemReducerDispatch must be used within a SystemProvider');
+    }
+    return context.dispatch;
+};

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../items/types';
 import Button from '../../user-interface/Button';
@@ -15,6 +14,7 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import ItemTable from '../../items/ItemTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { logger } from '../../../utils/logger';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -48,6 +48,12 @@ const ManageItemsPage: React.FC = () => {
 
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
     const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);
+    
+    useEffect(() => {
+        if (debouncedSearchTerm) {
+            logger.log(`[ManageItems] Search term updated: "${debouncedSearchTerm}"`);
+        }
+    }, [debouncedSearchTerm]);
 
     const fetchAssets = useCallback(async () => {
         setIsLoading(true);
@@ -83,11 +89,13 @@ const ManageItemsPage: React.FC = () => {
     }, [activeTab, searchTerm, sortBy]);
     
     const handleFileProcess = useCallback((file: File) => {
+        logger.log('[ManageItems] Processing file for categorization', { name: file.name, size: file.size });
         setFileToCategorize(file);
     }, []);
 
     const handleUploadWithCategory = async (file: File, category: string) => {
         setIsUploading(true);
+        logger.log('[ManageItems] Uploading file with category', { name: file.name, category });
         try {
             const uploadedAsset = await uploadFile(file, category);
             if (uploadedAsset?.url) {
@@ -120,6 +128,7 @@ const ManageItemsPage: React.FC = () => {
         event.preventDefault();
         event.stopPropagation();
         setIsDragging(false);
+        logger.log(`[ManageItems] Dropped ${event.dataTransfer.files?.length} files for upload.`);
         if (event.dataTransfer.files?.length > 0) {
             Array.from(event.dataTransfer.files).forEach(handleFileProcess);
             event.dataTransfer.clearData();
@@ -135,18 +144,26 @@ const ManageItemsPage: React.FC = () => {
 
 
     const handleEdit = (asset: GameAsset) => {
+        logger.log('[ManageItems] Opening edit dialog for asset', { id: asset.id, name: asset.name });
         setEditingAsset(asset);
         setIsCreateDialogOpen(true);
     };
 
     const handleCreate = () => {
+        logger.log('[ManageItems] Opening create dialog');
         setEditingAsset(null);
         setInitialCreateData(null);
         setIsCreateDialogOpen(true);
     };
 
+    const handleClone = (assetId: string) => {
+        logger.log('[ManageItems] Cloning asset', { id: assetId });
+        cloneGameAsset(assetId);
+    };
+
     const handleConfirmAction = async () => {
         if (!confirmation || confirmation.action !== 'delete') return;
+        logger.log('[ManageItems] Confirming bulk delete action', { ids: confirmation.ids });
         try {
             await deleteSelectedAssets({ gameAssets: confirmation.ids });
             addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
@@ -156,6 +173,7 @@ const ManageItemsPage: React.FC = () => {
     };
 
     const handleUseIdea = (idea: any) => {
+        logger.log('[ManageItems] Using AI-generated idea to create item', { name: idea.name });
         setIsGeneratorOpen(false);
         setInitialCreateData({
             ...idea,
@@ -167,6 +185,16 @@ const ManageItemsPage: React.FC = () => {
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedAssets(e.target.checked ? pageAssets.map(a => a.id) : []);
+    };
+    
+    const handleTabChange = (tab: string) => {
+        logger.log(`[ManageItems] Tab changed to: ${tab}`);
+        setActiveTab(tab);
+    };
+    
+    const handleSortChange = (value: typeof sortBy) => {
+        logger.log(`[ManageItems] Sort changed to: ${value}`);
+        setSortBy(value);
     };
 
     return (
@@ -186,7 +214,7 @@ const ManageItemsPage: React.FC = () => {
                             {isUploading ? 'Processing...' : 'Upload Image'}
                         </Button>
                          {isAiAvailable && (
-                            <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary" data-log-id="manage-items-create-with-ai">Create with AI</Button>
+                            <Button onClick={() => { logger.log('[ManageItems] Opening AI generator'); setIsGeneratorOpen(true); }} variant="secondary" data-log-id="manage-items-create-with-ai">Create with AI</Button>
                         )}
                         <Button onClick={handleCreate} variant="secondary" data-log-id="manage-items-create-manually">Create Manually</Button>
                     </div>
@@ -195,8 +223,8 @@ const ManageItemsPage: React.FC = () => {
             <Card title={`All Created ${settings.terminology.link_manage_items}`}>
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
-                        {categories.map((category: string) => (
-                            <button key={category} onClick={() => setActiveTab(category)}
+                        {categories.map(category => (
+                            <button key={category} onClick={() => handleTabChange(category)}
                                 data-log-id={`manage-items-tab-${category.toLowerCase()}`}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                     activeTab === category
@@ -211,7 +239,7 @@ const ManageItemsPage: React.FC = () => {
 
                 <div className="flex flex-wrap gap-4 mb-4">
                     <Input placeholder="Search assets..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as typeof sortBy)}>
+                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSortChange(e.target.value as typeof sortBy)}>
                         <option value="createdAt-desc">Date (Newest)</option>
                         <option value="createdAt-asc">Date (Oldest)</option>
                         <option value="name-asc">Name (A-Z)</option>
@@ -221,8 +249,8 @@ const ManageItemsPage: React.FC = () => {
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedAssets.length} selected</span>
                             <Button size="sm" variant="secondary" onClick={() => handleEdit(pageAssets.find(a => a.id === selectedAssets[0])!)} disabled={selectedAssets.length !== 1}>Edit</Button>
-                            <Button size="sm" variant="secondary" onClick={() => cloneGameAsset(selectedAssets[0])} disabled={selectedAssets.length !== 1}>Clone</Button>
-                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedAssets })} data-log-id="manage-items-bulk-delete">Delete</Button>
+                            <Button size="sm" variant="secondary" onClick={() => handleClone(selectedAssets[0])} disabled={selectedAssets.length !== 1}>Clone</Button>
+                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => { logger.log('[ManageItems] Staging delete action for selected assets'); setConfirmation({ action: 'delete', ids: selectedAssets }); }} data-log-id="manage-items-bulk-delete">Delete</Button>
                         </div>
                     )}
                 </div>
@@ -233,8 +261,8 @@ const ManageItemsPage: React.FC = () => {
                     onSelectAll={handleSelectAll}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
-                    onClone={cloneGameAsset}
-                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    onClone={handleClone}
+                    onDeleteRequest={(ids: string[]) => { logger.log('[ManageItems] Staging delete action for asset(s)', { ids }); setConfirmation({ action: 'delete', ids }); }}
                     onPreviewImage={setPreviewImageUrl}
                     isLoading={isLoading}
                     searchTerm={debouncedSearchTerm}

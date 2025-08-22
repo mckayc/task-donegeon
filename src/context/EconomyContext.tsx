@@ -4,6 +4,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { SystemAction, useSystemReducerDispatch } from './SystemContext';
+import { logger } from '../utils/logger';
 import { 
     addMarketAPI, updateMarketAPI, cloneMarketAPI, updateMarketsStatusAPI, 
     addRewardTypeAPI, updateRewardTypeAPI, cloneRewardTypeAPI, 
@@ -67,6 +68,7 @@ const initialState: EconomyState = {
 };
 
 const economyReducer = (state: EconomyState, action: EconomyAction): EconomyState => {
+    logger.log('[EconomyReducer] Action:', action.type, 'Payload:', action.payload);
     switch (action.type) {
         case 'SET_ECONOMY_DATA':
             return { ...state, ...action.payload };
@@ -74,6 +76,8 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof EconomyState;
+                if (!action.payload[typedKey]) continue;
+
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
                     (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
@@ -86,6 +90,8 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof EconomyState;
+                if (!action.payload[typedKey]) continue;
+                
                 if (Array.isArray(stateWithRemoved[typedKey])) {
                     const idsToRemove = new Set(action.payload[typedKey] as string[]);
                     (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));

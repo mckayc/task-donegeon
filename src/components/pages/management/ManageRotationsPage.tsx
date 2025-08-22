@@ -8,6 +8,7 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import RotationTable from '../../rotations/RotationTable';
 import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { logger } from '../../../utils/logger';
 
 const ManageRotationsPage: React.FC = () => {
     const { settings } = useSystemState();
@@ -24,17 +25,20 @@ const ManageRotationsPage: React.FC = () => {
     const handleCheckboxClick = useShiftSelect(rotationIds, selectedRotations, setSelectedRotations);
 
     const handleCreate = () => {
+        logger.log('[ManageRotations] Opening create dialog');
         setEditingRotation(null);
         setIsDialogOpen(true);
     };
 
     const handleEdit = (rotation: Rotation) => {
+        logger.log('[ManageRotations] Opening edit dialog for rotation', { id: rotation.id, name: rotation.name });
         setEditingRotation(rotation);
         setIsDialogOpen(true);
     };
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
+            logger.log('[ManageRotations] Confirming delete action', { ids: deletingIds });
             deleteSelectedAssets({ rotations: deletingIds });
         }
         setDeletingIds([]);
@@ -46,6 +50,7 @@ const ManageRotationsPage: React.FC = () => {
     };
 
     const handleRunRotation = (rotationId: string) => {
+        logger.log('[ManageRotations] Manually running rotation', { id: rotationId });
         runRotation(rotationId);
     };
 

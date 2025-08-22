@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { QuestGroup } from '../../types';
 import Button from '../../user-interface/Button';
@@ -10,6 +9,7 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useQuestsState } from '../../../context/QuestsContext';
 import QuestGroupTable from '../../quest-groups/QuestGroupTable';
+import { logger } from '../../../utils/logger';
 
 const ManageQuestGroupsPage: React.FC = () => {
     const { settings } = useSystemState();
@@ -26,21 +26,25 @@ const ManageQuestGroupsPage: React.FC = () => {
     const handleCheckboxClick = useShiftSelect(groupIds, selectedGroups, setSelectedGroups);
 
     const handleCreate = () => {
+        logger.log('[ManageQuestGroups] Opening create dialog');
         setEditingGroup(null);
         setIsDialogOpen(true);
     };
 
     const handleEdit = (group: QuestGroup) => {
+        logger.log('[ManageQuestGroups] Opening edit dialog', { id: group.id, name: group.name });
         setEditingGroup(group);
         setIsDialogOpen(true);
     };
 
     const handleAssign = (group: QuestGroup) => {
+        logger.log('[ManageQuestGroups] Opening assign dialog', { id: group.id, name: group.name });
         setAssigningGroup(group);
     };
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
+            logger.log('[ManageQuestGroups] Confirming delete action', { ids: deletingIds });
             deleteSelectedAssets({ questGroups: deletingIds });
         }
         setDeletingIds([]);

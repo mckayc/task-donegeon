@@ -10,6 +10,7 @@ import Input from '../../user-interface/Input';
 import { DatabaseIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { logger } from '../../../utils/logger';
 
 const BackupListItem: React.FC<{ 
     backup: BackupInfo; 
@@ -87,6 +88,7 @@ const BackupList: React.FC<{
     };
     
     const handleBulkDelete = async () => {
+        logger.log('[BackupPage] Deleting multiple backups', { filenames: selectedBackups });
         try {
             const response = await fetch('/api/backups/bulk-delete', {
                 method: 'POST',
@@ -191,6 +193,7 @@ export const BackupAndImportPage: React.FC = () => {
 
     const handleCreateBackup = async (type: 'json' | 'sqlite' | 'both') => {
         setIsCreating(true);
+        logger.log('[BackupPage] Creating manual backup', { type });
         try {
             if (type === 'json' || type === 'both') await apiRequest('POST', `/api/backups/create-json`);
             if (type === 'sqlite' || type === 'both') await apiRequest('POST', `/api/backups/create-sqlite`);
@@ -206,6 +209,7 @@ export const BackupAndImportPage: React.FC = () => {
     
     const handleConfirmDelete = async () => {
         if (!confirmDelete) return;
+        logger.log('[BackupPage] Deleting backup', { filename: confirmDelete });
         try {
             await apiRequest('DELETE', `/api/backups/${confirmDelete}`);
             addNotification({ type: 'info', message: 'Backup deleted.' });
@@ -220,6 +224,7 @@ export const BackupAndImportPage: React.FC = () => {
         if (!fileToRestore) return;
         
         setIsRestoring(true);
+        logger.log('[BackupPage] Restoring from backup file', { filename: fileToRestore.name });
         const formData = new FormData();
         formData.append('backupFile', fileToRestore);
 
@@ -241,6 +246,7 @@ export const BackupAndImportPage: React.FC = () => {
     };
 
     const handleSaveSchedule = (scheduleData: Omit<BackupSchedule, 'id'>) => {
+        logger.log('[BackupPage] Saving backup schedule', { scheduleData });
         const updatedSchedules = [...settings.automatedBackups.schedules];
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);
@@ -257,6 +263,7 @@ export const BackupAndImportPage: React.FC = () => {
 
     const handleDeleteSchedule = () => {
         if (!deletingSchedule) return;
+        logger.log('[BackupPage] Deleting backup schedule', { scheduleId: deletingSchedule.id });
         const updatedSchedules = settings.automatedBackups.schedules.filter(s => s.id !== deletingSchedule.id);
         updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, schedules: updatedSchedules } });
         setDeletingSchedule(null);

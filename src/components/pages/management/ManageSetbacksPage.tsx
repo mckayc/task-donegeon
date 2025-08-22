@@ -10,6 +10,7 @@ import Avatar from '../../user-interface/Avatar';
 import { useAuthState } from '../../../context/AuthContext';
 import ModifierTable from '../../modifiers/ModifierTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { logger } from '../../../utils/logger';
 
 const ManageSetbacksPage: React.FC = () => {
     const { settings, modifierDefinitions, appliedModifiers } = useSystemState();
@@ -40,22 +41,26 @@ const ManageSetbacksPage: React.FC = () => {
     }, [appliedModifiers, users, modifierDefinitions]);
 
     const handleCreate = () => {
+        logger.log('[ManageSetbacks] Opening create dialog');
         setEditingModifier(null);
         setIsDialogOpen(true);
     };
 
     const handleEdit = (modifier: ModifierDefinition) => {
+        logger.log('[ManageSetbacks] Opening edit dialog for modifier', { id: modifier.id, name: modifier.name });
         setEditingModifier(modifier);
         setIsDialogOpen(true);
     };
 
     const handleApply = (modifier: ModifierDefinition) => {
+        logger.log('[ManageSetbacks] Opening apply dialog for modifier', { id: modifier.id, name: modifier.name });
         setApplyingModifier(modifier);
         setIsApplyDialogOpen(true);
     };
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
+            logger.log('[ManageSetbacks] Confirming delete action', { ids: deletingIds });
             deleteSelectedAssets({ modifierDefinitions: deletingIds });
         }
         setDeletingIds([]);

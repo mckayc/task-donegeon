@@ -18,16 +18,19 @@ const getChronicles = async (req, res) => {
     const { startDate, endDate, userId, guildId, viewMode, page = 1, limit = 50 } = req.query;
     const manager = dataSource.manager;
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const isPersonalScope = guildId === 'null' || !guildId || guildId === 'undefined';
 
     let allEvents = [];
-    
-    const isPersonalScope = guildId === 'null' || !guildId || guildId === 'undefined';
 
     // --- Quest Completions ---
     const completionsQb = manager.createQueryBuilder(QuestCompletionEntity, "completion")
-        .leftJoinAndSelect("completion.user", "user")
         .leftJoinAndSelect("completion.quest", "quest")
-        .orderBy("completion.completedAt", "DESC");
+        .leftJoinAndSelect("completion.user", "user")
+        .select([
+            "completion.id", "completion.completedAt", "completion.note", "completion.status", "completion.userId", "completion.guildId",
+            "quest.id", "quest.title", "quest.icon",
+            "user.id", "user.gameName"
+        ]);
 
     if (isPersonalScope) {
         completionsQb.where("completion.guildId IS NULL");
@@ -36,14 +39,15 @@ const getChronicles = async (req, res) => {
     }
 
     if (viewMode === 'personal') {
-        completionsQb.andWhere("user.id = :userId", { userId });
+        completionsQb.andWhere("completion.userId = :userId", { userId });
     }
+    
     const completions = await completionsQb.getMany();
 
     allEvents.push(...completions.map(c => ({
         id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
         title: c.quest?.title || 'Unknown Quest', note: c.note, status: c.status,
-        icon: c.quest?.icon || '📜', color: '#10b981', userId: c.user?.id
+        icon: c.quest?.icon || '📜', color: '#10b981', userId: c.userId, actorName: c.user?.gameName,
     })));
 
     // --- Other Entities ---
@@ -58,51 +62,33 @@ const getChronicles = async (req, res) => {
         otherWhere.userId = userId;
     }
     
-    // Purchase Requests
-    const purchases = await manager.find(PurchaseRequestEntity, {
-        where: otherWhere,
-        relations: ['user'],
-        order: { requestedAt: 'DESC' }
-    });
+    const purchases = await manager.find(PurchaseRequestEntity, { where: otherWhere, relations: ['user'] });
     allEvents.push(...purchases.map(p => ({
         id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
         title: `Purchase: ${p.assetDetails.name}`, note: p.assetDetails.description, status: p.status,
-        icon: '💰', color: '#f59e0b', userId: p.user?.id
+        icon: '💰', color: '#f59e0b', userId: p.userId, actorName: p.user?.gameName
     })));
 
-    // User Trophies
-    const trophies = await manager.find(UserTrophyEntity, {
-        where: otherWhere,
-        relations: ['user', 'trophy'],
-        order: { awardedAt: 'DESC' }
-    });
+    const trophies = await manager.find(UserTrophyEntity, { where: otherWhere, relations: ['user', 'trophy'] });
     allEvents.push(...trophies.map(t => ({
         id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
         title: `Trophy Earned: ${t.trophy?.name || 'Unknown Trophy'}`, note: t.trophy?.description, status: 'Awarded',
-        icon: t.trophy?.icon || '🏆', color: '#ca8a04', userId: t.user?.id
+        icon: t.trophy?.icon || '🏆', color: '#ca8a04', userId: t.userId, actorName: t.user?.gameName
     })));
 
-    // Admin Adjustments
-    const adjustments = await manager.find(AdminAdjustmentEntity, {
-        where: otherWhere,
-        relations: ['user'],
-        order: { adjustedAt: 'DESC' }
-    });
+    const adjustments = await manager.find(AdminAdjustmentEntity, { where: otherWhere, relations: ['user'] });
     allEvents.push(...adjustments.map(a => ({
         id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
         title: `Admin Adjustment: ${a.type}`, note: a.reason, status: a.type,
-        icon: '⚖️', color: '#a855f7', userId: a.user?.id
+        icon: '⚖️', color: '#a855f7', userId: a.userId, actorName: a.user?.gameName
     })));
-    
-    // Date Range Filtering (Post-fetch for simplicity across different date fields)
+
+    // Date Range Filtering & Sorting
     const filteredByDate = allEvents.filter(event => {
         if (!startDate || !endDate) return true;
         const eventDate = event.date.split('T')[0];
         return eventDate >= startDate && eventDate <= endDate;
-    });
-
-    // Sort all collected events by date
-    filteredByDate.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     const paginatedEvents = filteredByDate.slice(skip, skip + parseInt(limit, 10));
     

@@ -1,7 +1,4 @@
 
-
-
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -67,6 +64,9 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
         case 'SET_QUESTS_DATA':
             return { ...state, ...action.payload, allTags: Array.from(new Set(action.payload.quests?.flatMap(q => q.tags) || [])) };
         case 'UPDATE_QUESTS_DATA': {
+            if (action.payload.quests) {
+                console.log('[QuestsReducer] Updating quests with payload:', JSON.stringify(action.payload.quests, null, 2));
+            }
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;

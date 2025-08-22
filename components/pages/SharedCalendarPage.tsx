@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus } from '../../types';
 import { AppMode } from '../../types/app';
@@ -161,6 +157,7 @@ const SharedCalendarPage: React.FC = () => {
         if (!selectedQuestDetails) return;
         const { quest, user } = selectedQuestDetails;
         const isCurrentlyTodo = quest.todoUserIds?.includes(user.id);
+        console.log(`[SharedCalendarPage] Toggling To-Do for quest: ${quest.id}. Is currently To-Do: ${isCurrentlyTodo}`);
 
         if (isCurrentlyTodo) {
             unmarkQuestAsTodo(quest.id, user.id);

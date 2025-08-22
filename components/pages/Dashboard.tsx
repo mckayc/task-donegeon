@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { Quest, QuestType, QuestKind, Trophy } from '../../types';
@@ -102,6 +98,8 @@ const Dashboard: React.FC = () => {
     const handleToggleTodo = (questToToggle: Quest) => {
         if (!currentUser || questToToggle.type !== QuestType.Venture) return;
         const isTodo = questToToggle.todoUserIds?.includes(currentUser.id);
+        
+        console.log(`[Dashboard] Toggling To-Do for quest: ${questToToggle.id}. Is currently To-Do: ${isTodo}`);
         
         if (isTodo) {
             unmarkQuestAsTodo(questToToggle.id, currentUser.id);

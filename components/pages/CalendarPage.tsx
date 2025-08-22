@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
@@ -380,6 +378,7 @@ const CalendarPage: React.FC = () => {
         if (!viewingQuest || !currentUser) return;
         const { quest } = viewingQuest;
         const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
+        console.log(`[CalendarPage] Toggling To-Do for quest: ${quest.id}. Is currently To-Do: ${isCurrentlyTodo}`);
 
         if (isCurrentlyTodo) {
             unmarkQuestAsTodo(quest.id, currentUser.id);

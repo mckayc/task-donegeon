@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -18,39 +17,38 @@ const getChronicles = async (req, res) => {
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const isPersonalScope = guildId === 'null' || !guildId || guildId === 'undefined';
 
+    const whereClauseBase = {
+        guildId: isPersonalScope ? IsNull() : guildId,
+    };
+    if (viewMode === 'personal') {
+        whereClauseBase.user = { id: userId };
+    }
+
     // --- Fetch All Event Types Concurrently ---
-    const completionsPromise = manager.createQueryBuilder(QuestCompletionEntity, "completion")
-        .leftJoinAndSelect("completion.quest", "quest")
-        .leftJoinAndSelect("completion.user", "user")
-        .where(isPersonalScope ? "completion.guildId IS NULL" : "completion.guildId = :guildId", { guildId })
-        .andWhere(viewMode === 'personal' ? "completion.userId = :userId" : "1=1", { userId })
-        .orderBy("completion.completedAt", "DESC")
-        .getMany();
+    const completionsPromise = manager.find(QuestCompletionEntity, {
+        relations: ['quest', 'user'],
+        where: {
+            guildId: isPersonalScope ? IsNull() : guildId,
+            ...(viewMode === 'personal' && { user: { id: userId } }),
+        },
+        order: { completedAt: "DESC" }
+    });
 
-    const buildOtherQuery = (entity) => {
-        const qb = manager.createQueryBuilder(entity, "event")
-            .leftJoinAndSelect("event.user", "user");
-
-        if (isPersonalScope) {
-            qb.where("event.guildId IS NULL");
-        } else {
-            qb.where("event.guildId = :guildId", { guildId });
-        }
-        if (viewMode === 'personal') {
-            qb.andWhere("event.userId = :userId", { userId });
-        }
-        return qb.getMany();
+    const buildOtherQuery = (entity, relations = ['user']) => {
+        const where = { ...whereClauseBase };
+        return manager.find(entity, { relations, where });
     };
 
     const purchasesPromise = buildOtherQuery(PurchaseRequestEntity);
     const adjustmentsPromise = buildOtherQuery(AdminAdjustmentEntity);
 
-    const trophiesPromise = manager.createQueryBuilder(UserTrophyEntity, "ut")
-        .innerJoinAndSelect("ut.trophy", "trophy")
-        .innerJoinAndSelect("ut.user", "user")
-        .where(isPersonalScope ? "ut.guildId IS NULL" : "ut.guildId = :guildId", { guildId })
-        .andWhere(viewMode === 'personal' ? "ut.userId = :userId" : "1=1", { userId })
-        .getMany();
+    const trophiesPromise = manager.find(UserTrophyEntity, {
+        relations: ['trophy', 'user'],
+        where: {
+            guildId: isPersonalScope ? IsNull() : guildId,
+            ...(viewMode === 'personal' && { user: { id: userId } }),
+        }
+    });
 
     const [completions, purchases, adjustments, userTrophies] = await Promise.all([
         completionsPromise,

@@ -3,7 +3,7 @@ import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCa
 import { Guild } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addGuildAPI, updateGuildAPI, deleteGuildAPI } from '../api';
+import { addGuildAPI, updateGuildAPI, deleteGuildAPI } from '../src/api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -40,10 +40,7 @@ const communityReducer = (state: CommunityState, action: CommunityAction): Commu
                 const typedKey = key as keyof CommunityState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    const itemsToUpdate = action.payload[typedKey];
-                    if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
-                    }
+                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }

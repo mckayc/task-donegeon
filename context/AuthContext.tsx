@@ -1,7 +1,9 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
+import { addUserAPI, updateUserAPI, deleteUsersAPI, completeFirstRunAPI } from '../src/api';
 
 // State managed by this context
 interface AuthState {
@@ -47,26 +49,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const isFirstRun = users.length === 0;
 
-  const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
-      try {
-          const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
-          if (body) options.body = JSON.stringify(body);
-          const response = await window.fetch(path, options);
-          if (!response.ok) {
-              const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-              throw new Error(errorData.error || `Request failed with status ${response.status}`);
-          }
-          return response.status === 204 ? null : await response.json();
-      } catch (error) {
-          addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
-          throw error;
-      }
-  }, [addNotification]);
-
   const setCurrentUser = useCallback((user: User | null) => {
       _setCurrentUser(prevUser => {
-          // Idempotency check: only update if the user is actually different.
-          // This prevents re-renders when sync provides an identical user object.
           if (JSON.stringify(prevUser) === JSON.stringify(user)) {
               return prevUser;
           }
@@ -90,38 +74,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
     }
 
-    // Using a single functional update for `setUsers` ensures all logic operates on the most recent state,
-    // preventing race conditions. This is a more robust implementation.
     setUsers(prevUsers => {
         const userIndex = prevUsers.findIndex(u => u.id === userId);
         if (userIndex === -1) {
             console.error(`[updateUser] User with ID ${userId} not found.`);
             addNotification({ type: 'error', message: 'Could not find user to update.'});
-            return prevUsers; // Return original state if user not found
+            return prevUsers;
         }
         
         const userToUpdate = prevUsers[userIndex];
         const updatePayload = typeof update === 'function' ? update(userToUpdate) : update;
         const updatedUser = { ...userToUpdate, ...updatePayload };
 
-        // The API call is initiated from within this atomic block.
         const isFullObject = 'id' in updatePayload;
         if (Object.keys(updatePayload).length > 0 && !isFullObject) {
-            apiRequest('PUT', `/api/users/${userId}`, updatePayload).catch(error => {
+            updateUserAPI(userId, updatePayload).catch(error => {
+                addNotification({ type: 'error', message: `Failed to save user update: ${error.message}` });
                 console.error("Failed to update user on server; optimistic update may be stale.", error);
             });
         }
         
-        // The dependent state update for `currentUser` is also handled here to ensure atomicity.
         _setCurrentUser(prevCurrentUser => (prevCurrentUser?.id === userId ? updatedUser : prevCurrentUser));
         
-        // Construct the new users array by explicitly replacing the user at the specific index.
-        // This is a clearer and safer "replace" operation than map, preventing duplicates.
         const newUsers = [...prevUsers];
         newUsers[userIndex] = updatedUser;
         return newUsers;
     });
-  }, [apiRequest, addNotification]);
+  }, [addNotification]);
   
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
 
@@ -141,31 +120,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
       }
       try {
-          return await apiRequest('POST', '/api/users', userData);
+          return await addUserAPI(userData);
       } catch (error) {
-          console.error("Failed to add user on server.", error);
+          addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to add user.' });
           return null;
       }
-  }, [apiRequest]);
+  }, [addNotification]);
 
-  const deleteUsers = useCallback((userIds: string[]) => {
+  const deleteUsers = useCallback(async (userIds: string[]) => {
       if (userIds.length === 0) return;
       if (bugLogger.isRecording()) {
           bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
       }
-      setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
-      apiRequest('DELETE', '/api/users', { ids: userIds }).catch(error => {
-         console.error("Failed to delete users on server.", error);
-      });
-  }, [apiRequest]);
+      try {
+        await deleteUsersAPI(userIds);
+        setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
+      } catch (error) {
+        addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete users.' });
+      }
+  }, [addNotification]);
   
   const completeFirstRun = useCallback(async (adminUserData: any) => {
       try {
-          await apiRequest('POST', '/api/first-run', { adminUserData });
+          await completeFirstRunAPI(adminUserData);
           addNotification({ type: 'success', message: 'Setup complete! The app will now reload.' });
           setTimeout(() => window.location.reload(), 2000);
-      } catch (error) {}
-  }, [apiRequest, addNotification]);
+      } catch (error) {
+        addNotification({ type: 'error', message: error instanceof Error ? error.message : 'First run setup failed.' });
+      }
+  }, [addNotification]);
   
   const dispatch = useMemo(() => ({
       setUsers,

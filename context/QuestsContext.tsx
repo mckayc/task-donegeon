@@ -64,15 +64,15 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
         case 'SET_QUESTS_DATA':
             return { ...state, ...action.payload, allTags: Array.from(new Set(action.payload.quests?.flatMap(q => q.tags) || [])) };
         case 'UPDATE_QUESTS_DATA': {
-            if (action.payload.quests) {
-                console.log('[QuestsReducer] Updating quests with payload:', JSON.stringify(action.payload.quests, null, 2));
-            }
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }

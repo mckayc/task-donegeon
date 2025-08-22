@@ -19,10 +19,8 @@ const getChronicles = async (req, res) => {
 
     // --- Fetch All Event Types Concurrently ---
     const completionsPromise = manager.createQueryBuilder(QuestCompletionEntity, "completion")
-        .innerJoin("completion.quest", "quest")
-        .innerJoin("completion.user", "user")
-        .addSelect(["quest.title", "quest.icon"])
-        .addSelect(["user.gameName"])
+        .innerJoinAndSelect("completion.quest", "quest")
+        .innerJoinAndSelect("completion.user", "user")
         .where(isPersonalScope ? "completion.guildId IS NULL" : "completion.guildId = :guildId", { guildId })
         .andWhere(viewMode === 'personal' ? "completion.userId = :userId" : "1=1", { userId })
         .orderBy("completion.completedAt", "DESC")
@@ -62,29 +60,43 @@ const getChronicles = async (req, res) => {
 
     // --- Map to Common Format ---
     let allEvents = [];
-    allEvents.push(...completions.map(c => ({
-        id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: `${c.user.gameName} completed "${c.quest.title}"`,
-        note: c.note, status: c.status, icon: c.quest.icon, color: '#10b981', userId: c.userId, actorName: c.user.gameName
-    })));
+    allEvents.push(...completions.map(c => {
+        const questTitle = c.quest ? c.quest.title : 'Unknown Quest';
+        const questIcon = c.quest ? c.quest.icon : '❓';
+        const userName = c.user ? c.user.gameName : 'Unknown User';
+        return {
+            id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
+            title: `${userName} completed "${questTitle}"`,
+            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.userId, actorName: userName
+        };
+    }));
 
-    allEvents.push(...purchases.map(p => ({
-        id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-        title: `${p.user.gameName} purchased "${p.assetDetails.name}"`,
-        note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: p.user.gameName
-    })));
+    allEvents.push(...purchases.map(p => {
+        const userName = p.user ? p.user.gameName : 'Unknown User';
+        return {
+            id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
+            title: `${userName} purchased "${p.assetDetails.name}"`,
+            note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: userName
+        };
+    }));
 
-    allEvents.push(...userTrophies.map(t => ({
-        id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
-        title: `${t.user.gameName} earned: "${t.trophy.name}"`,
-        note: t.trophy.description, status: 'Awarded', icon: t.trophy.icon, color: '#ca8a04', userId: t.userId, actorName: t.user.gameName
-    })));
+    allEvents.push(...userTrophies.map(t => {
+        const userName = t.user ? t.user.gameName : 'Unknown User';
+        return {
+            id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
+            title: `${userName} earned: "${t.trophy.name}"`,
+            note: t.trophy.description, status: 'Awarded', icon: t.trophy.icon, color: '#ca8a04', userId: t.userId, actorName: userName
+        };
+    }));
 
-    allEvents.push(...adjustments.map(a => ({
-        id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
-        title: `Admin Adjustment for ${a.user.gameName}`,
-        note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7', userId: a.userId, actorName: a.user.gameName
-    })));
+    allEvents.push(...adjustments.map(a => {
+        const userName = a.user ? a.user.gameName : 'Unknown User';
+        return {
+            id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
+            title: `Admin Adjustment for ${userName}`,
+            note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7', userId: a.userId, actorName: userName
+        };
+    }));
     
     // Date Range Filtering & Sorting
     const filteredByDate = allEvents.filter(event => {

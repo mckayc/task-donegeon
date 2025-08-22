@@ -1,7 +1,5 @@
-
-
 const { dataSource } = require('../data-source');
-const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity } = require('../entities');
+const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity } = require('../entities');
 const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
@@ -242,7 +240,78 @@ const unmarkAsTodo = async (questId, userId) => {
 };
 
 const completeCheckpoint = async (questId, userId) => {
-    // ... (This function remains complex and correct as is)
+    return await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        const quest = await manager.findOneBy(QuestEntity, { id: questId });
+        if (!user || !quest) throw new Error('User or Quest not found');
+
+        if (!quest.checkpoints || quest.checkpoints.length === 0) {
+            throw new Error('Quest is not a valid Journey or has no checkpoints.');
+        }
+        
+        const completedCount = Object.keys(quest.checkpointCompletionTimestamps?.[userId] || {}).length;
+        if (completedCount >= quest.checkpoints.length) {
+            throw new Error('Journey is already fully completed.');
+        }
+
+        const checkpoint = quest.checkpoints[completedCount];
+        const now = new Date().toISOString();
+
+        if (!quest.checkpointCompletionTimestamps) {
+            quest.checkpointCompletionTimestamps = {};
+        }
+        if (!quest.checkpointCompletionTimestamps[userId]) {
+            quest.checkpointCompletionTimestamps[userId] = {};
+        }
+        quest.checkpointCompletionTimestamps[userId][checkpoint.id] = now;
+
+        const newCompletion = manager.create(QuestCompletionEntity, {
+            id: `qc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            quest: quest,
+            user: user,
+            completedAt: now,
+            status: 'Approved',
+            note: `Completed checkpoint: "${checkpoint.description}"`,
+            guildId: quest.guildId
+        });
+        await manager.save(updateTimestamps(newCompletion, true));
+        
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const isGuildScope = !!quest.guildId;
+        const balances = isGuildScope ? user.guildBalances[quest.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+            
+        checkpoint.rewards.forEach(reward => {
+            const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+            if (rewardDef) {
+                const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+            }
+        });
+        if (isGuildScope) user.guildBalances[quest.guildId] = balances;
+
+        let newUserTrophies = [];
+        let newNotifications = [];
+        if (checkpoint.trophyId) {
+            const trophy = await manager.findOneBy(TrophyEntity, { id: checkpoint.trophyId });
+            if (trophy) {
+                const newTrophy = manager.create(UserTrophyEntity, {
+                    id: `usertrophy-${Date.now()}`,
+                    userId,
+                    trophyId: trophy.id,
+                    awardedAt: now,
+                    guildId: quest.guildId || undefined,
+                });
+                const saved = await manager.save(updateTimestamps(newTrophy, true));
+                newUserTrophies.push(saved);
+            }
+        }
+        
+        const updatedUser = await manager.save(updateTimestamps(user));
+        const updatedQuest = await manager.save(updateTimestamps(quest));
+
+        updateEmitter.emit('update');
+        return { updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications };
+    });
 };
 
 module.exports = {

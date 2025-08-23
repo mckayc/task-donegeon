@@ -88,12 +88,28 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
               return null;
           }).filter((r: RewardItem | null): r is RewardItem => r !== null) || [];
         
+        const suggestedCheckpoints: Checkpoint[] = initialData?.checkpoints
+          ?.map((cp: { description: string; suggestedRewards?: { rewardTypeName: string; amount: number; }[] }) => {
+              const checkpointRewards: RewardItem[] = cp.suggestedRewards
+                ?.map(reward => {
+                    const foundType = rewardTypes.find(rt => rt.name.toLowerCase() === reward.rewardTypeName.toLowerCase().replace(' xp', ''));
+                    if (foundType) return { rewardTypeId: foundType.id, amount: reward.amount };
+                    return null;
+                }).filter((r): r is RewardItem => r !== null) || [];
+              
+              return {
+                  id: `cp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  description: cp.description,
+                  rewards: checkpointRewards,
+              };
+          }) || [];
+
         const isCreatingNewAIGroup = initialData?.isNewGroup && !!initialData.groupName;
         const suggestedGroupId = !isCreatingNewAIGroup && initialData?.groupName
           ? questGroups.find(g => g.name.toLowerCase() === initialData.groupName?.toLowerCase())?.id || ''
           : '';
 
-        const suggestedType = initialData.type === 'Duty' ? QuestType.Duty : QuestType.Venture;
+        const suggestedType = initialData.type || (initialData.checkpoints ? QuestType.Journey : QuestType.Venture);
 
         return {
             ...baseData,
@@ -102,6 +118,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             icon: initialData.icon || '📝',
             tags: initialData.tags || [],
             rewards: suggestedRewardItems,
+            checkpoints: suggestedCheckpoints,
             groupId: suggestedGroupId,
             type: suggestedType,
             rrule: suggestedType === QuestType.Duty ? 'FREQ=DAILY' : null,

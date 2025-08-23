@@ -43,6 +43,7 @@ const SuggestionEnginePage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { questGroups } = useQuestsState();
     const { rewardTypes } = useEconomyState();
+    const { users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -50,6 +51,7 @@ const SuggestionEnginePage: React.FC = () => {
     const [context, setContext] = useState(localStorage.getItem('aiStudioContext') || '');
     const [prompt, setPrompt] = useState('');
     const [assetType, setAssetType] = useState<AssetType>('Ventures');
+    const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -82,20 +84,22 @@ const SuggestionEnginePage: React.FC = () => {
     };
 
     const getSchemaForAssetType = (type: AssetType) => {
-        const questSchema = { type: Type.OBJECT, properties: {
+        const rewardSchema = { type: Type.ARRAY, items: {
+            type: Type.OBJECT, properties: {
+                rewardTypeName: { type: Type.STRING },
+                amount: { type: Type.INTEGER }
+            }, required: ['rewardTypeName', 'amount']
+        }};
+
+        const baseQuestSchema = {
             title: { type: Type.STRING, description: 'A short, engaging title.' },
             description: { type: Type.STRING, description: 'A one-sentence description.' },
             icon: { type: Type.STRING, description: 'A single, relevant emoji.'},
             tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-            suggestedRewards: { type: Type.ARRAY, items: {
-                type: Type.OBJECT, properties: {
-                    rewardTypeName: { type: Type.STRING },
-                    amount: { type: Type.INTEGER }
-                }
-            }},
-            groupName: { type: Type.STRING },
-            isNewGroup: { type: Type.BOOLEAN }
-        }, required: ['title', 'description', 'icon', 'tags', 'suggestedRewards', 'groupName', 'isNewGroup'] };
+            suggestedRewards: { ...rewardSchema, description: "Rewards for completing the entire quest." },
+            groupName: { type: Type.STRING, description: 'The most appropriate group name for the quest. This can be an existing group name or a new one.'},
+            isNewGroup: { type: Type.BOOLEAN, description: 'Set to true if the groupName is a new suggestion, not from the existing list.' }
+        };
 
         switch (type) {
             case 'Markets':
@@ -106,8 +110,23 @@ const SuggestionEnginePage: React.FC = () => {
                 }, required: ['title', 'description', 'icon'] };
             case 'Duties':
             case 'Ventures':
+                return { type: Type.OBJECT, properties: baseQuestSchema, required: ['title', 'description', 'icon', 'tags', 'suggestedRewards', 'groupName', 'isNewGroup'] };
             case 'Journeys':
-                return questSchema;
+                 return { type: Type.OBJECT, properties: {
+                    ...baseQuestSchema,
+                    checkpoints: {
+                        type: Type.ARRAY,
+                        description: "An array of 2 to 5 steps or checkpoints for the journey.",
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                description: { type: Type.STRING, description: "Description of this single step." },
+                                suggestedRewards: { ...rewardSchema, description: "Rewards for completing just this checkpoint." }
+                            },
+                            required: ['description']
+                        }
+                    }
+                }, required: ['title', 'description', 'icon', 'tags', 'checkpoints', 'groupName', 'isNewGroup'] };
             case 'Trophies':
                 return { type: Type.OBJECT, properties: {
                     name: { type: Type.STRING },
@@ -134,13 +153,25 @@ const SuggestionEnginePage: React.FC = () => {
         const groupNames = questGroups.map(g => g.name).join(', ');
         
         let specificInstructions = '';
-        if (assetType === 'Duties' || assetType === 'Ventures' || assetType === 'Journeys') {
-            specificInstructions = `For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}).
+        if (assetType === 'Duties' || assetType === 'Ventures') {
+            specificInstructions = `For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward for completing the entire quest, based on the task's likely effort (using reward names from this list: ${rewardNames}).
             
             Here is a list of existing Quest Groups: "${groupNames}". For each idea, suggest the most appropriate group from this list. If none of the existing groups seem appropriate, suggest a suitable new group name and indicate it's a new group by setting the isNewGroup flag to true.`;
+        } else if (assetType === 'Journeys') {
+            specificInstructions = `This is a multi-step quest. Create 2-5 sequential "checkpoints". Each checkpoint must have its own description and can optionally have its own suggested rewards from the list: ${rewardNames}. Also provide a final reward for completing the entire Journey.
+            
+            Here is a list of existing Quest Groups: "${groupNames}". Suggest the most appropriate group. If none fit, suggest a new group name and set the isNewGroup flag to true.`;
+        }
+        
+        let userContext = context ? ` General context for our group: "${context}".` : '';
+        if (selectedUserId) {
+            const selectedUser = users.find(u => u.id === selectedUserId);
+            if (selectedUser) {
+                userContext += ` Generate this specifically for a user with this context: User's Name: ${selectedUser.gameName} (real name ${selectedUser.firstName} ${selectedUser.lastName}). Birthday: ${selectedUser.birthday}. About Me: "${selectedUser.aboutMe || 'Not provided.'}". Private Admin Notes: "${selectedUser.adminNotes || 'Not provided.'}". Tailor the idea to these details, referring to the user by name and considering their age based on their birthday.`;
+            }
         }
 
-        const fullPrompt = `Generate a single JSON object for a ${assetTypeName} for a gamified task app called ${settings.terminology.appName}. The asset should be based on the theme: "${prompt}". ${specificInstructions}`;
+        const fullPrompt = `Generate a single JSON object for a ${assetTypeName} for a gamified task app called ${settings.terminology.appName}. The asset should be based on the theme: "${prompt}".${userContext} ${specificInstructions}`;
 
         const requestBody = {
              model: 'gemini-2.5-flash',
@@ -188,7 +219,7 @@ const SuggestionEnginePage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [prompt, assetType, context, dialogToShow, rewardTypes, questGroups, settings.terminology]);
+    }, [prompt, assetType, context, dialogToShow, rewardTypes, questGroups, settings.terminology, users, selectedUserId]);
     
     const handleCloseDialog = () => {
         setDialogToShow(null);
@@ -253,6 +284,20 @@ const SuggestionEnginePage: React.FC = () => {
                             rows={4}
                             className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
                         />
+                         <div className="pt-4 border-t border-stone-700/60">
+                             <Input
+                                as="select"
+                                label="Personalize for User (Optional)"
+                                value={selectedUserId}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
+                                disabled={isLoading}
+                            >
+                                <option value="">General / For All Users</option>
+                                {users.map(user => (
+                                    <option key={user.id} value={user.id}>{user.gameName}</option>
+                                ))}
+                            </Input>
+                         </div>
                         <div className="text-right mt-2">
                             <Button variant="secondary" onClick={handleSaveContext} className="text-xs py-1 px-3">Save Context</Button>
                         </div>

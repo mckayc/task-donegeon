@@ -166,15 +166,19 @@ const approveQuestCompletion = async (id, approverId, note) => {
         if (user && quest) {
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
             const isGuildScope = !!completion.guildId;
-            const balances = isGuildScope ? user.guildBalances[completion.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+            const balances = isGuildScope 
+                ? (user.guildBalances || {})[completion.guildId] || { purse: {}, experience: {} } 
+                : { purse: user.personalPurse, experience: user.personalExperience };
             
             const applyRewards = (rewardsToApply) => {
                 if (!rewardsToApply || !Array.isArray(rewardsToApply)) return;
                 rewardsToApply.forEach(reward => {
                     const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
                     if (rewardDef) {
-                        const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                        const target = rewardDef.category === 'Currency' ? (balances.purse || {}) : (balances.experience || {});
                         target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+                        if (rewardDef.category === 'Currency') balances.purse = target;
+                        else balances.experience = target;
                     }
                 });
             };
@@ -183,7 +187,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
 
             if (quest.type === 'Journey') {
                 if (completion.checkpointId && Array.isArray(quest.checkpoints)) {
-                    const checkpoint = quest.checkpoints.find(cp => cp.id === completion.checkpointId);
+                    const checkpoint = quest.checkpoints.find(cp => cp && typeof cp === 'object' && cp.id === completion.checkpointId);
                     if (checkpoint) {
                         applyRewards(checkpoint.rewards);
                         if (checkpoint.trophyId) {
@@ -209,7 +213,13 @@ const approveQuestCompletion = async (id, approverId, note) => {
                 applyRewards(quest.rewards);
             }
 
-            if(isGuildScope) user.guildBalances[completion.guildId] = balances;
+            if(isGuildScope) {
+                if (!user.guildBalances) user.guildBalances = {};
+                user.guildBalances[completion.guildId] = balances;
+            } else {
+                user.personalPurse = balances.purse;
+                user.personalExperience = balances.experience;
+            }
 
             const updatedUser = await manager.save(updateTimestamps(user));
             const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);

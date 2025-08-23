@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -250,75 +251,90 @@ const completeCheckpoint = async (questId, userId) => {
             throw new Error('Quest is not a valid Journey or has no checkpoints.');
         }
         
-        const completedCount = Object.keys(quest.checkpointCompletionTimestamps?.[userId] || {}).length;
+        const userCompletions = await manager.find(QuestCompletionEntity, {
+            where: { quest: { id: questId }, user: { id: userId } }
+        });
+
+        const completedCount = userCompletions.filter(c => c.status === 'Approved').length;
+
         if (completedCount >= quest.checkpoints.length) {
             throw new Error('Journey is already fully completed.');
         }
 
+        const hasPending = userCompletions.some(c => c.status === 'Pending');
+        if (hasPending) {
+            throw new Error('A checkpoint for this journey is already pending approval.');
+        }
+        
         const checkpoint = quest.checkpoints[completedCount];
         const now = new Date().toISOString();
-
-        if (!quest.checkpointCompletionTimestamps) {
-            quest.checkpointCompletionTimestamps = {};
-        }
-        if (!quest.checkpointCompletionTimestamps[userId]) {
-            quest.checkpointCompletionTimestamps[userId] = {};
-        }
-        quest.checkpointCompletionTimestamps[userId][checkpoint.id] = now;
+        
+        const status = quest.requiresApproval ? 'Pending' : 'Approved';
+        const note = `Checkpoint ${status.toLowerCase()}: "${checkpoint.description}"`;
 
         const newCompletion = manager.create(QuestCompletionEntity, {
             id: `qc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             quest: quest,
             user: user,
             completedAt: now,
-            status: 'Approved',
-            note: `Completed checkpoint: "${checkpoint.description}"`,
-            guildId: quest.guildId
+            status: status,
+            note: note,
+            guildId: quest.guildId,
+            checkpointId: checkpoint.id,
         });
         await manager.save(updateTimestamps(newCompletion, true));
         
-        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
-        const isGuildScope = !!quest.guildId;
-        const balances = isGuildScope ? user.guildBalances[quest.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
-            
-        checkpoint.rewards.forEach(reward => {
-            const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-            if (rewardDef) {
-                const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
-            }
-        });
-        if (isGuildScope) user.guildBalances[quest.guildId] = balances;
-
+        let updatedUser = null;
         let newUserTrophies = [];
         let newNotifications = [];
-        if (checkpoint.trophyId) {
-            const trophy = await manager.findOneBy(TrophyEntity, { id: checkpoint.trophyId });
-            if (trophy) {
-                const newTrophy = manager.create(UserTrophyEntity, {
-                    id: `usertrophy-${Date.now()}`,
-                    userId,
-                    trophyId: trophy.id,
-                    awardedAt: now,
-                    guildId: quest.guildId || undefined,
-                });
-                const saved = await manager.save(updateTimestamps(newTrophy, true));
-                newUserTrophies.push(saved);
+
+        if (status === 'Approved') {
+            const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+            const isGuildScope = !!quest.guildId;
+            const balances = isGuildScope ? user.guildBalances[quest.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+            
+            checkpoint.rewards.forEach(reward => {
+                const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                if (rewardDef) {
+                    const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                    target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            });
+            if (isGuildScope) user.guildBalances[quest.guildId] = balances;
+
+            if (checkpoint.trophyId) {
+                const trophy = await manager.findOneBy(TrophyEntity, { id: checkpoint.trophyId });
+                if (trophy) {
+                    const newTrophy = manager.create(UserTrophyEntity, {
+                        id: `usertrophy-${Date.now()}`,
+                        userId,
+                        trophyId: trophy.id,
+                        awardedAt: now,
+                        guildId: quest.guildId || undefined,
+                    });
+                    const saved = await manager.save(updateTimestamps(newTrophy, true));
+                    newUserTrophies.push(saved);
+                }
             }
+            updatedUser = await manager.save(updateTimestamps(user));
         }
-        
-        const updatedUser = await manager.save(updateTimestamps(user));
+
+        // This timestamp is just for display, completion records are the source of truth
+        if (!quest.checkpointCompletionTimestamps) quest.checkpointCompletionTimestamps = {};
+        if (!quest.checkpointCompletionTimestamps[userId]) quest.checkpointCompletionTimestamps[userId] = {};
+        quest.checkpointCompletionTimestamps[userId][checkpoint.id] = now;
         await manager.save(updateTimestamps(quest));
         
-        // **BUG FIX**: Refetch the quest with its relations before returning
         const finalUpdatedQuest = await manager.findOne(QuestEntity, { where: { id: questId }, relations: ['assignedUsers'] });
         const { assignedUsers, ...restOfQuest } = finalUpdatedQuest;
         const updatedQuestForFrontend = { ...restOfQuest, assignedUserIds: assignedUsers.map(u => u.id) };
+        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: newCompletion.id }, relations: ['user', 'quest'] });
 
         updateEmitter.emit('update');
-        return { updatedUser, updatedQuest: updatedQuestForFrontend, newCompletion, newUserTrophies, newNotifications };
+        return { updatedUser, updatedQuest: updatedQuestForFrontend, newCompletion: finalCompletion, newUserTrophies, newNotifications };
     });
 };
+
 
 module.exports = {
     getAll, create, clone, update, deleteMany, bulkUpdateStatus, bulkUpdate, complete,

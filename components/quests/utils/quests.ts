@@ -254,8 +254,15 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
     const isTodoPriority = isTodo ? 0 : 1;
     
-    // --- Key 4: Quest Type (0 = Duty, 1 = Venture, 2 = Journey) ---
-    const typePriority = quest.type === QuestType.Duty ? 0 : quest.type === QuestType.Venture ? 1 : 2;
+    // --- Key 4: Quest Type (0 = Duty, 1 = In-Progress Journey, 2 = Venture, 3 = New Journey) ---
+    let typePriority = quest.type === QuestType.Duty ? 0 : quest.type === QuestType.Venture ? 2 : 3;
+    if (quest.type === QuestType.Journey) {
+        const completedCheckpoints = userCompletionsForQuest.filter(c => c.status === QuestCompletionStatus.Approved).length;
+        const totalCheckpoints = quest.checkpoints?.length || 0;
+        if (completedCheckpoints > 0 && totalCheckpoints > 0 && completedCheckpoints < totalCheckpoints) {
+            typePriority = 1; // In-progress Journeys are high priority
+        }
+    }
     
     // --- Key 5: Time Sorting (earlier times/dates get a smaller number) ---
     let timePriority = Number.MAX_SAFE_INTEGER;

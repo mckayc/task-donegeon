@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -271,7 +272,6 @@ const approveQuestCompletion = async (id, approverId, note) => {
         throw error; // Re-throw to ensure transaction fails and server returns 500
     }
 };
-
 
 const rejectQuestCompletion = async (id, rejecterId, note) => {
     const completion = await completionRepo.findOne({ where: { id }, relations: ['user', 'quest'] });

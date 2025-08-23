@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -170,7 +169,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
             const balances = isGuildScope ? user.guildBalances[completion.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
             
             const applyRewards = (rewardsToApply) => {
-                if (!rewardsToApply) return;
+                if (!rewardsToApply || !Array.isArray(rewardsToApply)) return;
                 rewardsToApply.forEach(reward => {
                     const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
                     if (rewardDef) {
@@ -182,34 +181,31 @@ const approveQuestCompletion = async (id, approverId, note) => {
 
             const manuallyAwardedTrophies = [];
 
-            if (quest.type === 'Journey' && completion.checkpointId && Array.isArray(quest.checkpoints)) {
-                const checkpoint = quest.checkpoints.find(cp => cp.id === completion.checkpointId);
-                if (checkpoint) {
-                    applyRewards(checkpoint.rewards); // Apply checkpoint-specific rewards
-
-                    if (checkpoint.trophyId) {
-                        const trophyExists = await manager.countBy(TrophyEntity, { id: checkpoint.trophyId });
-                        if (trophyExists > 0) {
-                            const newTrophy = manager.create(UserTrophyEntity, {
-                                id: `usertrophy-${Date.now()}-${Math.random()}`,
-                                userId: user.id,
-                                trophyId: checkpoint.trophyId,
-                                awardedAt: new Date().toISOString(),
-                                guildId: quest.guildId || undefined
-                            });
-                            const savedTrophy = await manager.save(updateTimestamps(newTrophy, true));
-                            manuallyAwardedTrophies.push(savedTrophy);
+            if (quest.type === 'Journey') {
+                if (completion.checkpointId && Array.isArray(quest.checkpoints)) {
+                    const checkpoint = quest.checkpoints.find(cp => cp.id === completion.checkpointId);
+                    if (checkpoint) {
+                        applyRewards(checkpoint.rewards);
+                        if (checkpoint.trophyId) {
+                            const trophyExists = await manager.countBy(TrophyEntity, { id: checkpoint.trophyId });
+                            if (trophyExists > 0) {
+                                const newTrophy = manager.create(UserTrophyEntity, {
+                                    id: `usertrophy-${Date.now()}-${Math.random()}`, userId: user.id, trophyId: checkpoint.trophyId,
+                                    awardedAt: new Date().toISOString(), guildId: quest.guildId || undefined
+                                });
+                                manuallyAwardedTrophies.push(await manager.save(updateTimestamps(newTrophy, true)));
+                            }
                         }
+                    } else {
+                        console.warn(`[Approval] Checkpoint ID "${completion.checkpointId}" not found for quest "${quest.title}". Skipping checkpoint rewards.`);
                     }
                 }
-                
-                // Check if this was the last checkpoint. Important: count *after* updating the current one.
+
                 const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
-                if (quest.checkpoints && approvedCount === quest.checkpoints.length) {
-                    applyRewards(quest.rewards); // Apply final journey rewards
+                if (Array.isArray(quest.checkpoints) && quest.checkpoints.length > 0 && approvedCount === quest.checkpoints.length) {
+                    applyRewards(quest.rewards);
                 }
             } else {
-                // Default behavior for Duty/Venture
                 applyRewards(quest.rewards);
             }
 

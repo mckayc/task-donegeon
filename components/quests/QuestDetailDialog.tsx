@@ -1,15 +1,15 @@
 
-
 import React, { useEffect, useMemo } from 'react';
-import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
+import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus } from '../../types';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
 import { useAuthState } from '../../context/AuthContext';
 import { CheckCircleIcon } from '../user-interface/Icons';
-import { useQuestsDispatch } from '../../context/QuestsContext';
+import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -23,8 +23,10 @@ interface QuestDetailDialogProps {
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
     const { settings } = useSystemState();
     const { rewardTypes } = useEconomyState();
+    const { questCompletions } = useQuestsState();
     const { currentUser } = useAuthState();
     const { completeCheckpoint } = useQuestsDispatch();
+    const { addNotification } = useNotificationsDispatch();
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -41,8 +43,17 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 
     const handleComplete = () => {
         if (quest.type === QuestType.Journey && currentUser) {
-            completeCheckpoint(quest.id, currentUser.id);
-            onClose(); // Close dialog immediately after action is dispatched
+            // Journey completion is handled differently now.
+            // We find the current checkpoint and dispatch an action to complete it.
+            const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.questId === quest.id);
+            const approvedCount = userCompletions.filter(c => c.status === QuestCompletionStatus.Approved).length;
+            const currentCheckpoint = quest.checkpoints?.[approvedCount];
+
+            if (currentCheckpoint) {
+                 completeCheckpoint(quest.id, currentUser.id);
+                 addNotification({ type: 'success', message: 'Checkpoint submitted!' });
+            }
+            onClose();
         } else if (onComplete) {
             if (bugLogger.isRecording()) {
                 bugLogger.add({ type: 'ACTION', message: `Clicked 'Complete' in Quest Detail dialog for "${quest.title}".` });
@@ -74,12 +85,21 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         );
     }
     
+    const { completedCount, hasPendingCompletion } = useMemo(() => {
+        if (!currentUser || quest.type !== QuestType.Journey) return { completedCount: 0, hasPendingCompletion: false };
+
+        const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.questId === quest.id);
+        const approved = userCompletions.filter(c => c.status === QuestCompletionStatus.Approved).length;
+        const pending = userCompletions.some(c => c.status === QuestCompletionStatus.Pending);
+
+        return { completedCount: approved, hasPendingCompletion: pending };
+    }, [quest.id, quest.type, currentUser, questCompletions]);
+
     const journeyProgress = useMemo(() => {
         if (quest.type !== QuestType.Journey || !currentUser) return { completed: 0, total: 0, currentIdx: 0 };
-        const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
         const total = quest.checkpoints?.length || 0;
-        return { completed, total, currentIdx: completed };
-    }, [quest, currentUser]);
+        return { completed: completedCount, total, currentIdx: completedCount };
+    }, [quest.type, quest.checkpoints, currentUser, completedCount]);
 
 
     const themeClasses = quest.type === QuestType.Duty
@@ -137,21 +157,22 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 
                     {quest.type === QuestType.Journey && quest.checkpoints && (
                         <div className="space-y-3 pt-4 border-t border-white/10">
-                            <h3 className="font-bold text-lg text-stone-200">Checkpoints</h3>
+                            <h3 className="font-bold text-lg text-stone-200">Checkpoints ({journeyProgress.completed}/{journeyProgress.total})</h3>
                             {quest.checkpoints.map((cp, idx) => {
                                 const isCompleted = idx < journeyProgress.completed;
                                 const isCurrent = idx === journeyProgress.currentIdx;
                                 const isFuture = idx > journeyProgress.currentIdx;
+                                const isObfuscated = isFuture || (isCurrent && hasPendingCompletion);
 
                                 return (
-                                    <div key={cp.id} className={`p-3 rounded-lg border-l-4 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}>
+                                    <div key={cp.id} className={`p-3 rounded-lg border-l-4 transition-all duration-300 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}>
                                         <div className="flex items-center gap-2">
                                             {isCompleted && <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />}
                                             <p className={`font-semibold ${isCompleted ? 'text-stone-400 line-through' : 'text-stone-200'}`}>Checkpoint {idx + 1}</p>
                                         </div>
-                                        {!isFuture && <p className="text-sm text-stone-300 mt-1">{cp.description}</p>}
+                                        <p className={`text-sm text-stone-300 mt-1 transition-all duration-300 ${isObfuscated ? 'filter blur-sm select-none' : ''}`}>{isObfuscated ? 'Complete the previous checkpoint to reveal.' : cp.description}</p>
                                         <div className="mt-2">
-                                            {renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', isFuture)}
+                                            {renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', isObfuscated)}
                                         </div>
                                     </div>
                                 );
@@ -178,8 +199,10 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             />
                         )}
                         {onComplete && (
-                            <Button onClick={handleComplete}>
-                                {quest.type === QuestType.Journey ? 'Complete Checkpoint' : 'Complete'}
+                            <Button onClick={handleComplete} disabled={hasPendingCompletion}>
+                                {quest.type === QuestType.Journey 
+                                    ? (hasPendingCompletion ? 'Awaiting Approval' : 'Complete Checkpoint')
+                                    : 'Complete'}
                             </Button>
                         )}
                     </div>

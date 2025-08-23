@@ -1,4 +1,6 @@
-import { Quest, QuestCompletion, QuestCompletionStatus, AppMode, User, QuestType, ScheduledEvent } from '../../../types';
+
+
+import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode } from '../../../types';
 
 /**
  * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
@@ -157,13 +159,21 @@ export const isQuestAvailableForUser = (
   }
 
   // Journey-specific logic
-  if (quest.type === QuestType.Journey) {
-    if (!onVacation && quest.endDateTime && today > new Date(quest.endDateTime)) {
-      return false; // Past final deadline
+    if (quest.type === QuestType.Journey) {
+        if (!onVacation && quest.endDateTime && today > new Date(quest.endDateTime)) {
+            return false; // Past final deadline
+        }
+        
+        const totalCheckpoints = quest.checkpoints?.length || 0;
+        if (totalCheckpoints === 0) return false;
+
+        const completionsForQuest = userCompletions.filter(c => c.questId === quest.id);
+        const approvedCount = completionsForQuest.filter(c => c.status === QuestCompletionStatus.Approved).length;
+        const hasPending = completionsForQuest.some(c => c.status === QuestCompletionStatus.Pending);
+        
+        // Available for action if not all approved and nothing is pending
+        return approvedCount < totalCheckpoints && !hasPending;
     }
-    // A journey is available as long as it hasn't been fully completed
-    return questUserCompletions.length === 0;
-  }
   
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {

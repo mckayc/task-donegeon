@@ -97,6 +97,7 @@ export interface QuestCompletion {
   guildId?: string;
   actedById?: string;
   actedAt?: string;
+  checkpointId?: string;
   createdAt?: string;
   updatedAt?: string;
 }

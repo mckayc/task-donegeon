@@ -8,7 +8,7 @@ import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { Role } from '../users/types';
-import { QuestType, Quest, QuestKind } from '../quests/types';
+import { QuestType, Quest, QuestKind, QuestCompletionStatus } from '../quests/types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../quests/utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -131,12 +131,18 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
     
-    const progressHeader = useMemo(() => {
-        if (quest.type !== QuestType.Journey || !quest.checkpoints || quest.checkpoints.length === 0) return null;
-        const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
+    const { progressHeader, progressPercent } = useMemo(() => {
+        if (quest.type !== QuestType.Journey || !quest.checkpoints || quest.checkpoints.length === 0) {
+            return { progressHeader: null, progressPercent: 0 };
+        }
+        const completed = questCompletions.filter(c => c.userId === currentUser.id && c.questId === quest.id && c.status === QuestCompletionStatus.Approved).length;
         const total = quest.checkpoints.length;
-        return `Checkpoint ${completed + 1} / ${total}`;
-    }, [quest, currentUser]);
+        const percent = total > 0 ? (completed / total) * 100 : 0;
+        return {
+            progressHeader: `Checkpoint ${completed + 1} / ${total}`,
+            progressPercent: percent
+        };
+    }, [quest, currentUser.id, questCompletions]);
 
 
     return (
@@ -169,6 +175,11 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
             {/* Body */}
             <div className="p-4 flex-grow">
+                {quest.type === QuestType.Journey && progressPercent > 0 && (
+                    <div className="w-full bg-stone-700 rounded-full h-2.5 mb-4">
+                        <div className="bg-green-600 h-2.5 rounded-full" style={{width: `${progressPercent}%`}}></div>
+                    </div>
+                )}
                 <p className="text-stone-300 text-sm mb-4">{quest.description}</p>
                 
                 {quest.rewards.length > 0 && (

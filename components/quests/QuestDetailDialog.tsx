@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useMemo } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus } from '../../types';
 import Button from '../user-interface/Button';
@@ -62,29 +61,30 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         return (
             <div>
                 <p className={`text-xs font-semibold ${colorClass} uppercase tracking-wider`}>{title}</p>
-                 {isObfuscated ? (
-                    <p className="text-sm font-semibold mt-1 text-stone-400 italic">Complete the previous step to reveal.</p>
-                ) : (
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold mt-1">
-                        {rewards.map(r => {
-                            const { name, icon } = getRewardInfo(r.rewardTypeId);
-                            const prefix = title.toLowerCase().includes(settings.terminology.negativePoint.toLowerCase()) ? '- ' : '+ ';
-                            return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-stone-300 flex items-center gap-1" title={name}>
-                                {`${prefix}${r.amount}`} <span className="text-base">{icon}</span>
-                            </span>
-                        })}
-                    </div>
-                )}
+                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold mt-1">
+                    {rewards.map(r => {
+                        const { name, icon } = getRewardInfo(r.rewardTypeId);
+                        const prefix = title.toLowerCase().includes(settings.terminology.negativePoint.toLowerCase()) ? '- ' : '+ ';
+                        const amountDisplay = isObfuscated ? '?' : r.amount;
+                        return <span key={`${r.rewardTypeId}-${r.amount}`} className={`flex items-center gap-1 ${isObfuscated ? 'text-stone-400 italic' : 'text-stone-300'}`} title={name}>
+                            {`${prefix}${amountDisplay}`} <span className="text-base">{icon}</span>
+                        </span>
+                    })}
+                </div>
             </div>
         );
     }
     
     const journeyProgress = useMemo(() => {
         if (quest.type !== QuestType.Journey || !currentUser) return { completed: 0, total: 0, currentIdx: 0 };
-        const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
+        const completedCount = questCompletions.filter(c =>
+            c.userId === currentUser.id &&
+            c.questId === quest.id &&
+            c.status === QuestCompletionStatus.Approved
+        ).length;
         const total = quest.checkpoints?.length || 0;
-        return { completed, total, currentIdx: completed };
-    }, [quest, currentUser]);
+        return { completed: completedCount, total, currentIdx: completedCount };
+    }, [quest, currentUser, questCompletions]);
 
     const isAwaitingApproval = useMemo(() => {
         if (!currentUser || quest.type !== QuestType.Journey || !quest.requiresApproval) {
@@ -153,23 +153,24 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         <div className="space-y-3 pt-4 border-t border-white/10">
                             <h3 className="font-bold text-lg text-stone-200">Checkpoints</h3>
                             {quest.checkpoints.map((cp, idx) => {
-                                const isCompleted = idx < journeyProgress.completed;
-                                const isCurrent = idx === journeyProgress.currentIdx;
+                                const isCompleted = idx < journeyProgress.currentIdx;
+                                const isCurrent = !isAwaitingApproval && idx === journeyProgress.currentIdx;
+                                const isPending = isAwaitingApproval && idx === journeyProgress.currentIdx;
                                 const isFuture = idx > journeyProgress.currentIdx;
-                                const shouldObfuscate = isAwaitingApproval && isCurrent;
+                                const shouldObfuscate = isFuture || isPending;
 
                                 return (
-                                    <div key={cp.id} className={`p-3 rounded-lg border-l-4 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}>
+                                    <div key={cp.id} className={`p-3 rounded-lg border-l-4 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent || isPending ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}>
                                         <div className="flex items-center gap-2">
                                             {isCompleted && <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />}
                                             <p className={`font-semibold ${isCompleted ? 'text-stone-400 line-through' : 'text-stone-200'}`}>Checkpoint {idx + 1}</p>
                                         </div>
-                                        {shouldObfuscate ? (
-                                             <p className="text-sm text-stone-400 mt-1 italic filter blur-sm select-none">Awaiting approval to reveal next step...</p>
-                                        ) : !isFuture && <p className="text-sm text-stone-300 mt-1">{cp.description}</p>}
+                                        {isFuture ? (
+                                             <p className="text-sm text-stone-400 mt-1 italic filter blur-sm select-none">Complete previous step to reveal...</p>
+                                        ) : <p className="text-sm text-stone-300 mt-1">{cp.description}</p>}
 
                                         <div className="mt-2">
-                                            {renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', shouldObfuscate)}
+                                            {renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', isFuture)}
                                         </div>
                                     </div>
                                 );
@@ -208,3 +209,4 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 };
 
 export default QuestDetailDialog;
+

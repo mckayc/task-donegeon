@@ -209,7 +209,6 @@ export const isQuestAvailableForUser = (
 
 /**
  * Generates a multi-part sort key for a quest to determine its priority in a list.
- * Lower numbers in each part of the key mean higher priority.
  */
 const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[]): (string | number)[] => {
     const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
@@ -218,9 +217,9 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
     // Key 1: In-Progress Journey (0 = In-progress, 1 = Not)
     let inProgressJourneyPriority = 1;
     if (quest.type === QuestType.Journey) {
-        const completedCheckpoints = userCompletionsForQuest.filter(c => c.status === QuestCompletionStatus.Approved).length;
+        const approvedCheckpoints = userCompletionsForQuest.filter(c => c.status === QuestCompletionStatus.Approved).length;
         const totalCheckpoints = quest.checkpoints?.length || 0;
-        if (completedCheckpoints > 0 && totalCheckpoints > 0 && completedCheckpoints < totalCheckpoints) {
+        if (approvedCheckpoints > 0 && totalCheckpoints > 0 && approvedCheckpoints < totalCheckpoints) {
             inProgressJourneyPriority = 0; // Highest priority for in-progress Journeys
         }
     }
@@ -273,10 +272,6 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
 
 /**
  * A comparator function for sorting quests based on a standardized priority order.
- * @param user The current user, for To-Do list checking.
- * @param allCompletions All quest completions, to determine availability.
- * @param date The date context for sorting (e.g., today's date).
- * @returns A comparator function for Array.prototype.sort().
  */
 export const questSorter = (user: User, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[], date: Date = new Date()) => (a: Quest, b: Quest): number => {
     const keyA = getQuestSortKey(a, user, date, allCompletions, scheduledEvents);

@@ -170,6 +170,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
             const balances = isGuildScope ? user.guildBalances[completion.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
             
             const applyRewards = (rewardsToApply) => {
+                if (!rewardsToApply) return;
                 rewardsToApply.forEach(reward => {
                     const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
                     if (rewardDef) {
@@ -202,9 +203,9 @@ const approveQuestCompletion = async (id, approverId, note) => {
                     }
                 }
                 
-                // Check if this was the last checkpoint
+                // Check if this was the last checkpoint. Important: count *after* updating the current one.
                 const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
-                if (approvedCount === quest.checkpoints.length) {
+                if (quest.checkpoints && approvedCount === quest.checkpoints.length) {
                     applyRewards(quest.rewards); // Apply final journey rewards
                 }
             } else {

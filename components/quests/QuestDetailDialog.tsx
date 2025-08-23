@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useMemo } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus } from '../../types';
 import Button from '../user-interface/Button';
@@ -162,7 +163,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                 const isCompleted = idx < journeyProgress.completed;
                                 const isCurrent = idx === journeyProgress.currentIdx;
                                 const isFuture = idx > journeyProgress.currentIdx;
-                                const isObfuscated = isFuture || (isCurrent && hasPendingCompletion);
+                                const isObfuscated = isFuture;
 
                                 return (
                                     <div key={cp.id} className={`p-3 rounded-lg border-l-4 transition-all duration-300 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}>

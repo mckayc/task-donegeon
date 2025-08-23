@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
@@ -7,13 +6,12 @@ import { PurchaseRequestStatus } from '../items/types';
 import { ChronicleEvent } from '../chronicles/types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
-import { useEconomyDispatch, useEconomyState } from '../../context/EconomyContext';
+import { useEconomyDispatch } from '../../context/EconomyContext';
 
 const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { cancelPurchaseRequest } = useEconomyDispatch();
-    const { rewardTypes } = useEconomyState();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -68,7 +66,7 @@ const ChroniclesPage: React.FC = () => {
           case "Exchanged":
             return 'text-green-400';
           case "Requested":
-          case "Pending Approval":
+          case "Pending":
             return 'text-yellow-400';
           case 'QUEST_LATE':
             return 'text-yellow-400 font-semibold';
@@ -88,11 +86,6 @@ const ChroniclesPage: React.FC = () => {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return dateString;
         return date.toLocaleString('default', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    };
-
-    const getRewardInfo = (id: string) => {
-        const rewardDef = rewardTypes.find(rt => rt.id === id);
-        return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
     };
 
     return (
@@ -142,26 +135,12 @@ const ChroniclesPage: React.FC = () => {
                                         <span className="truncate">{activity.title}</span>
                                     </p>
 
-                                    {/* Column 2: Note & Rewards */}
+                                    {/* Column 2: Note */}
                                     <div className="md:col-span-1 md:text-center min-w-0">
                                         {activity.note && (
                                             <p className="text-sm text-stone-400 italic truncate" title={activity.note}>
                                                 "{activity.note}"
                                             </p>
-                                        )}
-                                        {activity.rewards && activity.rewards.length > 0 && (
-                                            <div className={`flex flex-wrap gap-x-2 justify-center mt-2 ${activity.status === 'Pending Approval' ? 'opacity-50' : ''}`}>
-                                                {activity.rewards.map(r => {
-                                                    const info = getRewardInfo(r.rewardTypeId);
-                                                    if (!info) return null;
-                                                    const prefix = activity.type === 'Trial' ? '- ' : '+ ';
-                                                    return (
-                                                        <span key={r.rewardTypeId} className="text-xs font-semibold text-accent-light flex items-center gap-1">
-                                                            {prefix} {r.amount} <span className="text-base">{info.icon}</span>
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
                                         )}
                                     </div>
                                     

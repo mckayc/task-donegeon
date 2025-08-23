@@ -1,5 +1,4 @@
-
-import { QuestType, RewardItem } from '../../types';
+import { QuestType } from '../quests/types';
 
 export type ChronicleEvent = {
     id: string;
@@ -18,5 +17,4 @@ export type ChronicleEvent = {
     recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)
     questType?: QuestType;
     guildId?: string; // The scope of the event
-    rewards?: RewardItem[];
 };

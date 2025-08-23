@@ -19,8 +19,7 @@ const getChronicles = async (req, res) => {
     // --- Quest Completions ---
     const qcQb = manager.createQueryBuilder(QuestCompletionEntity, "qc")
         .leftJoinAndSelect("qc.user", "user")
-        .leftJoinAndSelect("qc.quest", "quest")
-        .leftJoinAndSelect("qc.actedBy", "actor");
+        .leftJoinAndSelect("qc.quest", "quest");
     
     if (viewMode === 'personal' && userId) qcQb.where("user.id = :userId", { userId });
     
@@ -33,25 +32,12 @@ const getChronicles = async (req, res) => {
     }
 
     const completions = await qcQb.orderBy("qc.completedAt", "DESC").getMany();
-    completions.forEach(c => {
-        const baseTitle = `${c.user?.gameName || 'Unknown User'} completed: ${c.quest?.title || 'Unknown Quest'}`;
-        
-        allEvents.push({
-            id: `c-comp-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Checkpoint',
-            title: baseTitle,
-            note: c.note, status: 'Completed', icon: c.quest?.icon || '📜', color: '#10b981',
-            userId: c.user?.id
-        });
-
-        if (c.status === 'Approved' && c.actedAt) {
-             allEvents.push({
-                id: `c-appr-${c.id}`, originalId: c.id, date: c.actedAt, type: 'Checkpoint',
-                title: `${c.actor?.gameName || 'Admin'} approved: ${c.quest?.title || 'Unknown Quest'}`,
-                note: c.note, status: 'Approved', icon: '✅', color: '#22c55e',
-                userId: c.user?.id, actorName: c.actor?.gameName
-            });
-        }
-    });
+    allEvents.push(...completions.map(c => ({
+        id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
+        title: `${c.user?.gameName || 'Unknown User'} completed: ${c.quest?.title || 'Unknown Quest'}`,
+        note: c.note, status: c.status, icon: c.quest?.icon || '📜', color: '#10b981',
+        userId: c.user?.id
+    })));
 
     // --- Purchase Requests ---
     const prQb = manager.createQueryBuilder(PurchaseRequestEntity, "pr")

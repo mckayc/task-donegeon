@@ -144,7 +144,10 @@ const complete = async (completionData) => {
 const approveQuestCompletion = async (id, approverId, note) => {
     return await dataSource.transaction(async manager => {
         const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
-        if (!completion || completion.status !== 'Pending') return null;
+        if (!completion || completion.status !== 'Pending') {
+            console.error(`[Approval] Completion not found or not pending for ID: ${id}`);
+            return null;
+        }
 
         const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
         const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
@@ -161,24 +164,40 @@ const approveQuestCompletion = async (id, approverId, note) => {
         if (note) completion.note = `${completion.note ? `${completion.note}\n` : ''}Approver note: ${note}`;
         
         const updatedCompletion = await manager.save(updateTimestamps(completion));
+        
         const { user, quest } = completion;
         
         if (user && quest) {
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
             const isGuildScope = !!completion.guildId;
-            const balances = isGuildScope 
-                ? (user.guildBalances || {})[completion.guildId] || { purse: {}, experience: {} } 
-                : { purse: user.personalPurse, experience: user.personalExperience };
-            
+
+            // Safely get and initialize balances if they don't exist.
+            // This is a direct reference to the object on the user entity.
+            const balances = (() => {
+                if (isGuildScope) {
+                    if (!user.guildBalances) user.guildBalances = {};
+                    if (!user.guildBalances[completion.guildId]) {
+                        user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
+                    }
+                    // Ensure sub-objects exist
+                    user.guildBalances[completion.guildId].purse = user.guildBalances[completion.guildId].purse || {};
+                    user.guildBalances[completion.guildId].experience = user.guildBalances[completion.guildId].experience || {};
+                    return user.guildBalances[completion.guildId];
+                } else {
+                    // For personal scope, ensure the purse/experience objects are not null before returning
+                    user.personalPurse = user.personalPurse || {};
+                    user.personalExperience = user.personalExperience || {};
+                    return { purse: user.personalPurse, experience: user.personalExperience };
+                }
+            })();
+
             const applyRewards = (rewardsToApply) => {
                 if (!rewardsToApply || !Array.isArray(rewardsToApply)) return;
                 rewardsToApply.forEach(reward => {
                     const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
                     if (rewardDef) {
-                        const target = rewardDef.category === 'Currency' ? (balances.purse || {}) : (balances.experience || {});
+                        const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
                         target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
-                        if (rewardDef.category === 'Currency') balances.purse = target;
-                        else balances.experience = target;
                     }
                 });
             };
@@ -207,20 +226,14 @@ const approveQuestCompletion = async (id, approverId, note) => {
 
                 const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
                 if (Array.isArray(quest.checkpoints) && quest.checkpoints.length > 0 && approvedCount === quest.checkpoints.length) {
+                    console.log(`[Approval] Final checkpoint approved for Journey "${quest.title}". Applying main quest rewards.`);
                     applyRewards(quest.rewards);
                 }
             } else {
                 applyRewards(quest.rewards);
             }
 
-            if(isGuildScope) {
-                if (!user.guildBalances) user.guildBalances = {};
-                user.guildBalances[completion.guildId] = balances;
-            } else {
-                user.personalPurse = balances.purse;
-                user.personalExperience = balances.experience;
-            }
-
+            // The user object has been mutated directly by reference, so we just need to save it.
             const updatedUser = await manager.save(updateTimestamps(user));
             const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
             
@@ -231,6 +244,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
             updateEmitter.emit('update');
             return { updatedUser, updatedCompletion: finalCompletion, newUserTrophies, newNotifications };
         } else {
+            console.error(`[Approval] User or Quest was missing for completion ID: ${id}`);
             updateEmitter.emit('update');
             return { updatedCompletion };
         }

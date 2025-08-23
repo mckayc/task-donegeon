@@ -142,7 +142,7 @@ const complete = async (completionData) => {
     });
 };
 
-const approveCompletion = async (id, approverId, note) => {
+const approveQuestCompletion = async (id, approverId, note) => {
     return await dataSource.transaction(async manager => {
         const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
         if (!completion || completion.status !== 'Pending') return null;
@@ -167,20 +167,58 @@ const approveCompletion = async (id, approverId, note) => {
         if (user && quest) {
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
             const isGuildScope = !!completion.guildId;
-
             const balances = isGuildScope ? user.guildBalances[completion.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
-            quest.rewards.forEach(reward => {
-                const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                if (rewardDef) {
-                    const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                    target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+            
+            const applyRewards = (rewardsToApply) => {
+                rewardsToApply.forEach(reward => {
+                    const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                    if (rewardDef) {
+                        const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                        target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+                    }
+                });
+            };
+
+            const manuallyAwardedTrophies = [];
+
+            if (quest.type === 'Journey' && completion.checkpointId) {
+                const checkpoint = quest.checkpoints.find(cp => cp.id === completion.checkpointId);
+                if (checkpoint) {
+                    applyRewards(checkpoint.rewards); // Apply checkpoint-specific rewards
+
+                    if (checkpoint.trophyId) {
+                        const trophyExists = await manager.countBy(TrophyEntity, { id: checkpoint.trophyId });
+                        if (trophyExists > 0) {
+                            const newTrophy = manager.create(UserTrophyEntity, {
+                                id: `usertrophy-${Date.now()}-${Math.random()}`,
+                                userId: user.id,
+                                trophyId: checkpoint.trophyId,
+                                awardedAt: new Date().toISOString(),
+                                guildId: quest.guildId || undefined
+                            });
+                            const savedTrophy = await manager.save(updateTimestamps(newTrophy, true));
+                            manuallyAwardedTrophies.push(savedTrophy);
+                        }
+                    }
                 }
-            });
+                
+                // Check if this was the last checkpoint
+                const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
+                if (approvedCount === quest.checkpoints.length) {
+                    applyRewards(quest.rewards); // Apply final journey rewards
+                }
+            } else {
+                // Default behavior for Duty/Venture
+                applyRewards(quest.rewards);
+            }
 
             if(isGuildScope) user.guildBalances[completion.guildId] = balances;
 
             const updatedUser = await manager.save(updateTimestamps(user));
             const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
+            
+            newUserTrophies.push(...manuallyAwardedTrophies);
+
             const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: ['user', 'quest'] });
 
             updateEmitter.emit('update');
@@ -255,9 +293,9 @@ const completeCheckpoint = async (questId, userId) => {
             where: { quest: { id: questId }, user: { id: userId } }
         });
 
-        const completedCount = userCompletions.filter(c => c.status === 'Approved').length;
+        const approvedCount = userCompletions.filter(c => c.status === 'Approved').length;
 
-        if (completedCount >= quest.checkpoints.length) {
+        if (approvedCount >= quest.checkpoints.length) {
             throw new Error('Journey is already fully completed.');
         }
 
@@ -266,7 +304,7 @@ const completeCheckpoint = async (questId, userId) => {
             throw new Error('A checkpoint for this journey is already pending approval.');
         }
         
-        const checkpoint = quest.checkpoints[completedCount];
+        const checkpoint = quest.checkpoints[approvedCount];
         const now = new Date().toISOString();
         
         const status = quest.requiresApproval ? 'Pending' : 'Approved';

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -131,22 +132,32 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
     
-    const { progressHeader, progressPercent } = useMemo(() => {
+    const { progressHeader, progressPercent, hasPendingCompletion } = useMemo(() => {
         if (quest.type !== QuestType.Journey || !quest.checkpoints || quest.checkpoints.length === 0) {
-            return { progressHeader: null, progressPercent: 0 };
+            return { progressHeader: null, progressPercent: 0, hasPendingCompletion: false };
         }
-        const completed = questCompletions.filter(c => c.userId === currentUser.id && c.questId === quest.id && c.status === QuestCompletionStatus.Approved).length;
+        const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.questId === quest.id);
+        const completed = userCompletions.filter(c => c.status === QuestCompletionStatus.Approved).length;
+        const pending = userCompletions.some(c => c.status === QuestCompletionStatus.Pending);
         const total = quest.checkpoints.length;
         const percent = total > 0 ? (completed / total) * 100 : 0;
+        
+        let header = `Checkpoint ${completed + 1} / ${total}`;
+        if(pending) header = `Awaiting Approval (${completed}/${total})`;
+
         return {
-            progressHeader: `Checkpoint ${completed + 1} / ${total}`,
-            progressPercent: percent
+            progressHeader: header,
+            progressPercent: percent,
+            hasPendingCompletion: pending
         };
     }, [quest, currentUser.id, questCompletions]);
 
+    const isClickable = quest.type === QuestType.Journey || isAvailable;
+    const cardIsDimmed = !isAvailable && !hasPendingCompletion;
+
 
     return (
-        <div onClick={() => isAvailable && onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 ${baseCardClass} ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}>
+        <div onClick={() => isClickable && onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 ${baseCardClass} ${borderClass} ${optionalClass} ${cardIsDimmed ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden bg-black/30`}>

@@ -154,7 +154,7 @@ const ChroniclesPage: React.FC = () => {
                                                 {activity.rewards.map(r => {
                                                     const info = getRewardInfo(r.rewardTypeId);
                                                     if (!info) return null;
-                                                    const prefix = activity.type === 'Trial' ? '-' : '+';
+                                                    const prefix = activity.type === 'Trial' ? '- ' : '+ ';
                                                     return (
                                                         <span key={r.rewardTypeId} className="text-xs font-semibold text-accent-light flex items-center gap-1">
                                                             {prefix} {r.amount} <span className="text-base">{info.icon}</span>

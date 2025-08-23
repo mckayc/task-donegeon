@@ -19,7 +19,8 @@ const getChronicles = async (req, res) => {
     const qcQb = manager.createQueryBuilder(QuestCompletionEntity, "qc")
         .leftJoinAndSelect("qc.user", "user")
         .leftJoinAndSelect("qc.quest", "quest")
-        .leftJoinAndSelect("qc.actedBy", "actor");
+        .leftJoin("qc.actedBy", "actor")
+        .addSelect(["actor.id", "actor.gameName"]);
     
     if (viewMode === 'personal' && userId) qcQb.where("user.id = :userId", { userId });
     
@@ -27,46 +28,57 @@ const getChronicles = async (req, res) => {
     else if (guildId) qcQb.andWhere("qc.guildId = :guildId", { guildId });
     
     if (startDate && endDate) {
-        qcQb.andWhere("qc.completedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
-        qcQb.andWhere("qc.completedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        const start = `${startDate}T00:00:00.000Z`;
+        const end = `${endDate}T23:59:59.999Z`;
+        qcQb.andWhere(new In(
+            new Brackets(qb => {
+                qb.where("qc.completedAt >= :start AND qc.completedAt <= :end", { start, end })
+                  .orWhere("qc.actedAt >= :start AND qc.actedAt <= :end", { start, end })
+            })
+        ));
     }
 
     const completions = await qcQb.orderBy("qc.completedAt", "DESC").getMany();
     
     completions.forEach(c => {
-        if (!c.user || !c.quest) return; // Skip orphaned records
+        if (!c.user || !c.quest) return;
 
         const eventType = c.quest.type === 'Journey' ? 'Checkpoint' : 'Quest';
+        const isApprovalQuest = c.quest.requiresApproval;
 
-        if (c.quest.requiresApproval) {
-            if (c.status === 'Pending') {
-                allEvents.push({
-                    id: `c-pend-${c.id}`, originalId: c.id, date: c.completedAt, type: eventType, questType: c.quest.type,
-                    title: `${c.user.gameName} completed: ${c.quest.title}`,
-                    note: c.note, status: 'Pending Approval', icon: c.quest.icon || '📜', color: '#f59e0b',
-                    userId: c.user.id, rewards: c.quest.rewards
-                });
-            } else if (c.status === 'Approved' && c.actedAt) {
-                allEvents.push({
-                    id: `c-appr-${c.id}`, originalId: c.id, date: c.actedAt, type: eventType, questType: c.quest.type,
-                    title: `Quest Approved: ${c.quest.title}`,
-                    note: `Approved by ${c.actor?.gameName || 'Admin'}.`, status: 'Approved', icon: '✅', color: '#22c55e',
-                    userId: c.user.id, actorName: c.actor?.gameName, rewards: c.quest.rewards
-                });
-            } else if (c.status === 'Rejected' && c.actedAt) {
-                allEvents.push({
-                    id: `c-rej-${c.id}`, originalId: c.id, date: c.actedAt, type: eventType, questType: c.quest.type,
-                    title: `Quest Rejected: ${c.quest.title}`,
-                    note: `Rejected by ${c.actor?.gameName || 'Admin'}.`, status: 'Rejected', icon: '❌', color: '#ef4444',
-                    userId: c.user.id, actorName: c.actor?.gameName, rewards: []
-                });
+        if (isApprovalQuest) {
+            // Log 1: The completion event
+            allEvents.push({
+                id: `c-pend-${c.id}`, originalId: c.id, date: c.completedAt, type: eventType, questType: c.quest.type,
+                title: `${c.user.gameName} completed: ${c.quest.title}`,
+                note: c.note, status: 'Pending Approval', icon: c.quest.icon || '📜', color: '#f59e0b',
+                userId: c.user.id, rewards: c.quest.type === 'Journey' ? c.quest.checkpoints?.find(cp => !Object.keys(c.quest.checkpointCompletionTimestamps?.[c.user.id] || {}).includes(cp.id))?.rewards : c.quest.rewards
+            });
+
+            // Log 2: The action event (if it happened)
+            if (c.actedAt) {
+                if (c.status === 'Approved') {
+                    allEvents.push({
+                        id: `c-appr-${c.id}`, originalId: c.id, date: c.actedAt, type: eventType, questType: c.quest.type,
+                        title: `Quest Approved: ${c.quest.title}`,
+                        note: `Approved by ${c.actedBy?.gameName || 'Admin'}.`, status: 'Approved', icon: '✅', color: '#22c55e',
+                        userId: c.user.id, actorName: c.actedBy?.gameName, rewards: c.quest.type === 'Journey' ? c.quest.checkpoints?.find(cp => !Object.keys(c.quest.checkpointCompletionTimestamps?.[c.user.id] || {}).includes(cp.id))?.rewards : c.quest.rewards
+                    });
+                } else if (c.status === 'Rejected') {
+                    allEvents.push({
+                        id: `c-rej-${c.id}`, originalId: c.id, date: c.actedAt, type: eventType, questType: c.quest.type,
+                        title: `Quest Rejected: ${c.quest.title}`,
+                        note: `Rejected by ${c.actedBy?.gameName || 'Admin'}.`, status: 'Rejected', icon: '❌', color: '#ef4444',
+                        userId: c.user.id, actorName: c.actedBy?.gameName
+                    });
+                }
             }
-        } else { // Auto-approved quests
+        } else { // Auto-approved quest
             allEvents.push({
                 id: `c-comp-${c.id}`, originalId: c.id, date: c.completedAt, type: eventType, questType: c.quest.type,
                 title: `${c.user.gameName} completed: ${c.quest.title}`,
                 note: c.note, status: 'Completed', icon: c.quest.icon || '📜', color: '#10b981',
-                userId: c.user.id, rewards: c.quest.rewards
+                userId: c.user.id, rewards: c.quest.type === 'Journey' ? c.quest.checkpoints?.find(cp => !Object.keys(c.quest.checkpointCompletionTimestamps?.[c.user.id] || {}).includes(cp.id))?.rewards : c.quest.rewards
             });
         }
     });
@@ -90,7 +102,7 @@ const getChronicles = async (req, res) => {
         id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
         title: `${p.user?.gameName || 'Unknown User'} requested: ${p.assetDetails.name}`,
         note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b',
-        userId: p.user?.id
+        userId: p.user?.id, rewards: p.assetDetails.cost
     })));
 
     // --- User Trophies ---

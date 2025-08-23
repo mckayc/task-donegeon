@@ -30,7 +30,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         if (bugLogger.isRecording()) {
           bugLogger.add({ type: 'ACTION', message: `Opened Quest Detail dialog for "${quest.title}".` });
         }
-    }, []); // Only on mount.
+    }, [quest.title]);
 
     const handleClose = () => {
         if (bugLogger.isRecording()) {
@@ -103,6 +103,8 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const todoClass = isTodo ? '!border-purple-500 ring-2 ring-purple-500/50' : '';
     
     const buttonText = isAwaitingApproval ? 'Awaiting Approval' : (quest.type === QuestType.Journey ? 'Complete Checkpoint' : 'Complete');
+    const isJourneyCompleted = quest.type === QuestType.Journey && journeyProgress.completed === journeyProgress.total && journeyProgress.total > 0;
+    const canComplete = onComplete && !isJourneyCompleted;
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={handleClose}>
@@ -170,7 +172,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                         ) : <p className="text-sm text-stone-300 mt-1">{cp.description}</p>}
 
                                         <div className="mt-2">
-                                            {renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', isFuture)}
+                                            {renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', shouldObfuscate)}
                                         </div>
                                     </div>
                                 );
@@ -180,7 +182,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 
 
                     <div className="space-y-3 pt-4 border-t border-white/10">
-                        {renderRewardList(quest.rewards, `Final ${settings.terminology.points}`, 'text-green-400')}
+                        {renderRewardList(quest.rewards, `Final ${settings.terminology.points}`, 'text-green-400', isJourneyCompleted)}
                         {renderRewardList(quest.lateSetbacks, `Late ${settings.terminology.negativePoints}`, 'text-yellow-400')}
                         {renderRewardList(quest.incompleteSetbacks, `Incomplete ${settings.terminology.negativePoints}`, 'text-red-400')}
                     </div>
@@ -196,7 +198,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                 label="To-Do"
                             />
                         )}
-                        {onComplete && (
+                        {canComplete && (
                             <Button onClick={handleComplete} disabled={isAwaitingApproval}>
                                 {buttonText}
                             </Button>
@@ -209,4 +211,3 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 };
 
 export default QuestDetailDialog;
-

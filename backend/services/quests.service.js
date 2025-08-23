@@ -230,7 +230,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
     });
 };
 
-const rejectCompletion = async (id, rejecterId, note) => {
+const rejectQuestCompletion = async (id, rejecterId, note) => {
     const completion = await completionRepo.findOne({ where: { id }, relations: ['user', 'quest'] });
     if (!completion || completion.status !== 'Pending') return null;
     
@@ -376,5 +376,5 @@ const completeCheckpoint = async (questId, userId) => {
 
 module.exports = {
     getAll, create, clone, update, deleteMany, bulkUpdateStatus, bulkUpdate, complete,
-    approveCompletion, rejectCompletion, markAsTodo, unmarkAsTodo, completeCheckpoint,
+    approveQuestCompletion, rejectQuestCompletion, markAsTodo, unmarkAsTodo, completeCheckpoint,
 };

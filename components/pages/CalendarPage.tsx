@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
@@ -497,7 +498,6 @@ const CalendarPage: React.FC = () => {
                 <CreateQuestDialog
                     initialData={createInitialData}
                     onClose={() => setIsCreateDialogOpen(false)}
-                    onJourneySaved={() => setIsCreateDialogOpen(false)}
                 />
             )}
             {chronicleDetail && (

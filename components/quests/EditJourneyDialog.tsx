@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useEconomyState } from '../../context/EconomyContext';
-import { Quest, Checkpoint, RewardItem, RewardCategory, Trophy } from '../../types';
+import { Checkpoint, RewardItem, RewardCategory, Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
@@ -10,29 +9,23 @@ import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '../user-interface/Icons';
 
 interface EditJourneyDialogProps {
-    questId: string;
+    questTitle: string;
+    initialCheckpoints: Checkpoint[];
+    onSave: (checkpoints: Checkpoint[]) => void;
     onClose: () => void;
 }
 
-const EditJourneyDialog: React.FC<EditJourneyDialogProps> = ({ questId, onClose }) => {
-    const { quests } = useQuestsState();
+const EditJourneyDialog: React.FC<EditJourneyDialogProps> = ({ questTitle, initialCheckpoints, onSave, onClose }) => {
     const { trophies } = useProgressionState();
     const { rewardTypes } = useEconomyState();
-    const { updateQuest } = useQuestsDispatch();
 
-    const [questData, setQuestData] = useState<Quest | null>(null);
     const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [deletingCheckpointId, setDeletingCheckpointId] = useState<string | null>(null);
 
     useEffect(() => {
-        const journey = quests.find(q => q.id === questId);
-        if (journey) {
-            setQuestData(journey);
-            // Deep copy checkpoints to avoid direct state mutation
-            setCheckpoints(JSON.parse(JSON.stringify(journey.checkpoints || [])));
-        }
-    }, [questId, quests]);
+        setCheckpoints(JSON.parse(JSON.stringify(initialCheckpoints)));
+    }, [initialCheckpoints]);
 
     const handleAddCheckpoint = () => {
         const newCheckpoint: Checkpoint = {
@@ -84,21 +77,17 @@ const EditJourneyDialog: React.FC<EditJourneyDialogProps> = ({ questId, onClose 
     };
 
     const handleSave = async () => {
-        if (!questData) return;
         setIsSaving(true);
-        await updateQuest({ ...questData, checkpoints });
+        onSave(checkpoints);
         setIsSaving(false);
-        onClose();
     };
 
-    if (!questData) return null;
-
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
                 <div className="p-8 border-b border-stone-700/60">
                     <h2 className="text-3xl font-medieval text-accent">Edit Journey Checkpoints</h2>
-                    <p className="text-stone-300">For: <span className="font-bold">{questData.title}</span></p>
+                    <p className="text-stone-300">For: <span className="font-bold">{questTitle}</span></p>
                 </div>
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
@@ -157,7 +146,7 @@ const EditJourneyDialog: React.FC<EditJourneyDialogProps> = ({ questId, onClose 
                 <div className="p-6 border-t border-stone-700/60 mt-auto flex justify-end space-x-4">
                     <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>
                     <Button type="button" onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? 'Saving...' : 'Save Journey'}
+                        {isSaving ? 'Saving...' : 'Confirm Checkpoints'}
                     </Button>
                 </div>
             </div>

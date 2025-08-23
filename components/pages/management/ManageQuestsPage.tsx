@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
@@ -11,7 +10,6 @@ import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
 import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
-import EditJourneyDialog from '../../quests/EditJourneyDialog';
 import { QuestTable } from '../../quests/QuestTable';
 
 const ManageQuestsPage: React.FC = () => {
@@ -27,7 +25,6 @@ const ManageQuestsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedQuests, setSelectedQuests] = useState<string[]>([]);
-    const [editingJourneyId, setEditingJourneyId] = useState<string | null>(null);
     
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
@@ -73,13 +70,9 @@ const ManageQuestsPage: React.FC = () => {
     }, [activeTab, searchTerm, sortBy]);
 
     const handleEdit = (quest: Quest) => {
-        if (quest.type === QuestType.Journey) {
-            setEditingJourneyId(quest.id);
-        } else {
-            setInitialCreateData(null);
-            setEditingQuest(quest);
-            setIsCreateDialogOpen(true);
-        }
+        setInitialCreateData(null);
+        setEditingQuest(quest);
+        setIsCreateDialogOpen(true);
     };
 
     const handleCreate = () => {
@@ -199,10 +192,8 @@ const ManageQuestsPage: React.FC = () => {
                 />
             </Card>
             
-            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} onJourneySaved={(questId) => { handleCloseDialog(); setEditingJourneyId(questId); }} />}
+            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
             
-            {editingJourneyId && <EditJourneyDialog questId={editingJourneyId} onClose={() => setEditingJourneyId(null)} />}
-
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 
             {isBulkEditDialogOpen && <BulkEditQuestsDialog questIds={selectedQuests} onClose={() => setIsBulkEditDialogOpen(false)} onSave={(updates) => bulkUpdateQuests(selectedQuests, updates)} />}

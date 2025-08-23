@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-import { Quest, QuestType, QuestKind } from '../quests/types';
+import { Quest, QuestType, QuestKind, Checkpoint } from '../quests/types';
 import { RewardItem, RewardCategory } from '../items/types';
 import { Role } from '../users/types';
 import { BugReport } from '../dev/types';
@@ -31,10 +31,9 @@ interface QuestDialogProps {
   isGenerating?: boolean;
   onSave?: (updatedData: any) => void;
   initialDataFromBug?: BugReport;
-  onJourneySaved: (questId: string) => void;
 }
 
-const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug, onJourneySaved }) => {
+const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
   const { settings } = useSystemState();
   const { guilds } = useCommunityState();
   const { allTags, questGroups } = useQuestsState();
@@ -61,6 +60,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         startTime: null, endTime: null, 
         dailyCompletionsLimit: 1, totalCompletionsLimit: 0,
         todoUserIds: [],
+        checkpoints: [],
+        checkpointCompletionTimestamps: {},
     };
 
     // Mode: Edit
@@ -140,6 +141,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(initialData?.isNewGroup && !!initialData.groupName);
   const [newGroupName, setNewGroupName] = useState(initialData?.isNewGroup ? initialData.groupName || '' : '');
+  const [isJourneyEditorOpen, setIsJourneyEditorOpen] = useState(false);
   
   const userList = initialDataFromBug ? users.filter(u => u.role === Role.DonegeonMaster) : users;
 
@@ -250,19 +252,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     if (onSave) {
         onSave(questPayload);
     } else if (mode === 'edit' && questToEdit) {
-        const updatedQuest = await updateQuest({ ...questToEdit, ...questPayload });
-        if (updatedQuest && updatedQuest.type === QuestType.Journey) {
-            onJourneySaved(updatedQuest.id);
-        } else {
-            onClose();
-        }
+        await updateQuest({ ...questToEdit, ...questPayload });
+        onClose();
     } else {
-        const newQuest = await addQuest(questPayload);
-        if (newQuest && newQuest.type === QuestType.Journey) {
-            onJourneySaved(newQuest.id);
-        } else {
-            onClose();
-        }
+        await addQuest(questPayload);
+        onClose();
     }
   };
   
@@ -394,6 +388,23 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             </div>
 
           <QuestScheduling value={formData} onChange={handleScheduleChange} />
+
+          {formData.type === QuestType.Journey && (
+            <div className="pt-4 border-t border-stone-700/60">
+                <h3 className="font-semibold text-lg text-stone-200 mb-2">Journey Checkpoints</h3>
+                <p className="text-sm text-stone-400 mb-3">
+                    A Journey is a multi-step quest. Manage its checkpoints here.
+                </p>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsJourneyEditorOpen(true)}
+                    className="w-full"
+                >
+                    Manage Checkpoints ({formData.checkpoints?.length || 0})
+                </Button>
+            </div>
+          )}
           
            <div className="flex justify-between items-center">
              <h3 className="font-semibold text-lg text-stone-200">Approval</h3>
@@ -464,6 +475,17 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         }}
         onClose={() => setIsGalleryOpen(false)}
       />
+    )}
+    {isJourneyEditorOpen && (
+        <EditJourneyDialog
+            questTitle={formData.title || 'New Journey'}
+            initialCheckpoints={formData.checkpoints || []}
+            onSave={(updatedCheckpoints: Checkpoint[]) => {
+                setFormData(p => ({ ...p, checkpoints: updatedCheckpoints }));
+                setIsJourneyEditorOpen(false);
+            }}
+            onClose={() => setIsJourneyEditorOpen(false)}
+        />
     )}
     </>
   );

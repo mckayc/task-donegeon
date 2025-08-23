@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -281,8 +282,8 @@ const SuggestionEnginePage: React.FC = () => {
                     </Card>
                 </div>
             </div>
-            {dialogToShow === 'Ventures' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Venture}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} onJourneySaved={handleCloseDialog} />}
-            {dialogToShow === 'Duties' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Duty}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} onJourneySaved={handleCloseDialog} />}
+            {dialogToShow === 'Ventures' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Venture}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
+            {dialogToShow === 'Duties' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Duty}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
             {dialogToShow === 'Items' && <EditGameAssetDialog assetToEdit={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
             {dialogToShow === 'Trophies' && <EditTrophyDialog trophy={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
             {dialogToShow === 'Markets' && <EditMarketDialog market={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}

@@ -33,7 +33,7 @@ export const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ 
 
   const handleRewardChange = (items: RewardItem[], setter: React.Dispatch<React.SetStateAction<RewardItem[]>>) => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
+    newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
     setter(newItems);
   };
   

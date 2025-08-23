@@ -182,7 +182,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
   const handleRewardChange = (category: 'rewards' | 'lateSetbacks' | 'incompleteSetbacks') => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...(formData[category] || [])];
-    newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
+    newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
     setFormData(prev => ({ ...prev, [category]: newItems }));
   };
   

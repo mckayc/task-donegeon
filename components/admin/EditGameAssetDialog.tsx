@@ -119,7 +119,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   const handleCostGroupChange = (groupIndex: number) => (itemIndex: number, field: keyof RewardItem, value: string | number) => {
     const newCostGroups = [...formData.costGroups.map(group => [...group])];
     const newGroup = newCostGroups[groupIndex];
-    newGroup[itemIndex] = { ...newGroup[itemIndex], [field]: field === 'amount' ? Math.max(1, Number(value)) : value };
+    newGroup[itemIndex] = { ...newGroup[itemIndex], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
     setFormData(p => ({ ...p, costGroups: newCostGroups }));
   };
   
@@ -142,7 +142,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
 
   const handlePayoutChange = (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...formData.payouts];
-    newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(1, Number(value)) : value };
+    newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
     setFormData(prev => ({ ...prev, payouts: newItems }));
   };
   

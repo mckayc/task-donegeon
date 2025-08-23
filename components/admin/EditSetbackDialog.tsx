@@ -88,7 +88,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
             const effect = newEffects[effectIndex];
             if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
                 const newRewards = effect.rewards;
-                newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
+                newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
                 effect.rewards = newRewards;
             }
             return { ...prev, effects: newEffects };

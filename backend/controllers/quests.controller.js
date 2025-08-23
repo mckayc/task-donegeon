@@ -48,7 +48,7 @@ const approveQuestCompletion = async (req, res) => {
     const { id } = req.params;
     const { approverId, note } = req.body;
     try {
-        const result = await questService.approveCompletion(id, approverId, note);
+        const result = await questService.approveQuestCompletion(id, approverId, note);
         if (!result) return res.status(404).json({ error: 'Completion not found or not pending.' });
         res.json(result);
     } catch (error) {
@@ -62,7 +62,7 @@ const approveQuestCompletion = async (req, res) => {
 const rejectQuestCompletion = async (req, res) => {
     const { id } = req.params;
     const { rejecterId, note } = req.body;
-    const result = await questService.rejectCompletion(id, rejecterId, note);
+    const result = await questService.rejectQuestCompletion(id, rejecterId, note);
     if (!result) return res.status(404).json({ error: 'Completion not found or not pending.' });
     res.json(result);
 };

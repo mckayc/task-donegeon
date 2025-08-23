@@ -1,5 +1,4 @@
 
-
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent } from '../types';
 import { AppMode } from '../types/app';
 
@@ -160,16 +159,17 @@ export const isQuestAvailableForUser = (
   }
 
   // Journey-specific logic
-  if (quest.type === QuestType.Journey) {
-    if (!onVacation && quest.endDateTime && today > new Date(quest.endDateTime)) {
-        return false; // Past final deadline
+    if (quest.type === QuestType.Journey) {
+        if (!onVacation && quest.endDateTime && today > new Date(quest.endDateTime)) {
+            return false; // Past final deadline
+        }
+        // A journey is available if not all checkpoints have a completion record.
+        const totalCheckpoints = quest.checkpoints?.length || 0;
+        if (totalCheckpoints === 0) return false; // Not a valid journey
+        
+        // Each checkpoint completion creates a QuestCompletion record.
+        return questUserCompletions.length < totalCheckpoints;
     }
-    // A journey is available as long as it hasn't been fully completed
-    const user = { id: userCompletions[0]?.userId }; // A bit of a hack to get userId
-    const completed = Object.keys(quest.checkpointCompletionTimestamps?.[user.id] || {}).length;
-    const total = quest.checkpoints?.length || 0;
-    return completed < total;
-  }
   
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {

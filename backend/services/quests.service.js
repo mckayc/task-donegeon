@@ -308,10 +308,15 @@ const completeCheckpoint = async (questId, userId) => {
         }
         
         const updatedUser = await manager.save(updateTimestamps(user));
-        const updatedQuest = await manager.save(updateTimestamps(quest));
+        await manager.save(updateTimestamps(quest));
+        
+        // **BUG FIX**: Refetch the quest with its relations before returning
+        const finalUpdatedQuest = await manager.findOne(QuestEntity, { where: { id: questId }, relations: ['assignedUsers'] });
+        const { assignedUsers, ...restOfQuest } = finalUpdatedQuest;
+        const updatedQuestForFrontend = { ...restOfQuest, assignedUserIds: assignedUsers.map(u => u.id) };
 
         updateEmitter.emit('update');
-        return { updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications };
+        return { updatedUser, updatedQuest: updatedQuestForFrontend, newCompletion, newUserTrophies, newNotifications };
     });
 };
 

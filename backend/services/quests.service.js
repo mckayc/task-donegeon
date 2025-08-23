@@ -142,114 +142,133 @@ const complete = async (completionData) => {
 };
 
 const approveQuestCompletion = async (id, approverId, note) => {
-    return await dataSource.transaction(async manager => {
-        const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
-        if (!completion || completion.status !== 'Pending') {
-            console.error(`[Approval] Completion not found or not pending for ID: ${id}`);
-            return null;
-        }
+    try {
+        console.log(`[APPROVE_QUEST] Starting approval for completionId: ${id}, approverId: ${approverId}`);
+        return await dataSource.transaction(async manager => {
+            const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
+            
+            console.log('[APPROVE_QUEST] Fetched completion object:', JSON.stringify(completion, null, 2));
+            if (!completion || completion.status !== 'Pending') {
+                console.error(`[APPROVE_QUEST] Completion not found or not pending for ID: ${id}`);
+                return null;
+            }
 
-        const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
-        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
-        const isSelfApproval = completion.user.id === approverId;
+            const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
+            const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+            const isSelfApproval = completion.user.id === approverId;
 
-        if (isSelfApproval && !settings.security.allowAdminSelfApproval) {
-            const adminCount = await manager.count(UserEntity, { where: { role: 'Donegeon Master' } });
-            if (adminCount > 1) throw new Error('Self-approval is disabled. Another administrator must approve this quest.');
-        }
+            if (isSelfApproval && !settings.security.allowAdminSelfApproval) {
+                const adminCount = await manager.count(UserEntity, { where: { role: 'Donegeon Master' } });
+                if (adminCount > 1) throw new Error('Self-approval is disabled. Another administrator must approve this quest.');
+            }
 
-        completion.status = 'Approved';
-        completion.actedById = approverId;
-        completion.actedAt = new Date().toISOString();
-        if (note) completion.note = `${completion.note ? `${completion.note}\n` : ''}Approver note: ${note}`;
-        
-        const updatedCompletion = await manager.save(updateTimestamps(completion));
-        
-        const { user, quest } = completion;
-        
-        if (user && quest) {
-            const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
-            const isGuildScope = !!completion.guildId;
+            completion.status = 'Approved';
+            completion.actedById = approverId;
+            completion.actedAt = new Date().toISOString();
+            if (note) completion.note = `${completion.note ? `${completion.note}\n` : ''}Approver note: ${note}`;
+            
+            const updatedCompletion = await manager.save(updateTimestamps(completion));
+            
+            const { user, quest } = completion;
+            
+            console.log('[APPROVE_QUEST] User:', user?.gameName, 'Quest:', quest?.title);
 
-            // Safely get and initialize balances if they don't exist.
-            // This is a direct reference to the object on the user entity.
-            const balances = (() => {
-                if (isGuildScope) {
-                    if (!user.guildBalances) user.guildBalances = {};
-                    if (!user.guildBalances[completion.guildId]) {
-                        user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
+            if (user && quest) {
+                const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+                const isGuildScope = !!completion.guildId;
+
+                console.log(`[APPROVE_QUEST] User balances BEFORE applying rewards:`, JSON.stringify({ personal: user.personalPurse, guild: user.guildBalances }, null, 2));
+
+                const balances = (() => {
+                    if (isGuildScope) {
+                        if (!user.guildBalances) user.guildBalances = {};
+                        if (!user.guildBalances[completion.guildId]) user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
+                        user.guildBalances[completion.guildId].purse = user.guildBalances[completion.guildId].purse || {};
+                        user.guildBalances[completion.guildId].experience = user.guildBalances[completion.guildId].experience || {};
+                        return user.guildBalances[completion.guildId];
                     }
-                    // Ensure sub-objects exist
-                    user.guildBalances[completion.guildId].purse = user.guildBalances[completion.guildId].purse || {};
-                    user.guildBalances[completion.guildId].experience = user.guildBalances[completion.guildId].experience || {};
-                    return user.guildBalances[completion.guildId];
-                } else {
-                    // For personal scope, ensure the purse/experience objects are not null before returning
                     user.personalPurse = user.personalPurse || {};
                     user.personalExperience = user.personalExperience || {};
                     return { purse: user.personalPurse, experience: user.personalExperience };
-                }
-            })();
+                })();
 
-            const applyRewards = (rewardsToApply) => {
-                if (!rewardsToApply || !Array.isArray(rewardsToApply)) return;
-                rewardsToApply.forEach(reward => {
-                    const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                    if (rewardDef) {
-                        const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                        target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
-                    }
-                });
-            };
+                const applyRewards = (rewardsToApply) => {
+                    if (!rewardsToApply || !Array.isArray(rewardsToApply)) return;
+                    rewardsToApply.forEach(reward => {
+                        const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                        if (rewardDef) {
+                            const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                            target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+                        }
+                    });
+                };
 
-            const manuallyAwardedTrophies = [];
+                const manuallyAwardedTrophies = [];
 
-            if (quest.type === 'Journey') {
-                if (completion.checkpointId && Array.isArray(quest.checkpoints)) {
-                    const checkpoint = quest.checkpoints.find(cp => cp && typeof cp === 'object' && cp.id === completion.checkpointId);
-                    if (checkpoint) {
-                        applyRewards(checkpoint.rewards);
-                        if (checkpoint.trophyId) {
-                            const trophyExists = await manager.countBy(TrophyEntity, { id: checkpoint.trophyId });
-                            if (trophyExists > 0) {
-                                const newTrophy = manager.create(UserTrophyEntity, {
-                                    id: `usertrophy-${Date.now()}-${Math.random()}`, userId: user.id, trophyId: checkpoint.trophyId,
-                                    awardedAt: new Date().toISOString(), guildId: quest.guildId || undefined
-                                });
-                                manuallyAwardedTrophies.push(await manager.save(updateTimestamps(newTrophy, true)));
+                if (quest.type === 'Journey') {
+                    console.log('[APPROVE_QUEST] Handling Journey checkpoint.');
+                    console.log('[APPROVE_QUEST] Completion checkpointId:', completion.checkpointId);
+                    console.log('[APPROVE_QUEST] Quest checkpoints available:', JSON.stringify(quest.checkpoints, null, 2));
+
+                    if (completion.checkpointId && Array.isArray(quest.checkpoints)) {
+                        const checkpoint = quest.checkpoints.find(cp => cp && typeof cp === 'object' && cp.id === completion.checkpointId);
+                        
+                        if (checkpoint) {
+                            console.log('[APPROVE_QUEST] Found matching checkpoint:', JSON.stringify(checkpoint, null, 2));
+                            applyRewards(checkpoint.rewards);
+                            if (checkpoint.trophyId) {
+                                const trophyExists = await manager.countBy(TrophyEntity, { id: checkpoint.trophyId });
+                                if (trophyExists > 0) {
+                                    const newTrophy = manager.create(UserTrophyEntity, {
+                                        id: `usertrophy-${Date.now()}-${Math.random()}`, userId: user.id, trophyId: checkpoint.trophyId,
+                                        awardedAt: new Date().toISOString(), guildId: quest.guildId || undefined
+                                    });
+                                    manuallyAwardedTrophies.push(await manager.save(updateTimestamps(newTrophy, true)));
+                                }
                             }
+                        } else {
+                            console.error(`[APPROVE_QUEST] CRITICAL: Checkpoint with ID "${completion.checkpointId}" NOT FOUND in quest "${quest.title}".`);
+                            throw new Error(`Checkpoint not found for ID: ${completion.checkpointId}`);
                         }
                     } else {
-                        console.warn(`[Approval] Checkpoint ID "${completion.checkpointId}" not found for quest "${quest.title}". Skipping checkpoint rewards.`);
+                         console.warn(`[APPROVE_QUEST] Journey quest approval is missing checkpointId or quest.checkpoints is invalid.`);
                     }
-                }
 
-                const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
-                if (Array.isArray(quest.checkpoints) && quest.checkpoints.length > 0 && approvedCount === quest.checkpoints.length) {
-                    console.log(`[Approval] Final checkpoint approved for Journey "${quest.title}". Applying main quest rewards.`);
+                    const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
+                    if (Array.isArray(quest.checkpoints) && quest.checkpoints.length > 0 && approvedCount === quest.checkpoints.length) {
+                        console.log(`[APPROVE_QUEST] Final checkpoint approved for Journey "${quest.title}". Applying main quest rewards.`);
+                        applyRewards(quest.rewards);
+                    }
+                } else {
                     applyRewards(quest.rewards);
                 }
+                
+                console.log(`[APPROVE_QUEST] User balances AFTER applying rewards:`, JSON.stringify({ personal: user.personalPurse, guild: user.guildBalances }, null, 2));
+
+                const updatedUser = await manager.save(updateTimestamps(user));
+                const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
+                
+                newUserTrophies.push(...manuallyAwardedTrophies);
+
+                const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: ['user', 'quest'] });
+
+                console.log(`[APPROVE_QUEST] Successfully completed approval for completionId: ${id}`);
+                updateEmitter.emit('update');
+                return { updatedUser, updatedCompletion: finalCompletion, newUserTrophies, newNotifications };
             } else {
-                applyRewards(quest.rewards);
+                console.error(`[APPROVE_QUEST] User or Quest was missing for completion ID: ${id}`);
+                updateEmitter.emit('update');
+                return { updatedCompletion };
             }
-
-            // The user object has been mutated directly by reference, so we just need to save it.
-            const updatedUser = await manager.save(updateTimestamps(user));
-            const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
-            
-            newUserTrophies.push(...manuallyAwardedTrophies);
-
-            const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: ['user', 'quest'] });
-
-            updateEmitter.emit('update');
-            return { updatedUser, updatedCompletion: finalCompletion, newUserTrophies, newNotifications };
-        } else {
-            console.error(`[Approval] User or Quest was missing for completion ID: ${id}`);
-            updateEmitter.emit('update');
-            return { updatedCompletion };
-        }
-    });
+        });
+    } catch (error) {
+        console.error(`[APPROVE_QUEST] FATAL ERROR during approval for completionId: ${id}`);
+        console.error('[APPROVE_QUEST] Error Message:', error.message);
+        console.error('[APPROVE_QUEST] Error Stack:', error.stack);
+        throw error; // Re-throw to ensure transaction fails and server returns 500
+    }
 };
+
 
 const rejectQuestCompletion = async (id, rejecterId, note) => {
     const completion = await completionRepo.findOne({ where: { id }, relations: ['user', 'quest'] });

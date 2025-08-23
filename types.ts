@@ -1,3 +1,19 @@
+import { GenerateContentResponse } from "@google/genai";
+import { User, UserTemplate, AdminAdjustment } from './components/users/types';
+import { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from './components/items/types';
+import { Quest, QuestGroup, QuestCompletion } from './components/quests/types';
+import { Trophy, UserTrophy } from './components/trophies/types';
+import { Rank } from './components/ranks/types';
+import { Rotation } from './components/rotations/types';
+import { Guild } from './components/guilds/types';
+import { ModifierDefinition, AppliedModifier } from './components/modifiers/types';
+import { ScheduledEvent } from './components/events/types';
+import { SystemLog, SystemNotification } from './components/system/types';
+import { ChatMessage } from './components/chat/types';
+import { BugReport } from './components/dev/types';
+import { TradeOffer, Gift } from './components/trading/types';
+import { ThemeDefinition } from './components/themes/types';
+import { AppSettings } from './types/app';
 
 // Re-export all the modularized types
 export * from './components/users/types';
@@ -24,30 +40,30 @@ export * from './types/app';
 // MASTER DATA INTERFACE (Aggregator)
 
 export interface IAppData {
-  users: import('./components/users/types').User[];
-  quests: import('./components/quests/types').Quest[];
-  questGroups: import('./components/quests/types').QuestGroup[];
-  markets: import('./components/items/types').Market[];
-  rewardTypes: import('./components/items/types').RewardTypeDefinition[];
-  questCompletions: import('./components/quests/types').QuestCompletion[];
-  purchaseRequests: import('./components/items/types').PurchaseRequest[];
-  guilds: import('./components/guilds/types').Guild[];
-  ranks: import('./components/ranks/types').Rank[];
-  trophies: import('./components/trophies/types').Trophy[];
-  userTrophies: import('./components/trophies/types').UserTrophy[];
-  adminAdjustments: import('./components/users/types').AdminAdjustment[];
-  gameAssets: import('./components/items/types').GameAsset[];
-  systemLogs: import('./components/system/types').SystemLog[];
-  settings: import('./types/app').AppSettings;
-  themes: import('./components/themes/types').ThemeDefinition[];
+  users: User[];
+  quests: Quest[];
+  questGroups: QuestGroup[];
+  markets: Market[];
+  rewardTypes: RewardTypeDefinition[];
+  questCompletions: QuestCompletion[];
+  purchaseRequests: PurchaseRequest[];
+  guilds: Guild[];
+  ranks: Rank[];
+  trophies: Trophy[];
+  userTrophies: UserTrophy[];
+  adminAdjustments: AdminAdjustment[];
+  gameAssets: GameAsset[];
+  systemLogs: SystemLog[];
+  settings: AppSettings;
+  themes: ThemeDefinition[];
   loginHistory: string[];
-  chatMessages: import('./components/chat/types').ChatMessage[];
-  systemNotifications: import('./components/system/types').SystemNotification[];
-  scheduledEvents: import('./components/events/types').ScheduledEvent[];
-  rotations: import('./components/rotations/types').Rotation[];
-  bugReports: import('./components/dev/types').BugReport[];
-  modifierDefinitions: import('./components/modifiers/types').ModifierDefinition[];
-  appliedModifiers: import('./components/modifiers/types').AppliedModifier[];
-  tradeOffers: import('./components/trading/types').TradeOffer[];
-  gifts: import('./components/trading/types').Gift[];
+  chatMessages: ChatMessage[];
+  systemNotifications: SystemNotification[];
+  scheduledEvents: ScheduledEvent[];
+  rotations: Rotation[];
+  bugReports: BugReport[];
+  modifierDefinitions: ModifierDefinition[];
+  appliedModifiers: AppliedModifier[];
+  tradeOffers: TradeOffer[];
+  gifts: Gift[];
 }

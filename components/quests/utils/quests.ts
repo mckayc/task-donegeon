@@ -285,3 +285,17 @@ export const questSorter = (user: User, allCompletions: QuestCompletion[], sched
     }
     return 0;
 };
+
+
+export const getDueDateString = (quest: Quest): string | null => {
+    if (quest.type === QuestType.Venture && quest.startDateTime) {
+        return `Due: ${new Date(quest.startDateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+    }
+    if (quest.type === QuestType.Duty && quest.startTime) {
+        const [hours, minutes] = quest.startTime.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes);
+        return `Due at: ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    return null;
+};

@@ -59,7 +59,6 @@ const ManageRotationsPage: React.FC = () => {
                  {selectedRotations.length > 0 && (
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedRotations.length} selected</span>
-                        <Button size="sm" variant="secondary" onClick={() => handleRunRotation(selectedRotations[0])} disabled={selectedRotations.length !== 1}>Run Now</Button>
                         <Button size="sm" variant="secondary" onClick={() => handleEdit(rotations.find(r => r.id === selectedRotations[0])!)} disabled={selectedRotations.length !== 1}>Edit</Button>
                         <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedRotations)}>Delete</Button>
                     </div>

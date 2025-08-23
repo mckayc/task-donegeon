@@ -1,11 +1,10 @@
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import Button from '../user-interface/Button';
-import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, MarketOpenStatus } from '../items/types';
-import { ScheduledEvent } from '../events/types';
+import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, MarketOpenStatus } from '../../types';
+import { ScheduledEvent } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
 import { isMarketOpenForUser } from '../markets/utils/markets';
@@ -230,10 +229,14 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 
 const MarketplacePage: React.FC = () => {
-    const { settings, appliedModifiers, modifierDefinitions, scheduledEvents } = useSystemState();
-    const { quests, questCompletions } = useQuestsState();
-    const { ranks } = useProgressionState();
-    const { markets } = useEconomyState();
+    const systemState = useSystemState();
+    const questsState = useQuestsState();
+    const progressionState = useProgressionState();
+    const economyState = useEconomyState();
+    const { settings, appliedModifiers, modifierDefinitions, scheduledEvents } = systemState;
+    const { quests, questCompletions } = questsState;
+    const { ranks } = progressionState;
+    const { markets } = economyState;
     const { currentUser } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
     const { appMode, activeMarketId } = useUIState();
@@ -241,8 +244,10 @@ const MarketplacePage: React.FC = () => {
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     
     const marketDependencies = useMemo(() => ({
-        appliedModifiers, modifierDefinitions, quests, ranks, questCompletions
-    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions]);
+        ...systemState,
+        ...questsState,
+        ...progressionState,
+    } as IAppData), [systemState, questsState, progressionState]);
 
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];

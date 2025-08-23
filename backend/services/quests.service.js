@@ -181,7 +181,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
 
             const manuallyAwardedTrophies = [];
 
-            if (quest.type === 'Journey' && completion.checkpointId) {
+            if (quest.type === 'Journey' && completion.checkpointId && Array.isArray(quest.checkpoints)) {
                 const checkpoint = quest.checkpoints.find(cp => cp.id === completion.checkpointId);
                 if (checkpoint) {
                     applyRewards(checkpoint.rewards); // Apply checkpoint-specific rewards

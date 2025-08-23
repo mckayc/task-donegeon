@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -8,7 +7,7 @@ import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { Role } from '../users/types';
-import { QuestType, Quest, QuestKind } from '../quests/types';
+import { QuestType, Quest, QuestKind, QuestCompletionStatus } from '../quests/types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../quests/utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -71,6 +70,13 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
     const isTodo = quest.type === QuestType.Venture && (quest.todoUserIds || []).includes(currentUser.id);
+    const isInProgressJourney = useMemo(() => {
+        if (quest.type !== QuestType.Journey || !currentUser) return false;
+        const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
+        const total = quest.checkpoints?.length || 0;
+        return completed > 0 && completed < total;
+    }, [quest, currentUser]);
+
     const isRedemption = quest.kind === QuestKind.Redemption;
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
     const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
@@ -100,7 +106,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     
     if (isRedemption) {
         borderClass = 'border-slate-400 ring-2 ring-slate-400/50';
-    } else if (isTodo) {
+    } else if (isTodo || isInProgressJourney) {
         borderClass = 'border-purple-500 ring-2 ring-purple-500/50';
     } else if (deadline) {
       borderClass = isOverdue ? 'border-red-600' : 'border-green-600';
@@ -132,9 +138,10 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
     
     const progressHeader = useMemo(() => {
-        if (quest.type !== QuestType.Journey || !quest.checkpoints || quest.checkpoints.length === 0) return null;
+        if (quest.type !== QuestType.Journey || !quest.checkpoints || quest.checkpoints.length === 0 || !currentUser) return null;
         const completed = Object.keys(quest.checkpointCompletionTimestamps?.[currentUser.id] || {}).length;
         const total = quest.checkpoints.length;
+        if (completed >= total) return "Journey Complete!";
         return `Checkpoint ${completed + 1} / ${total}`;
     }, [quest, currentUser]);
 
@@ -255,9 +262,14 @@ const QuestsPage: React.FC = () => {
         }
     };
 
-    const handleStartCompletion = (quest: Quest) => {
-        setCompletingQuest(quest);
-        setSelectedQuest(null);
+    const handleStartCompletion = (questToComplete: Quest) => {
+        if (questToComplete.type === QuestType.Journey) {
+            // Journeys are handled via the detail dialog's internal logic
+            setSelectedQuest(questToComplete);
+        } else {
+            setCompletingQuest(questToComplete);
+            setSelectedQuest(null);
+        }
     };
 
     const sortedQuests = useMemo(() => {

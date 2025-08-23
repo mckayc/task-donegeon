@@ -246,6 +246,15 @@ const completeCheckpoint = async (questId, userId) => {
         const quest = await manager.findOneBy(QuestEntity, { id: questId });
         if (!user || !quest) throw new Error('User or Quest not found');
 
+        if (quest.requiresApproval) {
+            const existingCompletions = await manager.find(QuestCompletionEntity, {
+                where: { user: { id: userId }, quest: { id: questId }, status: 'Pending' }
+            });
+            if (existingCompletions.length > 0) {
+                throw new Error('A previous checkpoint is still pending approval and must be approved before you can continue.');
+            }
+        }
+
         if (!quest.checkpoints || quest.checkpoints.length === 0) {
             throw new Error('Quest is not a valid Journey or has no checkpoints.');
         }
@@ -271,7 +280,7 @@ const completeCheckpoint = async (questId, userId) => {
             quest: quest,
             user: user,
             completedAt: now,
-            status: 'Approved',
+            status: quest.requiresApproval ? 'Pending' : 'Approved',
             note: `Completed checkpoint: "${checkpoint.description}"`,
             guildId: quest.guildId
         });
@@ -310,7 +319,6 @@ const completeCheckpoint = async (questId, userId) => {
         const updatedUser = await manager.save(updateTimestamps(user));
         await manager.save(updateTimestamps(quest));
         
-        // **BUG FIX**: Refetch the quest with its relations before returning
         const finalUpdatedQuest = await manager.findOne(QuestEntity, { where: { id: questId }, relations: ['assignedUsers'] });
         const { assignedUsers, ...restOfQuest } = finalUpdatedQuest;
         const updatedQuestForFrontend = { ...restOfQuest, assignedUserIds: assignedUsers.map(u => u.id) };

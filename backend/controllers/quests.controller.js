@@ -90,7 +90,7 @@ const completeCheckpoint = async (req, res) => {
         if (error.message.includes('not found') || error.message.includes('invalid')) {
             return res.status(404).json({ error: error.message });
         }
-        if (error.message.includes('already completed')) {
+        if (error.message.includes('already completed') || error.message.includes('pending approval')) {
             return res.status(400).json({ error: error.message });
         }
         throw error;

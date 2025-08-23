@@ -227,6 +227,7 @@ const QuestCompletionEntity = new EntitySchema({
         guildId: { type: "varchar", nullable: true },
         actedById: { type: "varchar", nullable: true },
         actedAt: { type: "varchar", nullable: true },
+        checkpointId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     },

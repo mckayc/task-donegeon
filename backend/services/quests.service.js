@@ -235,7 +235,10 @@ const approveQuestCompletion = async (id, approverId, note) => {
                     }
 
                     const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
-                    if (Array.isArray(quest.checkpoints) && quest.checkpoints.length > 0 && approvedCount === quest.checkpoints.length) {
+                    const totalCheckpoints = Array.isArray(quest.checkpoints) ? quest.checkpoints.length : 0;
+                    
+                    // The current completion is now approved, so its included in the count.
+                    if (totalCheckpoints > 0 && approvedCount === totalCheckpoints) {
                         console.log(`[APPROVE_QUEST] Final checkpoint approved for Journey "${quest.title}". Applying main quest rewards.`);
                         applyRewards(quest.rewards);
                     }

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -18,11 +16,12 @@ import { useSystemState } from '../../context/SystemContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 
-type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
+type AssetType = 'Duties' | 'Ventures' | 'Journeys' | 'Trophies' | 'Items' | 'Markets';
 
 const assetTypeConfig: { [key in AssetType]: { icon: string; description: string; termKey: keyof Terminology } } = {
     Ventures: { icon: '🗺️', description: 'One-time tasks or projects.', termKey: 'singleTasks' },
     Duties: { icon: '🔄', description: 'Recurring daily or weekly tasks.', termKey: 'recurringTasks' },
+    Journeys: { icon: '🧭', description: 'Multi-step adventures.', termKey: 'journeys' },
     Items: { icon: '⚔️', description: 'Virtual goods for the marketplace.', termKey: 'link_manage_items' },
     Trophies: { icon: '🏆', description: 'Achievements for users to earn.', termKey: 'awards' },
     Markets: { icon: '🛒', description: 'Themed stores for selling items.', termKey: 'stores' },
@@ -107,6 +106,7 @@ const SuggestionEnginePage: React.FC = () => {
                 }, required: ['title', 'description', 'icon'] };
             case 'Duties':
             case 'Ventures':
+            case 'Journeys':
                 return questSchema;
             case 'Trophies':
                 return { type: Type.OBJECT, properties: {
@@ -129,12 +129,12 @@ const SuggestionEnginePage: React.FC = () => {
         if (!prompt.trim()) { setError('Please enter a prompt to generate assets.'); return; }
         setIsLoading(true); setError('');
         
-        const assetTypeName = assetType === 'Duties' ? 'Duties (recurring tasks)' : assetType === 'Ventures' ? 'Ventures (one-time projects)' : assetType;
+        const assetTypeName = assetType === 'Duties' ? 'Duties (recurring tasks)' : assetType === 'Ventures' ? 'Ventures (one-time projects)' : assetType === 'Journeys' ? 'Journeys (multi-step quests)' : assetType;
         const rewardNames = rewardTypes.map(rt => rt.name).join(', ');
         const groupNames = questGroups.map(g => g.name).join(', ');
         
         let specificInstructions = '';
-        if (assetType === 'Duties' || assetType === 'Ventures') {
+        if (assetType === 'Duties' || assetType === 'Ventures' || assetType === 'Journeys') {
             specificInstructions = `For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}).
             
             Here is a list of existing Quest Groups: "${groupNames}". For each idea, suggest the most appropriate group from this list. If none of the existing groups seem appropriate, suggest a suitable new group name and indicate it's a new group by setting the isNewGroup flag to true.`;
@@ -284,6 +284,7 @@ const SuggestionEnginePage: React.FC = () => {
             </div>
             {dialogToShow === 'Ventures' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Venture}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
             {dialogToShow === 'Duties' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Duty}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
+            {dialogToShow === 'Journeys' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Journey}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
             {dialogToShow === 'Items' && <EditGameAssetDialog assetToEdit={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
             {dialogToShow === 'Trophies' && <EditTrophyDialog trophy={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
             {dialogToShow === 'Markets' && <EditMarketDialog market={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}

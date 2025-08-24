@@ -93,11 +93,12 @@ export const isQuestVisibleToUserInMode = (
     if (appMode.mode !== 'personal') return false;
   }
   
-  // Assignment check - An empty list means it's not assigned to anyone yet.
+  // Assignment check - An empty list means it's available to ALL users in scope.
   if (quest.assignedUserIds.length === 0) {
-    return false;
+    return true;
   }
   
+  // If the list is not empty, the user must be in it.
   return quest.assignedUserIds.includes(userId);
 };
 

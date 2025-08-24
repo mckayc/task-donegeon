@@ -4,6 +4,7 @@ import { Rotation, Terminology } from '../../types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { PencilIcon, PlayIcon, TrashIcon } from '../user-interface/Icons';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface RotationTableProps {
     rotations: Rotation[];
@@ -11,7 +12,7 @@ interface RotationTableProps {
     onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSelectOne: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void;
     onEdit: (rotation: Rotation) => void;
-    onRun: (rotationId: string) => void;
+    onStatusChange: (rotation: Rotation, isActive: boolean) => void;
     onDeleteRequest: (ids: string[]) => void;
     terminology: Terminology;
     onCreate: () => void;
@@ -23,10 +24,10 @@ const RotationTable: React.FC<RotationTableProps> = ({
     onSelectAll,
     onSelectOne,
     onEdit,
-    onRun,
+    onStatusChange,
     onDeleteRequest,
     terminology,
-    onCreate
+    onCreate,
 }) => {
     if (rotations.length === 0) {
         return (
@@ -53,8 +54,9 @@ const RotationTable: React.FC<RotationTableProps> = ({
                             />
                         </th>
                         <th className="p-4 font-semibold">Name</th>
-                        <th className="p-4 font-semibold">Description</th>
+                        <th className="p-4 font-semibold">Status</th>
                         <th className="p-4 font-semibold">Frequency</th>
+                        <th className="p-4 font-semibold">Next Up</th>
                         <th className="p-4 font-semibold">Actions</th>
                     </tr>
                 </thead>
@@ -74,13 +76,17 @@ const RotationTable: React.FC<RotationTableProps> = ({
                                     {rotation.name}
                                  </button>
                             </td>
-                            <td className="p-4 text-stone-400">{rotation.description}</td>
+                            <td className="p-4">
+                                <ToggleSwitch
+                                    enabled={rotation.isActive}
+                                    setEnabled={(isActive) => onStatusChange(rotation, isActive)}
+                                    label={rotation.isActive ? 'Active' : 'Inactive'}
+                                />
+                            </td>
                             <td className="p-4 text-stone-300 capitalize">{rotation.frequency.toLowerCase()}</td>
+                             <td className="p-4 text-stone-400 text-sm">User {rotation.lastUserIndex + 2}, Quest {rotation.lastQuestIndex + 2}</td>
                             <td className="p-4">
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" title="Run Now" onClick={() => onRun(rotation.id)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                        <PlayIcon className="w-4 h-4" />
-                                    </Button>
                                     <Button variant="ghost" size="icon" title="Edit" onClick={() => onEdit(rotation)} className="h-8 w-8 text-stone-400 hover:text-white">
                                         <PencilIcon className="w-4 h-4" />
                                     </Button>

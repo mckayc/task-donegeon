@@ -14,6 +14,9 @@ export interface Rotation {
   lastUserIndex: number;
   // Tracks the index of the last quest assigned a quest in the questIds array.
   lastQuestIndex: number;
+  isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

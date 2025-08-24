@@ -375,6 +375,9 @@ const RotationEntity = new EntitySchema({
         lastAssignmentDate: { type: "varchar", nullable: true },
         lastUserIndex: { type: "integer" },
         lastQuestIndex: { type: "integer" },
+        isActive: { type: "boolean", default: true },
+        startDate: { type: "varchar", nullable: true },
+        endDate: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     }

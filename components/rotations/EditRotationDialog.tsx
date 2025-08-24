@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { Rotation, Quest, User } from '../../types';
@@ -6,6 +7,7 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import RotationQuestCard from './RotationQuestCard';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface EditRotationDialogProps {
     rotationToEdit: Rotation | null;
@@ -22,18 +24,24 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
     const { quests } = useQuestsState();
     const { users } = useAuthState();
 
-    const [formData, setFormData] = useState<Omit<Rotation, 'id' | 'createdAt' | 'updatedAt' | 'lastAssignmentDate'>>({
+    const [formData, setFormData] = useState<Omit<Rotation, 'id' | 'createdAt' | 'updatedAt'>>({
         name: '',
         description: '',
         questIds: [],
         userIds: [],
         activeDays: [1, 2, 3, 4, 5], // Default to weekdays
         frequency: 'DAILY',
+        lastAssignmentDate: null,
         lastUserIndex: -1,
         lastQuestIndex: -1,
+        isActive: true,
+        startDate: null,
+        endDate: null,
     });
     
     const [questSearchTerm, setQuestSearchTerm] = useState('');
+    const [useStartDate, setUseStartDate] = useState(!!rotationToEdit?.startDate);
+    const [useEndDate, setUseEndDate] = useState(!!rotationToEdit?.endDate);
 
     useEffect(() => {
         if (rotationToEdit) {
@@ -44,12 +52,30 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                 userIds: rotationToEdit.userIds,
                 activeDays: rotationToEdit.activeDays,
                 frequency: rotationToEdit.frequency,
+                lastAssignmentDate: rotationToEdit.lastAssignmentDate,
                 lastUserIndex: rotationToEdit.lastUserIndex,
                 lastQuestIndex: rotationToEdit.lastQuestIndex,
+                isActive: rotationToEdit.isActive,
+                startDate: rotationToEdit.startDate,
+                endDate: rotationToEdit.endDate,
             });
+            setUseStartDate(!!rotationToEdit.startDate);
+            setUseEndDate(!!rotationToEdit.endDate);
         }
     }, [rotationToEdit]);
     
+     useEffect(() => {
+        if (!useStartDate) {
+            setFormData(p => ({ ...p, startDate: null }));
+        }
+    }, [useStartDate]);
+
+    useEffect(() => {
+        if (!useEndDate) {
+            setFormData(p => ({ ...p, endDate: null }));
+        }
+    }, [useEndDate]);
+
     const filteredQuests = useMemo(() => {
         return quests.filter(q => q.title.toLowerCase().includes(questSearchTerm.toLowerCase()));
     }, [quests, questSearchTerm]);
@@ -74,10 +100,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const finalData = {
-            ...formData,
-            lastAssignmentDate: null,
-        };
+        const finalData = { ...formData };
 
         if (rotationToEdit) {
             updateRotation({ ...rotationToEdit, ...finalData });
@@ -117,7 +140,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-5xl w-full max-h-[90vh] flex flex-col">
+            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-7xl w-full max-h-[90vh] flex flex-col">
                 <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
                 <form id="rotation-form" onSubmit={handleSubmit} className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-hidden">
                     {/* Left Column: Configuration */}
@@ -166,6 +189,20 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                                         {day.label}
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+
+                         <div className="p-4 bg-stone-900/50 rounded-lg">
+                            <h3 className="font-semibold text-stone-200 mb-2">Schedule Window (Optional)</h3>
+                            <div className="space-y-4">
+                                <ToggleSwitch label="Set a Start Date" enabled={useStartDate} setEnabled={setUseStartDate} />
+                                {useStartDate && (
+                                    <Input label="Start Date" type="date" value={formData.startDate || ''} onChange={e => setFormData(p => ({...p, startDate: e.target.value}))} />
+                                )}
+                                <ToggleSwitch label="Set an End Date" enabled={useEndDate} setEnabled={setUseEndDate} />
+                                {useEndDate && (
+                                    <Input label="End Date" type="date" value={formData.endDate || ''} onChange={e => setFormData(p => ({...p, endDate: e.target.value}))} />
+                                )}
                             </div>
                         </div>
 

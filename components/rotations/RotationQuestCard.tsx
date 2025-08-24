@@ -25,12 +25,12 @@ const RotationQuestCard: React.FC<RotationQuestCardProps> = ({ quest, isSelected
                 onChange={onToggle}
                 className="mt-1 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
             />
-            <div className="flex-grow">
+            <div className="flex-grow min-w-0">
                 <p className="font-semibold text-stone-200 flex items-center gap-2">
                     <span>{quest.icon}</span>
-                    <span className="truncate" title={quest.title}>{quest.title}</span>
+                    <span className="whitespace-normal break-words">{quest.title}</span>
                 </p>
-                <p className="text-xs text-stone-400 truncate mt-1" title={quest.description}>
+                <p className="text-xs text-stone-400 whitespace-normal break-words mt-1">
                     {quest.description}
                 </p>
                 <div className="flex items-center gap-2 mt-2">

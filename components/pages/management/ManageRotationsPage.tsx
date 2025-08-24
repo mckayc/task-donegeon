@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Rotation } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -14,7 +15,7 @@ const ManageRotationsPage: React.FC = () => {
     const { settings } = useSystemState();
     const { rotations } = useQuestsState();
     const { deleteSelectedAssets } = useSystemDispatch();
-    const { runRotation } = useQuestsDispatch();
+    const { runRotation, updateRotation } = useQuestsDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRotation, setEditingRotation] = useState<Rotation | null>(null);
@@ -45,9 +46,9 @@ const ManageRotationsPage: React.FC = () => {
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedRotations(e.target.checked ? rotationIds : []);
     };
-
-    const handleRunRotation = (rotationId: string) => {
-        runRotation(rotationId);
+    
+    const handleStatusChange = (rotation: Rotation, isActive: boolean) => {
+        updateRotation({ ...rotation, isActive });
     };
 
     return (
@@ -69,7 +70,7 @@ const ManageRotationsPage: React.FC = () => {
                     onSelectAll={handleSelectAll}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
-                    onRun={handleRunRotation}
+                    onStatusChange={handleStatusChange}
                     onDeleteRequest={(ids) => setDeletingIds(ids)}
                     terminology={settings.terminology}
                     onCreate={handleCreate}

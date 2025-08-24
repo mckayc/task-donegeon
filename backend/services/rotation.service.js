@@ -1,8 +1,7 @@
 
-
 const { dataSource } = require('../data-source');
 const { RotationEntity, QuestEntity, UserEntity, SystemNotificationEntity } = require('../entities');
-const { In, Not } = require("typeorm");
+const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 

@@ -1,5 +1,4 @@
 
-
 const rotationService = require('../services/rotation.service');
 
 const getAllRotations = async (req, res) => {

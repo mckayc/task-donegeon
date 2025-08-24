@@ -1,4 +1,5 @@
 
+
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode } from '../../../types';
 
 /**
@@ -93,12 +94,8 @@ export const isQuestVisibleToUserInMode = (
     if (appMode.mode !== 'personal') return false;
   }
   
-  // Assignment check - An empty list means it's available to ALL users in scope.
-  if (quest.assignedUserIds.length === 0) {
-    return true;
-  }
-  
-  // If the list is not empty, the user must be in it.
+  // Assignment check: The user MUST be in the assigned list to see the quest.
+  // An empty list means nobody is assigned, so nobody sees it.
   return quest.assignedUserIds.includes(userId);
 };
 

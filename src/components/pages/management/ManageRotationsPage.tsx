@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useContext } from 'react';
 import { Rotation } from 'components/rotations/types';
 import Button from 'components/user-interface/Button';

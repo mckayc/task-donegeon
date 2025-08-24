@@ -1,5 +1,3 @@
-
-
 const { dataSource } = require('../data-source');
 const { RotationEntity, QuestEntity, UserEntity, SystemNotificationEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -68,8 +66,9 @@ const run = async (id) => {
             return { message: "Rotation not found or is inactive." };
         }
         
-        const quests = await questRepo.find({ where: { id: In(rotation.questIds) }, relations: ['assignedUsers'] });
-        const users = await userRepo.find({ where: { id: In(rotation.userIds) } });
+        // Ensure consistent ordering by sorting by a stable property like name/title.
+        const quests = await questRepo.find({ where: { id: In(rotation.questIds) }, relations: ['assignedUsers'], order: { title: 'ASC' } });
+        const users = await userRepo.find({ where: { id: In(rotation.userIds) }, order: { gameName: 'ASC' } });
 
         if (quests.length === 0 || users.length === 0) {
             return { message: "No quests or users available for this rotation." };
@@ -84,70 +83,78 @@ const run = async (id) => {
         for (const quest of quests) {
             quest.assignedUsers = quest.assignedUsers.filter(user => !userIdsInRotationSet.has(user.id));
         }
-
-        // 2. Determine the starting points for this run.
-        const startUserIndex = (rotation.lastUserIndex + 1) % numUsers;
-        const startQuestIndex = (rotation.lastQuestStartIndex + 1) % numQuests;
         
-        let questsAssignedThisRun = 0;
-        const notificationsToCreate = [];
+        const assignments = [];
         const usersWithNewQuests = new Map();
-
-        // 3. Loop through users and assign quests sequentially.
+        let nextUserIdx = (rotation.lastUserIndex + 1);
+        let nextQuestIdx = (rotation.lastQuestStartIndex + 1);
+        
+        // 2. Loop through users and determine the assignment plan for THIS run.
         for (let i = 0; i < numUsers; i++) {
-            if (questsAssignedThisRun >= numQuests) break; // Stop if all quests have been assigned.
+            if (assignments.length >= numQuests) break; // Stop if all quests are planned.
 
-            const currentUserIndex = (startUserIndex + i) % numUsers;
-            const user = users[currentUserIndex];
+            const currentUserIndex = nextUserIdx % numUsers;
+            const userToAssign = users[currentUserIndex];
+            const assignedQuestsForThisUser = [];
 
             for (let j = 0; j < questsPerUser; j++) {
-                if (questsAssignedThisRun >= numQuests) break;
+                if (assignments.length >= numQuests) break;
 
-                const currentQuestIndex = (startQuestIndex + questsAssignedThisRun) % numQuests;
-                const quest = quests[currentQuestIndex];
+                const currentQuestIndex = nextQuestIdx % numQuests;
+                const questToAssign = quests[currentQuestIndex];
+                
+                assignments.push({ user: userToAssign, quest: questToAssign });
+                assignedQuestsForThisUser.push(questToAssign);
 
-                quest.assignedUsers.push(user);
-                
-                // Track for notifications
-                const userQuestList = usersWithNewQuests.get(user.id) || [];
-                userQuestList.push(quest);
-                usersWithNewQuests.set(user.id, userQuestList);
-                
-                questsAssignedThisRun++;
-                
-                // Update the state for the next run
-                rotation.lastUserIndex = currentUserIndex;
-                rotation.lastQuestStartIndex = currentQuestIndex;
+                nextQuestIdx++;
             }
+            
+            if (assignedQuestsForThisUser.length > 0) {
+                usersWithNewQuests.set(userToAssign.id, assignedQuestsForThisUser);
+            }
+            
+            nextUserIdx++;
         }
         
-        // 4. Create notifications for users who received quests.
-        for (const [userId, assignedQuests] of usersWithNewQuests.entries()) {
-             const newNotification = notificationRepo.create({
-                id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                type: 'QuestAssigned',
-                message: `You have been assigned ${assignedQuests.length} new quest(s) from the "${rotation.name}" rotation.`,
-                recipientUserIds: [userId],
-                readByUserIds: [],
-                timestamp: new Date().toISOString(),
-                link: 'Quests',
-            });
-            notificationsToCreate.push(newNotification);
-        }
+        // 3. Apply the assignments and save changes
+        if (assignments.length > 0) {
+            for (const { user, quest } of assignments) {
+                quest.assignedUsers.push(user);
+            }
 
-        // 5. Save all changes if any assignments were made.
-        if (questsAssignedThisRun > 0) {
-            await manager.save(QuestEntity, quests.map(q => updateTimestamps(q)));
+            // 4. Update the rotation state to the LAST assignment made
+            const lastAssignment = assignments[assignments.length - 1];
+            const lastUserAssigned = lastAssignment.user;
+            const lastQuestAssigned = lastAssignment.quest;
             
+            rotation.lastUserIndex = users.findIndex(u => u.id === lastUserAssigned.id);
+            rotation.lastQuestStartIndex = quests.findIndex(q => q.id === lastQuestAssigned.id);
             rotation.lastAssignmentDate = new Date().toISOString().split('T')[0];
-            await manager.save(RotationEntity, updateTimestamps(rotation));
             
-            if(notificationsToCreate.length > 0) {
+            // 5. Create notifications
+            const notificationsToCreate = [];
+            for (const [userId, assignedQuests] of usersWithNewQuests.entries()) {
+                const newNotification = notificationRepo.create({
+                    id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'QuestAssigned',
+                    message: `You have been assigned ${assignedQuests.length} new quest(s) from the "${rotation.name}" rotation.`,
+                    recipientUserIds: [userId],
+                    readByUserIds: [],
+                    timestamp: new Date().toISOString(),
+                    link: 'Quests',
+                });
+                notificationsToCreate.push(newNotification);
+            }
+
+            // 6. Save all database changes
+            await manager.save(QuestEntity, quests.map(q => updateTimestamps(q)));
+            await manager.save(RotationEntity, updateTimestamps(rotation));
+            if (notificationsToCreate.length > 0) {
                 await manager.save(SystemNotificationEntity, notificationsToCreate.map(n => updateTimestamps(n, true)));
             }
 
             updateEmitter.emit('update');
-            return { message: `Rotation "${rotation.name}" ran successfully. Assigned ${questsAssignedThisRun} quests.` };
+            return { message: `Rotation "${rotation.name}" ran successfully. Assigned ${assignments.length} quests.` };
         }
 
         return { message: `Rotation "${rotation.name}" ran, but no quests were assigned.` };

@@ -15,15 +15,24 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "*": ["*"]
+      "types/*": ["types/*"],
+      "components/*": ["components/*"],
+      "context/*": ["context/*"],
+      "hooks/*": ["hooks/*"],
+      "utils/*": ["utils/*"],
+      "lib/*": ["lib/*"],
+      "data/*": ["data/*"]
     },
     "types": ["jest", "@testing-library/jest-dom"]
   },
-  "include": ["src"],
+  "include": ["."],
   "exclude": [
     "node_modules",
+    "dist",
+    "backend",
+    "public",
     "**/*.test.ts",
     "**/*.test.tsx",
     "jest.config.js",

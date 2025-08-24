@@ -1,3 +1,4 @@
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -84,9 +85,17 @@ const ASSET_PACKS_DIR = '/app/data/asset_packs';
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
 
 const { runScheduledBackups } = require('./controllers/management.controller');
+const { runScheduled: runScheduledRotations } = require('./services/rotation.service');
+
 const startAutomatedBackupScheduler = () => {
     setInterval(runScheduledBackups, 3600000); // Check every hour
     setTimeout(runScheduledBackups, 10000); // Also run 10s after start
+};
+
+const startAutomatedRotationScheduler = () => {
+    // Check for rotations to run every 15 minutes
+    setInterval(runScheduledRotations, 900000); 
+    setTimeout(runScheduledRotations, 15000); // Also run 15s after start
 };
 
 const ensureDefaultAssetPacksExist = async () => {
@@ -140,6 +149,7 @@ const initializeApp = async () => {
     
     await ensureDefaultAssetPacksExist();
     startAutomatedBackupScheduler();
+    startAutomatedRotationScheduler();
 
     console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);

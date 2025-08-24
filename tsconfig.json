@@ -15,7 +15,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
       "types/*": ["types/*"],
       "components/*": ["components/*"],
@@ -27,18 +27,6 @@
     },
     "types": ["jest", "@testing-library/jest-dom"]
   },
-  "include": ["."],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "backend",
-    "public",
-    "vite.config.ts",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "jest.config.js",
-    "jest.setup.js",
-    "test-utils.tsx"
-  ],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

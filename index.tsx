@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import AppProviders from './context/AppProviders';
+import App from './src/App';
+import AppProviders from './src/context/AppProviders';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

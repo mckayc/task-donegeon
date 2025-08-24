@@ -1,10 +1,9 @@
-
 import React from 'react';
-import { Rotation, Terminology } from '../../types';
-import Button from '../user-interface/Button';
-import EmptyState from '../user-interface/EmptyState';
-import { PencilIcon, CopyIcon, TrashIcon, PlayIcon } from '../user-interface/Icons';
-import ToggleSwitch from '../user-interface/ToggleSwitch';
+import { Rotation, Terminology } from 'types';
+import Button from 'components/user-interface/Button';
+import EmptyState from 'components/user-interface/EmptyState';
+import { PencilIcon, CopyIcon, TrashIcon, PlayIcon } from 'components/user-interface/Icons';
+import ToggleSwitch from 'components/user-interface/ToggleSwitch';
 
 interface RotationTableProps {
     rotations: Rotation[];

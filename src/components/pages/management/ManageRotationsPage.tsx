@@ -1,14 +1,14 @@
 
 import React, { useState, useMemo, useContext } from 'react';
-import { Rotation } from '../../../types';
-import Button from '../../user-interface/Button';
-import Card from '../../user-interface/Card';
-import EditRotationDialog from '../../rotations/EditRotationDialog';
-import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import { useShiftSelect } from '../../../hooks/useShiftSelect';
-import RotationTable from '../../rotations/RotationTable';
-import { useQuestsState, useQuestsDispatch, QuestsDispatchContext } from '../../../context/QuestsContext';
-import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { Rotation } from 'components/rotations/types';
+import Button from 'components/user-interface/Button';
+import Card from 'components/user-interface/Card';
+import EditRotationDialog from 'components/rotations/EditRotationDialog';
+import ConfirmDialog from 'components/user-interface/ConfirmDialog';
+import { useShiftSelect } from 'hooks/useShiftSelect';
+import RotationTable from 'components/rotations/RotationTable';
+import { useQuestsState, useQuestsDispatch, QuestsDispatchContext } from 'context/QuestsContext';
+import { useSystemState, useSystemDispatch } from 'context/SystemContext';
 
 const ManageRotationsPage: React.FC = () => {
     const { settings } = useSystemState();

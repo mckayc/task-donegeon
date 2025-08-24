@@ -15,9 +15,13 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "baseUrl": "./src",
+    "paths": {
+      "*": ["*"]
+    },
     "types": ["jest", "@testing-library/jest-dom"]
   },
-  "include": ["components", "context", "data", "lib", "index.tsx", "App.tsx", "types.ts", "metadata.json", "src/types"],
+  "include": ["src"],
   "exclude": [
     "node_modules",
     "**/*.test.ts",

@@ -1,3 +1,5 @@
+
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -5,7 +7,7 @@ import {
     addQuestAPI, updateQuestAPI, cloneQuestAPI, updateQuestsStatusAPI, bulkUpdateQuestsAPI, 
     completeQuestAPI, approveQuestCompletionAPI, rejectQuestCompletionAPI, 
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
-    assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, runRotationAPI,
+    assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI, runRotationAPI,
     completeCheckpointAPI
 } from '../api';
 import { useAuthDispatch } from './AuthContext';
@@ -43,6 +45,7 @@ export interface QuestsDispatch {
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
   addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
   updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
+  cloneRotation: (rotationId: string) => Promise<Rotation | null>;
   runRotation: (rotationId: string) => Promise<void>;
   completeCheckpoint: (questId: string, userId: string) => Promise<void>;
 }
@@ -198,6 +201,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         assignQuestGroupToUsers: (groupId, userIds) => apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds)),
         addRotation: (data) => apiAction(() => addRotationAPI(data)),
         updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
+        cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
         runRotation: async (id) => {
             const result = await apiAction(() => runRotationAPI(id));
             if (result) addNotification({ type: 'success', message: (result as any).message });

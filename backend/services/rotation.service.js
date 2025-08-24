@@ -38,6 +38,24 @@ const deleteMany = async (ids) => {
     updateEmitter.emit('update');
 };
 
+const clone = async (id) => {
+    const repo = dataSource.getRepository(RotationEntity);
+    const rotationToClone = await repo.findOneBy({ id });
+    if (!rotationToClone) return null;
+
+    const { id: oldId, createdAt, updatedAt, ...cloneableData } = rotationToClone;
+
+    const newRotationData = {
+        ...cloneableData,
+        name: `${rotationToClone.name} (Copy)`,
+        lastAssignmentDate: null,
+        lastUserIndex: -1,
+        lastQuestStartIndex: -1,
+    };
+    
+    return create(newRotationData);
+};
+
 const run = async (id) => {
     return await dataSource.transaction(async manager => {
         const rotationRepo = manager.getRepository(RotationEntity);
@@ -46,81 +64,93 @@ const run = async (id) => {
         const notificationRepo = manager.getRepository(SystemNotificationEntity);
 
         const rotation = await rotationRepo.findOneBy({ id });
-        if (!rotation || !rotation.isActive || rotation.questIds.length === 0 || rotation.userIds.length === 0) {
-            return { success: false, message: 'Rotation is inactive or not configured with quests and users.' };
+        if (!rotation || !rotation.isActive) {
+            return { message: "Rotation not found or is inactive." };
         }
 
-        const quests = await questRepo.findBy({ id: In(rotation.questIds) });
-        const users = await userRepo.findBy({ id: In(rotation.userIds) });
+        const quests = await questRepo.find({ where: { id: In(rotation.questIds) } });
+        const users = await userRepo.find({ where: { id: In(rotation.userIds) } });
 
         if (quests.length === 0 || users.length === 0) {
-            return { success: false, message: 'Could not find quests or users for this rotation.' };
+            return { message: "No quests or users in rotation." };
         }
-        
+
         const { questsPerUser, lastUserIndex, lastQuestStartIndex } = rotation;
         const numUsers = users.length;
         const numQuests = quests.length;
-
-        const questsToAssignTotal = Math.min(numUsers * questsPerUser, numQuests);
         
-        const startUserIndex = (lastUserIndex + 1) % numUsers;
-        const startQuestIndex = (lastQuestStartIndex + 1) % numQuests;
+        let questsToUpdate = [];
+        let notifications = [];
+        let assignedQuestCount = 0;
         
-        const questsToUpdate = [];
-        const notificationsToCreate = [];
+        let currentUserIndex = (lastUserIndex + 1) % numUsers;
+        let currentQuestIndex = (lastQuestStartIndex + 1) % numQuests;
 
-        for (let i = 0; i < questsToAssignTotal; i++) {
-            const currentUserIndex = (startUserIndex + i) % numUsers;
-            const currentQuestIndex = (startQuestIndex + i) % numQuests;
+        let finalUserIndex = lastUserIndex;
+        let finalQuestIndex = lastQuestStartIndex;
+
+        const usersInThisRun = Math.min(numUsers, Math.ceil(numQuests / questsPerUser));
+
+        for (let i = 0; i < usersInThisRun; i++) {
+            const user = users[currentUserIndex];
+            const userQuests = [];
+
+            for (let j = 0; j < questsPerUser; j++) {
+                if (assignedQuestCount >= numQuests) break;
+
+                const quest = quests[currentQuestIndex];
+                quest.assignedUserIds = [user.id];
+                questsToUpdate.push(quest);
+                userQuests.push(quest);
+
+                finalQuestIndex = currentQuestIndex;
+                currentQuestIndex = (currentQuestIndex + 1) % numQuests;
+                assignedQuestCount++;
+            }
             
-            const userToAssign = users[currentUserIndex];
-            const questToAssign = await questRepo.findOne({ where: { id: quests[currentQuestIndex].id }, relations: ['assignedUsers'] });
+            finalUserIndex = currentUserIndex;
+            currentUserIndex = (currentUserIndex + 1) % numUsers;
 
-            if (questToAssign && userToAssign) {
-                questToAssign.assignedUsers = [userToAssign];
-                questsToUpdate.push(updateTimestamps(questToAssign));
-
-                const newNotification = notificationRepo.create({
-                    id: `sysnotif-${Date.now()}-${Math.random()}`,
+            if (userQuests.length > 0) {
+                 const newNotification = notificationRepo.create({
+                    id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                     type: 'QuestAssigned',
-                    message: `You have been assigned a new quest: "${questToAssign.title}"`,
-                    recipientUserIds: [userToAssign.id],
+                    message: `You have been assigned ${userQuests.length} new quest(s) from the "${rotation.name}" rotation.`,
+                    recipientUserIds: [user.id],
                     readByUserIds: [],
                     timestamp: new Date().toISOString(),
                     link: 'Quests',
-                    guildId: questToAssign.guildId,
-                    icon: questToAssign.icon,
-                    iconType: questToAssign.iconType,
-                    imageUrl: questToAssign.imageUrl,
                 });
-                notificationsToCreate.push(updateTimestamps(newNotification, true));
+                notifications.push(newNotification);
             }
         }
-        
+
         if (questsToUpdate.length > 0) {
-            const numAssigned = questsToUpdate.length;
-            rotation.lastUserIndex = (startUserIndex + numAssigned - 1) % numUsers;
-            rotation.lastQuestStartIndex = (startQuestIndex + numAssigned - 1) % numQuests;
+            await manager.save(QuestEntity, questsToUpdate.map(q => updateTimestamps(q)));
             
-            await questRepo.save(questsToUpdate);
-            await notificationRepo.save(notificationsToCreate);
+            rotation.lastUserIndex = finalUserIndex;
+            rotation.lastQuestStartIndex = finalQuestIndex;
+            rotation.lastAssignmentDate = new Date().toISOString().split('T')[0];
+
+            await manager.save(RotationEntity, updateTimestamps(rotation));
+            if(notifications.length > 0) {
+                await manager.save(SystemNotificationEntity, notifications.map(n => updateTimestamps(n, true)));
+            }
+
+            updateEmitter.emit('update');
+            return { message: `Rotation "${rotation.name}" ran successfully. Assigned ${assignedQuestCount} quests.` };
         }
 
-        rotation.lastAssignmentDate = new Date().toISOString().split('T')[0];
-        await rotationRepo.save(updateTimestamps(rotation));
-        
-        updateEmitter.emit('update');
-        const message = questsToUpdate.length > 0
-            ? `Rotation "${rotation.name}" assigned ${questsToUpdate.length} quests.`
-            : `Rotation "${rotation.name}" ran, but no quests were assigned.`;
-        return { success: true, message };
+        return { message: `Rotation "${rotation.name}" ran, but no quests were assigned.` };
     });
 };
+
 
 module.exports = {
     getAll,
     create,
     update,
     deleteMany,
+    clone,
     run,
 };

@@ -1,3 +1,5 @@
+
+
 const rotationService = require('../services/rotation.service');
 
 const getAllRotations = async (req, res) => {
@@ -21,12 +23,16 @@ const deleteRotations = async (req, res) => {
     res.status(204).send();
 };
 
+const cloneRotation = async (req, res) => {
+    const clonedRotation = await rotationService.clone(req.params.id);
+    if (!clonedRotation) return res.status(404).send('Rotation not found');
+    res.status(201).json(clonedRotation);
+};
+
 const runRotation = async (req, res) => {
     const result = await rotationService.run(req.params.id);
-    if (!result.success) {
-        return res.status(400).json({ error: result.message });
-    }
-    res.status(200).json({ message: result.message });
+    if (!result) return res.status(404).send('Rotation not found or could not run.');
+    res.status(200).json(result);
 };
 
 module.exports = {
@@ -34,5 +40,6 @@ module.exports = {
     createRotation,
     updateRotation,
     deleteRotations,
+    cloneRotation,
     runRotation,
 };

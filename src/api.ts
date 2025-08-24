@@ -1,3 +1,5 @@
+
+
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem,
 } from '../types';
@@ -86,7 +88,8 @@ export const updateQuestGroupAPI = (data: QuestGroup) => apiRequest('PUT', `/api
 export const assignQuestGroupToUsersAPI = (groupId: string, userIds: string[]) => apiRequest('POST', '/api/quest-groups/assign', { groupId, userIds });
 export const addRotationAPI = (data: Omit<Rotation, 'id'>) => apiRequest('POST', '/api/rotations', data);
 export const updateRotationAPI = (data: Rotation) => apiRequest('PUT', `/api/rotations/${data.id}`, data);
-export const runRotationAPI = (id: string): Promise<{ message: string }> => apiRequest('POST', `/api/rotations/run/${id}`);
+export const cloneRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/clone/${id}`);
+export const runRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/run/${id}`);
 export const completeCheckpointAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/complete-checkpoint', { questId, userId });
 
 

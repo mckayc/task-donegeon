@@ -7,7 +7,7 @@ import {
     addQuestAPI, updateQuestAPI, cloneQuestAPI, updateQuestsStatusAPI, bulkUpdateQuestsAPI, 
     completeQuestAPI, approveQuestCompletionAPI, rejectQuestCompletionAPI, 
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
-    assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, runRotationAPI,
+    assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI,
     completeCheckpointAPI
 } from '../src/api';
 import { useAuthDispatch } from './AuthContext';
@@ -45,7 +45,7 @@ export interface QuestsDispatch {
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
   addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
   updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
-  runRotation: (rotationId: string) => Promise<void>;
+  cloneRotation: (rotationId: string) => Promise<Rotation | null>;
   completeCheckpoint: (questId: string, userId: string) => Promise<void>;
 }
 
@@ -189,7 +189,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 if (newUserTrophies?.length > 0) progressionDispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
                 if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
                 
-                const message = newCompletion.status === 'Approved' 
+                const message = (newCompletion.status === 'Approved') 
                     ? 'Checkpoint completed!' 
                     : 'Checkpoint submitted for approval!';
                 addNotification({ type: 'success', message });
@@ -200,10 +200,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         assignQuestGroupToUsers: (groupId, userIds) => apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds)),
         addRotation: (data) => apiAction(() => addRotationAPI(data)),
         updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
-        runRotation: async (id) => {
-            const result = await apiAction(() => runRotationAPI(id));
-            if (result) addNotification({ type: 'success', message: (result as any).message });
-        },
+        cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
     }), [addNotification, apiAction, updateUser, progressionDispatch, systemDispatch]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);

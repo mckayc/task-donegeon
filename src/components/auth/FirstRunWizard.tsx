@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuthDispatch } from 'context/AuthContext';
-import { Role } from 'components/users/types';
-import { SystemStatus } from 'types/app';
-import Button from 'components/user-interface/Button';
-import Input from 'components/user-interface/Input';
-import UserFormFields from 'components/users/UserFormFields';
-import { CheckCircleIcon, XCircleIcon } from 'components/user-interface/Icons';
-import ToggleSwitch from 'components/user-interface/ToggleSwitch';
+import { useAuthDispatch } from '../../context/AuthContext';
+import { Role, SystemStatus } from '../../types';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import UserFormFields from '../users/UserFormFields';
+import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 const StatusCheck: React.FC<{
   title: string;

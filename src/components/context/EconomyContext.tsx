@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
+import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -197,27 +196,4 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             <EconomyDispatchContext.Provider value={contextValue}>
                 {children}
             </EconomyDispatchContext.Provider>
-        </EconomyStateContext.Provider>
-    );
-};
-
-export const useEconomyState = (): EconomyState => {
-    const context = useContext(EconomyStateContext);
-    if (context === undefined) throw new Error('useEconomyState must be used within an EconomyProvider');
-    return context;
-};
-
-export const useEconomyDispatch = (): EconomyDispatch => {
-    const context = useContext(EconomyDispatchContext);
-    if (context === undefined) throw new Error('useEconomyDispatch must be used within an EconomyProvider');
-    return context.actions;
-};
-
-// Hook to get the dispatch for the economy reducer directly
-export const useEconomyReducerDispatch = (): React.Dispatch<EconomyAction> => {
-  const context = useContext(EconomyDispatchContext);
-  if (!context) {
-    throw new Error('useEconomyReducerDispatch must be used within an EconomyProvider');
-  }
-  return context.dispatch;
-};
+        </EconomyState

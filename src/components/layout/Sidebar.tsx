@@ -1,17 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Role } from 'components/users/types';
-import { QuestCompletionStatus } from 'components/quests/types';
-import { PurchaseRequestStatus } from 'components/items/types';
-import { Page, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from 'types/app';
-import { TradeStatus } from 'components/trading/types';
-import { ChatMessage } from 'components/chat/types';
-import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from 'components/user-interface/Icons';
-import { useUIState, useUIDispatch } from 'context/UIContext';
-import { useAuthState } from 'context/AuthContext';
-import { useQuestsState } from 'context/QuestsContext';
-import { useEconomyState } from 'context/EconomyContext';
-import { useCommunityState } from 'context/CommunityContext';
-import { useSystemState } from 'context/SystemContext';
+import { Role, QuestCompletionStatus, PurchaseRequestStatus, Page, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
+import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useSystemState } from '../../context/SystemContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean; totalApprovals?: number }> = ({ title, items, isVisible, totalApprovals }) => {
     const { settings } = useSystemState();

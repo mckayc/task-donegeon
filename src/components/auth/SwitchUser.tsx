@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthState, useAuthDispatch } from 'context/AuthContext';
-import { User, Role } from 'components/users/types';
-import Button from 'components/user-interface/Button';
-import Keypad from 'components/user-interface/Keypad';
-import Avatar from 'components/user-interface/Avatar';
-import Input from 'components/user-interface/Input';
-import { useSystemState } from 'context/SystemContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
+import { User, Role } from '../../types';
+import Button from '../user-interface/Button';
+import Keypad from '../user-interface/Keypad';
+import Avatar from '../user-interface/Avatar';
+import Input from '../user-interface/Input';
+import { useSystemState } from '../../context/SystemContext';
 
 const SwitchUser: React.FC = () => {
     const { users, currentUser: anyCurrentUser, targetedUserForLogin } = useAuthState();
@@ -56,7 +56,7 @@ const SwitchUser: React.FC = () => {
             // Clean up the targeted user so it doesn't re-trigger
             setTargetedUserForLogin(null);
         }
-    }, [targetedUserForLogin]);
+    }, [targetedUserForLogin, setTargetedUserForLogin]);
 
     const handlePinSubmit = () => {
         if (selectedUser && selectedUser.pin === pin) {
@@ -98,14 +98,14 @@ const SwitchUser: React.FC = () => {
                             <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
                             <h2 className="text-3xl font-bold text-stone-100 mb-2">{selectedUser.gameName}</h2>
                             <p className="text-stone-400 mb-6">Enter your Password to continue</p>
-                            <form onSubmit={(e) => { e.preventDefault(); handlePasswordSubmit(); }} className="w-full space-y-4">
+                            <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handlePasswordSubmit(); }} className="w-full space-y-4">
                                 <Input
                                     label="Password"
                                     id="password-input"
                                     name="password"
                                     type="password"
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                                     required
                                     autoFocus
                                 />
@@ -138,13 +138,13 @@ const SwitchUser: React.FC = () => {
                                     type="password"
                                     aria-label="PIN Input"
                                     value={pin}
-                                    onChange={(e) => {
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                         const val = e.target.value;
                                         if (/^\d*$/.test(val) && val.length <= 10) {
                                             setPin(val);
                                         }
                                     }}
-                                    onKeyDown={e => {
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
                                             handlePinSubmit();
@@ -160,7 +160,7 @@ const SwitchUser: React.FC = () => {
                             {error && <p className="text-red-400 text-center mb-4">{error}</p>}
                             
                             <Keypad
-                                onKeyPress={(key) => {
+                                onKeyPress={(key: string) => {
                                     if (pin.length < 10) setPin(p => p + key)
                                 }}
                                 onBackspace={() => setPin(p => p.slice(0, -1))}

@@ -1,4 +1,4 @@
-import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus } from '../types';
+import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus } from '../src/types';
 import { toYMD } from './quests';
 
 export const isMarketOpenForUser = (market: Market, user: User, allData: IAppData): MarketOpenStatus => {

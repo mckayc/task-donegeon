@@ -1,4 +1,4 @@
-import { AssetPack, AssetPackAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset, QuestGroup, UserTemplate } from '../src/types';
+import { AssetPack, AssetPackAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset, QuestGroup, UserTemplate } from '../../types';
 
 /**
  * Finds all unique dependency IDs (e.g., rewardType IDs) from a collection of assets.

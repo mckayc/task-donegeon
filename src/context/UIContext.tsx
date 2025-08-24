@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { AppMode, Page } from '../types/app';
+import { AppMode, Page } from '../types';
 import { bugLogger } from '../utils/bugLogger';
 
 export interface UIState {

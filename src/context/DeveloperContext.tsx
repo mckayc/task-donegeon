@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
-import { BugReport, BugReportLogEntry, BugReportStatus, BugReportType } from 'types';
-import { useSystemDispatch, useSystemState } from 'context/SystemContext';
-import { bugLogger } from 'utils/bugLogger';
+import { BugReport, BugReportLogEntry, BugReportStatus, BugReportType } from '../types';
+import { useSystemDispatch, useSystemState } from './SystemContext';
+import { bugLogger } from '../utils/bugLogger';
 
 // State
 interface DeveloperState {

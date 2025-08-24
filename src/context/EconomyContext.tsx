@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -169,55 +168,4 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         cancelOrRejectTrade: (id, action) => apiAction(() => cancelOrRejectTradeAPI(id, action)),
         sendGift: (recipientId, assetId, guildId) => {
             if (!currentUser) return Promise.resolve();
-            return apiAction(() => sendGiftAPI(recipientId, assetId, guildId, currentUser.id), 'Gift sent!');
-        },
-        useItem: async (assetId) => {
-            if (!currentUser) return;
-            const result = await apiAction(() => useItemAPI(assetId, currentUser.id));
-            if (result) {
-                 if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
-                 addNotification({ type: 'success', message: 'Item used!' });
-            }
-        },
-        craftItem: async (assetId) => {
-            if (!currentUser) return;
-            const result = await apiAction(() => craftItemAPI(assetId, currentUser.id));
-            if (result) {
-                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
-                addNotification({ type: 'success', message: 'Item crafted!' });
-            }
-        },
-
-    }), [apiAction, currentUser, systemDispatch, updateUser, addNotification]);
-    
-    const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
-
-    return (
-        <EconomyStateContext.Provider value={state}>
-            <EconomyDispatchContext.Provider value={contextValue}>
-                {children}
-            </EconomyDispatchContext.Provider>
-        </EconomyStateContext.Provider>
-    );
-};
-
-export const useEconomyState = (): EconomyState => {
-    const context = useContext(EconomyStateContext);
-    if (context === undefined) throw new Error('useEconomyState must be used within an EconomyProvider');
-    return context;
-};
-
-export const useEconomyDispatch = (): EconomyDispatch => {
-    const context = useContext(EconomyDispatchContext);
-    if (context === undefined) throw new Error('useEconomyDispatch must be used within an EconomyProvider');
-    return context.actions;
-};
-
-// Hook to get the dispatch for the economy reducer directly
-export const useEconomyReducerDispatch = (): React.Dispatch<EconomyAction> => {
-  const context = useContext(EconomyDispatchContext);
-  if (!context) {
-    throw new Error('useEconomyReducerDispatch must be used within an EconomyProvider');
-  }
-  return context.dispatch;
-};
+            return apiAction(() => sendGiftAPI(recipientId, assetId, guildId, currentUser.id),

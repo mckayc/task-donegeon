@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Card from '../../user-interface/Card';
 import { BackupInfo, BackupSchedule } from '../../../types';
@@ -316,7 +317,7 @@ export const BackupAndImportPage: React.FC = () => {
                     <Card>
                         <ToggleSwitch 
                             enabled={settings.automatedBackups.enabled}
-                            setEnabled={(val) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
+                            setEnabled={(val: boolean) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
                             label="Enable Automated Backups"
                         />
                         {settings.automatedBackups.enabled && (
@@ -365,4 +366,36 @@ export const BackupAndImportPage: React.FC = () => {
                     <nav className="-mb-px flex space-x-6">
                         <button onClick={() => setActiveTab('manual')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'manual' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
                             Manual ({manualBackups.length})
-                        
+                        </button>
+                        <button onClick={() => setActiveTab('automated')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'automated' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
+                            Automated ({automatedBackups.length})
+                        </button>
+                    </nav>
+                </div>
+                {isLoading ? <p>Loading backups...</p> : (
+                    activeTab === 'manual' 
+                        ? <BackupList backupsToList={manualBackups} onDelete={setConfirmDelete} onRefetch={fetchBackups} />
+                        : <BackupList backupsToList={automatedBackups} onDelete={setConfirmDelete} onRefetch={fetchBackups} />
+                )}
+            </Card>
+
+            <ConfirmDialog 
+                isOpen={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Backup"
+                message={`Are you sure you want to permanently delete the backup file "${confirmDelete}"?`}
+            />
+            {isScheduleDialogOpen && <EditBackupScheduleDialog scheduleToEdit={editingSchedule} onClose={() => {setIsScheduleDialogOpen(false); setEditingSchedule(null);}} onSave={handleSaveSchedule} />}
+            <ConfirmDialog
+                isOpen={!!deletingSchedule}
+                onClose={() => setDeletingSchedule(null)}
+                onConfirm={handleDeleteSchedule}
+                title="Delete Schedule"
+                message="Are you sure you want to delete this backup schedule?"
+            />
+        </div>
+    );
+};
+
+export default BackupAndImportPage;

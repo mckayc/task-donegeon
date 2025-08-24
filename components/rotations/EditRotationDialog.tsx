@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { Rotation, Quest, User } from '../../types';
@@ -33,7 +32,8 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
         frequency: 'DAILY',
         lastAssignmentDate: null,
         lastUserIndex: -1,
-        lastQuestIndex: -1,
+        lastQuestStartIndex: -1,
+        questsPerUser: 1,
         isActive: true,
         startDate: null,
         endDate: null,
@@ -54,7 +54,8 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                 frequency: rotationToEdit.frequency,
                 lastAssignmentDate: rotationToEdit.lastAssignmentDate,
                 lastUserIndex: rotationToEdit.lastUserIndex,
-                lastQuestIndex: rotationToEdit.lastQuestIndex,
+                lastQuestStartIndex: rotationToEdit.lastQuestStartIndex,
+                questsPerUser: rotationToEdit.questsPerUser || 1,
                 isActive: rotationToEdit.isActive,
                 startDate: rotationToEdit.startDate,
                 endDate: rotationToEdit.endDate,
@@ -116,27 +117,31 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
 
         if (selectedQuests.length === 0 || selectedUsers.length === 0) return [];
         
-        const results = [];
-        let userIdx = formData.lastUserIndex;
-        let questIdx = formData.lastQuestIndex;
-        const numTurns = Math.max(selectedUsers.length, selectedQuests.length) * 2;
+        const { questsPerUser, lastUserIndex, lastQuestStartIndex } = formData;
+        const numUsers = selectedUsers.length;
+        const numQuests = selectedQuests.length;
 
-        for (let i = 1; i <= numTurns; i++) {
-            userIdx = (userIdx + 1) % selectedUsers.length;
-            questIdx = (questIdx + 1) % selectedQuests.length;
+        const questsToAssignTotal = Math.min(numUsers * questsPerUser, numQuests);
+        
+        const startUserIndex = (lastUserIndex + 1) % numUsers;
+        const startQuestIndex = (lastQuestStartIndex + 1) % numQuests;
+        
+        const results = [];
+        for (let i = 0; i < questsToAssignTotal; i++) {
+            const user = selectedUsers[(startUserIndex + i) % numUsers];
+            const quest = selectedQuests[(startQuestIndex + i) % numQuests];
             results.push({
-                turn: i,
-                userName: selectedUsers[userIdx].gameName,
-                questTitle: selectedQuests[questIdx].title,
-                questIcon: selectedQuests[questIdx].icon,
+                turn: i + 1,
+                userName: user.gameName,
+                questTitle: quest.title,
+                questIcon: quest.icon,
             });
         }
         return results;
-
-    }, [formData.questIds, formData.userIds, formData.lastUserIndex, formData.lastQuestIndex, quests, users]);
+    }, [formData, quests, users]);
 
     const dialogTitle = rotationToEdit ? 'Edit Rotation' : 'Create New Rotation';
-    const isSaveDisabled = formData.questIds.length === 0 || formData.userIds.length === 0;
+    const isSaveDisabled = formData.questIds.length === 0;
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -177,10 +182,19 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
 
                     {/* Right Column: Scheduling & Preview */}
                     <div className="space-y-4 overflow-y-auto pr-2">
-                        <Input as="select" label="Frequency" value={formData.frequency} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({ ...p, frequency: e.target.value as 'DAILY' | 'WEEKLY' }))}>
-                            <option value="DAILY">Daily</option>
-                            <option value="WEEKLY">Weekly</option>
-                        </Input>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input as="select" label="Frequency" value={formData.frequency} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({ ...p, frequency: e.target.value as 'DAILY' | 'WEEKLY' }))}>
+                                <option value="DAILY">Daily</option>
+                                <option value="WEEKLY">Weekly</option>
+                            </Input>
+                            <Input
+                                label="Max Quests Per User Per Run"
+                                type="number"
+                                min="1"
+                                value={formData.questsPerUser}
+                                onChange={e => setFormData(p => ({...p, questsPerUser: parseInt(e.target.value) || 1}))}
+                            />
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-stone-300 mb-1">Active on Days</label>
                             <div className="flex justify-center gap-1">
@@ -213,7 +227,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                                     <option value={-1}>No one (start at first user)</option>
                                     {users.filter(u => formData.userIds.includes(u.id)).map((u, i) => <option key={u.id} value={i}>{u.gameName}</option>)}
                                 </Input>
-                                <Input as="select" label="Last Quest Assigned" value={formData.lastQuestIndex} onChange={e => setFormData(p => ({...p, lastQuestIndex: parseInt(e.target.value)}))}>
+                                <Input as="select" label="Last Quest Assigned" value={formData.lastQuestStartIndex} onChange={e => setFormData(p => ({...p, lastQuestStartIndex: parseInt(e.target.value)}))}>
                                      <option value={-1}>No quest (start at first quest)</option>
                                     {quests.filter(q => formData.questIds.includes(q.id)).map((q, i) => <option key={q.id} value={i}>{q.title}</option>)}
                                 </Input>
@@ -223,7 +237,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                         
                          <div className="p-4 bg-stone-900/50 rounded-lg">
                             <h3 className="font-semibold text-stone-200 mb-2">Assignment Preview</h3>
-                             <p className="text-xs text-stone-400 mb-3">This shows the order of assignments on each active rotation {formData.frequency === 'DAILY' ? 'day' : 'week'}.</p>
+                             <p className="text-xs text-stone-400 mb-3">This shows the order of assignments for the next run.</p>
                              <div className="h-48 overflow-y-auto pr-2 space-y-2">
                                 {rotationPreview.map(item => (
                                     <div key={item.turn} className="flex items-center gap-2 text-sm p-1 bg-stone-800/60 rounded">
@@ -232,6 +246,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                                         <span className="text-stone-300 flex-1 truncate">{item.questIcon} {item.questTitle}</span>
                                     </div>
                                 ))}
+                                {rotationPreview.length === 0 && <p className="text-center text-stone-500 pt-16">Select quests and users to see a preview.</p>}
                             </div>
                         </div>
 

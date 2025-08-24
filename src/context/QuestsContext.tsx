@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -187,7 +186,11 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 if (newCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [newCompletion] } });
                 if (newUserTrophies?.length > 0) progressionDispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
                 if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
-                addNotification({ type: 'success', message: 'Checkpoint completed!' });
+                
+                const message = (newCompletion.status === 'Approved') 
+                    ? 'Checkpoint completed!' 
+                    : 'Checkpoint submitted for approval!';
+                addNotification({ type: 'success', message });
             }
         },
         addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data)),
@@ -222,4 +225,12 @@ export const useQuestsDispatch = (): QuestsDispatch => {
     const context = useContext(QuestsDispatchContext);
     if (context === undefined) throw new Error('useQuestsDispatch must be used within a QuestsProvider');
     return context.actions;
+};
+
+export const useQuestsReducerDispatch = (): React.Dispatch<QuestsAction> => {
+  const context = useContext(QuestsDispatchContext);
+  if (!context) {
+    throw new Error('useQuestsReducerDispatch must be used within a QuestsProvider');
+  }
+  return context.dispatch;
 };

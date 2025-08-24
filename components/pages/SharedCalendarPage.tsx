@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus } from '../../types';
 import { AppMode } from '../../types/app';
@@ -91,7 +92,7 @@ const SharedCalendarPage: React.FC = () => {
                  }
             });
             
-            const uniqueQuests = Array.from(new Set(userQuests.map(q => q.id))).map(id => userQuests.find(q => q.id === id)!);
+            const uniqueQuests = Array.from(new Map(userQuests.map(q => [q.id, q])).values());
             const sortedQuests = uniqueQuests.sort(questSorter(user, userCompletions, scheduledEvents, currentDate));
             questsMap.set(user.id, sortedQuests.map(quest => ({ quest, user })));
         });

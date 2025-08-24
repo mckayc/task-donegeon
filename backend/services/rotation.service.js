@@ -1,6 +1,8 @@
 
+
 const { dataSource } = require('../data-source');
 const { RotationEntity, QuestEntity, UserEntity, SystemNotificationEntity } = require('../entities');
+const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 
@@ -44,48 +46,74 @@ const run = async (id) => {
         const notificationRepo = manager.getRepository(SystemNotificationEntity);
 
         const rotation = await rotationRepo.findOneBy({ id });
-        if (!rotation || rotation.questIds.length === 0 || rotation.userIds.length === 0) {
-            return { success: false, message: 'Rotation is not configured with quests and users.' };
+        if (!rotation || !rotation.isActive || rotation.questIds.length === 0 || rotation.userIds.length === 0) {
+            return { success: false, message: 'Rotation is inactive or not configured with quests and users.' };
         }
 
-        const nextUserIndex = (rotation.lastUserIndex + 1) % rotation.userIds.length;
-        const nextQuestIndex = (rotation.lastQuestIndex + 1) % rotation.questIds.length;
-        
-        const userIdToAssign = rotation.userIds[nextUserIndex];
-        const questIdToAssign = rotation.questIds[nextQuestIndex];
-        
-        const questToAssign = await questRepo.findOne({ where: { id: questIdToAssign }, relations: ['assignedUsers'] });
-        const userToAssign = await userRepo.findOneBy({ id: userIdToAssign });
+        const quests = await questRepo.findBy({ id: In(rotation.questIds) });
+        const users = await userRepo.findBy({ id: In(rotation.userIds) });
 
-        if (!questToAssign || !userToAssign) {
-            return { success: false, message: 'Quest or User not found in rotation.' };
+        if (quests.length === 0 || users.length === 0) {
+            return { success: false, message: 'Could not find quests or users for this rotation.' };
+        }
+        
+        const { questsPerUser, lastUserIndex, lastQuestStartIndex } = rotation;
+        const numUsers = users.length;
+        const numQuests = quests.length;
+
+        const questsToAssignTotal = Math.min(numUsers * questsPerUser, numQuests);
+        
+        const startUserIndex = (lastUserIndex + 1) % numUsers;
+        const startQuestIndex = (lastQuestStartIndex + 1) % numQuests;
+        
+        const questsToUpdate = [];
+        const notificationsToCreate = [];
+
+        for (let i = 0; i < questsToAssignTotal; i++) {
+            const currentUserIndex = (startUserIndex + i) % numUsers;
+            const currentQuestIndex = (startQuestIndex + i) % numQuests;
+            
+            const userToAssign = users[currentUserIndex];
+            const questToAssign = await questRepo.findOne({ where: { id: quests[currentQuestIndex].id }, relations: ['assignedUsers'] });
+
+            if (questToAssign && userToAssign) {
+                questToAssign.assignedUsers = [userToAssign];
+                questsToUpdate.push(updateTimestamps(questToAssign));
+
+                const newNotification = notificationRepo.create({
+                    id: `sysnotif-${Date.now()}-${Math.random()}`,
+                    type: 'QuestAssigned',
+                    message: `You have been assigned a new quest: "${questToAssign.title}"`,
+                    recipientUserIds: [userToAssign.id],
+                    readByUserIds: [],
+                    timestamp: new Date().toISOString(),
+                    link: 'Quests',
+                    guildId: questToAssign.guildId,
+                    icon: questToAssign.icon,
+                    iconType: questToAssign.iconType,
+                    imageUrl: questToAssign.imageUrl,
+                });
+                notificationsToCreate.push(updateTimestamps(newNotification, true));
+            }
+        }
+        
+        if (questsToUpdate.length > 0) {
+            const numAssigned = questsToUpdate.length;
+            rotation.lastUserIndex = (startUserIndex + numAssigned - 1) % numUsers;
+            rotation.lastQuestStartIndex = (startQuestIndex + numAssigned - 1) % numQuests;
+            
+            await questRepo.save(questsToUpdate);
+            await notificationRepo.save(notificationsToCreate);
         }
 
-        questToAssign.assignedUsers = [userToAssign];
-        await questRepo.save(updateTimestamps(questToAssign));
-
-        const newNotification = notificationRepo.create({
-            id: `sysnotif-${Date.now()}-${Math.random()}`,
-            type: 'QuestAssigned',
-            message: `You have been assigned a new quest: "${questToAssign.title}"`,
-            recipientUserIds: [userIdToAssign],
-            readByUserIds: [],
-            timestamp: new Date().toISOString(),
-            link: 'Quests',
-            guildId: questToAssign.guildId,
-            icon: questToAssign.icon,
-            iconType: questToAssign.iconType,
-            imageUrl: questToAssign.imageUrl,
-        });
-        await notificationRepo.save(updateTimestamps(newNotification, true));
-
-        rotation.lastUserIndex = nextUserIndex;
-        rotation.lastQuestIndex = nextQuestIndex;
         rotation.lastAssignmentDate = new Date().toISOString().split('T')[0];
         await rotationRepo.save(updateTimestamps(rotation));
         
         updateEmitter.emit('update');
-        return { success: true, message: `Assigned "${questToAssign.title}" to ${userToAssign.gameName}.` };
+        const message = questsToUpdate.length > 0
+            ? `Rotation "${rotation.name}" assigned ${questsToUpdate.length} quests.`
+            : `Rotation "${rotation.name}" ran, but no quests were assigned.`;
+        return { success: true, message };
     });
 };
 

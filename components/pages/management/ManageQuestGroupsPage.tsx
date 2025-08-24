@@ -1,18 +1,19 @@
+
 import React, { useState, useMemo } from 'react';
-import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
-import { useQuestsState } from '../../../context/QuestsContext';
-import { QuestGroup } from '../../quests/types';
+import { QuestGroup } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditQuestGroupDialog from '../../quests/EditQuestGroupDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import AssignQuestGroupDialog from '../../quests/AssignQuestGroupDialog';
-import QuestGroupTable from '../../quest-groups/QuestGroupTable';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { useQuestsState } from '../../../context/QuestsContext';
+import QuestGroupTable from '../../quest-groups/QuestGroupTable';
 
 const ManageQuestGroupsPage: React.FC = () => {
-    const { questGroups } = useQuestsState();
     const { settings } = useSystemState();
+    const { questGroups } = useQuestsState();
     const { deleteSelectedAssets } = useSystemDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);

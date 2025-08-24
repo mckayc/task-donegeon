@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { Rotation } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -6,14 +6,15 @@ import EditRotationDialog from '../../rotations/EditRotationDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import RotationTable from '../../rotations/RotationTable';
-import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
+import { useQuestsState, useQuestsDispatch, QuestsDispatchContext } from '../../../context/QuestsContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 
 const ManageRotationsPage: React.FC = () => {
     const { settings } = useSystemState();
     const { rotations } = useQuestsState();
     const { deleteSelectedAssets } = useSystemDispatch();
-    const { runRotation } = useQuestsDispatch();
+    const { runRotation, updateRotation } = useQuestsDispatch();
+    const { dispatch: questsDispatch } = useContext(QuestsDispatchContext)!;
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRotation, setEditingRotation] = useState<Rotation | null>(null);
@@ -35,14 +36,22 @@ const ManageRotationsPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
-            deleteSelectedAssets({ rotations: deletingIds });
+            deleteSelectedAssets({ rotations: deletingIds }, () => {
+                questsDispatch({ type: 'REMOVE_QUESTS_DATA', payload: { rotations: deletingIds } });
+                setDeletingIds([]);
+                setSelectedRotations([]);
+            });
+        } else {
+            setDeletingIds([]);
         }
-        setDeletingIds([]);
-        setSelectedRotations(prev => prev.filter(id => !deletingIds.includes(id)));
     };
     
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedRotations(e.target.checked ? rotationIds : []);
+    };
+    
+    const handleStatusChange = (rotation: Rotation, isActive: boolean) => {
+        updateRotation({ ...rotation, isActive });
     };
 
     const handleRunRotation = (rotationId: string) => {
@@ -69,6 +78,7 @@ const ManageRotationsPage: React.FC = () => {
                     onSelectAll={handleSelectAll}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
+                    onStatusChange={handleStatusChange}
                     onRun={handleRunRotation}
                     onDeleteRequest={(ids) => setDeletingIds(ids)}
                     terminology={settings.terminology}

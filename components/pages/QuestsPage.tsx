@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -285,7 +284,8 @@ const QuestsPage: React.FC = () => {
     const sortedQuests = useMemo(() => {
         const today = now;
         const visibleQuests = quests.filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode));
-        return visibleQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
+        const uniqueQuests = Array.from(new Map(visibleQuests.map(q => [q.id, q])).values());
+        return uniqueQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
     }, [quests, currentUser, appMode, questCompletions, now, scheduledEvents]);
     
     const filteredSortedQuests = useMemo(() => {

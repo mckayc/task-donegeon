@@ -13,6 +13,7 @@ interface RotationTableProps {
     onSelectOne: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void;
     onEdit: (rotation: Rotation) => void;
     onStatusChange: (rotation: Rotation, isActive: boolean) => void;
+    onRun: (rotationId: string) => void;
     onDeleteRequest: (ids: string[]) => void;
     terminology: Terminology;
     onCreate: () => void;
@@ -25,6 +26,7 @@ const RotationTable: React.FC<RotationTableProps> = ({
     onSelectOne,
     onEdit,
     onStatusChange,
+    onRun,
     onDeleteRequest,
     terminology,
     onCreate,
@@ -84,9 +86,12 @@ const RotationTable: React.FC<RotationTableProps> = ({
                                 />
                             </td>
                             <td className="p-4 text-stone-300 capitalize">{rotation.frequency.toLowerCase()}</td>
-                             <td className="p-4 text-stone-400 text-sm">User {rotation.lastUserIndex + 2}, Quest {rotation.lastQuestIndex + 2}</td>
+                             <td className="p-4 text-stone-400 text-sm">User {rotation.lastUserIndex + 2}, Quest {rotation.lastQuestStartIndex + 2}</td>
                             <td className="p-4">
                                 <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" title="Run Now" onClick={() => onRun(rotation.id)} className="h-8 w-8 text-sky-400 hover:text-sky-300">
+                                        <PlayIcon className="w-4 h-4" />
+                                    </Button>
                                     <Button variant="ghost" size="icon" title="Edit" onClick={() => onEdit(rotation)} className="h-8 w-8 text-stone-400 hover:text-white">
                                         <PencilIcon className="w-4 h-4" />
                                     </Button>

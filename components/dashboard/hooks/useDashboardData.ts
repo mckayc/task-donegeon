@@ -1,4 +1,5 @@
 
+
 import { useMemo } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -50,7 +51,7 @@ export const useDashboardData = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce((sum, amount) => sum + amount, 0);
+        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         let nextRank: Rank | null = sortedRanks[1] || null;
@@ -158,7 +159,8 @@ export const useDashboardData = () => {
             isQuestVisibleToUserInMode(quest, currentUser.id, appMode) &&
             isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode)
         );
-        return completableQuests.sort(questSorter(currentUser, userCompletions, scheduledEvents, today));
+        const uniqueQuests = Array.from(new Map(completableQuests.map(q => [q.id, q])).values());
+        return uniqueQuests.sort(questSorter(currentUser, userCompletions, scheduledEvents, today));
     }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
     
     const weeklyProgressData = useMemo(() => {

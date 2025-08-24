@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import { Guild, Rank, User, Trophy } from '../../types';
 import Card from '../user-interface/Card';

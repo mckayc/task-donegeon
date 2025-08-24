@@ -1,9 +1,9 @@
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../../types';
-import { useNotificationsDispatch } from './NotificationsContext';
-import { useAuthDispatch, useAuthState } from './AuthContext';
-import { bugLogger } from '../utils/bugLogger';
-import { SystemAction, useSystemReducerDispatch } from './SystemContext';
+import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, RewardItem, User } from '../../types';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useAuthDispatch, useAuthState } from '../../context/AuthContext';
+import { bugLogger } from '../../utils/bugLogger';
+import { SystemAction, useSystemReducerDispatch } from '../../context/SystemContext';
 import { 
     addMarketAPI, updateMarketAPI, cloneMarketAPI, updateMarketsStatusAPI, 
     addRewardTypeAPI, updateRewardTypeAPI, cloneRewardTypeAPI, 

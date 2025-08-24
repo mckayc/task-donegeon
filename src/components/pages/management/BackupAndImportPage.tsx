@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Card from '../../user-interface/Card';
 import { BackupInfo, BackupSchedule } from '../../../types';
@@ -317,7 +316,7 @@ export const BackupAndImportPage: React.FC = () => {
                     <Card>
                         <ToggleSwitch 
                             enabled={settings.automatedBackups.enabled}
-                            setEnabled={(val) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
+                            setEnabled={(val: boolean) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
                             label="Enable Automated Backups"
                         />
                         {settings.automatedBackups.enabled && (

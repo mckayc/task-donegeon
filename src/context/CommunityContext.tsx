@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-import { Guild } from 'types';
-import { useNotificationsDispatch } from 'context/NotificationsContext';
-import { bugLogger } from 'utils/bugLogger';
+import { Guild } from '../types';
+import { useNotificationsDispatch } from './NotificationsContext';
+import { bugLogger } from '../utils/bugLogger';
 import { addGuildAPI, updateGuildAPI, deleteGuildAPI } from '../api';
 
 // --- STATE & CONTEXT DEFINITIONS ---

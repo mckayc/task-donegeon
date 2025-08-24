@@ -4,7 +4,7 @@ import ExportPanel from '../../sharing/ExportPanel';
 import ImportPanel from '../../sharing/ImportPanel';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
-import { IAppData, AssetPack, ImportResolution } from 'types';
+import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';

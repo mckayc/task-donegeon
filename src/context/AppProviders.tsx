@@ -1,14 +1,14 @@
 import React from 'react';
-import { NotificationsProvider } from 'context/NotificationsContext';
-import { AuthProvider } from 'context/AuthContext';
-import { DeveloperProvider } from 'context/DeveloperContext';
-import { UIProvider } from 'context/UIContext';
-import { QuestsProvider } from 'context/QuestsContext';
-import { EconomyProvider } from 'context/EconomyContext';
-import { ProgressionProvider } from 'context/ProgressionContext';
-import { CommunityProvider } from 'context/CommunityContext';
-import { SystemProvider } from 'context/SystemContext';
-import { DataProvider } from 'context/DataProvider';
+import { NotificationsProvider } from './NotificationsContext';
+import { AuthProvider } from './AuthContext';
+import { DeveloperProvider } from './DeveloperContext';
+import { UIProvider } from './UIContext';
+import { QuestsProvider } from './QuestsContext';
+import { EconomyProvider } from './EconomyContext';
+import { ProgressionProvider } from './ProgressionContext';
+import { CommunityProvider } from './CommunityContext';
+import { SystemProvider } from './SystemContext';
+import { DataProvider } from './DataProvider';
 
 interface AppProvidersProps {
   children: React.ReactNode;

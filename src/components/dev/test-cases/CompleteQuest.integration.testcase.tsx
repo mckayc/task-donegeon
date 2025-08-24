@@ -9,6 +9,7 @@ import { useSystemState } from '../../../context/SystemContext';
 import { isQuestAvailableForUser } from '../../quests/utils/quests';
 import { useUIState } from '../../../context/UIContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+import CompleteQuestDialog from '../../quests/CompleteQuestDialog';
 
 
 const CompleteQuestIntegrationTestCase: React.FC = () => {

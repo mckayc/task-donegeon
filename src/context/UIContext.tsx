@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { AppMode, Page } from 'types/app';
-import { bugLogger } from 'utils/bugLogger';
+import { AppMode, Page } from '../types/app';
+import { bugLogger } from '../utils/bugLogger';
 
 export interface UIState {
   activePage: Page;

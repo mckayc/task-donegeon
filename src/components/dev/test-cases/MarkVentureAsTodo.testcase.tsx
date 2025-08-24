@@ -57,10 +57,10 @@ const MarkVentureAsTodoTestCase: React.FC = () => {
       markQuestAsTodo(testQuest.id, currentUser.id);
     }
     // And also update our local mock state to reflect the change visually.
-    setTestQuest(prev => ({
+    setTestQuest((prev: Quest) => ({
       ...prev,
       todoUserIds: isTodo
-        ? (prev.todoUserIds || []).filter(id => id !== currentUser.id)
+        ? (prev.todoUserIds || []).filter((id: string) => id !== currentUser.id)
         : [...(prev.todoUserIds || []), currentUser.id],
     }));
   };

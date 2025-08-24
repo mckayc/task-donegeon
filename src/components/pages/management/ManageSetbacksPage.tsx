@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ModifierDefinition, User } from 'types';
+import { ModifierDefinition, User } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditSetbackDialog from '../../admin/EditSetbackDialog';
@@ -86,7 +86,7 @@ const ManageSetbacksPage: React.FC = () => {
                     onSelectOne={handleCheckboxClick}
                     onApply={handleApply}
                     onEdit={handleEdit}
-                    onDeleteRequest={(ids) => setDeletingIds(ids)}
+                    onDeleteRequest={(ids: string[]) => setDeletingIds(ids)}
                     onCreate={handleCreate}
                 />
             </Card>

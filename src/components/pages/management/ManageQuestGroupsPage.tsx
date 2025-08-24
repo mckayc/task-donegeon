@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { QuestGroup } from 'types';
+import { QuestGroup } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditQuestGroupDialog from '../../quests/EditQuestGroupDialog';
@@ -66,7 +66,7 @@ const ManageQuestGroupsPage: React.FC = () => {
                     setSelectedGroups={setSelectedGroups}
                     onEdit={handleEdit}
                     onAssign={handleAssign}
-                    onDeleteRequest={(ids) => setDeletingIds(ids)}
+                    onDeleteRequest={(ids: string[]) => setDeletingIds(ids)}
                     onCreate={handleCreate}
                 />
             </Card>

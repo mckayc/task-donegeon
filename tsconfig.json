@@ -33,6 +33,7 @@
     "dist",
     "backend",
     "public",
+    "vite.config.ts",
     "**/*.test.ts",
     "**/*.test.tsx",
     "jest.config.js",

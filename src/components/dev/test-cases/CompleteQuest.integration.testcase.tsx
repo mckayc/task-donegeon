@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, QuestKind, Role, QuestCompletionStatus } from 'types';
 import Card from '../../user-interface/Card';

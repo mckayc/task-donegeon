@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
-import { Quest, QuestType, QuestKind, Role } from '../../../types';
+import { Quest, QuestType, QuestKind, Role } from 'types';
 import Card from '../../user-interface/Card';
 import QuestDetailDialog from '../../quests/QuestDetailDialog';
 import { useQuestsDispatch } from '../../../context/QuestsContext';

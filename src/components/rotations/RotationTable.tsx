@@ -82,7 +82,7 @@ const RotationTable: React.FC<RotationTableProps> = ({
                             <td className="p-4">
                                 <ToggleSwitch
                                     enabled={rotation.isActive}
-                                    setEnabled={(isActive: boolean) => onStatusChange(rotation, isActive)}
+                                    setEnabled={(isActive) => onStatusChange(rotation, isActive)}
                                     label={rotation.isActive ? 'Active' : 'Inactive'}
                                 />
                             </td>

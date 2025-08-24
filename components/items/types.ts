@@ -1,5 +1,5 @@
-import { Quest } from '../quests/types';
-import { Rank } from '../ranks/types';
+import type { Quest } from '../quests/types';
+import type { Rank } from '../ranks/types';
 
 export enum RewardCategory {
   Currency = 'Currency',

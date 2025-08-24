@@ -317,7 +317,7 @@ export const BackupAndImportPage: React.FC = () => {
                     <Card>
                         <ToggleSwitch 
                             enabled={settings.automatedBackups.enabled}
-                            setEnabled={(val: boolean) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
+                            setEnabled={(val) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
                             label="Enable Automated Backups"
                         />
                         {settings.automatedBackups.enabled && (
@@ -326,7 +326,7 @@ export const BackupAndImportPage: React.FC = () => {
                                     as="select"
                                     label="Backup Format"
                                     value={settings.automatedBackups.format}
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, format: e.target.value as any }})}
+                                    onChange={(e) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, format: (e.target as HTMLSelectElement).value as any }})}
                                 >
                                     <option value="json">JSON (data only)</option>
                                     <option value="sqlite">SQLite (full database)</option>
@@ -397,5 +397,3 @@ export const BackupAndImportPage: React.FC = () => {
         </div>
     );
 };
-
-export default BackupAndImportPage;

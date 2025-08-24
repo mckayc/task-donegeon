@@ -11,7 +11,7 @@ import {
     purchaseMarketItemAPI, approvePurchaseRequestAPI, rejectPurchaseRequestAPI, cancelPurchaseRequestAPI, 
     executeExchangeAPI, proposeTradeAPI, updateTradeOfferAPI, acceptTradeAPI, cancelOrRejectTradeAPI, 
     sendGiftAPI, useItemAPI, craftItemAPI 
-} from '../api';
+} from '../../api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -186,7 +186,6 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 addNotification({ type: 'success', message: 'Item crafted!' });
             }
         },
-
     }), [apiAction, currentUser, systemDispatch, updateUser, addNotification]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
@@ -196,4 +195,27 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             <EconomyDispatchContext.Provider value={contextValue}>
                 {children}
             </EconomyDispatchContext.Provider>
-        </EconomyState
+        </EconomyStateContext.Provider>
+    );
+};
+
+export const useEconomyState = (): EconomyState => {
+    const context = useContext(EconomyStateContext);
+    if (context === undefined) throw new Error('useEconomyState must be used within an EconomyProvider');
+    return context;
+};
+
+export const useEconomyDispatch = (): EconomyDispatch => {
+    const context = useContext(EconomyDispatchContext);
+    if (context === undefined) throw new Error('useEconomyDispatch must be used within an EconomyProvider');
+    return context.actions;
+};
+
+// Hook to get the dispatch for the economy reducer directly
+export const useEconomyReducerDispatch = (): React.Dispatch<EconomyAction> => {
+  const context = useContext(EconomyDispatchContext);
+  if (!context) {
+    throw new Error('useEconomyReducerDispatch must be used within an EconomyProvider');
+  }
+  return context.dispatch;
+};

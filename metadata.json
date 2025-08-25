@@ -1,5 +1,5 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.22b - Move duplicate files to src - Fix Build Errors",
+  "name": "Task Donegeon 2.0 - 0.1.23 - Delete Redundant folders",
   "version": "0.5.0",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [

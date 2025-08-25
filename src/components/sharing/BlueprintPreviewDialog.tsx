@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { AssetPack, ImportResolution, ShareableAssetType } from '../../../types';
-import { Terminology } from '../../../types/app';
+import { AssetPack, ImportResolution, ShareableAssetType } from '../../types';
+import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
-import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../utils/sharing';
 
 interface BlueprintPreviewDialogProps {
   assetPack: AssetPack;
@@ -60,7 +60,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ assetPa
                         <div className="p-4 bg-stone-900/50 rounded-lg">
                             <h4 className="font-semibold text-green-400 mb-2">New Items to be Added ({newItems.length})</h4>
                             <ul className="text-sm text-stone-300 list-disc list-inside max-h-32 overflow-y-auto">
-                                {newItems.map(res => <li key={`${res.type}-${res.id}`}>{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[terminologyMap[res.type]] || res.type})</span></li>)}
+                                {newItems.map((res: ImportResolution) => <li key={`${res.type}-${res.id}`}>{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[terminologyMap[res.type]] || res.type})</span></li>)}
                             </ul>
                         </div>
                     )}
@@ -70,7 +70,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ assetPa
                             <h4 className="font-semibold text-amber-400 mb-2">Name Conflicts ({conflictingItems.length})</h4>
                             <p className="text-sm text-amber-300/80 mb-4">Some items in this asset pack have the same name as items you already have. Please choose how to handle them.</p>
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                                {conflictingItems.map(res => (
+                                {conflictingItems.map((res: ImportResolution) => (
                                     <div key={`${res.type}-${res.id}`} className="bg-stone-800/50 p-3 rounded-md">
                                         <p className="font-bold text-stone-200">{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[terminologyMap[res.type]] || res.type})</span></p>
                                         <div className="flex items-center gap-4 mt-2">

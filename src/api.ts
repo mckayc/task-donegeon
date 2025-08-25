@@ -1,6 +1,8 @@
+
+
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem,
-} from 'types';
+} from '../types';
 
 // Generic API Request Function
 const apiRequest = async (method: string, path: string, body?: any) => {
@@ -79,16 +81,17 @@ export const bulkUpdateQuestsAPI = (ids: string[], updates: BulkQuestUpdates) =>
 export const completeQuestAPI = (completionData: Omit<QuestCompletion, 'id'>) => apiRequest('POST', '/api/quests/complete', { completionData });
 export const approveQuestCompletionAPI = (id: string, approverId: string, note?: string) => apiRequest('POST', `/api/quests/approve/${id}`, { approverId, note });
 export const rejectQuestCompletionAPI = (id: string, rejecterId: string, note?: string) => apiRequest('POST', `/api/quests/reject/${id}`, { rejecterId, note });
-export const markQuestAsTodoAPI = (questId: string, userId: string): Promise<Quest> => apiRequest('POST', '/api/quests/mark-todo', { questId, userId });
-export const unmarkQuestAsTodoAPI = (questId: string, userId: string): Promise<Quest> => apiRequest('POST', '/api/quests/unmark-todo', { questId, userId });
+export const markQuestAsTodoAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/mark-todo', { questId, userId });
+export const unmarkQuestAsTodoAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/unmark-todo', { questId, userId });
 export const addQuestGroupAPI = (data: Omit<QuestGroup, 'id'>) => apiRequest('POST', '/api/quest-groups', data);
 export const updateQuestGroupAPI = (data: QuestGroup) => apiRequest('PUT', `/api/quest-groups/${data.id}`, data);
 export const assignQuestGroupToUsersAPI = (groupId: string, userIds: string[]) => apiRequest('POST', '/api/quest-groups/assign', { groupId, userIds });
 export const addRotationAPI = (data: Omit<Rotation, 'id'>) => apiRequest('POST', '/api/rotations', data);
 export const updateRotationAPI = (data: Rotation) => apiRequest('PUT', `/api/rotations/${data.id}`, data);
 export const cloneRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/clone/${id}`);
-export const completeCheckpointAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/complete-checkpoint', { questId, userId });
 export const runRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/run/${id}`);
+export const completeCheckpointAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/complete-checkpoint', { questId, userId });
+
 
 // --- System & Dev API ---
 export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }) => {

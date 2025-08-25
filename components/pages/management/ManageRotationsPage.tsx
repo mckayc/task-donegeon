@@ -14,7 +14,7 @@ const ManageRotationsPage: React.FC = () => {
     const { settings } = useSystemState();
     const { rotations } = useQuestsState();
     const { deleteSelectedAssets } = useSystemDispatch();
-    const { cloneRotation, updateRotation, runRotation } = useQuestsDispatch();
+    const { cloneRotation, updateRotation } = useQuestsDispatch();
     const { dispatch: questsDispatch } = useContext(QuestsDispatchContext)!;
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -55,10 +55,6 @@ const ManageRotationsPage: React.FC = () => {
         updateRotation({ ...rotation, isActive });
     };
 
-    const handleRunRotation = (rotationId: string) => {
-        runRotation(rotationId);
-    };
-
     return (
         <div className="space-y-6">
             <Card
@@ -68,7 +64,6 @@ const ManageRotationsPage: React.FC = () => {
                  {selectedRotations.length > 0 && (
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedRotations.length} selected</span>
-                        <Button size="sm" variant="secondary" onClick={() => handleRunRotation(selectedRotations[0])} disabled={selectedRotations.length !== 1}>Run Now</Button>
                         <Button size="sm" variant="secondary" onClick={() => cloneRotation(selectedRotations[0])} disabled={selectedRotations.length !== 1}>Clone</Button>
                         <Button size="sm" variant="secondary" onClick={() => handleEdit(rotations.find(r => r.id === selectedRotations[0])!)} disabled={selectedRotations.length !== 1}>Edit</Button>
                         <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedRotations)}>Delete</Button>
@@ -81,7 +76,6 @@ const ManageRotationsPage: React.FC = () => {
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
                     onStatusChange={handleStatusChange}
-                    onRun={handleRunRotation}
                     onClone={cloneRotation}
                     onDeleteRequest={(ids) => setDeletingIds(ids)}
                     terminology={settings.terminology}

@@ -1,6 +1,8 @@
+
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from 'types';
-import { useNotificationsDispatch } from 'context/NotificationsContext';
+import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
+import { useNotificationsDispatch } from './NotificationsContext';
 import { 
     addQuestAPI, updateQuestAPI, cloneQuestAPI, updateQuestsStatusAPI, bulkUpdateQuestsAPI, 
     completeQuestAPI, approveQuestCompletionAPI, rejectQuestCompletionAPI, 
@@ -8,9 +10,9 @@ import {
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI, runRotationAPI,
     completeCheckpointAPI
 } from '../api';
-import { useAuthDispatch } from 'context/AuthContext';
-import { useProgressionReducerDispatch } from 'context/ProgressionContext';
-import { useSystemReducerDispatch } from 'context/SystemContext';
+import { useAuthDispatch } from './AuthContext';
+import { useProgressionReducerDispatch } from './ProgressionContext';
+import { useSystemReducerDispatch } from './SystemContext';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -171,11 +173,11 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         markQuestAsTodo: async (questId, userId) => {
-            const result: Quest | null = await apiAction(() => markQuestAsTodoAPI(questId, userId));
+            const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
         unmarkQuestAsTodo: async (questId, userId) => {
-            const result: Quest | null = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
+            const result = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
         completeCheckpoint: async (questId, userId) => {
@@ -227,4 +229,12 @@ export const useQuestsDispatch = (): QuestsDispatch => {
     const context = useContext(QuestsDispatchContext);
     if (context === undefined) throw new Error('useQuestsDispatch must be used within a QuestsProvider');
     return context.actions;
+};
+
+export const useQuestsReducerDispatch = (): React.Dispatch<QuestsAction> => {
+  const context = useContext(QuestsDispatchContext);
+  if (!context) {
+    throw new Error('useQuestsReducerDispatch must be used within a QuestsProvider');
+  }
+  return context.dispatch;
 };

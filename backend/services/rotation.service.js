@@ -162,43 +162,6 @@ const run = async (id) => {
     });
 };
 
-const runScheduled = async () => {
-    const rotationRepo = dataSource.getRepository(RotationEntity);
-    const today = new Date();
-    const todayYMD = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-    const dayOfWeek = today.getDay();
-
-    const activeRotations = await rotationRepo.find({ where: { isActive: true } });
-
-    const rotationsToRun = activeRotations.filter(rotation => {
-        if (rotation.lastAssignmentDate === todayYMD) return false;
-        if (rotation.startDate && rotation.startDate > todayYMD) return false;
-        if (rotation.endDate && rotation.endDate < todayYMD) return false;
-        if (!rotation.activeDays.includes(dayOfWeek)) return false;
-
-        if (rotation.frequency === 'WEEKLY') {
-            const weekStartDate = new Date(today);
-            weekStartDate.setDate(today.getDate() - dayOfWeek); // Go back to Sunday of the current week
-            const weekStartDateYMD = `${weekStartDate.getFullYear()}-${(weekStartDate.getMonth() + 1).toString().padStart(2, '0')}-${weekStartDate.getDate().toString().padStart(2, '0')}`;
-            
-            if (rotation.lastAssignmentDate && rotation.lastAssignmentDate >= weekStartDateYMD) {
-                return false; // Already ran this week
-            }
-        }
-        
-        return true;
-    });
-
-    for (const rotation of rotationsToRun) {
-        console.log(`[Scheduler] Running scheduled rotation: ${rotation.name} (${rotation.id})`);
-        try {
-            await run(rotation.id);
-        } catch (error) {
-            console.error(`[Scheduler] Error running rotation ${rotation.id}:`, error);
-        }
-    }
-};
-
 
 module.exports = {
     getAll,
@@ -207,5 +170,4 @@ module.exports = {
     deleteMany,
     clone,
     run,
-    runScheduled,
 };

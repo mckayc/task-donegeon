@@ -1,7 +1,8 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { User, Role } from 'types';
-import { useNotificationsDispatch } from 'context/NotificationsContext';
-import { bugLogger } from 'utils/bugLogger';
+import { User, Role } from '../types';
+import { useNotificationsDispatch } from './NotificationsContext';
+import { bugLogger } from '../utils/bugLogger';
 import { addUserAPI, updateUserAPI, deleteUsersAPI, completeFirstRunAPI } from '../api';
 
 // State managed by this context

@@ -8,8 +8,7 @@ import {
     completeQuestAPI, approveQuestCompletionAPI, rejectQuestCompletionAPI, 
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI,
-    completeCheckpointAPI,
-    runRotationAPI
+    completeCheckpointAPI
 } from '../src/api';
 import { useAuthDispatch } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
@@ -47,7 +46,6 @@ export interface QuestsDispatch {
   addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
   updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
   cloneRotation: (rotationId: string) => Promise<Rotation | null>;
-  runRotation: (rotationId: string) => Promise<void>;
   completeCheckpoint: (questId: string, userId: string) => Promise<void>;
 }
 
@@ -203,10 +201,6 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         addRotation: (data) => apiAction(() => addRotationAPI(data)),
         updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
         cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
-        runRotation: async (id) => {
-            const result = await apiAction(() => runRotationAPI(id));
-            if (result) addNotification({ type: 'success', message: (result as any).message });
-        },
     }), [addNotification, apiAction, updateUser, progressionDispatch, systemDispatch]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);

@@ -16,7 +16,7 @@ import { useCommunityState } from './context/CommunityContext';
 import { useSystemState } from './context/SystemContext';
 import { useIsDataLoaded } from './context/DataProvider';
 import ErrorBoundary from './components/layout/ErrorBoundary';
-import { Role, Guild, ThemeDefinition } from './types';
+import { Role, Guild, ThemeDefinition } from '../types';
 
 const App: React.FC = () => {
   const { settings, themes } = useSystemState();

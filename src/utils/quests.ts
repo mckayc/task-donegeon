@@ -1,3 +1,4 @@
+
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode } from '../types';
 
 /**
@@ -85,28 +86,19 @@ export const isQuestVisibleToUserInMode = (
 
   const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
-  // If quest is a guild quest, it's only visible in that guild's view.
-  if (quest.guildId) {
-    if (quest.guildId !== currentGuildId) {
-      return false;
-    }
-    // Check assignment within the guild
-    if (quest.assignedUserIds.length > 0 && !quest.assignedUserIds.includes(userId)) {
-      return false;
-    }
-    return true;
-  } 
-  // If quest is a personal quest, it's only visible in personal view.
-  else {
-    if (appMode.mode !== 'personal') {
-      return false;
-    }
-    // Check assignment for personal quests
-    if (quest.assignedUserIds.length > 0 && !quest.assignedUserIds.includes(userId)) {
-      return false;
-    }
-    return true;
+  // Scope check first
+  if (quest.guildId) { // Guild quest
+    if (quest.guildId !== currentGuildId) return false;
+  } else { // Personal quest
+    if (appMode.mode !== 'personal') return false;
   }
+  
+  // Assignment check - An empty list means it's assigned to no one.
+  if (quest.assignedUserIds.length === 0) {
+    return false;
+  }
+  
+  return quest.assignedUserIds.includes(userId);
 };
 
 

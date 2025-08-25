@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../../types';
 import Card from '../user-interface/Card';

@@ -1,17 +1,18 @@
+
 import React, { useState } from 'react';
-import { AssetPack, ImportResolution, ShareableAssetType } from '../../types';
+import { AssetPack, ImportResolution, ShareableAssetType } from '../../../types';
 import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
-import { analyzeAssetPackForConflicts } from '../../utils/sharing';
+import { analyzeAssetPackForConflicts } from './utils/sharing';
 import { bugLogger } from '../../utils/bugLogger';
 
 interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
   initialResolutions: ImportResolution[];
   onClose: () => void;
-  onConfirm: (blueprint: AssetPack, resolutions: ImportResolution[]) => void;
+  onConfirm: (assetPack: AssetPack, resolutions: ImportResolution[]) => void;
 }
 
 const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {

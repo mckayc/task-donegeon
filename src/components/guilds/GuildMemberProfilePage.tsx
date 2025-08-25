@@ -1,7 +1,6 @@
 
-
 import React, { useMemo } from 'react';
-import { Guild, Rank, User, Trophy, RewardTypeDefinition } from '../../types';
+import { Guild, Rank, User, Trophy, RewardTypeDefinition, GameAsset } from '../../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import Avatar from '../user-interface/Avatar';
@@ -57,8 +56,8 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
 
     const ownedItems = useMemo(() => {
         return user.ownedAssetIds
-            .map(id => gameAssets.find(asset => asset.id === id))
-            .filter(asset => asset && asset.category.toLowerCase() !== 'avatar');
+            .map((id: string) => gameAssets.find((asset: GameAsset) => asset.id === id))
+            .filter((asset): asset is GameAsset => !!asset && asset.category.toLowerCase() !== 'avatar');
     }, [user.ownedAssetIds, gameAssets]);
 
     return (
@@ -134,10 +133,10 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
                     <h3 className="text-xl font-bold text-stone-200 mb-4">Item Collection</h3>
                      {ownedItems.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                             {ownedItems.map(asset => asset && (
+                             {ownedItems.map((asset: GameAsset) => asset && (
                                 <div key={asset.id} className="bg-stone-800/60 p-3 rounded-lg flex flex-col items-center text-center">
                                     <div className="w-16 h-16 mb-2 bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden">
-                                        <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-contain" />
+                                        <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
                                     </div>
                                     <p className="font-semibold text-sm text-stone-200 truncate w-full">{asset.name}</p>
                                     <p className="text-xs text-stone-400">{asset.category}</p>

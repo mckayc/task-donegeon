@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ModifierDefinition, ModifierEffect, ModifierEffectType, RewardCategory, RewardItem, QuestKind } from '../../types';
+import { ModifierDefinition, ModifierEffect, ModifierEffectType, RewardCategory, RewardItem, QuestKind } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
@@ -52,7 +52,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
     };
 
     const handleRemoveEffect = (index: number) => {
-        setFormData(prev => ({ ...prev, effects: prev.effects.filter((_, i) => i !== index) }));
+        setFormData(prev => ({ ...prev, effects: prev.effects.filter((_: ModifierEffect, i: number) => i !== index) }));
     };
     
     const handleEffectTypeChange = (effectIndex: number, newType: ModifierEffectType) => {
@@ -113,7 +113,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
             if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
-                effect.rewards = effect.rewards.filter((_: any, i: number) => i !== itemIndexToRemove);
+                effect.rewards = effect.rewards.filter((_: RewardItem, i: number) => i !== itemIndexToRemove);
             }
             return { ...prev, effects: newEffects };
         });
@@ -155,7 +155,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
                     
                     <div className="space-y-4 pt-4 border-t border-stone-700/60">
                         <h3 className="font-semibold text-stone-200">Effects</h3>
-                        {formData.effects.map((effect, index) => (
+                        {formData.effects.map((effect: ModifierEffect, index: number) => (
                             <div key={index} className="p-3 bg-stone-900/50 rounded-lg space-y-3">
                                 <div className="flex justify-between items-center">
                                     <Input as="select" label="" value={effect.type} onChange={e => handleEffectTypeChange(index, e.target.value as ModifierEffectType)}>

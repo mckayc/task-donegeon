@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Guild } from '../../types';
+import { Guild } from '../../../types';
 import Button from '../user-interface/Button';
 
 interface DonateDialogProps {

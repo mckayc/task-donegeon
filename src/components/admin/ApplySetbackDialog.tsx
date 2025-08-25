@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
-import { User, ModifierDefinition, Role, ModifierEffect, ModifierEffectType, RewardItem, RewardCategory, QuestKind } from '../../types';
+import { User, ModifierDefinition, Role, ModifierEffect, ModifierEffectType, RewardItem, RewardCategory, QuestKind } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -35,18 +35,18 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
         const newEffect: ModifierEffect = formData.category === 'Trial'
             ? { type: ModifierEffectType.CloseMarket, marketIds: [], durationHours: 24 }
             : { type: ModifierEffectType.GrantRewards, rewards: [] };
-        setFormData(prev => ({
+        setFormData((prev: ModifierDefinition) => ({
             ...prev,
             effects: [...prev.effects, newEffect]
         }));
     };
 
     const handleRemoveEffect = (index: number) => {
-        setFormData(prev => ({ ...prev, effects: prev.effects.filter((_, i) => i !== index) }));
+        setFormData((prev: ModifierDefinition) => ({ ...prev, effects: prev.effects.filter((_: ModifierEffect, i: number) => i !== index) }));
     };
     
     const handleEffectTypeChange = (effectIndex: number, newType: ModifierEffectType) => {
-        setFormData(prev => {
+        setFormData((prev: ModifierDefinition) => {
             const newEffects = [...prev.effects];
             let newEffect: ModifierEffect;
             switch(newType) {
@@ -65,7 +65,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     };
 
      const handleEffectPropChange = (effectIndex: number, prop: string, value: any) => {
-        setFormData(prev => {
+        setFormData((prev: ModifierDefinition) => {
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
             if(effect) {
@@ -76,7 +76,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     };
     
     const handleRewardChange = (effectIndex: number) => (itemIndex: number, field: keyof RewardItem, value: string | number) => {
-        setFormData(prev => {
+        setFormData((prev: ModifierDefinition) => {
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
             if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
@@ -89,7 +89,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     };
     
     const handleAddRewardToEffect = (effectIndex: number) => (rewardCat: RewardCategory) => {
-        setFormData(prev => {
+        setFormData((prev: ModifierDefinition) => {
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
             if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
@@ -102,7 +102,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     };
 
     const handleRemoveRewardFromEffect = (effectIndex: number) => (itemIndexToRemove: number) => {
-        setFormData(prev => {
+        setFormData((prev: ModifierDefinition) => {
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
             if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
@@ -159,8 +159,8 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                     
                     <div className="pt-4 border-t border-stone-700/60">
                          <h3 className="font-semibold text-stone-200 mb-2">Override Modifier Details (Optional)</h3>
-                         <Input label="Name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} />
-                         <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} />
+                         <Input label="Name" value={formData.name} onChange={e => setFormData((p: ModifierDefinition) => ({ ...p, name: e.target.value }))} />
+                         <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData((p: ModifierDefinition) => ({ ...p, description: e.target.value }))} />
                          <div>
                             <label className="block text-sm font-medium text-stone-300 mb-1">Icon</label>
                             <div className="relative">
@@ -168,12 +168,12 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                     <span className="text-2xl">{formData.icon}</span>
                                     <span className="text-stone-300">Click to change</span>
                                 </button>
-                                {isEmojiPickerOpen && <EmojiPicker onSelect={emoji => { setFormData(p => ({...p, icon: emoji})); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                                {isEmojiPickerOpen && <EmojiPicker onSelect={emoji => { setFormData((p: ModifierDefinition) => ({...p, icon: emoji})); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
                             </div>
                         </div>
                         <div className="space-y-4 pt-4">
                             <h3 className="font-semibold text-stone-200">Effects</h3>
-                            {formData.effects.map((effect, index) => (
+                            {formData.effects.map((effect: ModifierEffect, index: number) => (
                                 <div key={index} className="p-3 bg-stone-900/50 rounded-lg space-y-3">
                                     <div className="flex justify-between items-center">
                                          <Input as="select" label="" value={effect.type} onChange={e => handleEffectTypeChange(index, e.target.value as ModifierEffectType)}>
@@ -199,7 +199,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-stone-300 mb-1">Markets to Affect</label>
-                                                <select multiple value={effect.marketIds}
+                                                 <select multiple value={effect.marketIds}
                                                     className="w-full h-32 px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
                                                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                                                         const selectedValues = Array.from(e.target.selectedOptions, option => option.value);

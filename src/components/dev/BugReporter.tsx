@@ -1,11 +1,10 @@
 
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useDeveloper } from '../../context/DeveloperContext';
 import { ChevronDownIcon, ChevronUpIcon } from '../user-interface/Icons';
-import { BugReportType } from '../../types';
+import { BugReportType } from '../../../types';
 import { useSystemState } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
 

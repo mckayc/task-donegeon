@@ -150,8 +150,8 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
         }
         const packToInstall: AssetPack = JSON.parse(JSON.stringify(assetPack));
         
-        if (packToInstall.assets.quests && Array.isArray(packToInstall.assets.quests) && packToInstall.assets.quests.length > 0) {
-            packToInstall.assets.quests = packToInstall.assets.quests.map((quest: Quest) => ({
+        if (packToInstall.assets.quests && Array.isArray(packToInstall.assets.quests) && (packToInstall.assets.quests as Quest[]).length > 0) {
+            packToInstall.assets.quests = (packToInstall.assets.quests as Quest[]).map((quest: Quest) => ({
                 ...quest,
                 assignedUserIds: [...assignedUserIds]
             }));
@@ -171,7 +171,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
         
         const packToInstall: AssetPack = JSON.parse(JSON.stringify(assetPack));
         if (packToInstall.assets.quests && Array.isArray(packToInstall.assets.quests) && packToInstall.assets.quests.length > 0) {
-            packToInstall.assets.quests = packToInstall.assets.quests.map((quest: Quest) => ({
+            packToInstall.assets.quests = (packToInstall.assets.quests as Quest[]).map((quest: Quest) => ({
                 ...quest,
                 assignedUserIds: [...assignedUserIds]
             }));
@@ -189,7 +189,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
     };
 
 
-    const hasQuestsToImport = useMemo(() => assetPack.assets.quests && assetPack.assets.quests.length > 0, [assetPack.assets.quests]);
+    const hasQuestsToImport = useMemo(() => assetPack.assets.quests && (assetPack.assets.quests as Quest[]).length > 0, [assetPack.assets.quests]);
 
     const groupedResolutions = useMemo(() => {
         return resolutions.reduce((acc, res) => {
@@ -226,7 +226,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                                     {groupResolutions.map(res => {
                                         const assetList = assetPack.assets[res.type as keyof typeof assetPack.assets];
                                         const asset = Array.isArray(assetList)
-                                            ? assetList.find(a => {
+                                            ? (assetList as any[]).find(a => {
                                                 if (res.type === 'users') {
                                                     return (a as UserTemplate).username === res.id;
                                                 }

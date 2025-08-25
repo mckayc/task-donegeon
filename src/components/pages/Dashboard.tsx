@@ -8,7 +8,7 @@ import { Rank } from '../ranks/types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
-import { useDashboardData } from '../../hooks/useDashboardData';
+import { useDashboardData } from '../dashboard/hooks/useDashboardData';
 import RankCard from '../dashboard/RankCard';
 import InventoryCard from '../dashboard/InventoryCard';
 import TrophyCard from '../dashboard/TrophyCard';

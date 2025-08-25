@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Guild, AppSettings } from '../../types';
+import { Guild, AppSettings } from '../../../types';
 import EmptyState from '../user-interface/EmptyState';
 import { GuildIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';

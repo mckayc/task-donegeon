@@ -64,7 +64,7 @@ const ProgressPage: React.FC = () => {
         
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         const experience = appMode.mode === 'guild' ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
-        const totalXp: number = Object.values(experience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const totalXp: number = Object.values(experience).reduce<number>((sum, amount) => sum + amount, 0);
 
         const currentRank = [...ranks].sort((a,b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold) || null;
         

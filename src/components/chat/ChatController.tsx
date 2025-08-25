@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { Role, ChatMessage } from '../../types';
+import { Role, ChatMessage } from '../../../types';
 import { useSystemState } from '../../context/SystemContext';
 import { useCommunityState } from '../../context/CommunityContext';
 

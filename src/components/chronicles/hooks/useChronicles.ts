@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import {
   ChronicleEvent,
-} from '../../../types';
+} from '../../../../types';
 import { toYMD } from '../../quests/utils/quests';
 import { useAuthState } from '../../../context/AuthContext';
 import { useUIState } from '../../../context/UIContext';

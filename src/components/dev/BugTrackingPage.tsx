@@ -1,9 +1,7 @@
 
-
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
-import { BugReport, BugReportStatus } from '../../types';
+import { BugReport, BugReportStatus, BugReportLogEntry } from '../../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -199,7 +197,7 @@ const BugTrackingPage: React.FC = () => {
                         </thead>
                         <tbody>
                             {filteredReports.map(report => {
-                                const allLogsCopied = report.logs?.length > 0 && report.logs.every(log => log.lastCopiedAt);
+                                const allLogsCopied = report.logs?.length > 0 && report.logs.every((log: BugReportLogEntry) => log.lastCopiedAt);
 
                                 return (
                                     <tr 
@@ -215,7 +213,7 @@ const BugTrackingPage: React.FC = () => {
                                         </td>
                                         <td className={`p-4 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
                                             <div className="flex flex-wrap gap-1">
-                                                {(report.tags || []).map(tag => (
+                                                {(report.tags || []).map((tag: string) => (
                                                     <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
                                                 ))}
                                             </div>

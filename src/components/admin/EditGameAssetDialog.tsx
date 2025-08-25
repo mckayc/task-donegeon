@@ -1,7 +1,6 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { GameAsset, RewardItem, RewardCategory } from '../../types';
+import { GameAsset, RewardItem, RewardCategory } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
@@ -51,7 +50,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         avatarSlot: d.avatarSlot || '',
         isForSale: typeof d.isForSale === 'boolean' ? d.isForSale : false,
         requiresApproval: typeof d.requiresApproval === 'boolean' ? d.requiresApproval : false,
-        costGroups: d.costGroups && d.costGroups.length > 0 ? d.costGroups.map(group => [...group]) : [[]],
+        costGroups: d.costGroups && d.costGroups.length > 0 ? d.costGroups.map((group: RewardItem[]) => [...group]) : [[]],
         payouts: d.payouts ? [...d.payouts] : [],
         marketIds: [...(d.marketIds || [])],
         purchaseLimit: typeof d.purchaseLimit === 'number' ? d.purchaseLimit : null,
@@ -117,7 +116,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
 
 
   const handleCostGroupChange = (groupIndex: number) => (itemIndex: number, field: keyof RewardItem, value: string | number) => {
-    const newCostGroups = [...formData.costGroups.map(group => [...group])];
+    const newCostGroups = [...formData.costGroups.map((group: RewardItem[]) => [...group])];
     const newGroup = newCostGroups[groupIndex];
     newGroup[itemIndex] = { ...newGroup[itemIndex], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
     setFormData(p => ({ ...p, costGroups: newCostGroups }));
@@ -126,19 +125,19 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   const handleAddRewardToGroup = (groupIndex: number) => (rewardCat: RewardCategory) => {
     const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
     if (!defaultReward) return;
-    const newCostGroups = [...formData.costGroups.map(group => [...group])];
+    const newCostGroups = [...formData.costGroups.map((group: RewardItem[]) => [...group])];
     newCostGroups[groupIndex].push({ rewardTypeId: defaultReward.id, amount: 1 });
     setFormData(p => ({ ...p, costGroups: newCostGroups }));
   };
   
   const handleRemoveRewardFromGroup = (groupIndex: number) => (itemIndex: number) => {
-    const newCostGroups = [...formData.costGroups.map(group => [...group])];
+    const newCostGroups = [...formData.costGroups.map((group: RewardItem[]) => [...group])];
     newCostGroups[groupIndex].splice(itemIndex, 1);
     setFormData(p => ({ ...p, costGroups: newCostGroups }));
   };
 
   const addCostGroup = () => setFormData(p => ({ ...p, costGroups: [...p.costGroups, []] }));
-  const removeCostGroup = (groupIndex: number) => setFormData(p => ({ ...p, costGroups: p.costGroups.filter((_, i) => i !== groupIndex) }));
+  const removeCostGroup = (groupIndex: number) => setFormData(p => ({ ...p, costGroups: p.costGroups.filter((_: RewardItem[], i: number) => i !== groupIndex) }));
 
   const handlePayoutChange = (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...formData.payouts];
@@ -153,7 +152,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   };
   
   const handleRemovePayout = (indexToRemove: number) => {
-    setFormData(prev => ({ ...prev, payouts: prev.payouts.filter((_, i) => i !== indexToRemove) }));
+    setFormData(prev => ({ ...prev, payouts: prev.payouts.filter((_: RewardItem, i: number) => i !== indexToRemove) }));
   };
   
   const handleMarketToggle = (marketId: string) => {
@@ -195,8 +194,8 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       avatarSlot: formData.category.toLowerCase() === 'avatar' ? formData.avatarSlot : undefined,
       purchaseLimit: finalLimit,
       purchaseLimitType: finalLimitType,
-      payouts: formData.isForSale && formData.allowExchange ? formData.payouts.filter(p => p.amount > 0 && p.rewardTypeId) : undefined,
-      costGroups: formData.costGroups.map(g => g.filter(c => c.amount > 0 && c.rewardTypeId)).filter(g => g.length > 0),
+      payouts: formData.isForSale && formData.allowExchange ? formData.payouts.filter((p: RewardItem) => p.amount > 0 && p.rewardTypeId) : undefined,
+      costGroups: formData.costGroups.map((g: RewardItem[]) => g.filter((c: RewardItem) => c.amount > 0 && c.rewardTypeId)).filter((g: RewardItem[]) => g.length > 0),
     };
     
     const { allowExchange, url, ...intermediatePayload } = payload;
@@ -313,7 +312,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                       
                       <div className="space-y-3">
                         <h4 className="font-semibold text-stone-200">Cost Options</h4>
-                        {formData.costGroups.map((group, groupIndex) => (
+                        {formData.costGroups.map((group: RewardItem[], groupIndex: number) => (
                            <div key={groupIndex} className="p-3 border border-stone-700/60 rounded-lg">
                                <RewardInputGroup category='cost' items={group} onChange={handleCostGroupChange(groupIndex)} onAdd={handleAddRewardToGroup(groupIndex)} onRemove={handleRemoveRewardFromGroup(groupIndex)} />
                                {formData.costGroups.length > 1 && <Button type="button" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300 text-xs py-1 px-2 mt-2" onClick={() => removeCostGroup(groupIndex)}>Remove Cost Option</Button>}

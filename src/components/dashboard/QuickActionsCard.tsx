@@ -2,7 +2,7 @@
 import React from 'react';
 import Card from '../user-interface/Card';
 import QuestWidget from './QuestWidget';
-import { Quest } from '../../types';
+import { Quest } from '../../../types';
 
 interface QuickActionsCardProps {
     quests: Quest[];

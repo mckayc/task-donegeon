@@ -1,10 +1,6 @@
 
-
-
-
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
+import { BugReport, BugReportStatus, BugReportLogEntry } from '../../../types';
 import { useSystemDispatch } from '../../context/SystemContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Button from '../user-interface/Button';
@@ -95,7 +91,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         const logsToCopy = sortedLogs.filter(log => logTimestampsToCopy.includes(log.timestamp));
 
         const titleLine = `Report ID: #${shortId}\nTitle: ${report.title}\n\n--- LOGS ---\n`;
-        const logText = logsToCopy.map(log => {
+        const logText = logsToCopy.map((log: BugReportLogEntry) => {
             const authorText = log.type === 'COMMENT' && log.author ? `${log.author}: ` : '';
             return `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${authorText}${log.message}` +
             (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
@@ -107,7 +103,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
             addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
 
             const timestampsToUpdate = new Set(logTimestampsToCopy);
-            const newLogs = report.logs.map(log => {
+            const newLogs = report.logs.map((log: BugReportLogEntry) => {
                 if (timestampsToUpdate.has(log.timestamp)) {
                     const updatedLog: BugReportLogEntry = { ...log, lastCopiedAt: new Date().toISOString() };
                     if (log.type === 'COMMENT') {
@@ -158,7 +154,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         const newLogs = [...report.logs, newEntry];
         
         // Optimistically update the UI
-        setReport(prev => ({ ...prev, logs: newLogs }));
+        setReport((prev: BugReport) => ({ ...prev, logs: newLogs }));
         setComment('');
 
         try {
@@ -171,12 +167,12 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         } catch (error) {
             // Revert on failure
             addNotification({ type: 'error', message: 'Failed to save comment.' });
-            setReport(prev => ({ ...prev, logs: prev.logs.filter(log => log.timestamp !== newEntry.timestamp)}));
+            setReport((prev: BugReport) => ({ ...prev, logs: prev.logs.filter((log: BugReportLogEntry) => log.timestamp !== newEntry.timestamp)}));
         }
     };
 
     const handleToggleDim = (logTimestamp: string) => {
-        const newLogs = report.logs.map(log => {
+        const newLogs = report.logs.map((log: BugReportLogEntry) => {
             if (log.timestamp === logTimestamp && log.type === 'COMMENT') {
                 return { ...log, isDimmed: !log.isDimmed };
             }
@@ -188,7 +184,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
     };
 
     const handleCommentStatusChange = (logTimestamp: string, newStatus: 'good' | 'review') => {
-        const newLogs = report.logs.map(log => {
+        const newLogs = report.logs.map((log: BugReportLogEntry) => {
             if (log.timestamp === logTimestamp && log.type === 'COMMENT') {
                 const finalStatus = log.commentStatus === newStatus ? undefined : newStatus;
                 return { ...log, commentStatus: finalStatus };

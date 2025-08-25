@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BackupSchedule } from '../../types';
+import { BackupSchedule } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 

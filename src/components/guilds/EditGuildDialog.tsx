@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCommunityDispatch, useCommunityState } from '../../context/CommunityContext';
 import { useAuthState } from '../../context/AuthContext';
-import { Guild } from '../../types';
+import { Guild } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';

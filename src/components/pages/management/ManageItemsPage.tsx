@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../items/types';
 import Button from '../../user-interface/Button';
@@ -195,7 +196,7 @@ const ManageItemsPage: React.FC = () => {
             <Card title={`All Created ${settings.terminology.link_manage_items}`}>
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
-                        {categories.map((category: string) => (
+                        {categories.map(category => (
                             <button key={category} onClick={() => setActiveTab(category)}
                                 data-log-id={`manage-items-tab-${category.toLowerCase()}`}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -234,7 +235,7 @@ const ManageItemsPage: React.FC = () => {
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
                     onClone={cloneGameAsset}
-                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    onDeleteRequest={(ids: string[]) => setConfirmation({ action: 'delete', ids })}
                     onPreviewImage={setPreviewImageUrl}
                     isLoading={isLoading}
                     searchTerm={debouncedSearchTerm}

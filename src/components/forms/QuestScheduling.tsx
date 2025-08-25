@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { QuestType, Terminology } from '../../types';
+import { QuestType, Terminology } from '../../../types';
 import Input from '../user-interface/Input';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useSystemState } from '../../context/SystemContext';

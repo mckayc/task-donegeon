@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ScheduledEvent, RewardCategory } from '../../types';
+import { ScheduledEvent, RewardCategory } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';

@@ -1,10 +1,9 @@
-
 import React from 'react';
-import { GameAsset } from './types';
-import { Terminology } from '../../types';
+import { GameAsset, Terminology } from '../../types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { ItemManagerIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';
+import DynamicIcon from '../user-interface/DynamicIcon';
 
 interface ItemTableProps {
     assets: GameAsset[];
@@ -87,28 +86,32 @@ const ItemTable: React.FC<ItemTableProps> = ({
                                         className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
                                     />
                                 </td>
-                                <td className="p-2">
-                                    <button onClick={() => onPreviewImage(asset.imageUrl || null)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
-                                        <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
+                                <td className="p-4">
+                                    <button onClick={() => onPreviewImage(asset.imageUrl || null)} className="w-12 h-12 bg-stone-700/50 rounded-md flex items-center justify-center overflow-hidden">
+                                        <DynamicIcon iconType={asset.iconType} icon={asset.icon} imageUrl={asset.imageUrl} className="w-full h-full object-contain" />
                                     </button>
                                 </td>
                                 <td className="p-4 font-bold">
-                                    <button onClick={() => onEdit(asset)} data-log-id={`manage-items-edit-title-${asset.id}`} className="hover:underline hover:text-accent transition-colors text-left flex items-center gap-1.5">
-                                        {isOrphaned && <span title="This item is for sale but not in any market." className="text-yellow-400">⚠️</span>}
+                                    <button onClick={() => onEdit(asset)} className="hover:underline hover:text-accent transition-colors text-left">
                                         {asset.name}
                                     </button>
                                 </td>
                                 <td className="p-4 text-stone-400">{asset.category}</td>
-                                <td className="p-4 text-stone-300">{asset.isForSale ? 'Yes' : 'No'}</td>
                                 <td className="p-4">
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" title="Edit" onClick={() => onEdit(asset)} data-log-id={`manage-items-action-edit-${asset.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${asset.isForSale ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
+                                        {asset.isForSale ? 'Yes' : 'No'}
+                                    </span>
+                                    {isOrphaned && <p className="text-xs text-amber-400 mt-1">Orphaned</p>}
+                                </td>
+                                <td className="p-4">
+                                     <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="icon" title="Edit" onClick={() => onEdit(asset)} className="h-8 w-8 text-stone-400 hover:text-white">
                                             <PencilIcon className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" title="Clone" onClick={() => onClone(asset.id)} data-log-id={`manage-items-action-clone-${asset.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                        <Button variant="ghost" size="icon" title="Clone" onClick={() => onClone(asset.id)} className="h-8 w-8 text-stone-400 hover:text-white">
                                             <CopyIcon className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" title="Delete" onClick={() => onDeleteRequest([asset.id])} data-log-id={`manage-items-action-delete-${asset.id}`} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                        <Button variant="ghost" size="icon" title="Delete" onClick={() => onDeleteRequest([asset.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
                                             <TrashIcon className="w-4 h-4" />
                                         </Button>
                                     </div>
@@ -121,5 +124,4 @@ const ItemTable: React.FC<ItemTableProps> = ({
         </div>
     );
 };
-
 export default ItemTable;

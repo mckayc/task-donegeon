@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { Role, User, ChatMessage, Guild } from '../../types';
+import { Role, User, ChatMessage, Guild } from '../../../types';
 import Avatar from '../user-interface/Avatar';
 import Input from '../user-interface/Input';
 import { XCircleIcon } from '../user-interface/Icons';

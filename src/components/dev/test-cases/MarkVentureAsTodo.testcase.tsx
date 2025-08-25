@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Quest, QuestType, QuestKind, Role } from '../../../types';
+import { Quest, QuestType, QuestKind, Role } from '../../../../types';
 import Card from '../../user-interface/Card';
 import QuestDetailDialog from '../../quests/QuestDetailDialog';
 import { useQuestsDispatch } from '../../../context/QuestsContext';
@@ -58,10 +58,10 @@ const MarkVentureAsTodoTestCase: React.FC = () => {
       markQuestAsTodo(testQuest.id, currentUser.id);
     }
     // And also update our local mock state to reflect the change visually.
-    setTestQuest(prev => ({
+    setTestQuest((prev: Quest) => ({
       ...prev,
       todoUserIds: isTodo
-        ? (prev.todoUserIds || []).filter(id => id !== currentUser.id)
+        ? (prev.todoUserIds || []).filter((id: string) => id !== currentUser.id)
         : [...(prev.todoUserIds || []), currentUser.id],
     }));
   };

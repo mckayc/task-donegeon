@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Quest, QuestKind, QuestType, RewardTypeDefinition, RewardCategory } from '../../types';
+import { Quest, QuestKind, QuestType, RewardTypeDefinition, RewardCategory, RewardItem } from '../../../types';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 
@@ -84,7 +84,7 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
 
             {quest.rewards.length > 0 && (
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold md:col-span-1 md:justify-end">
-                    {quest.rewards.map(r => {
+                    {quest.rewards.map((r: RewardItem) => {
                         const { name, icon } = getRewardInfo(r.rewardTypeId);
                         return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+ {r.amount} <span className="text-base">{icon}</span></span>
                     })}

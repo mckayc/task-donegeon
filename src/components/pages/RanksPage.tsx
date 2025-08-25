@@ -23,7 +23,7 @@ const RanksPage: React.FC = () => {
             ? currentUser.personalExperience
             : currentUser.guildBalances[appMode.guildId]?.experience || {};
         
-        const currentTotalXp: number = Object.values(currentBalances).reduce((sum: number, amount: number) => sum + amount, 0);
+        const currentTotalXp: number = Object.values(currentBalances).reduce<number>((sum, amount) => sum + amount, 0);
         
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         

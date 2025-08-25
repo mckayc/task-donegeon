@@ -1,5 +1,3 @@
-
-
 import { GenerateContentResponse } from "@google/genai";
 import { User, UserTemplate, AdminAdjustment } from './components/users/types';
 import { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from './components/items/types';

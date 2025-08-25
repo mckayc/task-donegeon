@@ -1,17 +1,10 @@
-
-
-
-
-
-
-
 import React, { useState } from 'react';
 import { AssetPack, ImportResolution, ShareableAssetType } from '../../types';
 import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
-import { analyzeAssetPackForConflicts } from './utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../utils/sharing';
 
 interface BlueprintPreviewDialogProps {
   assetPack: AssetPack;

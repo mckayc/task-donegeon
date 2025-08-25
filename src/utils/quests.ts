@@ -1,5 +1,3 @@
-
-
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode } from '../types';
 
 /**

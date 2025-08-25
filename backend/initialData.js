@@ -1,4 +1,3 @@
-
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -264,27 +263,27 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
+const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
-  styles: styles as ThemeStyle,
+  styles: styles,
 }));
 
 // This function is for creating mock data, but is not used on initial load.
 // It remains here in case it's needed for testing or blueprints.
-export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
+const createInitialQuestCompletions = (users, quests) => {
     // This function can be used to populate some initial "completed" quests for demonstration
     return [];
 };
 
-export const INITIAL_TROPHIES: Trophy[] = [
-    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] },
+const INITIAL_TROPHIES = [
+    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },
     { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] },
     { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] },
     { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] },
-    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]},
+    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: 'ACHIEVE_RANK', value: 'rank-2', count: 1}]},
     { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] },
     { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', iconType: 'emoji', icon: '💰', isManual: true, requirements: [] },
     { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] },

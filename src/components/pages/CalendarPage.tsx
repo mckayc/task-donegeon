@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
@@ -18,7 +16,7 @@ import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput,
 import { useChronicles } from '../chronicles/hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode, isQuestScheduledForDay } from '../quests/utils/quests';
+import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode, isQuestScheduledForDay } from '../../utils/quests';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';

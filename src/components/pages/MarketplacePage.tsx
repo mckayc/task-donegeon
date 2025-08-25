@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useMemo } from 'react';
 import Card from '../../user-interface/Card';
 import { useSystemState } from '../../../context/SystemContext';
@@ -80,7 +77,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
             );
         };
 
-        const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [saleForThisItem]);
+        const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [asset.costGroups, saleForThisItem]);
         
         const canAffordAny = useMemo(() => {
             if (!currentUser) return false;

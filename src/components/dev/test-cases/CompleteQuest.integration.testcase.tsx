@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, QuestKind, Role, QuestCompletionStatus } from '../../../types';
 import Card from '../../user-interface/Card';
@@ -8,7 +6,7 @@ import { useQuestsDispatch, useQuestsState } from '../../../context/QuestsContex
 import { useAuthState } from '../../../context/AuthContext';
 import Button from '../../user-interface/Button';
 import { useSystemState } from '../../../context/SystemContext';
-import { isQuestAvailableForUser } from '../../quests/utils/quests';
+import { isQuestAvailableForUser } from '../../../utils/quests';
 import { useUIState } from '../../../context/UIContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 

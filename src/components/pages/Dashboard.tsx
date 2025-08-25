@@ -8,7 +8,7 @@ import { Rank } from '../ranks/types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
-import { useDashboardData } from '../dashboard/hooks/useDashboardData';
+import { useDashboardData } from '../../hooks/useDashboardData';
 import RankCard from '../dashboard/RankCard';
 import InventoryCard from '../dashboard/InventoryCard';
 import TrophyCard from '../dashboard/TrophyCard';
@@ -44,24 +44,6 @@ const Dashboard: React.FC = () => {
         recentActivities,
         weeklyProgressData,
         terminology,
-    }: {
-        rankData: {
-            totalXp: number;
-            currentRank: Rank | null;
-            nextRank: Rank | null;
-            progressPercentage: number;
-            currentLevel: number;
-            xpIntoCurrentRank: number;
-            xpForNextRank: number;
-        };
-        userCurrencies: any[];
-        userExperience: any[];
-        mostRecentTrophy: Trophy | null;
-        leaderboard: any[];
-        quickActionQuests: Quest[];
-        recentActivities: any[];
-        weeklyProgressData: { label: string; value: number }[];
-        terminology: any;
     } = useDashboardData();
     
     // Chart color logic must remain here as it depends on DOM styles
@@ -83,9 +65,9 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const style = getComputedStyle(document.documentElement);
-            const h = style.getPropertyValue('--color-primary-hue').trim();
-            const s = style.getPropertyValue('--color-primary-saturation').trim();
-            const l = style.getPropertyValue('--color-primary-lightness').trim();
+            const h = style.getPropertyValue('--color-primary-hue')?.trim();
+            const s = style.getPropertyValue('--color-primary-saturation')?.trim();
+            const l = style.getPropertyValue('--color-primary-lightness')?.trim();
             if (h && s && l) {
                 setChartColor(`hsl(${h} ${s} ${l})`);
             }

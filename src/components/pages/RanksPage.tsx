@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useUIState } from '../../context/UIContext';
-import { Rank } from '../../types';
+import { Rank } from '../../../types';
 import Card from '../user-interface/Card';
 import { RankIcon } from '../user-interface/Icons';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -23,7 +23,7 @@ const RanksPage: React.FC = () => {
             ? currentUser.personalExperience
             : currentUser.guildBalances[appMode.guildId]?.experience || {};
         
-        const currentTotalXp = Object.values(currentBalances).reduce<number>((sum, amount) => sum + Number(amount), 0);
+        const currentTotalXp = Object.values(currentBalances).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
         
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         

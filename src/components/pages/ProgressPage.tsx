@@ -1,6 +1,7 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { RewardCategory, QuestCompletionStatus } from '../../types';
+import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../../types';
 import Card from '../user-interface/Card';
 import LineChart from '../user-interface/LineChart';
 import BarChart from '../user-interface/BarChart';
@@ -51,9 +52,9 @@ const ProgressPage: React.FC = () => {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const style = getComputedStyle(document.documentElement);
-            const h = style.getPropertyValue('--color-primary-hue').trim();
-            const s = style.getPropertyValue('--color-primary-saturation').trim();
-            const l = style.getPropertyValue('--color-primary-lightness').trim();
+            const h = style.getPropertyValue('--color-primary-hue')?.trim();
+            const s = style.getPropertyValue('--color-primary-saturation')?.trim();
+            const l = style.getPropertyValue('--color-primary-lightness')?.trim();
             if (h && s && l) {
                 setChartColor(`hsl(${h} ${s} ${l})`);
             }
@@ -65,7 +66,7 @@ const ProgressPage: React.FC = () => {
         
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         const experience = appMode.mode === 'guild' ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
-        const totalXp = Object.values(experience).reduce<number>((sum, amount) => sum + Number(amount), 0);
+        const totalXp = Object.values(experience).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
 
         const currentRank = [...ranks].sort((a,b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold) || null;
         
@@ -90,7 +91,7 @@ const ProgressPage: React.FC = () => {
         completionsInScope.forEach(comp => {
             const quest = quests.find(q => q.id === comp.questId);
             if (!quest) return;
-            const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum: number, r) => sum + Number(r.amount), 0);
+            const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum: number, r: RewardItem) => sum + Number(r.amount), 0);
 
             const dateKey = comp.completedAt.split('T')[0];
             if (dateKey in weeklyData) weeklyData[dateKey] += xpForThisQuest;

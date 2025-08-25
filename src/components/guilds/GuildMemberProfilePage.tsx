@@ -1,7 +1,7 @@
 
 
 import React, { useMemo } from 'react';
-import { Guild, Rank, User, Trophy } from '../../types';
+import { Guild, Rank, User, Trophy, RewardTypeDefinition } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import Avatar from '../user-interface/Avatar';
@@ -36,7 +36,7 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
         return { currentRank, totalXp };
     }, [personalBalances.experience, ranks]);
     
-    const personalCurrencies = useMemo(() => {
+    const personalCurrencies: (RewardTypeDefinition & {amount: number})[] = useMemo(() => {
         return rewardTypes
             .filter(rt => rt.category === 'Currency' && (personalBalances.purse[rt.id] || 0) > 0)
             .map(c => ({ ...c, amount: personalBalances.purse[c.id] || 0 }));

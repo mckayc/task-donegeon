@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, UserTemplate, Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -146,9 +148,9 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
         if (bugLogger.isRecording()) {
             bugLogger.add({ type: 'ACTION', message: `Confirmed installation of asset pack: ${assetPack.manifest.name}` });
         }
-        const packToInstall = JSON.parse(JSON.stringify(assetPack));
+        const packToInstall: AssetPack = JSON.parse(JSON.stringify(assetPack));
         
-        if (packToInstall.assets.quests && packToInstall.assets.quests.length > 0) {
+        if (packToInstall.assets.quests && Array.isArray(packToInstall.assets.quests) && packToInstall.assets.quests.length > 0) {
             packToInstall.assets.quests = packToInstall.assets.quests.map((quest: Quest) => ({
                 ...quest,
                 assignedUserIds: [...assignedUserIds]
@@ -167,8 +169,8 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                 : { ...r, selected: false }
         );
         
-        const packToInstall = JSON.parse(JSON.stringify(assetPack));
-        if (packToInstall.assets.quests && packToInstall.assets.quests.length > 0) {
+        const packToInstall: AssetPack = JSON.parse(JSON.stringify(assetPack));
+        if (packToInstall.assets.quests && Array.isArray(packToInstall.assets.quests) && packToInstall.assets.quests.length > 0) {
             packToInstall.assets.quests = packToInstall.assets.quests.map((quest: Quest) => ({
                 ...quest,
                 assignedUserIds: [...assignedUserIds]

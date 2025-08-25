@@ -58,7 +58,7 @@ const CreateBugReportDialog: React.FC<CreateBugReportDialogProps> = ({ onClose }
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setReportType(e.target.value as BugReportType)}
                     >
                         {Object.values(BugReportType).map(type => (
-                            <option key={type} value={type}>{type}</option>
+                            <option key={String(type)} value={String(type)}>{String(type)}</option>
                         ))}
                     </Input>
                     <Input

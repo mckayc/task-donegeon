@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
-import { Quest, QuestType, QuestKind, Trophy } from '../../types';
+import { Quest, QuestType, QuestKind, Trophy, Rank } from '../../../types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
@@ -41,6 +42,24 @@ const Dashboard: React.FC = () => {
         recentActivities,
         weeklyProgressData,
         terminology,
+    }: {
+        rankData: {
+            totalXp: number;
+            currentRank: Rank | null;
+            nextRank: Rank | null;
+            progressPercentage: number;
+            currentLevel: number;
+            xpIntoCurrentRank: number;
+            xpForNextRank: number;
+        };
+        userCurrencies: any[];
+        userExperience: any[];
+        mostRecentTrophy: Trophy | null;
+        leaderboard: any[];
+        quickActionQuests: Quest[];
+        recentActivities: any[];
+        weeklyProgressData: { label: string; value: number }[];
+        terminology: any;
     } = useDashboardData();
     
     // Chart color logic must remain here as it depends on DOM styles

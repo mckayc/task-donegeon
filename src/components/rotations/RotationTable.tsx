@@ -3,7 +3,7 @@ import React from 'react';
 import { Rotation, Terminology } from '../../types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
-import { PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';
+import { PencilIcon, CopyIcon, TrashIcon, PlayIcon } from '../user-interface/Icons';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface RotationTableProps {
@@ -14,6 +14,7 @@ interface RotationTableProps {
     onEdit: (rotation: Rotation) => void;
     onStatusChange: (rotation: Rotation, isActive: boolean) => void;
     onClone: (rotationId: string) => void;
+    onRun: (rotationId: string) => void;
     onDeleteRequest: (ids: string[]) => void;
     terminology: Terminology;
     onCreate: () => void;
@@ -27,6 +28,7 @@ const RotationTable: React.FC<RotationTableProps> = ({
     onEdit,
     onStatusChange,
     onClone,
+    onRun,
     onDeleteRequest,
     terminology,
     onCreate,
@@ -89,6 +91,9 @@ const RotationTable: React.FC<RotationTableProps> = ({
                              <td className="p-4 text-stone-400 text-sm">User {rotation.lastUserIndex + 2}, Quest {rotation.lastQuestStartIndex + 2}</td>
                             <td className="p-4">
                                 <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" title="Run Now" onClick={() => onRun(rotation.id)} className="h-8 w-8 text-sky-400 hover:text-sky-300">
+                                        <PlayIcon className="w-4 h-4" />
+                                    </Button>
                                     <Button variant="ghost" size="icon" title="Clone" onClick={() => onClone(rotation.id)} className="h-8 w-8 text-stone-400 hover:text-white">
                                         <CopyIcon className="w-4 h-4" />
                                     </Button>

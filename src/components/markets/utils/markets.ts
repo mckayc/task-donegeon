@@ -1,5 +1,4 @@
-
-import { Market, User, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion } from '../../../types';
+import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion } from '../../../types';
 import { toYMD } from '../../quests/utils/quests';
 
 type MarketDependencies = {
@@ -50,7 +49,7 @@ export const isMarketOpenForUser = (market: Market, user: User, dependencies: Ma
             const checkCondition = (condition: MarketCondition): boolean => {
                 switch (condition.type) {
                     case MarketConditionType.MinRank:
-                        const totalXp = Object.values(user.personalExperience).reduce((sum, amount) => sum + amount, 0);
+                        const totalXp = Object.values(user.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
                         const userRank = dependencies.ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
                         const requiredRank = dependencies.ranks.find(r => r.id === condition.rankId);
                         if (!userRank || !requiredRank) return false;

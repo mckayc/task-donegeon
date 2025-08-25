@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { ModifierDefinition, ModifierEffect, ModifierEffectType, RewardCategory, RewardItem, QuestKind } from '../../../types';
+import { ModifierDefinition, ModifierEffect, ModifierEffectType, RewardCategory, RewardItem, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';

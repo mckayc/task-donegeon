@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { RewardCategory, RewardItem } from '../../../types';
+import { RewardCategory, RewardItem } from '../items/types';
 import Input from '../user-interface/Input';
 import Button from '../user-interface/Button';
 import { useRewardValue } from '../rewards/hooks/useRewardValue';

@@ -1,40 +1,40 @@
 
 
 import { GenerateContentResponse } from "@google/genai";
-import { User, UserTemplate, AdminAdjustment } from './src/components/users/types';
-import { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from './src/components/items/types';
-import { Quest, QuestGroup, QuestCompletion } from './src/components/quests/types';
-import { Trophy, UserTrophy } from './src/components/trophies/types';
-import { Rank } from './src/components/ranks/types';
-import { Rotation } from './src/components/rotations/types';
-import { Guild } from './src/components/guilds/types';
-import { ModifierDefinition, AppliedModifier } from './src/components/modifiers/types';
-import { ScheduledEvent } from './src/components/events/types';
-import { SystemLog, SystemNotification } from './src/components/system/types';
-import { ChatMessage } from './src/components/chat/types';
-import { BugReport } from './src/components/dev/types';
-import { TradeOffer, Gift } from './src/components/trading/types';
-import { ThemeDefinition } from './src/components/themes/types';
-import { AppSettings } from './src/types/app';
+import { User, UserTemplate, AdminAdjustment } from './components/users/types';
+import { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from './components/items/types';
+import { Quest, QuestGroup, QuestCompletion } from './components/quests/types';
+import { Trophy, UserTrophy } from './components/trophies/types';
+import { Rank } from './components/ranks/types';
+import { Rotation } from './components/rotations/types';
+import { Guild } from './components/guilds/types';
+import { ModifierDefinition, AppliedModifier } from './components/modifiers/types';
+import { ScheduledEvent } from './components/events/types';
+import { SystemLog, SystemNotification } from './components/system/types';
+import { ChatMessage } from './components/chat/types';
+import { BugReport } from './components/dev/types';
+import { TradeOffer, Gift } from './components/trading/types';
+import { ThemeDefinition } from './components/themes/types';
+import { AppSettings } from './types/app';
 
 // Re-export all the modularized types
-export * from './src/components/users/types';
-export * from './src/components/items/types';
-export * from './src/components/quests/types';
-export * from './src/components/trophies/types';
-export * from './src/components/ranks/types';
-export * from './src/components/rotations/types';
-export * from './src/components/guilds/types';
-export * from './src/components/modifiers/types';
-export * from './src/components/events/types';
-export * from './src/components/system/types';
-export * from './src/components/sharing/types';
-export * from './src/components/themes/types';
-export * from './src/components/chat/types';
-export * from './src/components/dev/types';
-export * from './src/components/trading/types';
-export * from './src/components/chronicles/types';
-export * from './src/types/app';
+export * from './components/users/types';
+export * from './components/items/types';
+export * from './components/quests/types';
+export * from './components/trophies/types';
+export * from './components/ranks/types';
+export * from './components/rotations/types';
+export * from './components/guilds/types';
+export * from './components/modifiers/types';
+export * from './components/events/types';
+export * from './components/system/types';
+export * from './components/sharing/types';
+export * from './components/themes/types';
+export * from './components/chat/types';
+export * from './components/dev/types';
+export * from './components/trading/types';
+export * from './components/chronicles/types';
+export * from './types/app';
 
 
 // MASTER DATA INTERFACE (Aggregator)

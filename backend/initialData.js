@@ -1,4 +1,5 @@
 
+
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 

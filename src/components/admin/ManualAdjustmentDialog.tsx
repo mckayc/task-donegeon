@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
-import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../../types';
+import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import RewardInputGroup from '../forms/RewardInputGroup';
 import { useCommunityState } from '../../context/CommunityContext';

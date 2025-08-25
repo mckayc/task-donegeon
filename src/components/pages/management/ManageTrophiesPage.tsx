@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -89,7 +88,7 @@ const ManageTrophiesPage: React.FC = () => {
                 {selectedTrophies.length > 0 && (
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedTrophies.length} selected</span>
-                        <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedTrophies)}>Delete</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(selectedTrophies)}>Delete</Button>
                     </div>
                 )}
                 <TrophyTable

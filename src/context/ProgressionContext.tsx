@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Rank, Trophy, UserTrophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addTrophyAPI, updateTrophyAPI, setRanksAPI } from '../src/api';
+import { addTrophyAPI, updateTrophyAPI, setRanksAPI } from '../api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -87,7 +86,9 @@ export const ProgressionProvider: React.FC<{ children: ReactNode }> = ({ childre
     const actions = useMemo<ProgressionDispatch>(() => ({
         addTrophy: (data) => apiAction(() => addTrophyAPI(data), 'Trophy created!'),
         updateTrophy: (data) => apiAction(() => updateTrophyAPI(data), 'Trophy updated!'),
-        setRanks: (ranks) => apiAction(() => setRanksAPI(ranks)),
+        setRanks: async (ranks) => {
+            await apiAction(() => setRanksAPI(ranks));
+        },
     }), [apiAction]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);

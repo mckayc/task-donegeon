@@ -1,13 +1,14 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { AssetPack, ImportResolution, ShareableAssetType } from '../../types';
 import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
 import { analyzeAssetPackForConflicts } from '../../utils/sharing';
+import { bugLogger } from '../../utils/bugLogger';
 
-interface BlueprintPreviewDialogProps {
-  blueprint: AssetPack;
+interface AssetPackInstallDialogProps {
+  assetPack: AssetPack;
   initialResolutions: ImportResolution[];
   onClose: () => void;
   onConfirm: (blueprint: AssetPack, resolutions: ImportResolution[]) => void;
@@ -26,7 +27,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     modifierDefinitions: 'link_triumphs_trials',
 };
 
-const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ blueprint, initialResolutions, onClose, onConfirm }) => {
+const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPack, initialResolutions, onClose, onConfirm }) => {
     const { settings } = useSystemState();
     const [resolutions, setResolutions] = useState(initialResolutions);
 
@@ -51,9 +52,9 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="p-4 bg-stone-900/50 rounded-lg">
-                        <h3 className="font-bold text-lg text-stone-100">{blueprint.manifest.name}</h3>
-                        <p className="text-sm text-stone-400">by {blueprint.manifest.author}</p>
-                        <p className="text-stone-300 mt-2">{blueprint.manifest.description}</p>
+                        <h3 className="font-bold text-lg text-stone-100">{assetPack.manifest.name}</h3>
+                        <p className="text-sm text-stone-400">by {assetPack.manifest.author}</p>
+                        <p className="text-stone-300 mt-2">{assetPack.manifest.description}</p>
                     </div>
 
                     {newItems.length > 0 && (
@@ -100,7 +101,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
                 <div className="p-6 border-t border-stone-700/60">
                     <div className="flex justify-end space-x-4">
                         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                        <Button type="button" onClick={() => onConfirm(blueprint, resolutions)}>Confirm & Import</Button>
+                        <Button type="button" onClick={() => onConfirm(assetPack, resolutions)}>Confirm & Import</Button>
                     </div>
                 </div>
             </div>
@@ -108,4 +109,4 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
     );
 };
 
-export default BlueprintPreviewDialog;
+export default AssetPackInstallDialog;

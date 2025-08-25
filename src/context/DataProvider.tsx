@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef } from 'react';
 import { User, IAppData } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';

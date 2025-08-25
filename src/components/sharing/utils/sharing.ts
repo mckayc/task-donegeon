@@ -116,11 +116,10 @@ export const analyzeAssetPackForConflicts = (
 
     const checkConflicts = (
         assetType: ShareableAssetType,
-        packAssets: (Quest | RewardTypeDefinition | Rank | Trophy | Market | QuestGroup | GameAsset)[],
+        packAssets: (Quest | RewardTypeDefinition | Rank | Trophy | Market | QuestGroup | GameAsset)[] | undefined,
         currentAssets: (Quest | RewardTypeDefinition | Rank | Trophy | Market | QuestGroup | GameAsset)[]
     ) => {
-        if (!packAssets) return;
-        packAssets.forEach(pAsset => {
+        packAssets?.forEach(pAsset => {
             const assetName = 'title' in pAsset ? pAsset.title : pAsset.name;
             const conflict = currentAssets.find(cAsset => ('title' in cAsset ? cAsset.title : cAsset.name).toLowerCase() === assetName.toLowerCase());
             resolutions.push({
@@ -134,13 +133,13 @@ export const analyzeAssetPackForConflicts = (
         });
     };
 
-    checkConflicts('quests', assetPack.assets.quests || [], currentData.quests);
-    checkConflicts('questGroups', assetPack.assets.questGroups || [], currentData.questGroups);
-    checkConflicts('rewardTypes', assetPack.assets.rewardTypes || [], currentData.rewardTypes);
-    checkConflicts('ranks', assetPack.assets.ranks || [], currentData.ranks);
-    checkConflicts('trophies', assetPack.assets.trophies || [], currentData.trophies);
-    checkConflicts('markets', assetPack.assets.markets || [], currentData.markets);
-    checkConflicts('gameAssets', assetPack.assets.gameAssets || [], currentData.gameAssets);
+    checkConflicts('quests', assetPack.assets.quests, currentData.quests);
+    checkConflicts('questGroups', assetPack.assets.questGroups, currentData.questGroups);
+    checkConflicts('rewardTypes', assetPack.assets.rewardTypes, currentData.rewardTypes);
+    checkConflicts('ranks', assetPack.assets.ranks, currentData.ranks);
+    checkConflicts('trophies', assetPack.assets.trophies, currentData.trophies);
+    checkConflicts('markets', assetPack.assets.markets, currentData.markets);
+    checkConflicts('gameAssets', assetPack.assets.gameAssets, currentData.gameAssets);
 
     // Special handling for users
     if (assetPack.assets.users) {

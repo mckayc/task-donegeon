@@ -230,11 +230,3 @@ export const useQuestsDispatch = (): QuestsDispatch => {
     if (context === undefined) throw new Error('useQuestsDispatch must be used within a QuestsProvider');
     return context.actions;
 };
-
-export const useQuestsReducerDispatch = (): React.Dispatch<QuestsAction> => {
-  const context = useContext(QuestsDispatchContext);
-  if (!context) {
-    throw new Error('useQuestsReducerDispatch must be used within a QuestsProvider');
-  }
-  return context.dispatch;
-};

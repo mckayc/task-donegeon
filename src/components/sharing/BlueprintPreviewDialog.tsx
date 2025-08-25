@@ -1,8 +1,10 @@
 
 
 
+
+
 import React, { useState } from 'react';
-import { AssetPack, ImportResolution, ShareableAssetType } from '../../../types';
+import { AssetPack, ImportResolution, ShareableAssetType } from '../../types';
 import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';

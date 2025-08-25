@@ -1,7 +1,8 @@
-const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity } = require('./entities');
+
+const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity } = require('../entities');
 const { In, IsNull } = require("typeorm");
-const { SystemNotificationEntity: SysNotifEntity } = require('./entities'); // alias for checkAndAwardTrophies
-const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('./initialData');
+const { SystemNotificationEntity: SysNotifEntity } = require('../entities'); // alias for checkAndAwardTrophies
+const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
 
 const updateTimestamps = (entity, isNew = false) => {
     const now = new Date().toISOString();

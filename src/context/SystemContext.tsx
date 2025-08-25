@@ -52,7 +52,7 @@ export interface SystemDispatch {
   updateBugReport: (reportId: string, updates: Partial<BugReport>) => Promise<BugReport | null>;
   deleteBugReports: (reportIds: string[]) => Promise<void>;
   importBugReports: (reports: BugReport[], mode: 'merge' | 'replace') => Promise<void>;
-  addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ModifierDefinition | null>;
+  addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
   updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
   applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
   cloneUser: (userId: string) => Promise<User | null>;
@@ -89,10 +89,7 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
                 const typedKey = key as keyof SystemState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    const itemsToUpdate = action.payload[typedKey];
-                    if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
-                    }
+                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 } else if (typeof updatedState[typedKey] === 'object' && updatedState[typedKey] !== null) {
                     (updatedState as any)[typedKey] = { ...(updatedState[typedKey] as object), ...(action.payload[typedKey] as object) };

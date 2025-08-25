@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { useAuthDispatch, useAuthState } from '../../context/AuthContext';
-import { Role } from '../../types';
-import Button from '../user-interface/Button';
-import Input from '../user-interface/Input';
+import { useAuthDispatch, useAuthState } from 'context/AuthContext';
+import { Role } from 'components/users/types';
+import Button from 'components/user-interface/Button';
+import Input from 'components/user-interface/Input';
 import UserFormFields from './UserFormFields';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { SparklesIcon } from '../user-interface/Icons';
+import { useNotificationsDispatch } from 'context/NotificationsContext';
+import { SparklesIcon } from 'components/user-interface/Icons';
 import { GenerateContentResponse } from '@google/genai';
-import { useSystemState } from '../../context/SystemContext';
+import { useSystemState } from 'context/SystemContext';
 
 interface AddUserDialogProps {
   onClose: () => void;

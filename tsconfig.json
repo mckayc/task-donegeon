@@ -15,6 +15,18 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "types": ["types"],
+      "types/*": ["types/*"],
+      "components/*": ["components/*"],
+      "context/*": ["context/*"],
+      "hooks/*": ["hooks/*"],
+      "utils/*": ["utils/*"],
+      "data/*": ["data/*"],
+      "lib/*": ["lib/*"],
+      "api": ["api"]
+    },
     "types": ["jest", "@testing-library/jest-dom"]
   },
   "include": ["src"],

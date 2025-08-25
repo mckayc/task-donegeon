@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Role, Page, AppMode } from '../../types';
-import Avatar from '../user-interface/Avatar';
-import { useUIState, useUIDispatch } from '../../context/UIContext';
-import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import FullscreenToggle from '../user-interface/FullscreenToggle';
-import { ChevronDownIcon } from '../user-interface/Icons';
-import RewardDisplay from '../user-interface/RewardDisplay';
-import { useCommunityState } from '../../context/CommunityContext';
-import { useSystemState } from '../../context/SystemContext';
-import { useSyncStatus } from '../../context/DataProvider';
+import { User, Role } from 'components/users/types';
+import { Page, AppMode } from 'types/app';
+import Avatar from 'components/user-interface/Avatar';
+import { useUIState, useUIDispatch } from 'context/UIContext';
+import { useAuthState, useAuthDispatch } from 'context/AuthContext';
+import FullscreenToggle from 'components/user-interface/FullscreenToggle';
+import { ChevronDownIcon } from 'components/user-interface/Icons';
+import RewardDisplay from 'components/user-interface/RewardDisplay';
+import { useCommunityState } from 'context/CommunityContext';
+import { useSystemState } from 'context/SystemContext';
+import { useSyncStatus } from 'context/DataProvider';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -19,7 +20,7 @@ const Clock: React.FC = () => {
         return () => clearInterval(timerId);
     }, []);
 
-    const statusConfig: Record<typeof syncStatus, { borderColor: string; pulse: boolean; title: string; }> = useMemo(() => ({
+    const statusConfig = useMemo(() => ({
         idle: { borderColor: 'border-stone-700/60', pulse: false, title: 'Ready.' },
         syncing: { borderColor: 'border-blue-500', pulse: true, title: 'Syncing data...' },
         success: { borderColor: 'border-green-500', pulse: false, title: 'Data is up to date.' },

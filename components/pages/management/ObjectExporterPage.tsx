@@ -1,14 +1,13 @@
 
 
-
 import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
 import ImportPanel from '../../sharing/ImportPanel';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { IAppData, AssetPack, ImportResolution } from '../../../src/types';
-import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
+import { IAppData, AssetPack, ImportResolution } from '../../../types';
+import { analyzeAssetPackForConflicts } from '../../sharing/utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import { useQuestsState } from '../../../context/QuestsContext';

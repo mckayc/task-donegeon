@@ -1,16 +1,18 @@
 import React, { useMemo, useEffect, useState, useRef, Suspense } from 'react';
-import Sidebar from './Sidebar';
-import Header from './Header';
-import { Role, Page, SystemNotification } from '../../types';
-import VacationModeBanner from '../settings/VacationModeBanner';
-import { useUIState, useUIDispatch } from '../../context/UIContext';
-import { useAuthState } from '../../context/AuthContext';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { ChatPanel } from '../chat/ChatPanel';
-import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
-import ChatController from '../chat/ChatController';
-import { routeConfig } from './routeConfig';
-import { useSystemState } from '../../context/SystemContext';
+import Sidebar from 'components/layout/Sidebar';
+import Header from 'components/layout/Header';
+import { Role } from 'types';
+import { Page } from 'types/app';
+import { SystemNotification } from 'components/system/types';
+import VacationModeBanner from 'components/settings/VacationModeBanner';
+import { useUIState, useUIDispatch } from 'context/UIContext';
+import { useAuthState } from 'context/AuthContext';
+import { useNotificationsDispatch } from 'context/NotificationsContext';
+import { ChatPanel } from 'components/chat/ChatPanel';
+import LoginNotificationPopup from 'components/user-interface/LoginNotificationPopup';
+import ChatController from 'components/chat/ChatController';
+import { routeConfig } from 'components/layout/routeConfig';
+import { useSystemState } from 'context/SystemContext';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();

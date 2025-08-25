@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { SystemNotification, SystemNotificationType, User } from '../../types';
 import Button from './Button';
@@ -30,14 +31,14 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
         onClose();
     };
 
-    const groupedNotifications = notifications.reduce((acc, notif) => {
+    const groupedNotifications = notifications.reduce<Record<string, SystemNotification[]>>((acc, notif) => {
         const typeKey = notif.type.replace(/([A-Z])/g, ' $1').trim(); // Add spaces for readability
         if (!acc[typeKey]) {
             acc[typeKey] = [];
         }
         acc[typeKey].push(notif);
         return acc;
-    }, {} as Record<string, SystemNotification[]>);
+    }, {});
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">

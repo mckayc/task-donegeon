@@ -1,5 +1,5 @@
-import type { RewardItem } from '../items/types';
-import type { Role } from '../users/types';
+import { RewardItem } from '../items/types';
+import { Role } from '../users/types';
 
 export enum QuestType {
   Duty = 'Duty',

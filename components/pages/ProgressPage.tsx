@@ -89,7 +89,7 @@ const ProgressPage: React.FC = () => {
         completionsInScope.forEach(comp => {
             const quest = quests.find(q => q.id === comp.questId);
             if (!quest) return;
-            const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce((sum: number, r) => sum + r.amount, 0);
+            const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce((sum, r) => sum + r.amount, 0);
 
             const dateKey = comp.completedAt.split('T')[0];
             if (dateKey in weeklyData) weeklyData[dateKey] += xpForThisQuest;

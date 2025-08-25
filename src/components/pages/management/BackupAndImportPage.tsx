@@ -70,8 +70,7 @@ const BackupListItem: React.FC<{
 const BackupList: React.FC<{ 
     backupsToList: BackupInfo[]; 
     onDelete: (filename: string) => void;
-    onRefetch: () => void;
-}> = ({ backupsToList, onDelete, onRefetch }) => {
+}> = ({ backupsToList, onDelete }) => {
     const backupFilenames = useMemo(() => backupsToList.map(b => b.filename), [backupsToList]);
     const [selectedBackups, setSelectedBackups] = useState<string[]>([]);
     const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -96,7 +95,7 @@ const BackupList: React.FC<{
             });
             if (!response.ok) throw new Error('Failed to delete backups.');
             addNotification({ type: 'info', message: `${selectedBackups.length} backups deleted.` });
-            onRefetch();
+            // The parent component will refetch the list.
         } catch (e) {
             addNotification({ type: 'error', message: e instanceof Error ? e.message : 'Deletion failed.' });
         } finally {
@@ -267,7 +266,7 @@ export const BackupAndImportPage: React.FC = () => {
         const manual: BackupInfo[] = [];
         const automated: BackupInfo[] = [];
         backups.forEach(b => {
-            if (b.parsed?.type === 'manual' || (!b.parsed && !b.filename.includes('auto'))) {
+            if (b.parsed?.type === 'manual' || (!b.parsed && b.filename.startsWith('backup-manual-'))) {
                 manual.push(b);
             } else {
                 automated.push(b);
@@ -313,10 +312,10 @@ export const BackupAndImportPage: React.FC = () => {
                         </div>
                     </div>
                     {/* Right Column: Automated */}
-                    <Card>
+                    <div className="p-4 bg-stone-900/40 rounded-lg">
                         <ToggleSwitch 
                             enabled={settings.automatedBackups.enabled}
-                            setEnabled={(val: boolean) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
+                            setEnabled={(val) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
                             label="Enable Automated Backups"
                         />
                         {settings.automatedBackups.enabled && (
@@ -356,7 +355,7 @@ export const BackupAndImportPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
-                    </Card>
+                    </div>
                 </div>
             </Card>
             
@@ -373,8 +372,8 @@ export const BackupAndImportPage: React.FC = () => {
                 </div>
                 {isLoading ? <p>Loading backups...</p> : (
                     activeTab === 'manual' 
-                        ? <BackupList backupsToList={manualBackups} onDelete={setConfirmDelete} onRefetch={fetchBackups} />
-                        : <BackupList backupsToList={automatedBackups} onDelete={setConfirmDelete} onRefetch={fetchBackups} />
+                        ? <BackupList backupsToList={manualBackups} onDelete={setConfirmDelete} />
+                        : <BackupList backupsToList={automatedBackups} onDelete={setConfirmDelete} />
                 )}
             </Card>
 

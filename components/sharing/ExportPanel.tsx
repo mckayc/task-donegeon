@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { ShareableAssetType, Terminology, IAppData } from '../../src/types';
+import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { generateAssetPack } from '../../utils/sharing';

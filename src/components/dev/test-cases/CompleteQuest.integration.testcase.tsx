@@ -1,5 +1,7 @@
+
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Quest, QuestType, QuestKind, Role, QuestCompletionStatus } from '../../../types';
+import { Quest, QuestType, QuestKind, Role, QuestCompletionStatus } from 'types';
 import Card from '../../user-interface/Card';
 import QuestDetailDialog from '../../quests/QuestDetailDialog';
 import { useQuestsDispatch, useQuestsState } from '../../../context/QuestsContext';
@@ -9,7 +11,6 @@ import { useSystemState } from '../../../context/SystemContext';
 import { isQuestAvailableForUser } from '../../quests/utils/quests';
 import { useUIState } from '../../../context/UIContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import CompleteQuestDialog from '../../quests/CompleteQuestDialog';
 
 
 const CompleteQuestIntegrationTestCase: React.FC = () => {

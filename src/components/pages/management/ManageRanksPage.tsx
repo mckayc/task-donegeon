@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
-import { Rank } from '../../../types';
+import { Rank } from '../../ranks/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditRankDialog from '../../settings/EditRankDialog';

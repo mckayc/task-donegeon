@@ -36,7 +36,7 @@ const ManageSetbacksPage: React.FC = () => {
                 const appliedBy = users.find(u => u.id === m.appliedById);
                 return { ...m, user, definition, appliedBy };
             })
-            .filter((s): s is (typeof appliedModifiers[0] & { user: User, definition: ModifierDefinition, appliedBy: User }) => !!s.user && !!s.definition && !!s.appliedBy);
+            .filter(s => s.user && s.definition && s.appliedBy) as (typeof appliedModifiers[0] & { user: User, definition: ModifierDefinition, appliedBy: User })[];
     }, [appliedModifiers, users, modifierDefinitions]);
 
     const handleCreate = () => {
@@ -86,7 +86,7 @@ const ManageSetbacksPage: React.FC = () => {
                     onSelectOne={handleCheckboxClick}
                     onApply={handleApply}
                     onEdit={handleEdit}
-                    onDeleteRequest={(ids: string[]) => setDeletingIds(ids)}
+                    onDeleteRequest={(ids) => setDeletingIds(ids)}
                     onCreate={handleCreate}
                 />
             </Card>

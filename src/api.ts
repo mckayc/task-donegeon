@@ -1,6 +1,6 @@
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem,
-} from './types';
+} from 'types';
 
 // Generic API Request Function
 const apiRequest = async (method: string, path: string, body?: any) => {
@@ -123,7 +123,7 @@ export const addBugReportAPI = (data: Partial<BugReport>) => apiRequest('POST', 
 export const updateBugReportAPI = (id: string, updates: Partial<BugReport>) => apiRequest('PUT', `/api/bug-reports/${id}`, updates);
 export const deleteBugReportsAPI = (ids: string[]) => apiRequest('DELETE', '/api/bug-reports', { ids });
 export const importBugReportsAPI = (reports: BugReport[], mode: 'merge' | 'replace') => apiRequest('POST', '/api/bug-reports/import', { reports, mode });
-export const addModifierDefinitionAPI = (data: Omit<ModifierDefinition, 'id' | 'createdAt' | 'updatedAt'>) => apiRequest('POST', '/api/setbacks', data);
+export const addModifierDefinitionAPI = (data: Omit<ModifierDefinition, 'id'>) => apiRequest('POST', '/api/setbacks', data);
 export const updateModifierDefinitionAPI = (data: ModifierDefinition) => apiRequest('PUT', `/api/setbacks/${data.id}`, data);
 export const applyModifierAPI = (userId: string, modifierId: string, reason: string, appliedById: string, overrides?: Partial<ModifierDefinition>) => apiRequest('POST', '/api/applied-modifiers/apply', { userId, modifierDefinitionId: modifierId, reason, appliedById, overrides });
 export const cloneUserAPI = (id: string) => apiRequest('POST', `/api/users/clone/${id}`);

@@ -1,5 +1,3 @@
-
-
 import { useMemo } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -51,7 +49,7 @@ export const useDashboardData = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce<number>((sum, amount) => sum + amount, 0);
+        const totalXp = Object.values(currentBalances.experience).reduce<number>((sum, amount) => sum + Number(amount), 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         let nextRank: Rank | null = sortedRanks[1] || null;
@@ -137,9 +135,9 @@ export const useDashboardData = () => {
         return users.map(user => {
             let userTotalXp = 0;
             if (currentGuildId) {
-                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce<number>((sum, amount) => sum + amount, 0);
+                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce<number>((sum, amount) => sum + Number(amount), 0);
             } else {
-                userTotalXp = Object.values(user.personalExperience).reduce<number>((sum, amount) => sum + amount, 0);
+                userTotalXp = Object.values(user.personalExperience).reduce<number>((sum, amount) => sum + Number(amount), 0);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);
@@ -184,7 +182,7 @@ export const useDashboardData = () => {
                 const quest = quests.find(q => q.id === completion.questId);
                 if (!quest) return;
                 const dateKey = completion.completedAt.split('T')[0];
-                const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce((sum: number, r: RewardItem) => sum + r.amount, 0);
+                const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce((sum: number, r: RewardItem) => sum + Number(r.amount), 0);
                 if (dateKey in dataByDay) {
                     dataByDay[dateKey] += xpForThisQuest;
                 }

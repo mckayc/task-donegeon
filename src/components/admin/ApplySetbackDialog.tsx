@@ -195,6 +195,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                     {(effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) && (
                                         <RewardInputGroup category={effect.type === ModifierEffectType.DeductRewards ? 'setbacks' : 'rewards'} items={effect.rewards} onChange={handleRewardChange(index)} onAdd={handleAddRewardToEffect(index)} onRemove={handleRemoveRewardFromEffect(index)} />
                                     )}
+
                                     {(effect.type === ModifierEffectType.CloseMarket || effect.type === ModifierEffectType.OpenMarket) && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>

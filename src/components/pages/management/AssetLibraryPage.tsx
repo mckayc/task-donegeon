@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -207,12 +205,12 @@ const AssetLibraryPage: React.FC = () => {
                                                     
                                                     <div className="mt-4 pt-4 border-t border-stone-700/60 grid grid-cols-2 gap-x-4 gap-y-2">
                                                         <ul className="space-y-1">
-                                                          {Array.isArray(packInfo.summary.quests) && (packInfo.summary.quests as any[]).map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
-                                                          {Array.isArray(packInfo.summary.gameAssets) && (packInfo.summary.gameAssets as any[]).map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
+                                                          {Array.isArray(packInfo.summary.quests) && packInfo.summary.quests.map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
+                                                          {Array.isArray(packInfo.summary.gameAssets) && packInfo.summary.gameAssets.map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
                                                         </ul>
                                                         <ul className="space-y-1">
-                                                          {Array.isArray(packInfo.summary.trophies) && (packInfo.summary.trophies as any[]).map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
-                                                          {Array.isArray(packInfo.summary.users) && (packInfo.summary.users as any[]).map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
+                                                          {Array.isArray(packInfo.summary.trophies) && packInfo.summary.trophies.map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
+                                                          {Array.isArray(packInfo.summary.users) && packInfo.summary.users.map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
                                                         </ul>
                                                     </div>
                                                 </Card>

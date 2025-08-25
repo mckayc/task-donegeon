@@ -236,14 +236,3 @@ export interface IAppData {
   tradeOffers: TradeOffer[];
   gifts: Gift[];
 }
-
-export interface BulkQuestUpdates {
-    isActive?: boolean;
-    isOptional?: boolean;
-    requiresApproval?: boolean;
-    groupId?: string | null; // null to set as uncategorized
-    addTags?: string[];
-    removeTags?: string[];
-    assignUsers?: string[];
-    unassignUsers?: string[];
-}

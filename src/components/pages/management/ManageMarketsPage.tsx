@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Market } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -29,10 +29,6 @@ const ManageMarketsPage: React.FC = () => {
 
     const marketIds = React.useMemo(() => markets.map(m => m.id), [markets]);
     const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
-    
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedMarkets(e.target.checked ? marketIds : []);
-    };
 
     const handleCreateMarket = () => {
         setEditingMarket(null);
@@ -116,7 +112,7 @@ const ManageMarketsPage: React.FC = () => {
                 <MarketTable
                     markets={markets}
                     selectedMarkets={selectedMarkets}
-                    onSelectAll={handleSelectAll}
+                    onSelectAll={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedMarkets(e.target.checked ? marketIds : [])}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEditMarket}
                     onClone={cloneMarket}

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../../types';
+import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
 import LineChart from '../user-interface/LineChart';
 import BarChart from '../user-interface/BarChart';

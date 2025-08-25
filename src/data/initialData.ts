@@ -1,15 +1,4 @@
-
-import { User, Role } from '../components/users/types';
-import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
-import { Rank } from '../components/ranks/types';
-import { Trophy, TrophyRequirementType } from '../components/trophies/types';
-import { QuestType, Quest, QuestGroup } from '../components/quests/types';
-import { Market } from '../types';
-import { Guild } from '../components/guilds/types';
-import { AppSettings, SidebarConfigItem } from '../types/app';
-import { GameAsset } from '../components/items/types';
-import { ThemeDefinition, ThemeStyle } from '../components/themes/types';
-import { QuestCompletion } from '../components/quests/types';
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Quest, QuestGroup, Market, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion } from '../types';
 
 export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
@@ -407,10 +396,10 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-78', name: 'Speed Runner', description: 'For getting ready for school in record time.', iconType: 'emoji', icon: '⏱️', isManual: true, requirements: [] },
     { id: 'trophy-79', name: 'Completionist', description: 'For finishing all your homework before dinner.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] },
     { id: 'trophy-80', name: 'The Strategist', description: 'For winning a board game with a clever strategy.', iconType: 'emoji', icon: '♟️', isManual: true, requirements: [] },
-    { id: 'trophy-81', 'name': 'The Farmer', 'description': 'For helping with gardening or yard work.', iconType: 'emoji', 'icon': '🧑‍🌾', 'isManual': true, 'requirements': [] },
+    { id: 'trophy-81', name: 'The Farmer', description: 'For helping with gardening or yard work.', iconType: 'emoji', icon: '🧑‍🌾', isManual: true, requirements: [] },
     { id: 'trophy-82', name: 'The Co-op King', description: 'For successfully completing a two-person chore with a sibling.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] },
     { id: 'trophy-83', name: 'The Patient One', description: 'For waiting patiently without complaining.', iconType: 'emoji', icon: '⏳', isManual: true, requirements: [] },
-    { id: 'trophy-84', name: 'The Brave', description: 'For going to the doctor or dentist without any fuss.', iconType: 'emoji', icon: '씩', isManual: true, requirements: [] },
+    { id: 'trophy-84', name: 'The Brave', description: 'For going to the doctor or dentist without any fuss.', iconType: 'emoji', icon: '🛡️', isManual: true, requirements: [] },
     { id: 'trophy-85', name: 'The Problem Solver', description: 'For figuring out a tricky problem on your own.', iconType: 'emoji', icon: '💡', isManual: true, requirements: [] },
     { id: 'trophy-86', name: 'The Tidy Titan', description: 'For keeping your room clean for a whole week.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] },
     { id: 'trophy-87', name: 'The Gracious', description: 'For remembering to say "please" and "thank you" all day.', iconType: 'emoji', icon: '🙏', isManual: true, requirements: [] },

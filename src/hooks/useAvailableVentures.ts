@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useUIState } from '../context/UIContext';
 import { QuestType } from '../types';
-import { isQuestAvailableForUser } from '../utils/quests';
+import { isQuestAvailableForUser } from '../components/quests/utils/quests';
 import { useAuthState } from '../context/AuthContext';
 import { useQuestsState } from '../context/QuestsContext';
 import { useSystemState } from '../context/SystemContext';

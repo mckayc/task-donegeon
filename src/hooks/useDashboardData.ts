@@ -183,7 +183,7 @@ export const useDashboardData = () => {
                 const quest = quests.find(q => q.id === completion.questId);
                 if (!quest) return;
                 const dateKey = completion.completedAt.split('T')[0];
-                const xpForThisQuest = quest.rewards.filter((r: RewardItem) => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum, r) => sum + r.amount, 0);
+                const xpForThisQuest = quest.rewards.filter((r: RewardItem) => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum, r) => sum + Number(r.amount), 0);
                 if (dateKey in dataByDay) {
                     dataByDay[dateKey] += xpForThisQuest;
                 }

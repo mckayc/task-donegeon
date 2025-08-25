@@ -1,10 +1,28 @@
 import { QuestType } from '../quests/types';
 
+export enum ChronicleEventType {
+    QuestCompletion = 'QuestCompletion',
+    QuestAssigned = 'QuestAssigned',
+    Purchase = 'Purchase',
+    TrophyAwarded = 'TrophyAwarded',
+    AdminAdjustment = 'AdminAdjustment',
+    GiftReceived = 'GiftReceived',
+    Trade = 'Trade',
+    Crafting = 'Crafting',
+    System = 'System',
+    Announcement = 'Announcement',
+    ScheduledEvent = 'ScheduledEvent',
+    Donation = 'Donation',
+    Triumph = 'Triumph',
+    Trial = 'Trial',
+    Checkpoint = 'Checkpoint',
+}
+
 export type ChronicleEvent = {
     id: string;
     originalId: string; // The ID of the source object (e.g., PurchaseRequest)
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Triumph' | 'Trial' | 'Checkpoint';
+    type: ChronicleEventType;
     title: string;
     note?: string;
     status: string;
@@ -13,7 +31,7 @@ export type ChronicleEvent = {
     imageUrl?: string;
     color: string;
     userId?: string; // The primary actor/user
-    actorName?: string; // Name of the user who acted (e.g., approved/rejected)
+    actorName?: string; // Name of the user who performed the action (e.g., admin)
     recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)
     questType?: QuestType;
     guildId?: string; // The scope of the event

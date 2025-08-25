@@ -8,7 +8,7 @@ import {
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI, runRotationAPI,
     completeCheckpointAPI
 } from '../api';
-import { useAuthDispatch } from './AuthContext';
+import { useAuthDispatch, useAuthState } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
 import { useSystemReducerDispatch } from './SystemContext';
 
@@ -122,6 +122,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [state, dispatch] = useReducer(questsReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
     const { updateUser } = useAuthDispatch();
+    const { currentUser } = useAuthState();
     const progressionDispatch = useProgressionReducerDispatch();
     const systemDispatch = useSystemReducerDispatch();
 
@@ -196,7 +197,10 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data)),
         updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data)),
-        assignQuestGroupToUsers: (groupId, userIds) => apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds)),
+        assignQuestGroupToUsers: (groupId, userIds) => {
+            if (!currentUser) return Promise.resolve();
+            return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds, currentUser.id));
+        },
         addRotation: (data) => apiAction(() => addRotationAPI(data)),
         updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
         cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
@@ -204,7 +208,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => runRotationAPI(id));
             if (result) addNotification({ type: 'success', message: (result as any).message });
         },
-    }), [addNotification, apiAction, updateUser, progressionDispatch, systemDispatch]);
+    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

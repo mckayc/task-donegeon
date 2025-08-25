@@ -1,11 +1,21 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
-import { Role, ChronicleEvent, PurchaseRequestStatus } from '../../types';
+import { Role, ChronicleEvent, ChronicleEventType } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';
+import { FilterIcon, ChevronDownIcon } from '../user-interface/Icons';
+
+const CHRONICLE_EVENT_TYPES = Object.values(ChronicleEventType).map(type => ({
+    type,
+    label: type.replace(/([A-Z])/g, ' $1').trim(),
+}));
+
+const DEFAULT_FILTERS = CHRONICLE_EVENT_TYPES
+    .map(t => t.type)
+    .filter(t => t !== ChronicleEventType.QuestAssigned);
 
 const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
@@ -18,10 +28,36 @@ const ChroniclesPage: React.FC = () => {
     const [events, setEvents] = useState<ChronicleEvent[]>([]);
     const [totalEvents, setTotalEvents] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const filterRef = useRef<HTMLDivElement>(null);
+
+    const [selectedFilters, setSelectedFilters] = useState<string[]>(() => {
+        try {
+            const savedFilters = localStorage.getItem('chronicleFilters');
+            return savedFilters ? JSON.parse(savedFilters) : DEFAULT_FILTERS;
+        } catch {
+            return DEFAULT_FILTERS;
+        }
+    });
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+                setIsFilterOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+    
+    useEffect(() => {
+        localStorage.setItem('chronicleFilters', JSON.stringify(selectedFilters));
+    }, [selectedFilters]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [viewMode, appMode, itemsPerPage]);
+    }, [viewMode, appMode, itemsPerPage, selectedFilters]);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -35,6 +71,7 @@ const ChroniclesPage: React.FC = () => {
                     userId: currentUser.id,
                     guildId,
                     viewMode,
+                    filterTypes: selectedFilters.join(','),
                 });
                 const response = await fetch(`/api/chronicles?${params.toString()}`);
                 if (!response.ok) throw new Error('Failed to fetch chronicles');
@@ -50,7 +87,7 @@ const ChroniclesPage: React.FC = () => {
             }
         };
         fetchEvents();
-    }, [currentPage, itemsPerPage, viewMode, appMode, currentUser]);
+    }, [currentPage, itemsPerPage, viewMode, appMode, currentUser, selectedFilters]);
 
     if (!currentUser) return null;
 
@@ -66,6 +103,7 @@ const ChroniclesPage: React.FC = () => {
             return 'text-green-400';
           case "Requested":
           case "Pending":
+          case "Assigned":
             return 'text-yellow-400';
           case 'QUEST_LATE':
             return 'text-yellow-400 font-semibold';
@@ -87,33 +125,54 @@ const ChroniclesPage: React.FC = () => {
         return date.toLocaleString('default', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
+    const handleFilterChange = (type: string) => {
+        setSelectedFilters(prev => 
+            prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+        );
+    };
+
+    const handleSelectAllFilters = () => {
+        if (selectedFilters.length === CHRONICLE_EVENT_TYPES.length) {
+            setSelectedFilters([]);
+        } else {
+            setSelectedFilters(CHRONICLE_EVENT_TYPES.map(t => t.type));
+        }
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-                {(currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && (
-                    <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                        <button
-                            onClick={() => setViewMode('all')}
-                            className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'all' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
-                        >
-                            All Activity
-                        </button>
-                        <button
-                            onClick={() => setViewMode('personal')}
-                            className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
-                        >
-                            My Activity
-                        </button>
+                <div className="flex items-center gap-4">
+                    {(currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && (
+                        <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
+                            <button onClick={() => setViewMode('all')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'all' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>All Activity</button>
+                            <button onClick={() => setViewMode('personal')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>My Activity</button>
+                        </div>
+                    )}
+                    <div className="relative" ref={filterRef}>
+                        <Button variant="secondary" onClick={() => setIsFilterOpen(p => !p)}>
+                            <FilterIcon className="w-4 h-4" /> Filter ({selectedFilters.length}) <ChevronDownIcon className="w-4 h-4" />
+                        </Button>
+                        {isFilterOpen && (
+                            <div className="absolute top-full mt-2 w-72 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20 p-4">
+                                <button onClick={handleSelectAllFilters} className="w-full text-left mb-2 px-2 py-1 text-sm font-semibold text-accent hover:bg-stone-800 rounded-md">
+                                    {selectedFilters.length === CHRONICLE_EVENT_TYPES.length ? 'Deselect All' : 'Select All'}
+                                </button>
+                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                    {CHRONICLE_EVENT_TYPES.map(item => (
+                                        <label key={item.type} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800 cursor-pointer">
+                                            <input type="checkbox" checked={selectedFilters.includes(item.type)} onChange={() => handleFilterChange(item.type)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
+                                            <span className="text-sm text-stone-300">{item.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
                 <div className="flex items-center gap-2">
                     <label htmlFor="items-per-page" className="text-sm font-medium text-stone-400">Show:</label>
-                    <select
-                        id="items-per-page"
-                        value={itemsPerPage}
-                        onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                        className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
-                    >
+                    <select id="items-per-page" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm">
                         <option value={20}>20</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
@@ -167,7 +226,7 @@ const ChroniclesPage: React.FC = () => {
                         )}
                     </>
                 ) : (
-                    <p className="text-stone-400 text-center py-4">No activities have been recorded yet in this mode.</p>
+                    <p className="text-stone-400 text-center py-4">No activities match your current filters.</p>
                 )}
             </Card>
         </div>

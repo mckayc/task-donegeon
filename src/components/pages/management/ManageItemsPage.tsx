@@ -233,7 +233,7 @@ const ManageItemsPage: React.FC = () => {
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
                     onClone={cloneGameAsset}
-                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    onDeleteRequest={(ids: string[]) => setConfirmation({ action: 'delete', ids })}
                     onPreviewImage={setPreviewImageUrl}
                     isLoading={isLoading}
                     searchTerm={debouncedSearchTerm}

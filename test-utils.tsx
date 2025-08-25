@@ -2,16 +2,16 @@ import '@testing-library/jest-dom';
 
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
-import { NotificationsProvider } from './context/NotificationsContext';
-import { AuthProvider } from './context/AuthContext';
-import { DeveloperProvider } from './context/DeveloperContext';
-import { DataProvider } from './context/DataProvider';
-import { UIProvider } from './context/UIContext';
-import { QuestsProvider } from './context/QuestsContext';
-import { EconomyProvider } from './context/EconomyContext';
-import { ProgressionProvider } from './context/ProgressionContext';
-import { CommunityProvider } from './context/CommunityContext';
-import { SystemProvider } from './context/SystemContext';
+import { NotificationsProvider } from 'src/context/NotificationsContext';
+import { AuthProvider } from 'src/context/AuthContext';
+import { DeveloperProvider } from 'src/context/DeveloperContext';
+import { DataProvider } from 'src/context/DataProvider';
+import { UIProvider } from 'src/context/UIContext';
+import { QuestsProvider } from 'src/context/QuestsContext';
+import { EconomyProvider } from 'src/context/EconomyContext';
+import { ProgressionProvider } from 'src/context/ProgressionContext';
+import { CommunityProvider } from 'src/context/CommunityContext';
+import { SystemProvider } from 'src/context/SystemContext';
 
 const AllTheProviders: React.FC<{children: React.ReactNode}> = ({ children }) => {
   return (

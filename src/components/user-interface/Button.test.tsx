@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '../../test-utils';
+import { render } from '../../../test-utils';
 import { screen } from '@testing-library/react';
 import { describe, it, expect } from '@jest/globals';
 import Button from './Button';

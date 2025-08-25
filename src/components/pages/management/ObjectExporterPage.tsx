@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
@@ -5,7 +7,7 @@ import ImportPanel from '../../sharing/ImportPanel';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
-import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../sharing/utils/sharing';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import { useQuestsState } from '../../context/QuestsContext';
@@ -33,7 +35,7 @@ const ObjectExporterPage: React.FC = () => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const json = JSON.parse(e.target?.result as string);
+                const json = JSON.parse(e.target?.result as string) as AssetPack;
                 if (json.manifest && json.assets) {
                     const fullCurrentData: IAppData = { ...systemState, ...authState, ...questState, ...economyState, ...progressionState, ...communityState } as IAppData;
                     const conflictResolutions = analyzeAssetPackForConflicts(json, fullCurrentData);

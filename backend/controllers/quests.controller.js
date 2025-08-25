@@ -93,7 +93,9 @@ const completeCheckpoint = async (req, res) => {
         if (error.message.includes('already completed') || error.message.includes('pending approval')) {
             return res.status(400).json({ error: error.message });
         }
-        throw error;
+        // For other errors, let the default error handler take over.
+        console.error("Error in completeCheckpoint controller:", error);
+        res.status(500).json({ error: 'An unexpected error occurred.' });
     }
 };
 

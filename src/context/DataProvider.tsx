@@ -1,6 +1,7 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef } from 'react';
-import { User } from '../types';
+import { User, IAppData } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { CommunityAction, CommunityDispatchContext } from './CommunityContext';
@@ -44,7 +45,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw new Error(`Server responded with status ${response.status}`);
         }
 
-        const { updates, newSyncTimestamp } = await response.json();
+        const { updates, newSyncTimestamp } = await response.json() as { updates: Partial<IAppData>, newSyncTimestamp: string };
         
         const { 
             users: updatedUsers, loginHistory: updatedLoginHistory, 

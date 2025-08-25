@@ -1,7 +1,6 @@
 
 
-import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent } from '../types';
-import { AppMode } from '../types/app';
+import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode } from '../types';
 
 /**
  * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.

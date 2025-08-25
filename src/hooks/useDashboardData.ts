@@ -1,9 +1,10 @@
 
+
 import { useMemo } from 'react';
 import { useSystemState } from '../context/SystemContext';
 import { useUIState } from '../context/UIContext';
 import { useAuthState } from '../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy } from '../types';
+import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem } from '../types';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../components/quests/utils/quests';
 import { useQuestsState } from '../context/QuestsContext';
 import { useProgressionState } from '../context/ProgressionContext';
@@ -50,7 +51,7 @@ export const useDashboardData = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp: number = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         let nextRank: Rank | null = sortedRanks[1] || null;
@@ -183,7 +184,7 @@ export const useDashboardData = () => {
                 const quest = quests.find(q => q.id === completion.questId);
                 if (!quest) return;
                 const dateKey = completion.completedAt.split('T')[0];
-                const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce((sum, r) => sum + r.amount, 0);
+                const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce((sum: number, r: RewardItem) => sum + r.amount, 0);
                 if (dateKey in dataByDay) {
                     dataByDay[dateKey] += xpForThisQuest;
                 }

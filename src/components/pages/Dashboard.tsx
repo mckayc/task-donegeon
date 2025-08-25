@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
-import { Quest, QuestType, QuestKind, Trophy, Rank } from '../../../types';
+import { Quest, QuestType, QuestKind } from '../quests/types';
+import { Trophy } from '../trophies/types';
+import { Rank } from '../ranks/types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
-import { useDashboardData } from '../dashboard/hooks/useDashboardData';
+import { useDashboardData } from '../../hooks/useDashboardData';
 import RankCard from '../dashboard/RankCard';
 import InventoryCard from '../dashboard/InventoryCard';
 import TrophyCard from '../dashboard/TrophyCard';

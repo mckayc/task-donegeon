@@ -32,8 +32,6 @@ export * from './src/components/chat/types';
 export * from './src/components/dev/types';
 export * from './src/components/trading/types';
 export * from './src/components/chronicles/types';
-
-// Export global types from the new file for any legacy imports that might remain
 export * from './src/types/app';
 
 

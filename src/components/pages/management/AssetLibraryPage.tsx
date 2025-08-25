@@ -6,7 +6,7 @@ import Card from '../../user-interface/Card';
 import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
 import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
 import Input from '../../user-interface/Input';
-import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../sharing/utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useAuthState } from '../../../context/AuthContext';
@@ -43,7 +43,7 @@ const AssetLibraryPage: React.FC = () => {
             try {
                 const response = await fetch('/api/asset-packs/discover');
                 if (!response.ok) throw new Error('Failed to discover local asset packs.');
-                const data = await response.json();
+                const data: AssetPackManifestInfo[] = await response.json();
                 setLocalPacks(data);
             } catch (e) {
                 const msg = e instanceof Error ? e.message : 'Unknown error';

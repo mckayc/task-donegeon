@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState, useRef, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { Role } from '../../../types';
+import { Role } from '../users/types';
 import { Page } from '../../types/app';
 import { SystemNotification } from '../system/types';
 import VacationModeBanner from '../settings/VacationModeBanner';

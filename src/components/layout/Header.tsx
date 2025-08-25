@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, AppMode } from '../../types';
 import Avatar from '../user-interface/Avatar';
@@ -10,6 +9,7 @@ import RewardDisplay from '../user-interface/RewardDisplay';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useSyncStatus } from '../../context/DataProvider';
+import Button from '../user-interface/Button';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -141,14 +141,15 @@ const Header: React.FC = () => {
         <FullscreenToggle />
         <Clock />
         {settings.sharedMode.enabled && (
-            <button
+            <Button
                 onClick={exitToSharedView}
                 data-log-id="header-exit-shared-view"
-                className="bg-amber-600 text-white px-4 py-1.5 rounded-full font-bold text-lg hover:bg-amber-500"
+                variant="secondary"
+                className="font-bold text-lg"
                 title="Exit to Shared View"
             >
                 Exit
-            </button>
+            </Button>
         )}
         <div className="relative">
             <button onClick={() => setProfileDropdownOpen(p => !p)} data-log-id="header-profile-dropdown" className="flex items-center gap-2">

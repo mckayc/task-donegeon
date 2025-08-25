@@ -1,4 +1,3 @@
-
 import { Role, User, AdminAdjustment } from '../components/users/types';
 import { ThemeDefinition } from '../components/themes/types';
 import { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from '../components/items/types';
@@ -236,4 +235,15 @@ export interface IAppData {
   appliedModifiers: AppliedModifier[];
   tradeOffers: TradeOffer[];
   gifts: Gift[];
+}
+
+export interface BulkQuestUpdates {
+    isActive?: boolean;
+    isOptional?: boolean;
+    requiresApproval?: boolean;
+    groupId?: string | null; // null to set as uncategorized
+    addTags?: string[];
+    removeTags?: string[];
+    assignUsers?: string[];
+    unassignUsers?: string[];
 }

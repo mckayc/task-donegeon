@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';

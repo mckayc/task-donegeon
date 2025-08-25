@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { GameAsset, TradeOffer, RewardItem, TradeStatus, RewardTypeDefinition, User } from '../../../types';
+import { GameAsset, TradeOffer, RewardItem, TradeStatus, RewardTypeDefinition, User } from '../../types';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
@@ -52,7 +52,7 @@ const TradeOfferPanel: React.FC<{
     const AssetSelector: React.FC<{ onToggle: (id: string) => void; selectedIds: string[] }> = ({ onToggle, selectedIds }) => {
         const ownedItems = useMemo(() => {
             return user.ownedAssetIds
-                .map(id => gameAssets.find(asset => asset.id === id))
+                .map((id: string) => gameAssets.find((asset: GameAsset) => asset.id === id))
                 .filter((asset): asset is GameAsset => !!asset && asset.category.toLowerCase() !== 'avatar' && !asset.category.toLowerCase().includes('theme'));
         }, [user.ownedAssetIds, gameAssets]);
 

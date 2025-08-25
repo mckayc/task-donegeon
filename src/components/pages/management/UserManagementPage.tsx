@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../../context/AuthContext';
 import Button from '../../user-interface/Button';
 import AddUserDialog from '../../users/AddUserDialog';
-import { Role, User } from '../../users/types';
+import { Role, User } from '../../../types';
 import EditUserDialog from '../../users/EditUserDialog';
 import { ManualAdjustmentDialog } from '../../admin/ManualAdjustmentDialog';
 import Card from '../../user-interface/Card';
@@ -47,7 +47,7 @@ const UserManagementPage: React.FC = () => {
                 case 'role-asc': return a.role.localeCompare(b.role);
                 case 'role-desc': return b.role.localeCompare(a.role);
                 case 'gameName-asc':
-                default: return a.gameName.localeCompare(b.gameName);
+                default: return a.gameName.localeCompare(a.gameName);
             }
         });
     }, [users, debouncedSearchTerm, sortBy]);

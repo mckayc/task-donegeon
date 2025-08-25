@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -114,7 +114,7 @@ const ManageTrophiesPage: React.FC = () => {
                 onClose={() => setDeletingIds([])}
                 onConfirm={handleConfirmDelete}
                 title={`Delete ${deletingIds.length > 1 ? settings.terminology.awards : settings.terminology.award}`}
-                message={`Are you sure you want to delete ${deletingIds.length} ${deletingIds.length > 1 ? settings.terminology.awards.toLowerCase() : settings.terminology.award.toLowerCase()}? This is permanent.`}
+                message={`Are you sure you want to delete ${deletingIds.length > 1 ? settings.terminology.awards.toLowerCase() : settings.terminology.award.toLowerCase()}? This is permanent.`}
             />
         </div>
     );

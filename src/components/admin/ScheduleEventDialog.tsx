@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { ScheduledEvent, RewardCategory } from '../../../types';
+import { ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
@@ -95,6 +94,17 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                             {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                         </Input>
                     </div>
+                     <Input as="select" label="Event Type" name="eventType" value={formData.eventType} onChange={handleChange}>
+                        <option value="Announcement">Announcement</option>
+                        <option value="BonusXP">Bonus XP</option>
+                        <option value="MarketSale">Market Sale</option>
+                        <option value="Vacation">Vacation</option>
+                    </Input>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input label="Start Date" name="startDate" type="date" value={formData.startDate} onChange={handleChange} required />
+                        <Input label="End Date" name="endDate" type="date" value={formData.endDate} onChange={handleChange} required />
+                    </div>
 
                     <div>
                         <label className="block text-sm font-medium text-stone-300 mb-1">Banner Color</label>
@@ -110,6 +120,38 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                             ))}
                         </div>
                     </div>
+                    
+                     {showModifiers && (
+                        <div className="pt-4 border-t border-stone-700/60 space-y-4">
+                            <h3 className="font-semibold text-stone-200">Modifiers</h3>
+                            {formData.eventType === 'BonusXP' && (
+                                <>
+                                    <Input label="XP Multiplier" name="xpMultiplier" type="number" step="0.1" min="1" value={formData.modifiers.xpMultiplier || 1} onChange={e => handleModifierChange('xpMultiplier', parseFloat(e.target.value))} />
+                                    <div>
+                                        <label className="block text-sm font-medium text-stone-300 mb-1">Affected XP Types (optional)</label>
+                                        <select multiple value={formData.modifiers.affectedRewardIds || []} 
+                                            className="w-full h-32 px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+                                            onChange={(e) => {
+                                                const selectedValues = Array.from(e.target.selectedOptions, option => option.value);
+                                                handleModifierChange('affectedRewardIds', selectedValues);
+                                            }}>
+                                            {xpRewardTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+                                        </select>
+                                        <p className="text-xs text-stone-400 mt-1">If none are selected, the bonus applies to all XP types.</p>
+                                    </div>
+                                </>
+                            )}
+                            {formData.eventType === 'MarketSale' && (
+                                <>
+                                    <Input as="select" label="Market" name="marketId" value={formData.modifiers.marketId || ''} onChange={e => handleModifierChange('marketId', e.target.value)} required>
+                                        <option value="" disabled>Select a market...</option>
+                                        {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                                    </Input>
+                                    <Input label="Discount Percentage" name="discountPercent" type="number" min="1" max="100" value={formData.modifiers.discountPercent || 1} onChange={e => handleModifierChange('discountPercent', parseInt(e.target.value))} />
+                                </>
+                            )}
+                        </div>
+                    )}
                 </form>
                 <div className="p-6 border-t border-stone-700/60 flex justify-between items-center">
                     <div>

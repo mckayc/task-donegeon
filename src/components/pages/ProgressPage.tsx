@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../../types';
 import Card from '../user-interface/Card';
@@ -66,7 +65,7 @@ const ProgressPage: React.FC = () => {
         
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         const experience: { [key: string]: number } = appMode.mode === 'guild' ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
-        const totalXp = Object.values(experience).reduce((sum, amount) => sum + amount, 0);
+        const totalXp = Object.values(experience).reduce((sum, amount) => sum + Number(amount), 0);
 
         const currentRank = [...ranks].sort((a,b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold) || null;
         

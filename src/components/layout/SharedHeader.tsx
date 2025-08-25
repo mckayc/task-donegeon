@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import { User } from '../../types';
+import { User } from '../../../types';
 import Avatar from '../user-interface/Avatar';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { useSystemState } from '../../context/SystemContext';
@@ -32,9 +32,9 @@ const SharedHeader: React.FC = () => {
     }, []);
 
   const sharedUsers = useMemo(() => {
-    const userMap = new Map(users.map(u => [u.id, u]));
+    const userMap = new Map(users.map((u: User) => [u.id, u]));
     const userIdsToShow = settings.sharedMode.userIds;
-    return userIdsToShow.map(id => userMap.get(id)).filter((u): u is User => !!u);
+    return userIdsToShow.map((id: string) => userMap.get(id)).filter((u): u is User => !!u);
   }, [users, settings.sharedMode.userIds]);
 
   const handleUserSelect = (user: User) => {

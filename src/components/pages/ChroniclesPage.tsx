@@ -1,9 +1,8 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
-import { Role } from '../users/types';
-import { PurchaseRequestStatus } from '../items/types';
-import { ChronicleEvent } from '../chronicles/types';
+import { Role, ChronicleEvent, PurchaseRequestStatus } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';

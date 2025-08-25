@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useContext } from 'react';
 import { Rotation } from '../../../types';
 import Button from '../../user-interface/Button';

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -7,9 +6,8 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
-import { Role } from '../users/types';
-import { QuestType, Quest, QuestKind, QuestCompletionStatus } from '../quests/types';
-import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../quests/utils/quests';
+import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus } from '../../types';
+import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';

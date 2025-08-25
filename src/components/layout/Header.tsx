@@ -1,6 +1,6 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Role } from '../users/types';
-import { Page, AppMode } from '../../types/app';
+import { Page, AppMode } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';

@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import { User, Role } from '../users/types';
+import { User, Role } from '../../types';
 import Button from '../user-interface/Button';
 import Keypad from '../user-interface/Keypad';
 import Avatar from '../user-interface/Avatar';

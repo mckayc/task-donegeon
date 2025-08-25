@@ -1,7 +1,5 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { GameAsset } from '../../items/types';
+import { GameAsset } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
@@ -235,7 +233,7 @@ const ManageItemsPage: React.FC = () => {
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
                     onClone={cloneGameAsset}
-                    onDeleteRequest={(ids: string[]) => setConfirmation({ action: 'delete', ids })}
+                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
                     onPreviewImage={setPreviewImageUrl}
                     isLoading={isLoading}
                     searchTerm={debouncedSearchTerm}

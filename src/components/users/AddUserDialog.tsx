@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useAuthDispatch, useAuthState } from '../../context/AuthContext';
-import { Role } from '../users/types';
+import { Role } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserFormFields from './UserFormFields';

@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Role, User } from '../../../types';
+import { Role, User } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserFormFields from '../users/UserFormFields';

@@ -1,24 +1,22 @@
 
 import React, { useState, useMemo } from 'react';
-import Card from '../user-interface/Card';
-import { useSystemState } from '../../context/SystemContext';
-import { useUIState, useUIDispatch } from '../../context/UIContext';
-import Button from '../user-interface/Button';
-import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, MarketOpenStatus } from '../items/types';
-import { ScheduledEvent } from '../events/types';
-import PurchaseDialog from '../markets/PurchaseDialog';
-import ExchangeView from '../markets/ExchangeView';
-import { isMarketOpenForUser } from '../markets/utils/markets';
-import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
-import DynamicIcon from '../user-interface/DynamicIcon';
-import { toYMD } from '../quests/utils/quests';
-import { useAuthState } from '../../context/AuthContext';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useQuestsState } from '../../context/QuestsContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useCommunityState } from '../../context/CommunityContext';
-import { useProgressionState } from '../../context/ProgressionContext';
-import { IAppData } from '../../types';
+import Card from '../../user-interface/Card';
+import { useSystemState } from '../../../context/SystemContext';
+import { useUIState, useUIDispatch } from '../../../context/UIContext';
+import Button from '../../user-interface/Button';
+import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, MarketOpenStatus, ScheduledEvent } from '../../../types';
+import PurchaseDialog from '../../markets/PurchaseDialog';
+import ExchangeView from '../../markets/ExchangeView';
+import { isMarketOpenForUser } from '../../markets/utils/markets';
+import ImagePreviewDialog from '../../user-interface/ImagePreviewDialog';
+import DynamicIcon from '../../user-interface/DynamicIcon';
+import { toYMD } from '../../utils/quests';
+import { useAuthState } from '../../../context/AuthContext';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+import { useQuestsState } from '../../../context/QuestsContext';
+import { useEconomyState } from '../../../context/EconomyContext';
+import { useCommunityState } from '../../../context/CommunityContext';
+import { useProgressionState } from '../../../context/ProgressionContext';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { settings, scheduledEvents } = useSystemState();
@@ -80,7 +78,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
             );
         };
 
-        const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [saleForThisItem, asset.costGroups]);
+        const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [saleForThisItem]);
         
         const canAffordAny = useMemo(() => {
             if (!currentUser) return false;
@@ -191,7 +189,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                         <select
                             id="sort-market-items"
                             value={sortBy}
-                            onChange={e => setSortBy(e.target.value as any)}
+                            onChange={(e) => setSortBy(e.target.value as any)}
                             className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
                         >
                             <option value="default">Default</option>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Market, MarketStatus, MarketCondition, MarketConditionType, Quest } from '../../types';
@@ -50,7 +51,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
         guildId: '', 
         iconType: 'emoji' as 'emoji' | 'image',
         icon: initialData?.icon || '🛒',
-        imageUrl: '',
+        imageUrl: '', 
         status: { type: 'open' } as MarketStatus,
     };
   }, [market, initialData, mode]);

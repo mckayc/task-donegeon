@@ -1,10 +1,7 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
-import { Quest, QuestType, QuestKind } from '../quests/types';
-import { Trophy } from '../trophies/types';
-import { Rank } from '../ranks/types';
+import { Quest, QuestType, QuestKind } from '../../types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';

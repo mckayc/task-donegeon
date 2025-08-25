@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';

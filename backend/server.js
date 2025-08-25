@@ -83,10 +83,17 @@ const BACKUP_DIR = '/app/data/backups';
 const ASSET_PACKS_DIR = '/app/data/asset_packs';
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
 
-const { runScheduledBackups } = require('./controllers/management.controller');
+const { runScheduledBackups, runScheduledRotations } = require('./controllers/management.controller');
 const startAutomatedBackupScheduler = () => {
     setInterval(runScheduledBackups, 3600000); // Check every hour
     setTimeout(runScheduledBackups, 10000); // Also run 10s after start
+};
+
+const startAutomatedRotationScheduler = () => {
+    // Run every 15 minutes to check for due rotations
+    setInterval(runScheduledRotations, 15 * 60 * 1000);
+    // Also run shortly after server start for immediate assignment if needed
+    setTimeout(runScheduledRotations, 15000);
 };
 
 const ensureDefaultAssetPacksExist = async () => {
@@ -140,6 +147,7 @@ const initializeApp = async () => {
     
     await ensureDefaultAssetPacksExist();
     startAutomatedBackupScheduler();
+    startAutomatedRotationScheduler();
 
     console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);

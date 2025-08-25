@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { RotationEntity, QuestEntity, UserEntity, SystemNotificationEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -63,11 +64,10 @@ const run = async (id) => {
         const notificationRepo = manager.getRepository(SystemNotificationEntity);
 
         const rotation = await rotationRepo.findOneBy({ id });
-        if (!rotation || !rotation.isActive) {
-            return { message: "Rotation not found or is inactive." };
+        if (!rotation) {
+            return { message: "Rotation not found." };
         }
         
-        // Ensure consistent ordering by sorting by a stable property like name/title.
         const quests = await questRepo.find({ where: { id: In(rotation.questIds) }, relations: ['assignedUsers'], order: { title: 'ASC' } });
         const users = await userRepo.find({ where: { id: In(rotation.userIds) }, order: { gameName: 'ASC' } });
 
@@ -79,7 +79,6 @@ const run = async (id) => {
         const numUsers = users.length;
         const numQuests = quests.length;
 
-        // 1. Clear any existing assignments for these quests FROM users in this rotation.
         const userIdsInRotationSet = new Set(users.map(u => u.id));
         for (const quest of quests) {
             quest.assignedUsers = quest.assignedUsers.filter(user => !userIdsInRotationSet.has(user.id));
@@ -90,49 +89,37 @@ const run = async (id) => {
         let nextUserIdx = (rotation.lastUserIndex + 1);
         let nextQuestIdx = (rotation.lastQuestStartIndex + 1);
         
-        // 2. Loop through users and determine the assignment plan for THIS run.
-        for (let i = 0; i < numUsers; i++) {
-            if (assignments.length >= numQuests) break; // Stop if all quests are planned.
+        const maxAssignmentsForThisRun = Math.min(numUsers * questsPerUser, numQuests);
+        let assignmentsMade = 0;
 
-            const currentUserIndex = nextUserIdx % numUsers;
-            const userToAssign = users[currentUserIndex];
-            const assignedQuestsForThisUser = [];
+        while (assignmentsMade < maxAssignmentsForThisRun) {
+            const userToAssign = users[nextUserIdx % numUsers];
+            const questToAssign = quests[nextQuestIdx % numQuests];
 
-            for (let j = 0; j < questsPerUser; j++) {
-                if (assignments.length >= numQuests) break;
-
-                const currentQuestIndex = nextQuestIdx % numQuests;
-                const questToAssign = quests[currentQuestIndex];
-                
-                assignments.push({ user: userToAssign, quest: questToAssign });
-                assignedQuestsForThisUser.push(questToAssign);
-
-                nextQuestIdx++;
-            }
+            assignments.push({ user: userToAssign, quest: questToAssign });
             
-            if (assignedQuestsForThisUser.length > 0) {
-                usersWithNewQuests.set(userToAssign.id, assignedQuestsForThisUser);
+            if (!usersWithNewQuests.has(userToAssign.id)) {
+                usersWithNewQuests.set(userToAssign.id, []);
             }
+            usersWithNewQuests.get(userToAssign.id).push(questToAssign);
             
+            assignmentsMade++;
             nextUserIdx++;
+            nextQuestIdx++;
         }
         
-        // 3. Apply the assignments and save changes
         if (assignments.length > 0) {
             for (const { user, quest } of assignments) {
-                quest.assignedUsers.push(user);
+                if (!quest.assignedUsers.some(u => u.id === user.id)) {
+                    quest.assignedUsers.push(user);
+                }
             }
 
-            // 4. Update the rotation state to the LAST assignment made
             const lastAssignment = assignments[assignments.length - 1];
-            const lastUserAssigned = lastAssignment.user;
-            const lastQuestAssigned = lastAssignment.quest;
-            
-            rotation.lastUserIndex = users.findIndex(u => u.id === lastUserAssigned.id);
-            rotation.lastQuestStartIndex = quests.findIndex(q => q.id === lastQuestAssigned.id);
+            rotation.lastUserIndex = users.findIndex(u => u.id === lastAssignment.user.id);
+            rotation.lastQuestStartIndex = quests.findIndex(q => q.id === lastAssignment.quest.id);
             rotation.lastAssignmentDate = new Date().toISOString().split('T')[0];
             
-            // 5. Create notifications
             const notificationsToCreate = [];
             for (const [userId, assignedQuests] of usersWithNewQuests.entries()) {
                 const newNotification = notificationRepo.create({
@@ -147,7 +134,6 @@ const run = async (id) => {
                 notificationsToCreate.push(newNotification);
             }
 
-            // 6. Save all database changes
             await manager.save(QuestEntity, quests.map(q => updateTimestamps(q)));
             await manager.save(RotationEntity, updateTimestamps(rotation));
             if (notificationsToCreate.length > 0) {
@@ -162,6 +148,36 @@ const run = async (id) => {
     });
 };
 
+const runAllScheduled = async () => {
+    console.log('[Rotation Service] Running scheduled rotation check...');
+    const rotationRepo = dataSource.getRepository(RotationEntity);
+    const allRotations = await rotationRepo.find({ where: { isActive: true } });
+
+    const today = new Date();
+    const todayYMD = today.toISOString().split('T')[0];
+    const todayDayOfWeek = today.getDay();
+
+    for (const rotation of allRotations) {
+        if (rotation.lastAssignmentDate === todayYMD) continue;
+        if (rotation.startDate && todayYMD < rotation.startDate) continue;
+        if (rotation.endDate && todayYMD > rotation.endDate) continue;
+        if (!rotation.activeDays.includes(todayDayOfWeek)) continue;
+        
+        if (rotation.frequency === 'WEEKLY') {
+            const firstActiveDayOfWeek = Math.min(...rotation.activeDays);
+            if (todayDayOfWeek !== firstActiveDayOfWeek) {
+                continue;
+            }
+        }
+        
+        console.log(`[Rotation Service] Triggering scheduled rotation "${rotation.name}" (ID: ${rotation.id})`);
+        try {
+            await run(rotation.id);
+        } catch (error) {
+            console.error(`[Rotation Service] Error running scheduled rotation ${rotation.id}:`, error);
+        }
+    }
+};
 
 module.exports = {
     getAll,
@@ -170,4 +186,5 @@ module.exports = {
     deleteMany,
     clone,
     run,
+    runAllScheduled,
 };

@@ -3,6 +3,7 @@ const multer = require('multer');
 const fs = require('fs').promises;
 const { asyncMiddleware } = require('../utils/helpers');
 const backupService = require('../services/backup.service');
+const rotationService = require('../services/rotation.service');
 
 // === Multer Configuration ===
 const UPLOADS_DIR = '/app/data/assets';
@@ -29,6 +30,13 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 const runScheduledBackups = () => {
     backupService.runScheduled().catch(err => {
         console.error("[Controller] Error during automated backup execution:", err);
+    });
+};
+
+// --- Scheduled Rotations ---
+const runScheduledRotations = () => {
+    rotationService.runAllScheduled().catch(err => {
+        console.error("[Controller] Error during automated rotation execution:", err);
     });
 };
 
@@ -267,6 +275,7 @@ module.exports = {
     uploadMedia: asyncMiddleware(uploadMedia),
     // Backup exports
     runScheduledBackups,
+    runScheduledRotations,
     getBackups: asyncMiddleware(getBackups),
     createJsonBackup: asyncMiddleware(createJsonBackup),
     createSqliteBackup: asyncMiddleware(createSqliteBackup),

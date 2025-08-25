@@ -1,5 +1,5 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.23a - Delete Redundant folders - Building but bad gateway",
+  "name": "Task Donegeon 2.0 - 0.1.25 - Builds and Loads - After Root Folder Cleanup - Rotation now more functional",
   "version": "0.5.0",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [

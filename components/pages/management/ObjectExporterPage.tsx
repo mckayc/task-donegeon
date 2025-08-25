@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
@@ -73,7 +74,7 @@ const ObjectExporterPage: React.FC = () => {
 
             {assetPackToPreview && (
                 <BlueprintPreviewDialog
-                    blueprint={assetPackToPreview}
+                    assetPack={assetPackToPreview}
                     initialResolutions={initialResolutions}
                     onClose={() => setAssetPackToPreview(null)}
                     onConfirm={handleConfirmImport}

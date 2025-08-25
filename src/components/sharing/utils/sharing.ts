@@ -1,3 +1,4 @@
+
 import { AssetPack, AssetPackAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset, QuestGroup, UserTemplate } from '../../../types';
 
 /**

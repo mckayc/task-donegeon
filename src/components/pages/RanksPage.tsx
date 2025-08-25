@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useUIState } from '../../context/UIContext';
-import { Rank } from '../../../types';
+import { Rank } from '../../types';
 import Card from '../user-interface/Card';
 import { RankIcon } from '../user-interface/Icons';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -30,7 +30,7 @@ const RanksPage: React.FC = () => {
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         
         let foundRank: Rank | null = allRanks[0] || null;
-        let foundNextRank: Rank | null = null;
+        let foundNextRank: Rank | null = allRanks[1] || null;
 
         for (let i = allRanks.length - 1; i >= 0; i--) {
             if (currentTotalXp >= allRanks[i].xpThreshold) {

@@ -4,7 +4,7 @@ import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment } from '../../../../types';
-import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../quests/utils/quests';
+import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../../utils/quests';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useProgressionState } from '../../../context/ProgressionContext';
 import { useEconomyState } from '../../../context/EconomyContext';

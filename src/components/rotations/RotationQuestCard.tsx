@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Quest, QuestType } from '../../types';
-import { getDueDateString } from '../quests/utils/quests';
+import { getDueDateString } from '../../utils/quests';
 
 interface RotationQuestCardProps {
     quest: Quest;

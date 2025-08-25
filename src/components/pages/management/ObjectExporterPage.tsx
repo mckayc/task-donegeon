@@ -5,7 +5,7 @@ import ImportPanel from '../../sharing/ImportPanel';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
-import { analyzeAssetPackForConflicts } from '../../sharing/utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import { useQuestsState } from '../../../context/QuestsContext';

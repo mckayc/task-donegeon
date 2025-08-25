@@ -4,7 +4,7 @@ import Card from '../../user-interface/Card';
 import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution, Quest } from '../../../types';
 import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
 import Input from '../../user-interface/Input';
-import { analyzeAssetPackForConflicts } from '../../sharing/utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useAuthState } from '../../../context/AuthContext';

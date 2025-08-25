@@ -1,6 +1,6 @@
 
 const { dataSource } = require('../data-source');
-const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity } = require('../entities');
+const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity } = require('../entities');
 const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
@@ -15,20 +15,46 @@ const getAll = async () => {
     return quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers.map(u => u.id) }));
 };
 
-const create = async (questDataWithUsers) => {
-    const { assignedUserIds, ...questData } = questDataWithUsers;
-    const newQuest = questRepo.create({
-        ...questData,
-        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+const create = async (questDataWithUsers, actorId) => {
+    return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const userRepo = manager.getRepository(UserEntity);
+        const notificationRepo = manager.getRepository(SystemNotificationEntity);
+
+        const { assignedUserIds, ...questData } = questDataWithUsers;
+        const newQuest = questRepo.create({
+            ...questData,
+            id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+        });
+        if (assignedUserIds && assignedUserIds.length > 0) {
+            newQuest.assignedUsers = await userRepo.findBy({ id: In(assignedUserIds) });
+        }
+        const saved = await questRepo.save(updateTimestamps(newQuest, true));
+
+        if (actorId && assignedUserIds && assignedUserIds.length > 0) {
+            const actor = await userRepo.findOneBy({ id: actorId });
+            if (actor) {
+                 const notification = notificationRepo.create({
+                    id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'QuestAssigned',
+                    message: `${actor.gameName} assigned the quest: "${saved.title}"`,
+                    recipientUserIds: assignedUserIds,
+                    senderId: actorId,
+                    link: 'Quests',
+                    icon: saved.icon,
+                    iconType: saved.iconType,
+                    imageUrl: saved.imageUrl,
+                    guildId: saved.guildId || undefined,
+                });
+                await manager.save(updateTimestamps(notification, true));
+            }
+        }
+        
+        updateEmitter.emit('update');
+        const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: ['assignedUsers'] });
+        const { assignedUsers: users, ...rest } = savedWithRelations;
+        return { ...rest, assignedUserIds: users.map(u => u.id) };
     });
-    if (assignedUserIds && assignedUserIds.length > 0) {
-        newQuest.assignedUsers = await userRepo.findBy({ id: In(assignedUserIds) });
-    }
-    const saved = await questRepo.save(updateTimestamps(newQuest, true));
-    updateEmitter.emit('update');
-    const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: ['assignedUsers'] });
-    const { assignedUsers: users, ...rest } = savedWithRelations;
-    return { ...rest, assignedUserIds: users.map(u => u.id) };
 };
 
 const clone = async (id) => {
@@ -47,23 +73,54 @@ const clone = async (id) => {
     return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
 };
 
-const update = async (id, questDataWithUsers) => {
-    const quest = await questRepo.findOne({ where: { id }, relations: ['assignedUsers'] });
-    if (!quest) return null;
+const update = async (id, questDataWithUsers, actorId) => {
+     return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const userRepo = manager.getRepository(UserEntity);
+        const notificationRepo = manager.getRepository(SystemNotificationEntity);
 
-    const { assignedUserIds, ...questData } = questDataWithUsers;
-    questRepo.merge(quest, questData);
+        const quest = await questRepo.findOne({ where: { id }, relations: ['assignedUsers'] });
+        if (!quest) return null;
 
-    if (assignedUserIds) {
-        quest.assignedUsers = await userRepo.findBy({ id: In(assignedUserIds) });
-    }
+        const oldAssignedIds = new Set(quest.assignedUsers.map(u => u.id));
 
-    const saved = await questRepo.save(updateTimestamps(quest));
-    updateEmitter.emit('update');
-    
-    const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: ['assignedUsers'] });
-    const { assignedUsers, ...rest } = savedWithRelations;
-    return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
+        const { assignedUserIds, ...questData } = questDataWithUsers;
+        questRepo.merge(quest, questData);
+
+        if (assignedUserIds) {
+            quest.assignedUsers = await userRepo.findBy({ id: In(assignedUserIds) });
+        }
+
+        const saved = await questRepo.save(updateTimestamps(quest));
+
+        const newAssignedIds = new Set(quest.assignedUsers.map(u => u.id));
+        const newlyAssignedUserIds = [...newAssignedIds].filter(id => !oldAssignedIds.has(id));
+
+        if (actorId && newlyAssignedUserIds.length > 0) {
+            const actor = await userRepo.findOneBy({ id: actorId });
+             if (actor) {
+                 const notification = notificationRepo.create({
+                    id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'QuestAssigned',
+                    message: `${actor.gameName} assigned you the quest: "${saved.title}"`,
+                    recipientUserIds: newlyAssignedUserIds,
+                    senderId: actorId,
+                    link: 'Quests',
+                    icon: saved.icon,
+                    iconType: saved.iconType,
+                    imageUrl: saved.imageUrl,
+                    guildId: saved.guildId || undefined,
+                });
+                await manager.save(updateTimestamps(notification, true));
+            }
+        }
+        
+        updateEmitter.emit('update');
+        
+        const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: ['assignedUsers'] });
+        const { assignedUsers, ...rest } = savedWithRelations;
+        return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
+    });
 };
 
 const deleteMany = async (ids) => {

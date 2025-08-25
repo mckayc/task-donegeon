@@ -138,8 +138,14 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, [addNotification]);
     
     const actions = useMemo<QuestsDispatch>(() => ({
-        addQuest: (data) => apiAction(() => addQuestAPI(data), 'Quest created!'),
-        updateQuest: (data) => apiAction(() => updateQuestAPI(data), 'Quest updated!'),
+        addQuest: (data) => {
+            if (!currentUser) return Promise.resolve(null);
+            return apiAction(() => addQuestAPI(data, currentUser.id), 'Quest created!');
+        },
+        updateQuest: (data) => {
+            if (!currentUser) return Promise.resolve(null);
+            return apiAction(() => updateQuestAPI(data, currentUser.id), 'Quest updated!');
+        },
         cloneQuest: (id) => apiAction(() => cloneQuestAPI(id), 'Quest cloned!'),
         updateQuestsStatus: (ids, isActive) => apiAction(() => updateQuestsStatusAPI(ids, isActive)),
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),

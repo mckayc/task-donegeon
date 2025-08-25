@@ -7,7 +7,8 @@ const getAllQuests = async (req, res) => {
 };
 
 const createQuest = async (req, res) => {
-    const savedQuest = await questService.create(req.body);
+    const { actorId, ...questData } = req.body;
+    const savedQuest = await questService.create(questData, actorId);
     res.status(201).json(savedQuest);
 };
 
@@ -18,7 +19,8 @@ const cloneQuest = async (req, res) => {
 };
 
 const updateQuest = async (req, res) => {
-    const updatedQuest = await questService.update(req.params.id, req.body);
+    const { actorId, ...questData } = req.body;
+    const updatedQuest = await questService.update(req.params.id, questData, actorId);
     if (!updatedQuest) return res.status(404).send('Quest not found');
     res.json(updatedQuest);
 };

@@ -3,7 +3,7 @@
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
-    UserEntity, QuestEntity, SettingEntity
+    UserEntity, QuestEntity, SettingEntity, SystemNotificationEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
@@ -11,100 +11,145 @@ const { INITIAL_SETTINGS } = require('../initialData');
 const { In, IsNull } = require('typeorm');
 
 const getChronicles = async (req, res) => {
-    const { userId, guildId, viewMode, page = 1, limit = 50, startDate, endDate } = req.query;
+    const { userId, guildId, viewMode, page = 1, limit = 50, startDate, endDate, filterTypes } = req.query;
     const manager = dataSource.manager;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     let allEvents = [];
+    const activeFilters = filterTypes ? filterTypes.split(',') : [];
 
     // --- Quest Completions ---
-    const qcQb = manager.createQueryBuilder(QuestCompletionEntity, "qc")
-        .leftJoinAndSelect("qc.user", "user")
-        .leftJoinAndSelect("qc.quest", "quest");
+    if (activeFilters.includes('QuestCompletion')) {
+        const qcQb = manager.createQueryBuilder(QuestCompletionEntity, "qc")
+            .leftJoinAndSelect("qc.user", "user")
+            .leftJoinAndSelect("qc.quest", "quest");
+        
+        if (viewMode === 'personal' && userId) qcQb.where("user.id = :userId", { userId });
+        
+        if (guildId === 'null') qcQb.andWhere("qc.guildId IS NULL");
+        else if (guildId) qcQb.andWhere("qc.guildId = :guildId", { guildId });
+        
+        if (startDate && endDate) {
+            qcQb.andWhere("qc.completedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+            qcQb.andWhere("qc.completedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        }
+
+        const completions = await qcQb.orderBy("qc.completedAt", "DESC").getMany();
+        allEvents.push(...completions.map(c => ({
+            id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'QuestCompletion',
+            title: `${c.user?.gameName || 'Unknown User'} completed: ${c.quest?.title || 'Unknown Quest'}`,
+            note: c.note, status: c.status, icon: c.quest?.icon || '📜', color: '#10b981',
+            userId: c.user?.id
+        })));
+    }
     
-    if (viewMode === 'personal' && userId) qcQb.where("user.id = :userId", { userId });
-    
-    if (guildId === 'null') qcQb.andWhere("qc.guildId IS NULL");
-    else if (guildId) qcQb.andWhere("qc.guildId = :guildId", { guildId });
-    
-    if (startDate && endDate) {
-        qcQb.andWhere("qc.completedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
-        qcQb.andWhere("qc.completedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+    // --- Quest Assignments ---
+    if (activeFilters.includes('QuestAssigned')) {
+        const snQb = manager.createQueryBuilder(SystemNotificationEntity, "sn")
+            .where("sn.type = :type", { type: 'QuestAssigned' });
+
+        if (viewMode === 'personal' && userId) {
+            snQb.andWhere("sn.recipientUserIds LIKE :userId", { userId: `%${userId}%` });
+        }
+
+        if (guildId === 'null') {
+            snQb.andWhere("sn.guildId IS NULL");
+        } else if (guildId) {
+            snQb.andWhere("sn.guildId = :guildId", { guildId });
+        }
+
+        if (startDate && endDate) {
+            snQb.andWhere("sn.timestamp >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+            snQb.andWhere("sn.timestamp <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        }
+        
+        const assignments = await snQb.orderBy("sn.timestamp", "DESC").getMany();
+        const senderIds = [...new Set(assignments.map(a => a.senderId).filter(Boolean))];
+        const senders = senderIds.length > 0 ? await manager.findBy(UserEntity, { id: In(senderIds) }) : [];
+        const senderMap = new Map(senders.map(s => [s.id, s.gameName]));
+
+        allEvents.push(...assignments.map(a => ({
+            id: `assign-${a.id}`, originalId: a.id, date: a.timestamp, type: 'QuestAssigned',
+            title: a.message,
+            status: 'Assigned', icon: a.icon || '🗺️', color: '#8b5cf6',
+            userId: a.senderId,
+            actorName: a.senderId ? senderMap.get(a.senderId) || 'An Admin' : 'System',
+            recipientUserIds: a.recipientUserIds,
+        })));
     }
 
-    const completions = await qcQb.orderBy("qc.completedAt", "DESC").getMany();
-    allEvents.push(...completions.map(c => ({
-        id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: `${c.user?.gameName || 'Unknown User'} completed: ${c.quest?.title || 'Unknown Quest'}`,
-        note: c.note, status: c.status, icon: c.quest?.icon || '📜', color: '#10b981',
-        userId: c.user?.id
-    })));
 
     // --- Purchase Requests ---
-    const prQb = manager.createQueryBuilder(PurchaseRequestEntity, "pr")
-        .leftJoinAndSelect("pr.user", "user");
-    
-    if (viewMode === 'personal' && userId) prQb.where("user.id = :userId", { userId });
+     if (activeFilters.includes('Purchase')) {
+        const prQb = manager.createQueryBuilder(PurchaseRequestEntity, "pr")
+            .leftJoinAndSelect("pr.user", "user");
+        
+        if (viewMode === 'personal' && userId) prQb.where("user.id = :userId", { userId });
 
-    if (guildId === 'null') prQb.andWhere("pr.guildId IS NULL");
-    else if (guildId) prQb.andWhere("pr.guildId = :guildId", { guildId });
+        if (guildId === 'null') prQb.andWhere("pr.guildId IS NULL");
+        else if (guildId) prQb.andWhere("pr.guildId = :guildId", { guildId });
 
-    if (startDate && endDate) {
-        prQb.andWhere("pr.requestedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
-        prQb.andWhere("pr.requestedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        if (startDate && endDate) {
+            prQb.andWhere("pr.requestedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+            prQb.andWhere("pr.requestedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        }
+        
+        const purchases = await prQb.orderBy("pr.requestedAt", "DESC").getMany();
+        allEvents.push(...purchases.map(p => ({
+            id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
+            title: `${p.user?.gameName || 'Unknown User'} requested: ${p.assetDetails.name}`,
+            note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b',
+            userId: p.user?.id
+        })));
     }
-    
-    const purchases = await prQb.orderBy("pr.requestedAt", "DESC").getMany();
-    allEvents.push(...purchases.map(p => ({
-        id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-        title: `${p.user?.gameName || 'Unknown User'} requested: ${p.assetDetails.name}`,
-        note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b',
-        userId: p.user?.id
-    })));
 
     // --- User Trophies ---
-    const utQb = manager.createQueryBuilder(UserTrophyEntity, "ut")
-        .leftJoinAndSelect("ut.user", "user")
-        .leftJoinAndSelect("ut.trophy", "trophy");
-    
-    if (viewMode === 'personal' && userId) utQb.where("user.id = :userId", { userId });
+     if (activeFilters.includes('TrophyAwarded')) {
+        const utQb = manager.createQueryBuilder(UserTrophyEntity, "ut")
+            .leftJoinAndSelect("ut.user", "user")
+            .leftJoinAndSelect("ut.trophy", "trophy");
+        
+        if (viewMode === 'personal' && userId) utQb.where("user.id = :userId", { userId });
 
-    if (guildId === 'null') utQb.andWhere("ut.guildId IS NULL");
-    else if (guildId) utQb.andWhere("ut.guildId = :guildId", { guildId });
+        if (guildId === 'null') utQb.andWhere("ut.guildId IS NULL");
+        else if (guildId) utQb.andWhere("ut.guildId = :guildId", { guildId });
 
-    if (startDate && endDate) {
-        utQb.andWhere("ut.awardedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
-        utQb.andWhere("ut.awardedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        if (startDate && endDate) {
+            utQb.andWhere("ut.awardedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+            utQb.andWhere("ut.awardedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        }
+
+        const trophies = await utQb.orderBy("ut.awardedAt", "DESC").getMany();
+        allEvents.push(...trophies.map(t => ({
+            id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'TrophyAwarded',
+            title: `${t.user?.gameName || 'Unknown User'} earned: ${t.trophy?.name || 'Unknown Trophy'}`,
+            note: t.trophy?.description, status: 'Awarded', icon: t.trophy?.icon || '🏆', color: '#ca8a04',
+            userId: t.user?.id
+        })));
     }
-
-    const trophies = await utQb.orderBy("ut.awardedAt", "DESC").getMany();
-    allEvents.push(...trophies.map(t => ({
-        id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
-        title: `${t.user?.gameName || 'Unknown User'} earned: ${t.trophy?.name || 'Unknown Trophy'}`,
-        note: t.trophy?.description, status: 'Awarded', icon: t.trophy?.icon || '🏆', color: '#ca8a04',
-        userId: t.user?.id
-    })));
 
     // --- Admin Adjustments ---
-    const aaQb = manager.createQueryBuilder(AdminAdjustmentEntity, "aa")
-        .leftJoinAndSelect("aa.user", "user");
-    
-    if (viewMode === 'personal' && userId) aaQb.where("user.id = :userId", { userId });
+     if (activeFilters.includes('AdminAdjustment')) {
+        const aaQb = manager.createQueryBuilder(AdminAdjustmentEntity, "aa")
+            .leftJoinAndSelect("aa.user", "user");
+        
+        if (viewMode === 'personal' && userId) aaQb.where("user.id = :userId", { userId });
 
-    if (guildId === 'null') aaQb.andWhere("aa.guildId IS NULL");
-    else if (guildId) aaQb.andWhere("aa.guildId = :guildId", { guildId });
+        if (guildId === 'null') aaQb.andWhere("aa.guildId IS NULL");
+        else if (guildId) aaQb.andWhere("aa.guildId = :guildId", { guildId });
 
-    if (startDate && endDate) {
-        aaQb.andWhere("aa.adjustedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
-        aaQb.andWhere("aa.adjustedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        if (startDate && endDate) {
+            aaQb.andWhere("aa.adjustedAt >= :startDate", { startDate: `${startDate}T00:00:00.000Z` });
+            aaQb.andWhere("aa.adjustedAt <= :endDate", { endDate: `${endDate}T23:59:59.999Z` });
+        }
+        
+        const adjustments = await aaQb.orderBy("aa.adjustedAt", "DESC").getMany();
+        allEvents.push(...adjustments.map(a => ({
+            id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'AdminAdjustment',
+            title: `Admin Adjustment for ${a.user?.gameName || 'Unknown User'}: ${a.type}`,
+            note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7',
+            userId: a.user?.id
+        })));
     }
-    
-    const adjustments = await aaQb.orderBy("aa.adjustedAt", "DESC").getMany();
-    allEvents.push(...adjustments.map(a => ({
-        id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
-        title: `Admin Adjustment for ${a.user?.gameName || 'Unknown User'}: ${a.type}`,
-        note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7',
-        userId: a.user?.id
-    })));
     
     // Sort all collected events by date
     allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

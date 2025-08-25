@@ -71,8 +71,8 @@ export const setRanksAPI = (ranks: Rank[]) => apiRequest('POST', '/api/ranks/bul
 
 
 // --- Quests API ---
-export const addQuestAPI = (data: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => apiRequest('POST', '/api/quests', data);
-export const updateQuestAPI = (data: Quest) => apiRequest('PUT', `/api/quests/${data.id}`, data);
+export const addQuestAPI = (data: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>, actorId: string) => apiRequest('POST', '/api/quests', { ...data, actorId });
+export const updateQuestAPI = (data: Quest, actorId: string) => apiRequest('PUT', `/api/quests/${data.id}`, { ...data, actorId });
 export const cloneQuestAPI = (id: string) => apiRequest('POST', `/api/quests/clone/${id}`);
 export const updateQuestsStatusAPI = (ids: string[], isActive: boolean) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive });
 export const bulkUpdateQuestsAPI = (ids: string[], updates: BulkQuestUpdates) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates });

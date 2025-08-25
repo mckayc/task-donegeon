@@ -1,3 +1,4 @@
+
 const questGroupService = require('../services/questGroup.service');
 
 const getAllQuestGroups = async (req, res) => {
@@ -22,8 +23,8 @@ const deleteQuestGroups = async (req, res) => {
 };
 
 const assignQuestGroupToUsers = async (req, res) => {
-    const { groupId, userIds } = req.body;
-    await questGroupService.assignToUsers(groupId, userIds);
+    const { groupId, userIds, actorId } = req.body;
+    await questGroupService.assignToUsers(groupId, userIds, actorId);
     res.status(204).send();
 };
 

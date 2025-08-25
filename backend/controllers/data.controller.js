@@ -3,7 +3,7 @@
 const { dataSource } = require('../data-source');
 const { In, MoreThan, IsNull } = require("typeorm");
 const { 
-    UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity
+    UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, SystemNotificationEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { getFullAppData } = require('../utils/helpers');

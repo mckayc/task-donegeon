@@ -65,8 +65,8 @@ const ProgressPage: React.FC = () => {
         if (!currentUser) return { totalXp: 0, currentRank: null, weeklyProgressData: [], monthlyProgressData: [], questsCompleted: 0, dutiesCompleted: 0, venturesCompleted: 0 };
         
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const experience = appMode.mode === 'guild' ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
-        const totalXp = Object.values(experience).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+        const experience: { [key: string]: number } = appMode.mode === 'guild' ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
+        const totalXp = Object.values(experience).reduce((sum, amount) => sum + amount, 0);
 
         const currentRank = [...ranks].sort((a,b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold) || null;
         
@@ -91,7 +91,7 @@ const ProgressPage: React.FC = () => {
         completionsInScope.forEach(comp => {
             const quest = quests.find(q => q.id === comp.questId);
             if (!quest) return;
-            const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum: number, r: RewardItem) => sum + Number(r.amount), 0);
+            const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum, r) => sum + Number(r.amount), 0);
 
             const dateKey = comp.completedAt.split('T')[0];
             if (dateKey in weeklyData) weeklyData[dateKey] += xpForThisQuest;

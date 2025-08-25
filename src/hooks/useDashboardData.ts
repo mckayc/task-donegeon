@@ -1,10 +1,8 @@
-
-
 import { useMemo } from 'react';
 import { useSystemState } from '../context/SystemContext';
 import { useUIState } from '../context/UIContext';
 import { useAuthState } from '../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem } from '../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment } from '../types';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../components/quests/utils/quests';
 import { useQuestsState } from '../context/QuestsContext';
 import { useProgressionState } from '../context/ProgressionContext';
@@ -51,7 +49,7 @@ export const useDashboardData = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+        const totalXp = Object.values(currentBalances.experience).reduce<number>((sum, amount) => sum + Number(amount), 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         let nextRank: Rank | null = sortedRanks[1] || null;
@@ -106,23 +104,23 @@ export const useDashboardData = () => {
                 const quest = quests.find(q => q.id === c.questId);
                 let rewardsText = '';
                 if (c.status === QuestCompletionStatus.Approved && quest && quest.rewards.length > 0) {
-                    rewardsText = quest.rewards.map(r => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                    rewardsText = quest.rewards.map((r: RewardItem) => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
                 }
                 return { id: c.id, type: 'Quest' as const, title: quest?.title || `Unknown ${terminology.task}`, date: c.completedAt, note: c.note ? `"${c.note}"` : undefined, rewardsText: rewardsText || undefined, status: c.status, icon: quest?.icon || '📜' };
             }),
-            ...purchaseRequests.filter(p => p.userId === currentUser.id && p.guildId == currentGuildId).map(p => ({ id: p.id, type: 'Purchase' as const, title: `Purchased "${p.assetDetails.name}"`, date: p.requestedAt, note: p.assetDetails.cost.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' '), status: p.status, icon: '💰' })),
+            ...purchaseRequests.filter(p => p.userId === currentUser.id && p.guildId == currentGuildId).map(p => ({ id: p.id, type: 'Purchase' as const, title: `Purchased "${p.assetDetails.name}"`, date: p.requestedAt, note: p.assetDetails.cost.map((r: RewardItem) => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' '), status: p.status, icon: '💰' })),
             ...userTrophies.filter(ut => ut.userId === currentUser.id && ut.guildId == currentGuildId).map(ut => {
                 const trophy = trophies.find(t => t.id === ut.trophyId);
                 return { id: ut.id, type: 'Trophy' as const, title: `Earned ${terminology.award}: "${trophy?.name || ''}"`, date: ut.awardedAt, note: trophy?.description, status: 'Awarded!', icon: trophy?.icon || '🏆' };
             }),
-            ...adminAdjustments.filter(a => a.userId === currentUser.id && a.guildId == currentGuildId).map(a => {
+            ...adminAdjustments.filter((a: AdminAdjustment) => a.userId === currentUser.id && a.guildId == currentGuildId).map((a: AdminAdjustment) => {
                 const isExchange = a.userId === a.adjusterId && a.reason.startsWith('Exchanged');
                 if (!isExchange) return null;
                 const title = `Made an Exchange`;
                 let rewardsText = '';
                 if (a.rewards.length > 0 || a.setbacks.length > 0) {
-                    const paid = a.setbacks.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
-                    const received = a.rewards.map(r => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                    const paid = a.setbacks.map((r: RewardItem) => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                    const received = a.rewards.map((r: RewardItem) => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
                     rewardsText = `${paid} ${received}`.trim();
                 }
                 return { id: a.id, type: 'Adjustment' as const, title, date: a.adjustedAt, note: a.reason, rewardsText: rewardsText || undefined, status: 'Exchanged!', icon: '⚖️' };
@@ -137,9 +135,9 @@ export const useDashboardData = () => {
         return users.map(user => {
             let userTotalXp = 0;
             if (currentGuildId) {
-                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount: number) => sum + Number(amount), 0);
             } else {
-                userTotalXp = Object.values(user.personalExperience).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount: number) => sum + Number(amount), 0);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);
@@ -185,7 +183,7 @@ export const useDashboardData = () => {
                 const quest = quests.find(q => q.id === completion.questId);
                 if (!quest) return;
                 const dateKey = completion.completedAt.split('T')[0];
-                const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum, r) => sum + r.amount, 0);
+                const xpForThisQuest = quest.rewards.filter((r: RewardItem) => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum, r) => sum + r.amount, 0);
                 if (dateKey in dataByDay) {
                     dataByDay[dateKey] += xpForThisQuest;
                 }

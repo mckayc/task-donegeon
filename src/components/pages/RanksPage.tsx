@@ -21,11 +21,11 @@ const RanksPage: React.FC = () => {
             return { currentRank: null, nextRank: null, totalXp: 0, progressPercentage: 0, sortedRanks: [], xpIntoCurrent: 0, xpForNext: 0 };
         }
 
-        const currentBalances = appMode.mode === 'personal'
+        const currentBalances: { [key: string]: number } = appMode.mode === 'personal'
             ? currentUser.personalExperience
             : currentUser.guildBalances[appMode.guildId]?.experience || {};
         
-        const currentTotalXp = Object.values(currentBalances).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+        const currentTotalXp = Object.values(currentBalances).reduce((sum, amount) => sum + amount, 0);
         
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         

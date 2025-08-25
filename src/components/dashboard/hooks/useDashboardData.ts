@@ -1,9 +1,10 @@
 
+
 import { useMemo } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem } from '../../../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment } from '../../../../types';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../quests/utils/quests';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useProgressionState } from '../../../context/ProgressionContext';
@@ -50,7 +51,7 @@ export const useDashboardData = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+        const totalXp = Object.values(currentBalances.experience).reduce<number>((sum, amount) => sum + Number(amount), 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         let nextRank: Rank | null = sortedRanks[1] || null;
@@ -114,7 +115,7 @@ export const useDashboardData = () => {
                 const trophy = trophies.find(t => t.id === ut.trophyId);
                 return { id: ut.id, type: 'Trophy' as const, title: `Earned ${terminology.award}: "${trophy?.name || ''}"`, date: ut.awardedAt, note: trophy?.description, status: 'Awarded!', icon: trophy?.icon || '🏆' };
             }),
-            ...adminAdjustments.filter(a => a.userId === currentUser.id && a.guildId == currentGuildId).map(a => {
+            ...adminAdjustments.filter((a: AdminAdjustment) => a.userId === currentUser.id && a.guildId == currentGuildId).map((a: AdminAdjustment) => {
                 const isExchange = a.userId === a.adjusterId && a.reason.startsWith('Exchanged');
                 if (!isExchange) return null;
                 const title = `Made an Exchange`;
@@ -136,9 +137,9 @@ export const useDashboardData = () => {
         return users.map(user => {
             let userTotalXp = 0;
             if (currentGuildId) {
-                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount: number) => sum + Number(amount), 0);
             } else {
-                userTotalXp = Object.values(user.personalExperience).reduce<number>((sum: number, amount: number) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount: number) => sum + Number(amount), 0);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);
@@ -184,7 +185,7 @@ export const useDashboardData = () => {
                 const quest = quests.find(q => q.id === completion.questId);
                 if (!quest) return;
                 const dateKey = completion.completedAt.split('T')[0];
-                const xpForThisQuest = quest.rewards.filter((r: RewardItem) => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum: number, r: RewardItem) => sum + r.amount, 0);
+                const xpForThisQuest = quest.rewards.filter((r: RewardItem) => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce<number>((sum, r) => sum + r.amount, 0);
                 if (dateKey in dataByDay) {
                     dataByDay[dateKey] += xpForThisQuest;
                 }

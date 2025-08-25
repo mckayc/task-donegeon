@@ -1,10 +1,11 @@
 
 
+
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
-import { generateAssetPack } from '../../utils/sharing';
+import { generateAssetPack } from './utils/sharing';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useSystemState } from '../../context/SystemContext';

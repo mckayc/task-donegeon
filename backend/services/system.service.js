@@ -411,6 +411,10 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign) => {
                 }
                 
                 if(assetType === 'quests') {
+                    // Ensure non-nullable fields have defaults if missing from pack
+                    if (!newAssetData.lateSetbacks) newAssetData.lateSetbacks = [];
+                    if (!newAssetData.incompleteSetbacks) newAssetData.incompleteSetbacks = [];
+
                     if (userIdsToAssign !== undefined) {
                         if (userIdsToAssign.length > 0) {
                             newAssetData.assignedUsers = await manager.findBy(UserEntity, { id: In(userIdsToAssign) });
@@ -432,12 +436,17 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign) => {
                     if(newAssetData.incompleteSetbacks) newAssetData.incompleteSetbacks = (newAssetData.incompleteSetbacks || []).map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
                     if (newAssetData.groupId) newAssetData.groupId = idMap.get(newAssetData.groupId) || newAssetData.groupId;
                 }
-                if(assetType === 'gameAssets' && newAssetData.costGroups) {
-                    newAssetData.costGroups = newAssetData.costGroups.map(group => 
-                        group.map(c => ({ ...c, rewardTypeId: idMap.get(c.rewardTypeId) || c.rewardTypeId }))
-                    );
-                    if (newAssetData.marketIds) {
-                        newAssetData.marketIds = newAssetData.marketIds.map(mid => idMap.get(mid) || mid);
+                if(assetType === 'gameAssets') {
+                    // Ensure non-nullable fields have defaults if missing from pack
+                    if (!newAssetData.creatorId) newAssetData.creatorId = 'system';
+
+                    if(newAssetData.costGroups) {
+                        newAssetData.costGroups = newAssetData.costGroups.map(group => 
+                            group.map(c => ({ ...c, rewardTypeId: idMap.get(c.rewardTypeId) || c.rewardTypeId }))
+                        );
+                        if (newAssetData.marketIds) {
+                            newAssetData.marketIds = newAssetData.marketIds.map(mid => idMap.get(mid) || mid);
+                        }
                     }
                 }
                 if (assetType === 'trophies' && newAssetData.requirements) {

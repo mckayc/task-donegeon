@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -10,20 +9,18 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useProgressionState } from '../../../context/ProgressionContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import TrophyTable from '../../trophies/TrophyTable';
-import { useAuthState } from '../../../context/AuthContext';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies } = useProgressionState();
     const { settings, isAiConfigured } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
-    const { currentUser } = useAuthState();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; icon: string; } | null>(null);
     const [selectedTrophies, setSelectedTrophies] = useState<string[]>([]);
-
+    
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const trophyIds = useMemo(() => trophies.map(t => t.id), [trophies]);
@@ -46,9 +43,8 @@ const ManageTrophiesPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
-        if (deletingIds.length > 0 && currentUser) {
-            deleteSelectedAssets({ trophies: deletingIds }, currentUser.id, () => {
+        if (deletingIds.length > 0) {
+            deleteSelectedAssets({ trophies: deletingIds }, () => {
                 setSelectedTrophies(prev => prev.filter(id => !deletingIds.includes(id)));
                 setDeletingIds([]);
             });
@@ -65,7 +61,11 @@ const ManageTrophiesPage: React.FC = () => {
     };
     
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedTrophies(e.target.checked ? trophies.map((t: Trophy) => t.id) : []);
+        if (e.target.checked) {
+            setSelectedTrophies(trophies.map((t: Trophy) => t.id));
+        } else {
+            setSelectedTrophies([]);
+        }
     };
 
     const headerActions = (
@@ -88,7 +88,6 @@ const ManageTrophiesPage: React.FC = () => {
                 {selectedTrophies.length > 0 && (
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedTrophies.length} selected</span>
-                        <Button size="sm" variant="secondary" onClick={() => handleEdit(trophies.find(t => t.id === selectedTrophies[0])!)} disabled={selectedTrophies.length !== 1}>Edit</Button>
                         <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(selectedTrophies)}>Delete</Button>
                     </div>
                 )}
@@ -98,7 +97,7 @@ const ManageTrophiesPage: React.FC = () => {
                     onSelectAll={handleSelectAll}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
-                    onDeleteRequest={handleDeleteRequest}
+                    onDeleteRequest={(ids: string[]) => setDeletingIds(ids)}
                     terminology={settings.terminology}
                     onCreate={handleCreate}
                 />
@@ -115,11 +114,10 @@ const ManageTrophiesPage: React.FC = () => {
                 onClose={() => setDeletingIds([])}
                 onConfirm={handleConfirmDelete}
                 title={`Delete ${deletingIds.length > 1 ? settings.terminology.awards : settings.terminology.award}`}
-                message={`Are you sure you want to delete ${deletingIds.length} ${deletingIds.length > 1 ? settings.terminology.awards.toLowerCase() : settings.terminology.award.toLowerCase()}? This is permanent.`}
+                message={`Are you sure you want to delete ${deletingIds.length > 1 ? settings.terminology.awards.toLowerCase() : settings.terminology.award.toLowerCase()}? This is permanent.`}
             />
         </div>
     );
 };
 
-// FIX: Add default export to resolve lazy loading issue in routeConfig.
 export default ManageTrophiesPage;

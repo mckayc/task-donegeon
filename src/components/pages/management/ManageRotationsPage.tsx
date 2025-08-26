@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useContext } from 'react';
 import { Rotation } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -9,7 +8,6 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import RotationTable from '../../rotations/RotationTable';
 import { useQuestsState, useQuestsDispatch, QuestsDispatchContext } from '../../../context/QuestsContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
-import { useAuthState } from '../../../context/AuthContext';
 
 const ManageRotationsPage: React.FC = () => {
     const { settings } = useSystemState();
@@ -17,7 +15,6 @@ const ManageRotationsPage: React.FC = () => {
     const { deleteSelectedAssets } = useSystemDispatch();
     const { cloneRotation, updateRotation, runRotation } = useQuestsDispatch();
     const { dispatch: questsDispatch } = useContext(QuestsDispatchContext)!;
-    const { currentUser } = useAuthState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRotation, setEditingRotation] = useState<Rotation | null>(null);
@@ -38,8 +35,8 @@ const ManageRotationsPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingIds.length > 0 && currentUser) {
-            deleteSelectedAssets({ rotations: deletingIds }, currentUser.id, () => {
+        if (deletingIds.length > 0) {
+            deleteSelectedAssets({ rotations: deletingIds }, () => {
                 questsDispatch({ type: 'REMOVE_QUESTS_DATA', payload: { rotations: deletingIds } });
                 setDeletingIds([]);
                 setSelectedRotations([]);

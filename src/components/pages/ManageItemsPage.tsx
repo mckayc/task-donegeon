@@ -16,7 +16,6 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 import ItemTable from '../items/ItemTable';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
-import { useAuthState } from '../../context/AuthContext';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -24,8 +23,6 @@ const ManageItemsPage: React.FC = () => {
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
-    // FIX: Get the current user to pass to the delete function.
-    const { currentUser } = useAuthState();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -150,10 +147,9 @@ const ManageItemsPage: React.FC = () => {
     };
 
     const handleConfirmAction = async () => {
-        if (!confirmation || confirmation.action !== 'delete' || !currentUser) return;
+        if (!confirmation || confirmation.action !== 'delete') return;
         try {
-            // FIX: The deleteSelectedAssets function requires an actorId (the current user's ID) to log the action.
-            await deleteSelectedAssets({ gameAssets: confirmation.ids }, currentUser.id);
+            await deleteSelectedAssets({ gameAssets: confirmation.ids });
             addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
             setSelectedAssets([]);
         } catch (e) { /* error handled in context */ }

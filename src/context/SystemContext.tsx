@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
@@ -7,10 +5,6 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI } from '../api';
-import { QuestsAction, useQuestsReducerDispatch } from './QuestsContext';
-import { EconomyAction, useEconomyReducerDispatch } from './EconomyContext';
-import { ProgressionAction, useProgressionReducerDispatch } from './ProgressionContext';
-import { CommunityAction, useCommunityReducerDispatch } from './CommunityContext';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -36,7 +30,7 @@ export type SystemAction =
   | { type: 'SET_AI_CONFIGURED', payload: boolean };
 
 export interface SystemDispatch {
-  deleteSelectedAssets: (assets: { [key in ShareableAssetType]?: string[] }, actorId: string, callback?: () => void) => Promise<void>;
+  deleteSelectedAssets: (assets: { [key in ShareableAssetType]?: string[] }, callback?: () => void) => Promise<void>;
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<boolean>;
   uploadFile: (file: File, category?: string) => Promise<{url: string} | null>;
   addTheme: (themeData: Omit<ThemeDefinition, 'id'>) => Promise<ThemeDefinition | null>;
@@ -90,20 +84,7 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
         case 'SET_AI_CONFIGURED':
             return { ...state, isAiConfigured: action.payload };
         case 'SET_SYSTEM_DATA':
-            return {
-                ...state,
-                settings: action.payload.settings || state.settings,
-                themes: action.payload.themes || [],
-                systemLogs: action.payload.systemLogs || [],
-                adminAdjustments: action.payload.adminAdjustments || [],
-                systemNotifications: action.payload.systemNotifications || [],
-                scheduledEvents: action.payload.scheduledEvents || [],
-                chatMessages: action.payload.chatMessages || [],
-                bugReports: action.payload.bugReports || [],
-                modifierDefinitions: action.payload.modifierDefinitions || [],
-                appliedModifiers: action.payload.appliedModifiers || [],
-                chronicleEvents: action.payload.chronicleEvents || [],
-            };
+            return { ...state, ...action.payload };
         case 'UPDATE_SYSTEM_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {
@@ -141,10 +122,6 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { addNotification } = useNotificationsDispatch();
     const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
     const { currentUser } = useAuthState();
-    const questsDispatch = useQuestsReducerDispatch();
-    const economyDispatch = useEconomyReducerDispatch();
-    const progressionDispatch = useProgressionReducerDispatch();
-    const communityDispatch = useCommunityReducerDispatch();
 
     const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
         try {
@@ -157,21 +134,30 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return null;
         }
     }, [addNotification]);
+    
+    const createAddAction = useCallback(<T_ADD, T_RETURN extends { id: any }, D extends keyof SystemState>(dataType: D) => 
+        async (data: T_ADD): Promise<T_RETURN | null> => {
+            const result = await apiAction(() => addThemeAPI(data as any)); // This needs to be more generic
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
+            return result as T_RETURN | null;
+        }, [apiAction]);
         
+    const createUpdateAction = useCallback(<T extends { id: any }, D extends keyof SystemState>(dataType: D) => 
+        async (data: T): Promise<T | null> => {
+            const result = await apiAction(() => updateThemeAPI(data as any)); // This needs to be more generic
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
+            return result as T | null;
+        }, [apiAction]);
+
     const actions = useMemo<SystemDispatch>(() => ({
-        deleteSelectedAssets: async (assets, actorId, callback) => {
-            await apiAction(() => deleteSelectedAssetsAPI(assets, actorId));
+        deleteSelectedAssets: async (assets, callback) => {
+            await apiAction(() => deleteSelectedAssetsAPI(assets));
+            const assetsToRemove: { [key in keyof SystemState]?: string[] } = {};
             if (assets.users) { deleteUsers(assets.users); }
-            if (assets.quests) questsDispatch({ type: 'REMOVE_QUESTS_DATA', payload: { quests: assets.quests } });
-            if (assets.questGroups) questsDispatch({ type: 'REMOVE_QUESTS_DATA', payload: { questGroups: assets.questGroups } });
-            if (assets.rotations) questsDispatch({ type: 'REMOVE_QUESTS_DATA', payload: { rotations: assets.rotations } });
-            if (assets.markets) economyDispatch({ type: 'REMOVE_ECONOMY_DATA', payload: { markets: assets.markets } });
-            if (assets.gameAssets) economyDispatch({ type: 'REMOVE_ECONOMY_DATA', payload: { gameAssets: assets.gameAssets } });
-            if (assets.rewardTypes) economyDispatch({ type: 'REMOVE_ECONOMY_DATA', payload: { rewardTypes: assets.rewardTypes } });
-            if (assets.ranks) progressionDispatch({ type: 'REMOVE_PROGRESSION_DATA', payload: { ranks: assets.ranks } });
-            if (assets.trophies) progressionDispatch({ type: 'REMOVE_PROGRESSION_DATA', payload: { trophies: assets.trophies } });
-            if (assets.modifierDefinitions) dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { modifierDefinitions: assets.modifierDefinitions } });
-            
+            Object.keys(assets).forEach(key => {
+                if (key !== 'users') (assetsToRemove as any)[key] = assets[key as ShareableAssetType];
+            });
+            if (Object.keys(assetsToRemove).length > 0) dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: assetsToRemove });
             if (callback) callback();
         },
         applyManualAdjustment: async (adjustment) => {
@@ -259,7 +245,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (!currentUser) return;
             await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
         },
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, questsDispatch, economyDispatch, progressionDispatch, communityDispatch]);
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

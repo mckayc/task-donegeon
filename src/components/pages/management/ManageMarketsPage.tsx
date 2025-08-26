@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Market } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -13,16 +11,12 @@ import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
 import MarketTable from '../../markets/MarketTable';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
-// FIX: Import useAuthState to get the current user for logging admin actions.
-import { useAuthState } from '../../../context/AuthContext';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { markets } = useEconomyState();
     const { updateMarketsStatus, cloneMarket } = useEconomyDispatch();
-    // FIX: Get the current user to pass to the delete function.
-    const { currentUser } = useAuthState();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -56,13 +50,11 @@ const ManageMarketsPage: React.FC = () => {
     };
     
     const handleConfirmAction = () => {
-        // FIX: Ensure currentUser exists before performing an action that requires an actorId.
-        if (!confirmation || !currentUser) return;
+        if (!confirmation) return;
         
         switch(confirmation.action) {
             case 'delete':
-                // FIX: Pass the currentUser.id as the second argument to `deleteSelectedAssets`.
-                deleteSelectedAssets({ markets: confirmation.ids }, currentUser.id);
+                deleteSelectedAssets({ markets: confirmation.ids });
                 break;
             case 'open':
                 updateMarketsStatus(confirmation.ids, 'open');

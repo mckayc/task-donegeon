@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { QuestGroup } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -11,15 +9,11 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useQuestsState } from '../../../context/QuestsContext';
 import QuestGroupTable from '../../quest-groups/QuestGroupTable';
-// FIX: Import useAuthState to get the current user for logging admin actions.
-import { useAuthState } from '../../../context/AuthContext';
 
 const ManageQuestGroupsPage: React.FC = () => {
     const { settings } = useSystemState();
     const { questGroups } = useQuestsState();
     const { deleteSelectedAssets } = useSystemDispatch();
-    // FIX: Get the current user to pass to the delete function.
-    const { currentUser } = useAuthState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);
@@ -45,9 +39,8 @@ const ManageQuestGroupsPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        // FIX: Ensure currentUser exists and pass it to deleteSelectedAssets.
-        if (deletingIds.length > 0 && currentUser) {
-            deleteSelectedAssets({ questGroups: deletingIds }, currentUser.id);
+        if (deletingIds.length > 0) {
+            deleteSelectedAssets({ questGroups: deletingIds });
         }
         setDeletingIds([]);
         setSelectedGroups(prev => prev.filter(id => !deletingIds.includes(id)));

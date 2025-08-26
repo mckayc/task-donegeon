@@ -1,4 +1,3 @@
-
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem,
 } from './types';
@@ -77,7 +76,6 @@ export const updateQuestAPI = (data: Quest, actorId: string) => apiRequest('PUT'
 export const cloneQuestAPI = (id: string) => apiRequest('POST', `/api/quests/clone/${id}`);
 export const updateQuestsStatusAPI = (ids: string[], isActive: boolean) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive });
 export const bulkUpdateQuestsAPI = (ids: string[], updates: BulkQuestUpdates) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates });
-export const deleteQuestsAPI = (ids: string[], actorId: string) => apiRequest('DELETE', '/api/quests', { ids, actorId });
 export const completeQuestAPI = (completionData: Omit<QuestCompletion, 'id'>) => apiRequest('POST', '/api/quests/complete', { completionData });
 export const approveQuestCompletionAPI = (id: string, approverId: string, note?: string) => apiRequest('POST', `/api/quests/approve/${id}`, { approverId, note });
 export const rejectQuestCompletionAPI = (id: string, rejecterId: string, note?: string) => apiRequest('POST', `/api/quests/reject/${id}`, { rejecterId, note });
@@ -94,12 +92,11 @@ export const completeCheckpointAPI = (questId: string, userId: string) => apiReq
 
 
 // --- System & Dev API ---
-export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }, actorId: string) => {
+export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }) => {
     const promises = Object.entries(assets).map(([type, ids]) => {
         if (ids && ids.length > 0) {
             const apiPath = type === 'modifierDefinitions' ? 'setbacks' : type;
-            const body = { ids, actorId }; // Send actorId with all delete requests
-            return apiRequest('DELETE', `/api/${apiPath}`, body);
+            return apiRequest('DELETE', `/api/${apiPath}`, { ids });
         }
         return Promise.resolve();
     });

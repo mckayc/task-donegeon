@@ -26,8 +26,7 @@ const updateQuest = async (req, res) => {
 };
 
 const deleteQuests = async (req, res) => {
-    const { ids, actorId } = req.body;
-    await questService.deleteMany(ids, actorId);
+    await questService.deleteMany(req.body.ids);
     res.status(204).send();
 };
 

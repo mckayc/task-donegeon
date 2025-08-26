@@ -1,4 +1,3 @@
-
 import { lazy } from 'react';
 import { Page } from '../../types/app';
 
@@ -25,7 +24,6 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Manage Markets': lazy(() => import('../pages/management/ManageMarketsPage')),
     'Manage Guilds': lazy(() => import('../pages/management/ManageGuildsPage')),
     'Manage Ranks': lazy(() => import('../pages/management/ManageRanksPage')),
-    // FIX: Corrected import to use the default export, resolving the lazy load error.
     'Manage Trophies': lazy(() => import('../pages/management/ManageTrophiesPage')),
     'Manage Events': lazy(() => import('../pages/management/ManageEventsPage')),
     'Triumphs & Trials': lazy(() => import('../pages/management/ManageSetbacksPage')),

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { ModifierDefinition, User } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -16,7 +15,6 @@ const ManageSetbacksPage: React.FC = () => {
     const { settings, modifierDefinitions, appliedModifiers } = useSystemState();
     const { users } = useAuthState();
     const { deleteSelectedAssets } = useSystemDispatch();
-    const { currentUser } = useAuthState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
@@ -57,8 +55,8 @@ const ManageSetbacksPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingIds.length > 0 && currentUser) {
-            deleteSelectedAssets({ modifierDefinitions: deletingIds }, currentUser.id);
+        if (deletingIds.length > 0) {
+            deleteSelectedAssets({ modifierDefinitions: deletingIds });
         }
         setDeletingIds([]);
         setSelectedModifiers(prev => prev.filter(id => !deletingIds.includes(id)));

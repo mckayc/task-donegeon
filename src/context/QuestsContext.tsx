@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -9,7 +7,7 @@ import {
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI, runRotationAPI,
     completeCheckpointAPI,
-    deleteQuestsAPI
+    deleteSelectedAssetsAPI
 } from '../api';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
@@ -68,13 +66,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
 
     switch (action.type) {
         case 'SET_QUESTS_DATA':
-            newState = {
-                quests: action.payload.quests || [],
-                questGroups: action.payload.questGroups || [],
-                questCompletions: action.payload.questCompletions || [],
-                rotations: action.payload.rotations || [],
-                allTags: [], // will be derived later
-            };
+            newState = { ...initialState, ...action.payload };
             break;
         case 'UPDATE_QUESTS_DATA': {
             const updatedState = { ...state };
@@ -161,9 +153,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {
-            if (!currentUser) return;
             try {
-                await deleteQuestsAPI(questIds, currentUser.id);
+                await deleteSelectedAssetsAPI({ quests: questIds });
                 dispatch({ type: 'REMOVE_QUESTS_DATA', payload: { quests: questIds }});
                 addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` });
             } catch (error) {
@@ -258,13 +249,4 @@ export const useQuestsDispatch = (): QuestsDispatch => {
     const context = useContext(QuestsDispatchContext);
     if (context === undefined) throw new Error('useQuestsDispatch must be used within a QuestsProvider');
     return context.actions;
-};
-
-// FIX: Export useQuestsReducerDispatch
-export const useQuestsReducerDispatch = (): React.Dispatch<QuestsAction> => {
-  const context = useContext(QuestsDispatchContext);
-  if (!context) {
-    throw new Error('useQuestsReducerDispatch must be used within a QuestsProvider');
-  }
-  return context.dispatch;
 };

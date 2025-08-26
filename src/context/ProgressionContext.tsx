@@ -36,11 +36,7 @@ const initialState: ProgressionState = {
 const progressionReducer = (state: ProgressionState, action: ProgressionAction): ProgressionState => {
     switch (action.type) {
         case 'SET_PROGRESSION_DATA':
-            return {
-                ranks: action.payload.ranks || [],
-                trophies: action.payload.trophies || [],
-                userTrophies: action.payload.userTrophies || [],
-            };
+            return { ...state, ...action.payload };
         case 'UPDATE_PROGRESSION_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {

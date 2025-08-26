@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../context/SystemContext';
 import { useUIState } from '../context/UIContext';
@@ -29,28 +28,13 @@ export const useDashboardData = () => {
         const fetchActivities = async () => {
             try {
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
-                
-                // Read filters from localStorage to sync with Chronicles page
-                const savedFilters = localStorage.getItem('chronicleFilters');
-                const filterTypes = savedFilters ? JSON.parse(savedFilters).join(',') : '';
-
-                // Set start date to 7 days ago
-                const startDate = new Date();
-                startDate.setDate(startDate.getDate() - 7);
-
                 const params = new URLSearchParams({
                     page: '1',
                     limit: '10',
                     userId: currentUser.id,
                     guildId,
                     viewMode: 'personal',
-                    startDate: startDate.toISOString().split('T')[0],
                 });
-
-                if (filterTypes) {
-                    params.append('filterTypes', filterTypes);
-                }
-
                 const response = await fetch(`/api/chronicles?${params.toString()}`);
                 if (!response.ok) throw new Error('Failed to fetch recent activities');
                 const data = await response.json();
@@ -62,7 +46,7 @@ export const useDashboardData = () => {
         };
 
         fetchActivities();
-    }, [currentUser, appMode, questCompletions, settings.terminology]); // Re-fetch on scope change or completions
+    }, [currentUser, appMode, questCompletions]); // Re-fetch when completions change
 
     if (!currentUser) {
         // Return a default or empty state if there's no user.

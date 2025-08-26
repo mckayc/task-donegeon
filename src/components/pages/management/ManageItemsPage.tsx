@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -17,8 +14,6 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import ItemTable from '../../items/ItemTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
-// FIX: Import useAuthState to get the current user for logging admin actions.
-import { useAuthState } from '../../../context/AuthContext';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -26,8 +21,6 @@ const ManageItemsPage: React.FC = () => {
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
-    // FIX: Get the current user to pass to the delete function.
-    const { currentUser } = useAuthState();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -152,11 +145,9 @@ const ManageItemsPage: React.FC = () => {
     };
 
     const handleConfirmAction = async () => {
-        // FIX: Ensure currentUser exists before performing an action that requires an actorId.
-        if (!confirmation || confirmation.action !== 'delete' || !currentUser) return;
+        if (!confirmation || confirmation.action !== 'delete') return;
         try {
-            // FIX: Pass the currentUser.id as the second argument to `deleteSelectedAssets`.
-            await deleteSelectedAssets({ gameAssets: confirmation.ids }, currentUser.id);
+            await deleteSelectedAssets({ gameAssets: confirmation.ids });
             addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
             setSelectedAssets([]);
         } catch (e) { /* error handled in context */ }

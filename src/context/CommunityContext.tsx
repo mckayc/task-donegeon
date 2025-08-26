@@ -32,9 +32,7 @@ const initialState: CommunityState = {
 const communityReducer = (state: CommunityState, action: CommunityAction): CommunityState => {
     switch (action.type) {
         case 'SET_COMMUNITY_DATA':
-            return {
-                guilds: action.payload.guilds || [],
-            };
+            return { ...state, ...action.payload };
         case 'UPDATE_COMMUNITY_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {
@@ -126,13 +124,4 @@ export const useCommunityDispatch = (): CommunityDispatch => {
     const context = useContext(CommunityDispatchContext);
     if (context === undefined) throw new Error('useCommunityDispatch must be used within a CommunityProvider');
     return context.actions;
-};
-
-// FIX: Export useCommunityReducerDispatch
-export const useCommunityReducerDispatch = (): React.Dispatch<CommunityAction> => {
-  const context = useContext(CommunityDispatchContext);
-  if (!context) {
-    throw new Error('useCommunityReducerDispatch must be used within a CommunityProvider');
-  }
-  return context.dispatch;
 };

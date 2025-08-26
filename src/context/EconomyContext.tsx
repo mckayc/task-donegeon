@@ -69,14 +69,7 @@ const initialState: EconomyState = {
 const economyReducer = (state: EconomyState, action: EconomyAction): EconomyState => {
     switch (action.type) {
         case 'SET_ECONOMY_DATA':
-            return {
-                markets: action.payload.markets || [],
-                gameAssets: action.payload.gameAssets || [],
-                purchaseRequests: action.payload.purchaseRequests || [],
-                rewardTypes: action.payload.rewardTypes || [],
-                tradeOffers: action.payload.tradeOffers || [],
-                gifts: action.payload.gifts || [],
-            };
+            return { ...state, ...action.payload };
         case 'UPDATE_ECONOMY_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {

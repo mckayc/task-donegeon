@@ -4,7 +4,7 @@ const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity } = require('../entities');
 const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
-const { updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
+const { updateTimestamps, checkAndAwardTrophies, logAdminAction } = require('../utils/helpers');
 const { INITIAL_SETTINGS } = require('../initialData');
 
 const questRepo = dataSource.getRepository(QuestEntity);
@@ -31,6 +31,8 @@ const create = async (questDataWithUsers, actorId) => {
             newQuest.assignedUsers = await userRepo.findBy({ id: In(assignedUserIds) });
         }
         const saved = await questRepo.save(updateTimestamps(newQuest, true));
+        
+        await logAdminAction(manager, { actorId, title: 'Created Quest', note: `Quest: "${saved.title}"`, icon: '📜', color: '#84cc16', guildId: saved.guildId });
 
         if (actorId && assignedUserIds && assignedUserIds.length > 0) {
             const actor = await userRepo.findOneBy({ id: actorId });
@@ -124,8 +126,12 @@ const update = async (id, questDataWithUsers, actorId) => {
     });
 };
 
-const deleteMany = async (ids) => {
-    await questRepo.delete(ids);
+const deleteMany = async (ids, actorId) => {
+    await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        await questRepo.delete(ids);
+        await logAdminAction(manager, { actorId, title: `Deleted ${ids.length} Quest(s)`, note: `IDs: ${ids.join(', ')}`, icon: '🗑️', color: '#ef4444' });
+    });
     updateEmitter.emit('update');
 };
 
@@ -194,11 +200,15 @@ const complete = async (completionData) => {
         }
 
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const isPending = savedCompletion.status === 'Pending';
         const eventData = {
             originalId: savedCompletion.id, date: savedCompletion.completedAt, type: 'QuestCompletion',
-            title: quest.title, note: savedCompletion.note, status: savedCompletion.status,
-            iconType: quest.iconType, icon: quest.icon, imageUrl: quest.imageUrl, color: savedCompletion.status === 'Approved' ? '#4ade80' : '#facc15',
-            userId: user.id, actorName: user.gameName, questType: quest.type, guildId: quest.guildId,
+            title: isPending ? `Submitted "${quest.title}"` : `Completed "${quest.title}"`,
+            note: savedCompletion.note, status: savedCompletion.status,
+            iconType: quest.iconType, icon: quest.icon, imageUrl: quest.imageUrl, color: isPending ? '#facc15' : '#4ade80',
+            userId: user.id, userName: user.gameName,
+            actorId: user.id, actorName: user.gameName,
+            questType: quest.type, guildId: quest.guildId,
             rewardsText: ''
         };
         const chronicleEvent = chronicleRepo.create({ ...eventData, id: `chron-${savedCompletion.id}`});
@@ -324,16 +334,33 @@ const approveQuestCompletion = async (id, approverId, note) => {
                 const approver = await manager.findOneBy(UserEntity, { id: approverId });
                 const chronicleRepo = manager.getRepository(ChronicleEventEntity);
                 const eventData = {
-                    originalId: completion.id, date: completion.actedAt, type: 'QuestCompletion', title: quest.title,
-                    note: completion.note, status: 'Approved', iconType: quest.iconType, icon: quest.icon,
-                    imageUrl: quest.imageUrl, color: '#4ade80', userId: user.id, actorName: approver?.gameName || 'System',
-                    questType: quest.type, guildId: quest.guildId, rewardsText: rewardsText || undefined,
+                    date: completion.actedAt,
+                    title: `Completed "${quest.title}"`,
+                    note: completion.adminNote || undefined,
+                    status: 'Approved',
+                    color: '#4ade80',
+                    actorId: approverId,
+                    actorName: approver?.gameName || 'System',
+                    rewardsText: rewardsText || undefined,
                 };
                 let chronicleEvent = await chronicleRepo.findOneBy({ originalId: completion.id });
                 if (chronicleEvent) {
                     chronicleRepo.merge(chronicleEvent, eventData);
                 } else {
-                    chronicleEvent = chronicleRepo.create({ ...eventData, id: `chron-${completion.id}`});
+                    // This case shouldn't happen for approvals, but let's be safe
+                    chronicleEvent = chronicleRepo.create({ 
+                        ...eventData, 
+                        id: `chron-${completion.id}`,
+                        originalId: completion.id,
+                        type: 'QuestCompletion',
+                        userId: completion.user.id,
+                        userName: completion.user.gameName,
+                        iconType: quest.iconType,
+                        icon: quest.icon,
+                        imageUrl: quest.imageUrl,
+                        questType: quest.type,
+                        guildId: quest.guildId
+                    });
                 }
                 await manager.save(updateTimestamps(chronicleEvent));
                 
@@ -378,16 +405,32 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
         const rejecter = await manager.findOneBy(UserEntity, { id: rejecterId });
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         const eventData = {
-            originalId: completion.id, date: completion.actedAt, type: 'QuestCompletion', title: completion.quest.title,
-            note: completion.note, status: 'Rejected', iconType: completion.quest.iconType, icon: completion.quest.icon,
-            imageUrl: completion.quest.imageUrl, color: '#f87171', userId: completion.user.id, actorName: rejecter?.gameName || 'System',
-            questType: completion.quest.type, guildId: completion.quest.guildId, rewardsText: '',
+            date: completion.actedAt,
+            title: `Rejected "${completion.quest.title}"`,
+            note: completion.adminNote,
+            status: 'Rejected',
+            color: '#f87171',
+            actorId: rejecterId,
+            actorName: rejecter?.gameName || 'System',
+            rewardsText: '',
         };
         let chronicleEvent = await chronicleRepo.findOneBy({ originalId: completion.id });
         if (chronicleEvent) {
             chronicleRepo.merge(chronicleEvent, eventData);
         } else {
-            chronicleEvent = chronicleRepo.create({ ...eventData, id: `chron-${completion.id}`});
+             chronicleEvent = chronicleRepo.create({ 
+                ...eventData, 
+                id: `chron-${completion.id}`,
+                originalId: completion.id,
+                type: 'QuestCompletion',
+                userId: completion.user.id,
+                userName: completion.user.gameName,
+                iconType: completion.quest.iconType,
+                icon: completion.quest.icon,
+                imageUrl: completion.quest.imageUrl,
+                questType: completion.quest.type,
+                guildId: completion.quest.guildId
+            });
         }
         await manager.save(updateTimestamps(chronicleEvent));
 

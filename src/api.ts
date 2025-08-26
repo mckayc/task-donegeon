@@ -29,9 +29,9 @@ const apiUpload = async (path: string, file: File, category?: string) => {
 
 
 // --- Auth API ---
-export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('POST', '/api/users', data);
+export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, actorId?: string) => apiRequest('POST', '/api/users', { ...data, actorId });
 export const updateUserAPI = (id: string, data: Partial<User>) => apiRequest('PUT', `/api/users/${id}`, data);
-export const deleteUsersAPI = (ids: string[]) => apiRequest('DELETE', '/api/users', { ids });
+export const deleteUsersAPI = (ids: string[], actorId?: string) => apiRequest('DELETE', '/api/users', { ids, actorId });
 export const completeFirstRunAPI = (adminUserData: any) => apiRequest('POST', '/api/data/first-run', { adminUserData });
 
 
@@ -86,21 +86,14 @@ export const updateQuestGroupAPI = (data: QuestGroup) => apiRequest('PUT', `/api
 export const assignQuestGroupToUsersAPI = (groupId: string, userIds: string[], actorId: string) => apiRequest('POST', '/api/quest-groups/assign', { groupId, userIds, actorId });
 export const addRotationAPI = (data: Omit<Rotation, 'id'>) => apiRequest('POST', '/api/rotations', data);
 export const updateRotationAPI = (data: Rotation) => apiRequest('PUT', `/api/rotations/${data.id}`, data);
-export const cloneRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/clone/${id}`);
+export const cloneRotationAPI = (id: string) => apiRequest('POST', '/api/rotations/clone/${id}`);
 export const runRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/run/${id}`);
 export const completeCheckpointAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/complete-checkpoint', { questId, userId });
 
 
 // --- System & Dev API ---
-export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }) => {
-    const promises = Object.entries(assets).map(([type, ids]) => {
-        if (ids && ids.length > 0) {
-            const apiPath = type === 'modifierDefinitions' ? 'setbacks' : type;
-            return apiRequest('DELETE', `/api/${apiPath}`, { ids });
-        }
-        return Promise.resolve();
-    });
-    return Promise.all(promises);
+export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }, actorId: string) => {
+    return apiRequest('POST', '/api/system/delete-assets', { assets, actorId });
 };
 export const applyManualAdjustmentAPI = (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => apiRequest('POST', '/api/users/adjust', adjustment);
 export const uploadFileAPI = (file: File, category?: string) => apiUpload('/api/media/upload', file, category);
@@ -119,7 +112,7 @@ export const markSystemNotificationsAsReadAPI = (ids: string[], userId: string) 
 export const addScheduledEventAPI = (data: Omit<ScheduledEvent, 'id'>) => apiRequest('POST', '/api/events', data);
 export const updateScheduledEventAPI = (data: ScheduledEvent) => apiRequest('PUT', `/api/events/${data.id}`, data);
 export const deleteScheduledEventAPI = (id: string) => apiRequest('DELETE', `/api/events/${id}`);
-export const importAssetPackAPI = (pack: AssetPack, resolutions: ImportResolution[], userIdsToAssign?: string[]) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions, userIdsToAssign });
+export const importAssetPackAPI = (pack: AssetPack, resolutions: ImportResolution[], actorId: string, userIdsToAssign?: string[]) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions, userIdsToAssign, actorId });
 export const addBugReportAPI = (data: Partial<BugReport>) => apiRequest('POST', '/api/bug-reports', data);
 export const updateBugReportAPI = (id: string, updates: Partial<BugReport>) => apiRequest('PUT', `/api/bug-reports/${id}`, updates);
 export const deleteBugReportsAPI = (ids: string[]) => apiRequest('DELETE', '/api/bug-reports', { ids });

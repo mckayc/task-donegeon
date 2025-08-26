@@ -11,7 +11,7 @@ const {
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity,
     ChronicleEventEntity
 } = require('../entities');
-const { getFullAppData, updateTimestamps } = require('../utils/helpers');
+const { getFullAppData, updateTimestamps, logAdminAction } = require('../utils/helpers');
 const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
 const settingService = require('../services/setting.service');
 const userService = require('../services/user.service');
@@ -264,10 +264,12 @@ const getChronicles = async (queryParams) => {
 
     if(filterTypes) {
         const filterTypesArray = filterTypes.split(',');
-        if (filterTypesArray.length === 0) {
+        if (filterTypesArray.length > 0) {
+            qb.where('event.type IN (:...filterTypesArray)', { filterTypesArray });
+        } else {
+             // If filters are provided but empty, return nothing
             return { events: [], total: 0 };
         }
-        qb.where('event.type IN (:...filterTypesArray)', { filterTypesArray });
     }
 
     const isDonegeonMaster = user.role === 'Donegeon Master';
@@ -308,8 +310,9 @@ const resetSettings = async () => {
     await settingService.update(INITIAL_SETTINGS);
 };
 
-const importAssetPack = async (assetPack, resolutions, userIdsToAssign) => {
+const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId) => {
     return await dataSource.transaction(async manager => {
+        await logAdminAction(manager, { actorId, title: 'Imported Asset Pack', note: `Pack: "${assetPack.manifest.name}"`, icon: '📦', color: '#a855f7' });
         const idMap = new Map();
 
         const processAssets = async (assetType, repoName, assets) => {

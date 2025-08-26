@@ -3,25 +3,37 @@ const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
 const trophyRepository = require('../repositories/trophy.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
+const { logAdminAction, updateTimestamps } = require('../utils/helpers');
+const { dataSource } = require('../data-source');
 
 const getAll = (options) => userRepository.findAll(options);
 
-const create = async (userData) => {
+const create = async (userData, actorId) => {
     const conflict = await userRepository.findByUsernameOrEmail(userData.username, userData.email);
     if (conflict) return null;
 
-    const newUser = {
-        ...userData,
-        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
-        guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
-    };
-    const savedUser = await userRepository.create(newUser);
-    
-    const defaultGuild = await guildRepository.findDefault();
-    if (defaultGuild) {
-        await guildRepository.addMember(defaultGuild.id, savedUser.id);
-    }
+    let savedUser;
+
+    await dataSource.transaction(async manager => {
+        const userRepo = manager.getRepository('User');
+        const newUser = userRepo.create({
+            ...userData,
+            id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
+            guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
+        });
+        savedUser = await userRepo.save(updateTimestamps(newUser, true));
+        
+        const defaultGuild = await manager.getRepository('Guild').findOne({ where: { isDefault: true }, relations: ['members'] });
+        if (defaultGuild) {
+            defaultGuild.members.push(savedUser);
+            await manager.save(updateTimestamps(defaultGuild));
+        }
+
+        if (actorId) {
+            await logAdminAction(manager, { actorId, title: 'Created User', note: `User: ${savedUser.gameName}`, icon: '👤', color: '#84cc16' });
+        }
+    });
 
     updateEmitter.emit('update');
     return savedUser;
@@ -75,9 +87,12 @@ const update = async (id, userData) => {
     return { success: true, user: saved };
 };
 
-const deleteMany = async (ids) => {
+const deleteMany = async (ids, actorId) => {
     if (ids.length > 0) {
-        await userRepository.deleteMany(ids);
+        await dataSource.transaction(async manager => {
+            await manager.getRepository('User').delete(ids);
+            await logAdminAction(manager, { actorId, title: `Deleted ${ids.length} User(s)`, note: `IDs: ${ids.join(', ')}`, icon: '🗑️', color: '#ef4444' });
+        });
         updateEmitter.emit('update');
     }
 };

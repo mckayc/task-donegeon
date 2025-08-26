@@ -151,7 +151,8 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const actions = useMemo<SystemDispatch>(() => ({
         deleteSelectedAssets: async (assets, callback) => {
-            await apiAction(() => deleteSelectedAssetsAPI(assets));
+            if (!currentUser) return;
+            await apiAction(() => deleteSelectedAssetsAPI(assets, currentUser.id));
             const assetsToRemove: { [key in keyof SystemState]?: string[] } = {};
             if (assets.users) { deleteUsers(assets.users); }
             Object.keys(assets).forEach(key => {
@@ -195,7 +196,10 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
         updateScheduledEvent: (data) => apiAction(() => updateScheduledEventAPI(data)),
         deleteScheduledEvent: (id) => apiAction(() => deleteScheduledEventAPI(id)),
-        importAssetPack: (pack, resolutions, userIdsToAssign) => apiAction(() => importAssetPackAPI(pack, resolutions, userIdsToAssign), 'Asset pack imported successfully!'),
+        importAssetPack: (pack, resolutions, userIdsToAssign) => {
+            if (!currentUser) return Promise.resolve();
+            return apiAction(() => importAssetPackAPI(pack, resolutions, currentUser.id, userIdsToAssign), 'Asset pack imported successfully!')
+        },
         addBugReport: async (report) => {
             await apiAction(() => addBugReportAPI(report));
         },

@@ -3,7 +3,7 @@ import { useSystemState } from '../context/SystemContext';
 import { useUIState } from '../context/UIContext';
 import { useAuthState } from '../context/AuthContext';
 import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment, ChronicleEvent } from '../types';
-import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../utils/quests';
+import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter, toYMD } from '../utils/quests';
 import { useQuestsState } from '../context/QuestsContext';
 import { useProgressionState } from '../context/ProgressionContext';
 import { useEconomyState } from '../context/EconomyContext';
@@ -28,13 +28,29 @@ export const useDashboardData = () => {
         const fetchActivities = async () => {
             try {
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
+                
+                // Get filters from localStorage to match Chronicles page
+                const savedFilters = localStorage.getItem('chronicleFilters');
+                const filterTypes = savedFilters ? JSON.parse(savedFilters).join(',') : '';
+                
+                // Calculate date range for the last 4 days
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(endDate.getDate() - 3); // -3 to get today + 3 previous days = 4 days total
+
                 const params = new URLSearchParams({
                     page: '1',
                     limit: '10',
                     userId: currentUser.id,
                     guildId,
                     viewMode: 'personal',
+                    startDate: toYMD(startDate),
+                    endDate: toYMD(endDate),
                 });
+                if (filterTypes) {
+                    params.append('filterTypes', filterTypes);
+                }
+
                 const response = await fetch(`/api/chronicles?${params.toString()}`);
                 if (!response.ok) throw new Error('Failed to fetch recent activities');
                 const data = await response.json();

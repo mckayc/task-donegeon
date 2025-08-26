@@ -7,7 +7,8 @@ const getAllUsers = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-    const savedUser = await userService.create(req.body);
+    const { actorId, ...userData } = req.body;
+    const savedUser = await userService.create(userData, actorId);
     if (!savedUser) return res.status(409).json({ error: 'Username or email is already in use.' });
     res.status(201).json(savedUser);
 };
@@ -27,7 +28,8 @@ const updateUser = async (req, res) => {
 };
 
 const deleteUsers = async (req, res) => {
-    await userService.deleteMany(req.body.ids);
+    const { ids, actorId } = req.body;
+    await userService.deleteMany(ids, actorId);
     res.status(204).send();
 };
 

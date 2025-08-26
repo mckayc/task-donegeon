@@ -153,8 +153,11 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {
+            // FIX: Add a guard for currentUser to ensure it exists before use.
+            if (!currentUser) return;
             try {
-                await deleteSelectedAssetsAPI({ quests: questIds });
+                // FIX: Pass the current user's ID as the second argument (actorId) to the API call.
+                await deleteSelectedAssetsAPI({ quests: questIds }, currentUser.id);
                 dispatch({ type: 'REMOVE_QUESTS_DATA', payload: { quests: questIds }});
                 addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` });
             } catch (error) {

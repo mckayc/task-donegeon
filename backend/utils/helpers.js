@@ -194,9 +194,8 @@ const logAdminAction = async (manager, { actorId, title, note, icon, color, guil
     const chronicleRepo = manager.getRepository(ChronicleEventEntity);
     const userRepo = manager.getRepository(UserEntity);
 
-    const actor = await userRepo.findOneBy({ id: actorId });
-    if (!actor) return;
-
+    const actor = actorId ? await userRepo.findOneBy({ id: actorId }) : null;
+    
     const eventData = {
         id: `chron-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         originalId: `admin-action-${Date.now()}`,
@@ -207,10 +206,10 @@ const logAdminAction = async (manager, { actorId, title, note, icon, color, guil
         status: 'Executed',
         icon,
         color,
-        userId: null, // Admin actions have no subject user
+        userId: null, 
         userName: null,
-        actorId: actor.id,
-        actorName: actor.gameName,
+        actorId: actor?.id || 'system',
+        actorName: actor?.gameName || 'System',
         guildId: guildId || undefined,
     };
 

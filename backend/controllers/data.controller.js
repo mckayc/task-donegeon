@@ -101,8 +101,14 @@ const resetSettings = async (req, res) => {
 };
 
 const importAssets = async (req, res) => {
-    const { assetPack, resolutions, userIdsToAssign } = req.body;
-    await systemService.importAssetPack(assetPack, resolutions, userIdsToAssign);
+    const { assetPack, resolutions, userIdsToAssign, actorId } = req.body;
+    await systemService.importAssetPack(assetPack, resolutions, userIdsToAssign, actorId);
+    res.status(204).send();
+};
+
+const deleteAssets = async (req, res) => {
+    const { assets, actorId } = req.body;
+    await systemService.deleteSelectedAssets(assets, actorId);
     res.status(204).send();
 };
 
@@ -118,4 +124,5 @@ module.exports = {
     getChronicles: asyncMiddleware(getChronicles),
     resetSettings: asyncMiddleware(resetSettings),
     importAssets: asyncMiddleware(importAssets),
+    deleteAssets: asyncMiddleware(deleteAssets),
 };

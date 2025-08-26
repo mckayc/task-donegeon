@@ -119,12 +119,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
       }
       try {
-          return await addUserAPI(userData);
+          // The current user must be the actor
+          return await addUserAPI(userData, currentUser?.id);
       } catch (error) {
           addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to add user.' });
           return null;
       }
-  }, [addNotification]);
+  }, [addNotification, currentUser]);
 
   const deleteUsers = useCallback(async (userIds: string[]) => {
       if (userIds.length === 0) return;
@@ -132,12 +133,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
       }
       try {
-        await deleteUsersAPI(userIds);
+        await deleteUsersAPI(userIds, currentUser?.id);
         setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
       } catch (error) {
         addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete users.' });
       }
-  }, [addNotification]);
+  }, [addNotification, currentUser]);
   
   const completeFirstRun = useCallback(async (adminUserData: any) => {
       try {

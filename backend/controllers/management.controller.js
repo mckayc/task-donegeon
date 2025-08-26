@@ -1,9 +1,10 @@
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
-const { asyncMiddleware } = require('../utils/helpers');
+const { asyncMiddleware, logAdminAction } = require('../utils/helpers');
 const backupService = require('../services/backup.service');
 const rotationService = require('../services/rotation.service');
+const { dataSource } = require('../data-source');
 
 // === Multer Configuration ===
 const UPLOADS_DIR = '/app/data/assets';
@@ -190,12 +191,14 @@ const getBackups = async (req, res) => {
 };
 
 const createJsonBackup = async (req, res) => {
-    const backup = await backupService.create('json');
+    const { actorId } = req.body;
+    const backup = await backupService.create('json', 'manual', actorId);
     res.status(201).json({ message: 'JSON backup created.', filename: backup.filename });
 };
 
 const createSqliteBackup = async (req, res) => {
-    const backup = await backupService.create('sqlite');
+    const { actorId } = req.body;
+    const backup = await backupService.create('sqlite', 'manual', actorId);
     res.status(201).json({ message: 'SQLite backup created.', filename: backup.filename });
 };
 
@@ -223,7 +226,8 @@ const bulkDeleteBackups = async (req, res) => {
 
 const restoreFromBackup = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No backup file provided.' });
-    await backupService.restore(req.file);
+    const { actorId } = req.body;
+    await backupService.restore(req.file, actorId);
     res.json({ message: 'Restore successful! The application will now reload.' });
 };
 

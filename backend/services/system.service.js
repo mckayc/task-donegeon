@@ -251,160 +251,186 @@ const factoryReset = async () => {
 
 const getChronicles = async (queryParams) => {
     const manager = dataSource.manager;
-    const { userId, guildId, viewMode, page = 1, limit = 50, startDate, endDate, filterTypes } = queryParams;
-    
-    const filterTypesArray = filterTypes ? filterTypes.split(',') : [];
-    
-    const qb = manager.createQueryBuilder();
+    const { userId, guildId, viewMode, page = 1, limit = 50, filterTypes } = queryParams;
+
+    if (!filterTypes) {
+        return { events: [], total: 0 };
+    }
+
+    const filterTypesArray = filterTypes.split(',');
+    if (filterTypesArray.length === 0) {
+        return { events: [], total: 0 };
+    }
+
     const subQueries = [];
-    const parameters = {};
+    const params = [];
 
     // --- Quest Completions ---
     if (filterTypesArray.includes('QuestCompletion')) {
-        let query = qb.subQuery()
-            .select([
-                'qc.id as id', 'qc.id as originalId', 'qc.completedAt as date', "'QuestCompletion' as type",
-                'quest.title as title', 'qc.note as note', 'qc.status as status',
-                'quest.iconType as iconType', 'quest.icon as icon', 'quest.imageUrl as imageUrl',
-                "'#4ade80' as color", 'qc.userId as userId', 'user.gameName as actorName',
-                'quest.type as questType', 'qc.guildId as guildId'
-            ])
-            .from('quest_completion', 'qc')
-            .leftJoin('user', 'user', 'user.id = qc.userId')
-            .leftJoin('quest', 'quest', 'quest.id = qc.questId');
-        
-        let hasWhere = false;
+        let query = `
+            SELECT
+                qc.id as id, qc.id as originalId, qc.completedAt as date, 'QuestCompletion' as type,
+                quest.title as title, qc.note as note, qc.status as status,
+                quest.iconType as iconType, quest.icon as icon, quest.imageUrl as imageUrl,
+                '#4ade80' as color, qc.userId as userId, user.gameName as actorName,
+                quest.type as questType, qc.guildId as guildId,
+                json_extract(quest.rewards, '$') as rewardsJson
+            FROM quest_completion qc
+            LEFT JOIN user user ON user.id = qc.userId
+            LEFT JOIN quest quest ON quest.id = qc.questId
+        `;
+        const where = [];
         if (viewMode === 'personal') {
-            query.where('qc.userId = :userId');
-            parameters.userId = userId;
-            hasWhere = true;
+            where.push('qc.userId = ?');
+            params.push(userId);
         }
         if (guildId !== 'null') {
-            query[hasWhere ? 'andWhere' : 'where']('qc.guildId = :guildId');
-            parameters.guildId = guildId;
+            where.push('qc.guildId = ?');
+            params.push(guildId);
         } else if (viewMode === 'personal') {
-            query.andWhere('qc.guildId IS NULL');
+            where.push('qc.guildId IS NULL');
         }
-        subQueries.push(query.getQuery());
+        if (where.length > 0) {
+            query += ' WHERE ' + where.join(' AND ');
+        }
+        subQueries.push(query);
     }
     
      // --- Purchases ---
     if (filterTypesArray.includes('Purchase')) {
-        let query = qb.subQuery()
-            .select([
-                'pr.id as id', 'pr.id as originalId', 'pr.requestedAt as date', "'Purchase' as type",
-                `'Purchase: ' || json_extract(pr.assetDetails, '$.name') as title`,
-                "json_extract(pr.assetDetails, '$.description') as note", 
-                'pr.status as status',
-                "'emoji' as iconType", "'💰' as icon", "'' as imageUrl",
-                "'#fbbf24' as color", 'pr.userId as userId', 'user.gameName as actorName',
-                "'' as questType", 'pr.guildId as guildId',
-                "json_extract(pr.assetDetails, '$.cost') as costJson"
-            ])
-            .from('purchase_request', 'pr')
-            .leftJoin('user', 'user', 'user.id = pr.userId');
-        
-        let hasWhere = false;
+        let query = `
+            SELECT
+                pr.id as id, pr.id as originalId, pr.requestedAt as date, 'Purchase' as type,
+                'Purchase: ' || json_extract(pr.assetDetails, '$.name') as title,
+                json_extract(pr.assetDetails, '$.description') as note, 
+                pr.status as status,
+                'emoji' as iconType, '💰' as icon, '' as imageUrl,
+                '#fbbf24' as color, pr.userId as userId, user.gameName as actorName,
+                '' as questType, pr.guildId as guildId,
+                json_extract(pr.assetDetails, '$.cost') as rewardsJson
+            FROM purchase_request pr
+            LEFT JOIN user user ON user.id = pr.userId
+        `;
+        const where = [];
         if (viewMode === 'personal') {
-            query.where('pr.userId = :userId');
-            parameters.userId = userId;
-            hasWhere = true;
+            where.push('pr.userId = ?');
+            params.push(userId);
         }
         if (guildId !== 'null') {
-            query[hasWhere ? 'andWhere' : 'where']('pr.guildId = :guildId');
-            parameters.guildId = guildId;
+            where.push('pr.guildId = ?');
+            params.push(guildId);
         } else if (viewMode === 'personal') {
-            query.andWhere('pr.guildId IS NULL');
+            where.push('pr.guildId IS NULL');
         }
-        subQueries.push(query.getQuery());
+        if (where.length > 0) {
+            query += ' WHERE ' + where.join(' AND ');
+        }
+        subQueries.push(query);
     }
 
     // --- Admin Adjustments ---
     if (filterTypesArray.includes('AdminAdjustment')) {
-        let query = qb.subQuery()
-            .select([
-                'aa.id as id', 'aa.id as originalId', 'aa.adjustedAt as date', "'AdminAdjustment' as type",
-                'aa.reason as title', "'' as note", 'aa.type as status',
-                "'emoji' as iconType", "'⚖️' as icon", "'' as imageUrl",
-                "'#60a5fa' as color", 'aa.userId as userId', 'adjuster.gameName as actorName',
-                "'' as questType", 'aa.guildId as guildId'
-            ])
-            .from('admin_adjustment', 'aa')
-            .leftJoin('user', 'adjuster', 'adjuster.id = aa.adjusterId');
-        
-        let hasWhere = false;
+        let query = `
+            SELECT
+                aa.id as id, aa.id as originalId, aa.adjustedAt as date, 'AdminAdjustment' as type,
+                aa.reason as title, '' as note, aa.type as status,
+                'emoji' as iconType, '⚖️' as icon, '' as imageUrl,
+                '#60a5fa' as color, aa.userId as userId, adjuster.gameName as actorName,
+                '' as questType, aa.guildId as guildId,
+                json_object('rewards', json(aa.rewards), 'setbacks', json(aa.setbacks)) as rewardsJson
+            FROM admin_adjustment aa
+            LEFT JOIN user user ON user.id = aa.userId
+            LEFT JOIN user adjuster ON adjuster.id = aa.adjusterId
+        `;
+        const where = [];
         if (viewMode === 'personal') {
-            query.where('aa.userId = :userId');
-            parameters.userId = userId;
-            hasWhere = true;
+            where.push('aa.userId = ?');
+            params.push(userId);
         }
         if (guildId !== 'null') {
-            query[hasWhere ? 'andWhere' : 'where']('aa.guildId = :guildId');
-            parameters.guildId = guildId;
+            where.push('aa.guildId = ?');
+            params.push(guildId);
         } else if (viewMode === 'personal') {
-            query.andWhere('aa.guildId IS NULL');
+            where.push('aa.guildId IS NULL');
         }
-        subQueries.push(query.getQuery());
+        if (where.length > 0) {
+            query += ' WHERE ' + where.join(' AND ');
+        }
+        subQueries.push(query);
     }
 
     // --- Trophies ---
     if (filterTypesArray.includes('TrophyAwarded')) {
-        let query = qb.subQuery()
-            .select([
-                'ut.id as id', 'ut.id as originalId', 'ut.awardedAt as date', "'TrophyAwarded' as type",
-                `'Trophy: ' || trophy.name as title`,
-                'trophy.description as note', "'Awarded' as status",
-                'trophy.iconType as iconType', 'trophy.icon as icon', 'trophy.imageUrl as imageUrl',
-                "'#facc15' as color", 'ut.userId as userId', 'user.gameName as actorName',
-                "'' as questType", 'ut.guildId as guildId'
-            ])
-            .from('user_trophy', 'ut')
-            .leftJoin('trophy', 'trophy', 'trophy.id = ut.trophyId')
-            .leftJoin('user', 'user', 'user.id = ut.userId');
-        
-        let hasWhere = false;
+        let query = `
+            SELECT
+                ut.id as id, ut.id as originalId, ut.awardedAt as date, 'TrophyAwarded' as type,
+                'Trophy: ' || trophy.name as title,
+                trophy.description as note, 'Awarded' as status,
+                trophy.iconType as iconType, trophy.icon as icon, trophy.imageUrl as imageUrl,
+                '#facc15' as color, ut.userId as userId, user.gameName as actorName,
+                '' as questType, ut.guildId as guildId,
+                '[]' as rewardsJson
+            FROM user_trophy ut
+            LEFT JOIN trophy trophy ON trophy.id = ut.trophyId
+            LEFT JOIN user user ON user.id = ut.userId
+        `;
+        const where = [];
         if (viewMode === 'personal') {
-            query.where('ut.userId = :userId');
-            parameters.userId = userId;
-            hasWhere = true;
+            where.push('ut.userId = ?');
+            params.push(userId);
         }
         if (guildId !== 'null') {
-            query[hasWhere ? 'andWhere' : 'where']('ut.guildId = :guildId');
-            parameters.guildId = guildId;
+            where.push('ut.guildId = ?');
+            params.push(guildId);
         } else if (viewMode === 'personal') {
-            query.andWhere('ut.guildId IS NULL');
+            where.push('ut.guildId IS NULL');
         }
-        subQueries.push(query.getQuery());
+        if (where.length > 0) {
+            query += ' WHERE ' + where.join(' AND ');
+        }
+        subQueries.push(query);
     }
     
-    if (subQueries.length === 0) {
-        return { events: [], total: 0 };
-    }
-
     const fullQuery = subQueries.join(' UNION ALL ');
-    const pagedQuery = `${fullQuery} ORDER BY date DESC LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
-    const countQuery = `SELECT COUNT(*) as total FROM (${fullQuery}) as unionResult`;
+    const pagedQuery = `SELECT * FROM (${fullQuery}) ORDER BY date DESC LIMIT ? OFFSET ?`;
+    const countQuery = `SELECT COUNT(*) as total FROM (${fullQuery})`;
+    
+    // The parameters for count and paged queries are different.
+    const pagedParams = [...params, limit, (page - 1) * limit];
+    const countParams = [...params];
 
-    const rawEvents = await manager.query(pagedQuery, parameters);
-    const totalResult = await manager.query(countQuery, parameters);
+    const rawEvents = await manager.query(pagedQuery, pagedParams);
+    const totalResult = await manager.query(countQuery, countParams);
     const total = totalResult[0]?.total || 0;
 
     const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
     const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
-
+    
     const events = rawEvents.map(event => {
-        if (event.type === 'Purchase' && event.costJson) {
-            try {
-                const costItems = JSON.parse(event.costJson);
-                if (Array.isArray(costItems)) {
-                    event.rewardsText = costItems.map(r => `-${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+        let rewardsText = '';
+        try {
+            const rewardsJsonString = event.rewardsJson || '[]';
+            const rewardsData = JSON.parse(rewardsJsonString);
+            
+            if (event.type === 'QuestCompletion' && event.status === 'Approved') {
+                if (Array.isArray(rewardsData)) {
+                    rewardsText = rewardsData.map(r => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
                 }
-            } catch (e) { /* ignore */ }
-            delete event.costJson; // Clean up temp field
+            } else if (event.type === 'Purchase') {
+                if (Array.isArray(rewardsData)) {
+                    rewardsText = rewardsData.map(r => `-${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                }
+            } else if (event.type === 'AdminAdjustment') {
+                const paid = (rewardsData.setbacks || []).map((r) => `-${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                const received = (rewardsData.rewards || []).map((r) => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                rewardsText = `${paid} ${received}`.trim();
+            }
+        } catch (e) {
+            // JSON parsing might fail, ignore.
         }
-        return event;
+        delete event.rewardsJson; // Clean up temp field
+        return { ...event, rewardsText: rewardsText || undefined };
     });
-
 
     return { events, total };
 };

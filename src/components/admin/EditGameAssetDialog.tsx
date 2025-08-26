@@ -42,11 +42,10 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
 
   const getInitialFormData = useCallback(() => {
     // Base structure for a new asset
-    // FIX: Replaced block-level type annotation with inline `as` casts to prevent TypeScript from widening literal types to `string`. This ensures `iconType` remains `'emoji' | 'image'`.
     const baseData = {
         name: '', description: '', imageUrl: '', category: 'Avatar', avatarSlot: '',
-        isForSale: false, requiresApproval: false, costGroups: [[]],
-        payouts: [], marketIds: [], purchaseLimit: null,
+        isForSale: false, requiresApproval: false, costGroups: [[]] as RewardItem[][],
+        payouts: [] as RewardItem[], marketIds: [] as string[], purchaseLimit: null,
         purchaseLimitType: 'Total' as 'Total' | 'PerUser', purchaseCount: 0, allowExchange: false,
         iconType: 'emoji' as 'emoji' | 'image', icon: '📦',
     };
@@ -84,7 +83,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
             imageUrl: finalImageUrl,
             category: isPredefined ? finalCategory : 'Other',
             avatarSlot: finalAvatarSlot,
-            iconType: finalImageUrl ? 'image' : 'emoji', // if image url is provided, it's an image
+            iconType: finalImageUrl ? 'image' as const : 'emoji' as const, // if image url is provided, it's an image
             icon: icon || (finalImageUrl ? '🖼️' : '📦'),
         };
     }
@@ -209,7 +208,6 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     } else if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
-      // FIX: Remove purchaseCount from the payload for addGameAsset, as it's not expected in the type.
       const { purchaseCount, ...payloadForAdd } = finalPayload;
       addGameAsset({ ...payloadForAdd, createdAt: new Date().toISOString() });
     }
@@ -222,7 +220,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         setIsUploading(true);
         const uploaded = await uploadFile(file);
         if(uploaded?.url) {
-            setFormData(p => ({...p, imageUrl: uploaded.url}));
+            setFormData(p => ({...p, imageUrl: uploaded.url, iconType: 'image'}));
             addNotification({type: 'success', message: 'Image uploaded!'}) 
         }
         setIsUploading(false);
@@ -344,7 +342,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                       
                       <div className="space-y-3">
                         <h4 className="font-semibold text-stone-200">Cost Options</h4>
-                        {formData.costGroups.map((group: RewardItem[], groupIndex: number) => (
+                        {formData.costGroups.map((group, groupIndex) => (
                            <div key={groupIndex} className="p-3 border border-stone-700/60 rounded-lg">
                                <RewardInputGroup category='cost' items={group} onChange={handleCostGroupChange(groupIndex)} onAdd={handleAddRewardToGroup(groupIndex)} onRemove={handleRemoveRewardFromGroup(groupIndex)} />
                                {formData.costGroups.length > 1 && <Button type="button" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300 text-xs py-1 px-2 mt-2" onClick={() => removeCostGroup(groupIndex)}>Remove Cost Option</Button>}
@@ -429,7 +427,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       {isGalleryOpen && (
           <ImageSelectionDialog 
               onSelect={(url: string) => {
-                  setFormData(p => ({...p, imageUrl: url}));
+                  setFormData(p => ({...p, imageUrl: url, iconType: 'image'}));
                   setIsGalleryOpen(false);
               }}
               onClose={() => setIsGalleryOpen(false)}

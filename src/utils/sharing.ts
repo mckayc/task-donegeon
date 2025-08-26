@@ -33,8 +33,7 @@ export const generateAssetPack = (
     description: string,
     author: string,
     selectedAssets: { [key in ShareableAssetType]: string[] },
-    allAssets: IAppData,
-    chronicleUserFilter?: string[]
+    allAssets: IAppData
 ) => {
     const assetPack: AssetPack = {
         manifest: {
@@ -95,12 +94,12 @@ export const generateAssetPack = (
             ownedAssetIds, ownedThemes, hasBeenOnboarded, ...userTemplate 
         }) => userTemplate);
         
-    // Add filtered chronicles
+    // Add filtered chronicles based on selected user IDs
+    const chronicleUserFilter = selectedAssets.chronicles;
     if (chronicleUserFilter && chronicleUserFilter.length > 0) {
         const userFilterSet = new Set(chronicleUserFilter);
         assetPack.assets.chronicles = allAssets.chronicleEvents.filter(c => c.userId && userFilterSet.has(c.userId));
     }
-
 
     // Download the file
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(assetPack, null, 2));

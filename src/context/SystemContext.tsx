@@ -20,7 +20,6 @@ export interface SystemState {
     bugReports: BugReport[];
     modifierDefinitions: ModifierDefinition[];
     appliedModifiers: AppliedModifier[];
-    // FIX: Added missing chronicleEvents property to the state interface
     chronicleEvents: ChronicleEvent[];
 }
 
@@ -77,7 +76,6 @@ const initialState: SystemState = {
     bugReports: [],
     modifierDefinitions: [],
     appliedModifiers: [],
-    // FIX: Added missing chronicleEvents property to the initial state
     chronicleEvents: [],
 };
 

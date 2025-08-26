@@ -9,7 +9,6 @@ import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useCommunityState } from '../../context/CommunityContext';
-import UserMultiSelect from '../user-interface/UserMultiSelect';
 
 const ExportPanel: React.FC = () => {
     const systemState = useSystemState();
@@ -31,9 +30,8 @@ const ExportPanel: React.FC = () => {
         users: [],
         rotations: [],
         modifierDefinitions: [],
-        chronicles: [], // Not used for selection, but for type consistency
+        chronicles: [],
     });
-    const [chronicleUserFilter, setChronicleUserFilter] = useState<string[]>(() => users.map(u => u.id));
     const [blueprintName, setBlueprintName] = useState('');
     const [blueprintDesc, setBlueprintDesc] = useState('');
     const lastCheckedIds = useRef<Partial<Record<ShareableAssetType, string>>>({});
@@ -49,6 +47,7 @@ const ExportPanel: React.FC = () => {
         { key: 'users', label: 'link_manage_users', data: users },
         { key: 'rotations', label: 'link_manage_rotations', data: questState.rotations },
         { key: 'modifierDefinitions', label: 'link_triumphs_trials', data: systemState.modifierDefinitions },
+        { key: 'chronicles', label: 'link_chronicles', data: users },
     ], [systemState, economyState, progressionState, questState, users]);
 
     const handleCheckboxChange = useCallback((
@@ -117,8 +116,7 @@ const ExportPanel: React.FC = () => {
             blueprintDesc,
             settings.terminology.appName,
             selected,
-            fullAppData,
-            chronicleUserFilter
+            fullAppData
         );
     };
 
@@ -156,15 +154,6 @@ const ExportPanel: React.FC = () => {
                         {data.length === 0 && <p className="text-xs text-stone-500 italic text-center py-2">No custom {settings.terminology[label].toLowerCase()} to export.</p>}
                     </div>
                 ))}
-                 <div className="p-4 bg-stone-900/50 rounded-lg">
-                    <UserMultiSelect
-                        allUsers={users}
-                        selectedUserIds={chronicleUserFilter}
-                        onSelectionChange={setChronicleUserFilter}
-                        label="Export Chronicles For..."
-                    />
-                     <p className="text-xs text-stone-500 mt-2">Select which users' historical logs to include in the export. All users are selected by default.</p>
-                </div>
             </div>
             
             <div className="text-right pt-4">

@@ -168,30 +168,40 @@ const ManageQuestsPage: React.FC = () => {
                     </nav>
                 </div>
 
-                 <div className="flex flex-wrap gap-4 mb-4">
-                    <Input placeholder="Search quests..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="flex-grow sm:flex-grow-0 sm:max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
-                        <option value="title-asc">Sort by Title (A-Z)</option>
-                        <option value="title-desc">Sort by Title (Z-A)</option>
-                        <option value="status-asc">Sort by Status (Inactive first)</option>
-                        <option value="status-desc">Sort by Status (Active first)</option>
-                        <option value="type-asc">Sort by Type (A-Z)</option>
-                        <option value="type-desc">Sort by Type (Z-A)</option>
-                    </Input>
-                    <Input as="select" value={typeFilter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTypeFilter(e.target.value as any)}>
-                        <option value="All">All Types</option>
-                        <option value={QuestType.Duty}>{settings.terminology.recurringTask}</option>
-                        <option value={QuestType.Venture}>{settings.terminology.singleTask}</option>
-                        <option value={QuestType.Journey}>{settings.terminology.journey}</option>
-                    </Input>
-                    <Input as="select" value={statusFilter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as any)}>
-                        <option value="All">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </Input>
+                <div className="space-y-4 mb-4">
+                    <div className="flex flex-wrap gap-4 items-end p-2 bg-stone-900/40 rounded-lg">
+                        <div className="flex-grow" style={{ minWidth: '200px' }}>
+                            <Input label="Search" placeholder="Search quests..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} />
+                        </div>
+                        <div className="flex-grow" style={{ minWidth: '180px' }}>
+                            <Input as="select" label="Sort By" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
+                                <option value="title-asc">Title (A-Z)</option>
+                                <option value="title-desc">Title (Z-A)</option>
+                                <option value="status-asc">Status (Inactive first)</option>
+                                <option value="status-desc">Status (Active first)</option>
+                                <option value="type-asc">Type (A-Z)</option>
+                                <option value="type-desc">Type (Z-A)</option>
+                            </Input>
+                        </div>
+                        <div className="flex-grow" style={{ minWidth: '150px' }}>
+                            <Input as="select" label="Type" value={typeFilter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTypeFilter(e.target.value as any)}>
+                                <option value="All">All Types</option>
+                                <option value={QuestType.Duty}>{settings.terminology.recurringTask}</option>
+                                <option value={QuestType.Venture}>{settings.terminology.singleTask}</option>
+                                <option value={QuestType.Journey}>{settings.terminology.journey}</option>
+                            </Input>
+                        </div>
+                        <div className="flex-grow" style={{ minWidth: '150px' }}>
+                            <Input as="select" label="Status" value={statusFilter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as any)}>
+                                <option value="All">All Statuses</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </Input>
+                        </div>
+                    </div>
                     
                     {selectedQuests.length > 0 && (
-                        <div className="w-full flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
+                        <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
                             <Button size="sm" variant="secondary" onClick={() => setIsBulkEditDialogOpen(true)} data-log-id="manage-quests-bulk-edit">Bulk Edit</Button>
                             <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })} data-log-id="manage-quests-bulk-activate">Mark Active</Button>

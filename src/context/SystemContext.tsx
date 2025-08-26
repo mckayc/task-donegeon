@@ -190,9 +190,18 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             await apiAction(() => addBugReportAPI(report));
         },
         updateBugReport: async (id, updates) => {
-            return await apiAction(() => updateBugReportAPI(id, updates));
+            const result = await apiAction(() => updateBugReportAPI(id, updates));
+            if (result) {
+                dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { bugReports: [result] } });
+            }
+            return result;
         },
-        deleteBugReports: (ids) => apiAction(() => deleteBugReportsAPI(ids)),
+        deleteBugReports: async (ids) => {
+            const result = await apiAction(() => deleteBugReportsAPI(ids));
+            if (result === null) { // Expect 204 No Content on success
+                dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { bugReports: ids } });
+            }
+        },
         importBugReports: async (reports, mode) => {
             await apiAction(() => importBugReportsAPI(reports, mode));
         },

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -110,6 +111,8 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         if (isSoldOut) buttonText = 'Sold Out';
         else if (isUserLimitReached) buttonText = 'Limit Reached';
         else if (!canAffordAny) buttonText = "Can't Afford";
+        
+        const isImageIcon = asset.iconType === 'image' && asset.imageUrl;
 
         return (
              <div className={`relative bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase || !canAffordAny ? 'opacity-60' : ''}`}>
@@ -122,14 +125,14 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                     <button
                         onClick={() => asset.iconType === 'image' && asset.imageUrl && setPreviewImageUrl(asset.imageUrl)}
                         disabled={asset.iconType !== 'image' || !asset.imageUrl}
-                        className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30 disabled:cursor-default"
+                        className={`w-full h-32 ${isImageIcon ? 'bg-black/20' : 'bg-transparent'} rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30 disabled:cursor-default`}
                         aria-label={`View larger image of ${asset.name}`}
                     >
                         <DynamicIcon
                             iconType={asset.iconType}
                             icon={asset.icon}
                             imageUrl={asset.imageUrl}
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200 text-6xl"
+                            className={`group-hover:scale-105 transition-transform duration-200 text-6xl ${isImageIcon ? 'w-full h-full object-contain' : ''}`}
                             altText={asset.name}
                         />
                     </button>
@@ -341,7 +344,7 @@ const MarketplacePage: React.FC = () => {
                 </div>
             ) : (
                  <Card>
-                    <p className="text-stone-400 text-center">There are no {settings.terminology.stores.toLowerCase()} available in this mode.</p>
+                    <p className="text-stone-400 text-center">There are no ${settings.terminology.stores.toLowerCase()} available in this mode.</p>
                 </Card>
             )}
 

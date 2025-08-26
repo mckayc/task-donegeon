@@ -1,15 +1,7 @@
 
-
-const { dataSource } = require('../data-source');
-const { In, MoreThan, IsNull } = require("typeorm");
-const { 
-    UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, SystemNotificationEntity
-} = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
-const { getFullAppData } = require('../utils/helpers');
-const { INITIAL_SETTINGS } = require('../initialData');
 const systemService = require('../services/system.service');
-
+const { asyncMiddleware } = require('../utils/helpers');
 
 // === Server-Sent Events Logic ===
 let clients = [];
@@ -51,7 +43,6 @@ const sendUpdateToClients = () => {
             client.res.write('data: sync\n\n');
         } catch (error) {
             console.error(`[SSE] Error writing to client ${client.id}:`, error.message);
-            // The 'close' event on req will handle cleanup.
         }
     });
 };
@@ -60,160 +51,63 @@ updateEmitter.on('update', sendUpdateToClients);
 
 // === Data Syncing & First Run ===
 
-const getDeltaAppData = async (manager, lastSync) => {
-    const updates = {};
-    const entityMap = {
-        Market: 'markets', GameAsset: 'gameAssets', PurchaseRequest: 'purchaseRequests', RewardTypeDefinition: 'rewardTypes', TradeOffer: 'tradeOffers', Gift: 'gifts',
-        Rank: 'ranks', Trophy: 'trophies', UserTrophy: 'userTrophies',
-        SystemLog: 'systemLogs', AdminAdjustment: 'adminAdjustments', SystemNotification: 'systemNotifications', ScheduledEvent: 'scheduledEvents', ChatMessage: 'chatMessages',
-        BugReport: 'bugReports', ModifierDefinition: 'modifierDefinitions', AppliedModifier: 'appliedModifiers', ThemeDefinition: 'themes', QuestGroup: 'questGroups', Rotation: 'rotations'
-    };
-
-    // User sync is special because of relations
-    const updatedUsers = await manager.find('User', { where: { updatedAt: MoreThan(lastSync) }, relations: ['guilds'] });
-    if (updatedUsers.length > 0) {
-        updates.users = updatedUsers.map(u => {
-            const { guilds, ...userData } = u;
-            return { ...userData, guildIds: guilds.map(g => g.id) };
-        });
-    }
-
-    // Quest sync
-    const questRepo = manager.getRepository('Quest');
-    const updatedQuests = await questRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['assignedUsers'] });
-    if (updatedQuests.length > 0) {
-        updates.quests = updatedQuests.map(q => {
-            const { assignedUsers, ...questData } = q;
-            return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
-        });
-    }
-
-    // QuestCompletion sync
-    const qcRepo = manager.getRepository(QuestCompletionEntity);
-    const updatedQCs = await qcRepo.find({ 
-        where: { updatedAt: MoreThan(lastSync) }, 
-        relations: ['user', 'quest'] 
-    });
-    if (updatedQCs.length > 0) {
-        updates.questCompletions = updatedQCs
-            .filter(qc => qc.user && qc.quest)
-            .map(qc => {
-                // Explicitly create a new object to avoid TypeORM proxy issues
-                return {
-                    id: qc.id,
-                    completedAt: qc.completedAt,
-                    status: qc.status,
-                    note: qc.note,
-                    guildId: qc.guildId,
-                    actedById: qc.actedById,
-                    actedAt: qc.actedAt,
-                    createdAt: qc.createdAt,
-                    updatedAt: qc.updatedAt,
-                    userId: qc.user.id,
-                    questId: qc.quest.id,
-                };
-            });
-    }
-
-    // Guild sync
-    const guildRepo = manager.getRepository('Guild');
-    const updatedGuilds = await guildRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['members'] });
-    if (updatedGuilds.length > 0) {
-        updates.guilds = updatedGuilds.map(g => {
-            const { members, ...guildData } = g;
-            return { ...guildData, memberIds: members?.map(m => m.id) || [] };
-        });
-    }
-    
-    for (const entityName in entityMap) {
-        const repo = manager.getRepository(entityName);
-        const keyName = entityMap[entityName];
-        
-        if (repo.metadata.hasColumnWithPropertyPath('updatedAt')) {
-            const changedItems = await repo.find({ where: { updatedAt: MoreThan(lastSync) } });
-            if (changedItems.length > 0) {
-                updates[keyName] = changedItems;
-            }
-        }
-    }
-
-    const settingRow = await manager.findOne('Setting', { where: { id: 1, updatedAt: MoreThan(lastSync) } });
-    if (settingRow) updates.settings = settingRow.settings;
-
-    const historyRow = await manager.findOne('LoginHistory', { where: { id: 1, updatedAt: MoreThan(lastSync) } });
-    if (historyRow) updates.loginHistory = historyRow.history;
-
-    return updates;
-};
-
 const syncData = async (req, res) => {
     const { lastSync } = req.query;
-    const newSyncTimestamp = new Date().toISOString();
-    const manager = dataSource.manager;
-
-    if (!lastSync) {
-        // Full initial load
-        const userCount = await manager.count(UserEntity);
-        if (userCount === 0) {
-            console.log("No users found, triggering first run.");
-            return res.status(200).json({
-                updates: { settings: INITIAL_SETTINGS, users: [], loginHistory: [] },
-                newSyncTimestamp
-            });
-        }
-        console.log("[Sync] Performing full initial data load for client.");
-        const appData = await getFullAppData(manager);
-        res.status(200).json({ updates: appData, newSyncTimestamp });
-    } else {
-        // Delta sync
-        console.log(`[Sync] Performing delta sync for client since ${lastSync}`);
-        const updates = await getDeltaAppData(manager, lastSync);
-        res.status(200).json({ updates, newSyncTimestamp });
-    }
+    const result = await systemService.syncData(lastSync);
+    res.status(200).json(result);
 };
 
 const firstRun = async (req, res) => {
-    await systemService.firstRun(req, res);
+    const { adminUserData } = req.body;
+    await systemService.firstRun(adminUserData);
+    res.status(201).json({ message: 'First run setup complete.' });
 };
 
 const applyUpdates = async (req, res) => {
-    await systemService.applySettingsUpdates(req, res);
+    await systemService.applySettingsUpdates();
+    res.status(204).send();
 };
 
 const clearHistory = async (req, res) => {
-    await systemService.clearAllHistory(req, res);
+    await systemService.clearAllHistory();
+    res.status(204).send();
 };
 
 const resetPlayers = async (req, res) => {
     const { includeAdmins } = req.body;
-    await systemService.resetAllPlayerData(req, res, includeAdmins === true);
+    await systemService.resetAllPlayerData(includeAdmins === true);
+    res.status(204).send();
 };
 
 const deleteContent = async (req, res) => {
-    await systemService.deleteAllCustomContent(req, res);
+    await systemService.deleteAllCustomContent();
+    res.status(204).send();
 };
 
 const factoryReset = async (req, res) => {
-    await systemService.factoryReset(req, res);
+    await systemService.factoryReset();
+    res.status(204).send();
 };
 
 const getChronicles = async (req, res) => {
-    await systemService.getChronicles(req, res);
+    const result = await systemService.getChronicles(req.query);
+    res.json(result);
 };
 
 const resetSettings = async (req, res) => {
-    await systemService.resetSettings(req, res);
+    await systemService.resetSettings();
+    res.status(204).send();
 };
 
 module.exports = {
     handleSse,
-    syncData,
-    firstRun,
-    applyUpdates,
-    clearHistory,
-    resetPlayers,
-    deleteContent,
-    factoryReset,
-    getChronicles,
-    resetSettings,
+    syncData: asyncMiddleware(syncData),
+    firstRun: asyncMiddleware(firstRun),
+    applyUpdates: asyncMiddleware(applyUpdates),
+    clearHistory: asyncMiddleware(clearHistory),
+    resetPlayers: asyncMiddleware(resetPlayers),
+    deleteContent: asyncMiddleware(deleteContent),
+    factoryReset: asyncMiddleware(factoryReset),
+    getChronicles: asyncMiddleware(getChronicles),
+    resetSettings: asyncMiddleware(resetSettings),
 };

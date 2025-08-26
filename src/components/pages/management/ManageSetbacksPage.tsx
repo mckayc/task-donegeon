@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { ModifierDefinition, User } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -56,7 +57,6 @@ const ManageSetbacksPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
         if (deletingIds.length > 0 && currentUser) {
             deleteSelectedAssets({ modifierDefinitions: deletingIds }, currentUser.id);
         }

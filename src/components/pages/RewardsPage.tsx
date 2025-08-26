@@ -108,7 +108,6 @@ const RewardsPage: React.FC = () => {
     }
     
     const handleConfirmDelete = () => {
-        // FIX: Add currentUser check and pass currentUser.id to deleteSelectedAssets
         if (deletingId && currentUser) {
             deleteSelectedAssets({ rewardTypes: [deletingId] }, currentUser.id);
         }

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useContext } from 'react';
 import { Rotation } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -37,7 +38,6 @@ const ManageRotationsPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
         if (deletingIds.length > 0 && currentUser) {
             deleteSelectedAssets({ rotations: deletingIds }, currentUser.id, () => {
                 questsDispatch({ type: 'REMOVE_QUESTS_DATA', payload: { rotations: deletingIds } });

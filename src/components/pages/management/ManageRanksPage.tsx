@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Rank } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -47,7 +48,6 @@ const ManageRanksPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
         if (deletingIds.length > 0 && currentUser) {
             deleteSelectedAssets({ ranks: deletingIds }, currentUser.id, () => {
                 setDeletingIds([]);

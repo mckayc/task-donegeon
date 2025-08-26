@@ -42,19 +42,13 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
 
   const getInitialFormData = useCallback(() => {
     // Base structure for a new asset
-    // FIX: Explicitly type baseData to prevent type widening on iconType.
-    const baseData: {
-        name: string; description: string; imageUrl: string; category: string; avatarSlot: string;
-        isForSale: boolean; requiresApproval: boolean; costGroups: RewardItem[][];
-        payouts: RewardItem[]; marketIds: string[]; purchaseLimit: number | null;
-        purchaseLimitType: 'Total' | 'PerUser'; purchaseCount: number; allowExchange: boolean;
-        iconType: 'emoji' | 'image'; icon: string;
-    } = {
+    // FIX: Replaced block-level type annotation with inline `as` casts to prevent TypeScript from widening literal types to `string`. This ensures `iconType` remains `'emoji' | 'image'`.
+    const baseData = {
         name: '', description: '', imageUrl: '', category: 'Avatar', avatarSlot: '',
         isForSale: false, requiresApproval: false, costGroups: [[]],
         payouts: [], marketIds: [], purchaseLimit: null,
-        purchaseLimitType: 'Total', purchaseCount: 0, allowExchange: false,
-        iconType: 'emoji', icon: '📦',
+        purchaseLimitType: 'Total' as 'Total' | 'PerUser', purchaseCount: 0, allowExchange: false,
+        iconType: 'emoji' as 'emoji' | 'image', icon: '📦',
     };
 
     if (mode === 'edit' && assetToEdit) {

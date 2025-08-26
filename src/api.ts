@@ -86,7 +86,7 @@ export const updateQuestGroupAPI = (data: QuestGroup) => apiRequest('PUT', `/api
 export const assignQuestGroupToUsersAPI = (groupId: string, userIds: string[], actorId: string) => apiRequest('POST', '/api/quest-groups/assign', { groupId, userIds, actorId });
 export const addRotationAPI = (data: Omit<Rotation, 'id'>) => apiRequest('POST', '/api/rotations', data);
 export const updateRotationAPI = (data: Rotation) => apiRequest('PUT', `/api/rotations/${data.id}`, data);
-export const cloneRotationAPI = (id: string) => apiRequest('POST', '/api/rotations/clone/${id}`);
+export const cloneRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/clone/${id}`);
 export const runRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/run/${id}`);
 export const completeCheckpointAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/complete-checkpoint', { questId, userId });
 

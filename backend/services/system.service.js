@@ -1,7 +1,7 @@
 
 
 const { dataSource } = require('../data-source');
-const { In, MoreThan, IsNull } = require("typeorm");
+const { In, MoreThan, IsNull, Not } = require("typeorm");
 const { 
     UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, PurchaseRequestEntity, 
     UserTrophyEntity, AdminAdjustmentEntity, SystemNotificationEntity, RewardTypeDefinitionEntity, 
@@ -185,14 +185,15 @@ const deleteAllCustomContent = async () => {
 
     const tablesToClear = [QuestEntity, QuestGroupEntity, MarketEntity, GameAssetEntity, TrophyEntity, RankEntity, ThemeDefinitionEntity, RotationEntity, ModifierDefinitionEntity];
     for (const table of tablesToClear) {
-        // Find entities that are not meant to be cleared (e.g., core ones)
         if (table === MarketEntity) {
-            await manager.getRepository(table).delete({ id: In(['market-bank']) });
+            // Delete all markets EXCEPT the bank
+            await manager.getRepository(table).delete({ id: Not(In(['market-bank'])) });
         } else {
              await manager.clear(table);
         }
     }
-    // Re-seed core content
+    // Re-seed core content that was cleared
+    await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS.map(qg => updateTimestamps(qg, true)));
     await manager.save(RankEntity, INITIAL_RANKS.map(r => updateTimestamps(r, true)));
     await manager.save(TrophyEntity, INITIAL_TROPHIES.map(t => updateTimestamps(t, true)));
     await manager.save(ThemeDefinitionEntity, INITIAL_THEMES.map(t => updateTimestamps(t, true)));

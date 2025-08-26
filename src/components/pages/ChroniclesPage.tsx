@@ -221,7 +221,14 @@ const ChroniclesPage: React.FC = () => {
                                     {/* Column 3: Rewards, Status, Actor, & Date */}
                                     <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
                                         <div className="font-semibold flex items-center justify-end gap-2">
-                                            {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
+                                            {activity.rewardsText && (
+                                                <span 
+                                                    className={activity.status === 'Pending' ? 'text-stone-500 opacity-70' : 'text-stone-300'}
+                                                    title={activity.status === 'Pending' ? 'Reward pending approval.' : undefined}
+                                                >
+                                                    {activity.rewardsText}
+                                                </span>
+                                            )}
                                             <span className={statusColor(activity.status)}>{activity.status}</span>
                                             {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
                                                 <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>

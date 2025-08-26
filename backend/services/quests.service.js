@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -48,6 +49,7 @@ const create = async (questDataWithUsers, actorId) => {
                  const notification = notificationRepo.create({
                     id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                     type: 'QuestAssigned',
+                    timestamp: new Date().toISOString(),
                     message: `${actor.gameName} assigned the quest: "${saved.title}"`,
                     recipientUserIds: assignedUserIds,
                     senderId: actorId,
@@ -113,6 +115,7 @@ const update = async (id, questDataWithUsers, actorId) => {
                  const notification = notificationRepo.create({
                     id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                     type: 'QuestAssigned',
+                    timestamp: new Date().toISOString(),
                     message: `${actor.gameName} assigned you the quest: "${saved.title}"`,
                     recipientUserIds: newlyAssignedUserIds,
                     senderId: actorId,

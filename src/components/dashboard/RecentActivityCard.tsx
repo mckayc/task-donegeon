@@ -65,7 +65,14 @@ const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ activities, ter
                              {/* Column 3: Status & Date */}
                             <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
                                 <div className="font-semibold flex items-center justify-end gap-2">
-                                    {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
+                                    {activity.rewardsText && (
+                                        <span 
+                                            className={activity.status === 'Pending' ? 'text-stone-500 opacity-70' : 'text-stone-300'}
+                                            title={activity.status === 'Pending' ? 'Reward pending approval.' : undefined}
+                                        >
+                                            {activity.rewardsText}
+                                        </span>
+                                    )}
                                     <span className={statusColorClass(activity.status)}>{activity.status}</span>
                                 </div>
                                 <div className="text-xs text-stone-400 mt-1 space-y-0.5">

@@ -181,7 +181,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     setFormData(getInitialFormData());
     setIsCreatingNewGroup(initialData?.isNewGroup && !!initialData.groupName);
     setNewGroupName(initialData?.isNewGroup ? initialData.groupName || '' : '');
-  }, [initialData, initialDataFromBug, questToEdit, getInitialFormData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData, initialDataFromBug, questToEdit]);
 
 
   const handleUserAssignmentChange = (userId: string) => {
@@ -447,7 +448,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 <Button type="button" variant="secondary" size="sm" onClick={handleAssignAll}>Assign All</Button>
                 <Button type="button" variant="secondary" size="sm" onClick={handleUnassignAll}>Unassign All</Button>
               </div>
-              <fieldset className="disabled:opacity-50">
+              <fieldset>
                 <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
                     {userList.map(user => (
                         <div key={user.id} className="flex items-center">

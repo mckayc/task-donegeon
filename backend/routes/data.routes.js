@@ -10,6 +10,7 @@ const {
     deleteContent,
     factoryReset,
     resetSettings,
+    importAssets,
 } = require('../controllers/data.controller');
 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.post('/reset-players', asyncMiddleware(resetPlayers));
 router.post('/delete-content', asyncMiddleware(deleteContent));
 router.post('/factory-reset', asyncMiddleware(factoryReset));
 router.post('/reset-settings', asyncMiddleware(resetSettings));
+router.post('/import-assets', asyncMiddleware(importAssets));
 
 module.exports = router;

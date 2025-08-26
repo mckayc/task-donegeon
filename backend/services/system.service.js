@@ -254,13 +254,14 @@ const getChronicles = async (queryParams) => {
     const { userId, guildId, viewMode, page = 1, limit = 50, startDate, endDate, filterTypes } = queryParams;
     
     const filterTypesArray = filterTypes ? filterTypes.split(',') : [];
-
+    
     const qb = manager.createQueryBuilder();
-    let subQueries = [];
+    const subQueries = [];
+    const parameters = {};
 
     // --- Quest Completions ---
     if (filterTypesArray.includes('QuestCompletion')) {
-        let questQuery = qb.subQuery()
+        let query = qb.subQuery()
             .select([
                 'qc.id as id', 'qc.id as originalId', 'qc.completedAt as date', "'QuestCompletion' as type",
                 'quest.title as title', 'qc.note as note', 'qc.status as status',
@@ -271,46 +272,56 @@ const getChronicles = async (queryParams) => {
             .from('quest_completion', 'qc')
             .leftJoin('user', 'user', 'user.id = qc.userId')
             .leftJoin('quest', 'quest', 'quest.id = qc.questId');
-
+        
+        let hasWhere = false;
         if (viewMode === 'personal') {
-            questQuery.where('qc.userId = :userId', { userId });
+            query.where('qc.userId = :userId');
+            parameters.userId = userId;
+            hasWhere = true;
         }
         if (guildId !== 'null') {
-            questQuery.andWhere('qc.guildId = :guildId', { guildId });
+            query[hasWhere ? 'andWhere' : 'where']('qc.guildId = :guildId');
+            parameters.guildId = guildId;
         } else if (viewMode === 'personal') {
-            questQuery.andWhere('qc.guildId IS NULL');
+            query.andWhere('qc.guildId IS NULL');
         }
-        subQueries.push(questQuery.getQuery());
+        subQueries.push(query.getQuery());
     }
     
      // --- Purchases ---
     if (filterTypesArray.includes('Purchase')) {
-        let purchaseQuery = qb.subQuery()
+        let query = qb.subQuery()
             .select([
                 'pr.id as id', 'pr.id as originalId', 'pr.requestedAt as date', "'Purchase' as type",
                 `'Purchase: ' || json_extract(pr.assetDetails, '$.name') as title`,
-                'json_extract(pr.assetDetails, \'$.description\') as note', 'pr.status as status',
+                "json_extract(pr.assetDetails, '$.description') as note", 
+                'pr.status as status',
                 "'emoji' as iconType", "'💰' as icon", "'' as imageUrl",
                 "'#fbbf24' as color", 'pr.userId as userId', 'user.gameName as actorName',
-                "'' as questType", 'pr.guildId as guildId'
+                "'' as questType", 'pr.guildId as guildId',
+                "json_extract(pr.assetDetails, '$.cost') as costJson"
             ])
             .from('purchase_request', 'pr')
             .leftJoin('user', 'user', 'user.id = pr.userId');
         
+        let hasWhere = false;
         if (viewMode === 'personal') {
-            purchaseQuery.where('pr.userId = :userId', { userId });
+            query.where('pr.userId = :userId');
+            parameters.userId = userId;
+            hasWhere = true;
         }
         if (guildId !== 'null') {
-            purchaseQuery.andWhere('pr.guildId = :guildId', { guildId });
+            query[hasWhere ? 'andWhere' : 'where']('pr.guildId = :guildId');
+            parameters.guildId = guildId;
         } else if (viewMode === 'personal') {
-            purchaseQuery.andWhere('pr.guildId IS NULL');
+            query.andWhere('pr.guildId IS NULL');
         }
-        subQueries.push(purchaseQuery.getQuery());
+        subQueries.push(query.getQuery());
     }
 
     // --- Admin Adjustments ---
     if (filterTypesArray.includes('AdminAdjustment')) {
-        let adjustmentQuery = qb.subQuery()
+        let query = qb.subQuery()
             .select([
                 'aa.id as id', 'aa.id as originalId', 'aa.adjustedAt as date', "'AdminAdjustment' as type",
                 'aa.reason as title', "'' as note", 'aa.type as status',
@@ -321,23 +332,27 @@ const getChronicles = async (queryParams) => {
             .from('admin_adjustment', 'aa')
             .leftJoin('user', 'adjuster', 'adjuster.id = aa.adjusterId');
         
+        let hasWhere = false;
         if (viewMode === 'personal') {
-            adjustmentQuery.where('aa.userId = :userId', { userId });
+            query.where('aa.userId = :userId');
+            parameters.userId = userId;
+            hasWhere = true;
         }
         if (guildId !== 'null') {
-            adjustmentQuery.andWhere('aa.guildId = :guildId', { guildId });
+            query[hasWhere ? 'andWhere' : 'where']('aa.guildId = :guildId');
+            parameters.guildId = guildId;
         } else if (viewMode === 'personal') {
-            adjustmentQuery.andWhere('aa.guildId IS NULL');
+            query.andWhere('aa.guildId IS NULL');
         }
-        subQueries.push(adjustmentQuery.getQuery());
+        subQueries.push(query.getQuery());
     }
 
     // --- Trophies ---
     if (filterTypesArray.includes('TrophyAwarded')) {
-        let trophyQuery = qb.subQuery()
+        let query = qb.subQuery()
             .select([
                 'ut.id as id', 'ut.id as originalId', 'ut.awardedAt as date', "'TrophyAwarded' as type",
-                `'Trophy Awarded: ' || trophy.name as title`,
+                `'Trophy: ' || trophy.name as title`,
                 'trophy.description as note', "'Awarded' as status",
                 'trophy.iconType as iconType', 'trophy.icon as icon', 'trophy.imageUrl as imageUrl',
                 "'#facc15' as color", 'ut.userId as userId', 'user.gameName as actorName',
@@ -347,15 +362,19 @@ const getChronicles = async (queryParams) => {
             .leftJoin('trophy', 'trophy', 'trophy.id = ut.trophyId')
             .leftJoin('user', 'user', 'user.id = ut.userId');
         
+        let hasWhere = false;
         if (viewMode === 'personal') {
-            trophyQuery.where('ut.userId = :userId', { userId });
+            query.where('ut.userId = :userId');
+            parameters.userId = userId;
+            hasWhere = true;
         }
         if (guildId !== 'null') {
-            trophyQuery.andWhere('ut.guildId = :guildId', { guildId });
+            query[hasWhere ? 'andWhere' : 'where']('ut.guildId = :guildId');
+            parameters.guildId = guildId;
         } else if (viewMode === 'personal') {
-            trophyQuery.andWhere('ut.guildId IS NULL');
+            query.andWhere('ut.guildId IS NULL');
         }
-        subQueries.push(trophyQuery.getQuery());
+        subQueries.push(query.getQuery());
     }
     
     if (subQueries.length === 0) {
@@ -366,24 +385,26 @@ const getChronicles = async (queryParams) => {
     const pagedQuery = `${fullQuery} ORDER BY date DESC LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
     const countQuery = `SELECT COUNT(*) as total FROM (${fullQuery}) as unionResult`;
 
-    const rawEvents = await manager.query(pagedQuery, [userId, guildId]);
-    const totalResult = await manager.query(countQuery, [userId, guildId]);
+    const rawEvents = await manager.query(pagedQuery, parameters);
+    const totalResult = await manager.query(countQuery, parameters);
     const total = totalResult[0]?.total || 0;
 
     const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
     const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
 
     const events = rawEvents.map(event => {
-        if (event.type === 'Purchase') {
+        if (event.type === 'Purchase' && event.costJson) {
             try {
-                const details = JSON.parse(event.note);
-                if (Array.isArray(details.cost)) {
-                    event.note = details.cost.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).name}`).join(', ');
+                const costItems = JSON.parse(event.costJson);
+                if (Array.isArray(costItems)) {
+                    event.rewardsText = costItems.map(r => `-${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
                 }
             } catch (e) { /* ignore */ }
+            delete event.costJson; // Clean up temp field
         }
         return event;
     });
+
 
     return { events, total };
 };

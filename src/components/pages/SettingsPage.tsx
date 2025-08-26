@@ -279,21 +279,54 @@ export const SettingsPage: React.FC = () => {
                 </CollapsibleSection>
 
                  <CollapsibleSection title="Game Rules">
-                    <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.setbacks.enabled} setEnabled={(val: boolean) => handleSettingChange('setbacks', 'enabled', val)} label="Enable Setbacks" />
-                        <p className="text-xs text-stone-400 -mt-3 ml-12">Globally enable or disable all negative points (Setbacks) for late or incomplete quests.</p>
-
-                        <div className={`pl-8 transition-opacity duration-300 ${!formState.setbacks.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                             <ToggleSwitch enabled={formState.setbacks.forgiveLate} setEnabled={(val: boolean) => handleSettingChange('setbacks', 'forgiveLate', val)} label="Forgive Late Setbacks" />
-                            <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, late setbacks are only applied if a quest is still incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
+                    <div className="p-6 space-y-6">
+                        {/* --- SETBACKS --- */}
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex-grow">
+                                <label className="font-medium text-stone-200">Enable Setbacks</label>
+                                <p className="text-sm text-stone-400 mt-1 max-w-md">Globally enable or disable all negative points (Setbacks) for late or incomplete quests.</p>
+                            </div>
+                            <div className="flex-shrink-0 pt-1">
+                                <ToggleSwitch
+                                    enabled={formState.setbacks.enabled}
+                                    setEnabled={(val: boolean) => handleSettingChange('setbacks', 'enabled', val)}
+                                    label="Enable Setbacks"
+                                />
+                            </div>
                         </div>
                         
-                        <div className="pt-4 border-t border-stone-700/60">
-                            <h4 className="font-semibold text-stone-200 mb-2">Quest Defaults</h4>
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
+                        <div className={`pl-6 border-l-2 border-stone-700/60 transition-opacity duration-300 ${!formState.setbacks.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div className="flex justify-between items-start gap-4">
+                                <div className="flex-grow">
+                                    <label className={`font-medium ${!formState.setbacks.enabled ? 'text-stone-400' : 'text-stone-200'}`}>Forgive Late Setbacks</label>
+                                    <p className="text-sm text-stone-400 mt-1 max-w-md">If ON, late setbacks are only applied if a quest is still incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
+                                </div>
+                                <div className="flex-shrink-0 pt-1">
+                                    <ToggleSwitch
+                                        enabled={formState.setbacks.forgiveLate}
+                                        setEnabled={(val: boolean) => handleSettingChange('setbacks', 'forgiveLate', val)}
+                                        label="Forgive Late Setbacks"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* --- QUEST DEFAULTS --- */}
+                        <div className="pt-6 border-t border-stone-700/60">
+                            <h4 className="font-semibold text-stone-200 mb-4">Quest Defaults</h4>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-medium text-stone-200">Active by default</span>
+                                    <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="font-medium text-stone-200">Optional by default</span>
+                                    <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="font-medium text-stone-200">Requires Approval by default</span>
+                                    <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
+                                </div>
                             </div>
                         </div>
                     </div>

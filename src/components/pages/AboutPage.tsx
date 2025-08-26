@@ -25,6 +25,11 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_40_DATE = new Date(2025, 7, 26);
+const V0_0_99Y_DATE = new Date(2025, 7, 19);
+const V0_0_54_DATE = new Date(2025, 7, 17);
+const V0_0_53_DATE = new Date(2025, 7, 15);
+const V0_0_52_DATE = new Date(2025, 7, 15);
 const V0_0_51_DATE = new Date(2025, 7, 8);
 const V0_0_97_DATE = new Date(2025, 6, 23);
 const V0_0_96_DATE = new Date(2025, 6, 22);
@@ -47,6 +52,52 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.40 ({V0_1_40_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Data Integrity &amp; Reset Fixes:</strong> Resolved critical issues where core game elements like the default Guild, Exchange Market, and Explorer Chronicles would disappear after a full data reset. The system now correctly re-initializes these essential components.</li>
+                <li><strong>Revamped Asset Pack Importer:</strong> Improved the asset pack import process. The import dialog now provides a clearer preview of all assets within the pack, including quests, markets, items, and trophies. It also includes a "select all" checkbox for easier bulk importing.</li>
+                <li><strong>Enhanced Setback Rules:</strong> Added more granular control over setbacks in the "Game Rules" settings. Admins can now globally disable setbacks or choose to only apply them if quests are incomplete at the end of the day ("Forgive Late Setbacks").</li>
+                <li><strong>UI Polish in Settings:</strong> Cleaned up the UI in the "Game Rules" section to prevent text from overlapping, improving readability.</li>
+            </ul>
+        </div>
+         <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.99y ({V0_0_99Y_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New "Journey" Quest Type:</strong> The simple "Unlocks Next Quest" feature has been completely replaced by a new, powerful <strong>Journey</strong> quest type. Journeys are multi-stage adventures composed of multiple <strong>checkpoints</strong>.</li>
+                <li><strong>Dedicated Checkpoint Editor:</strong> Admins can now create epic, multi-step quests using a new, intuitive dialog to add and manage checkpoints, each with its own description and unique rewards.</li>
+                <li><strong>Enhanced User Experience:</strong> Journey quests feature a distinct purple UI, progress tracking in the header (e.g., "Checkpoint 1/5"), and mystery rewards for future checkpoints to keep players engaged.</li>
+                <li><strong>Full System Integration:</strong> The new Journey type is fully supported by the AI Suggestion Engine for content creation and can be exported/imported via the Asset Pack system.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.54 ({V0_0_54_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>The calendar's day and week views now correctly display the full time range for timed quests, making deadlines much clearer.</li>
+            </ul>
+        </div>
+         <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.53 ({V0_0_53_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>Renamed an asset pack to "Student's Daily Quest" and added new tech-related marketplace rewards.</li>
+            </ul>
+        </div>
+         <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.52 ({V0_0_52_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>Added a new default asset pack for a student's daily routine with screen-time rewards.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.51 ({V0_0_51_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -261,7 +312,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: {settings.contentVersion > 0 ? `0.0.${settings.contentVersion}` : '0.0.51'}</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.40</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">

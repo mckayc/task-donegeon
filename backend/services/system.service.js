@@ -2,7 +2,7 @@
 
 const { dataSource, ensureDatabaseDirectoryExists } = require('../data-source');
 const fs = require('fs').promises;
-const { In, MoreThan, IsNull, Not } = require("typeorm");
+const { In, MoreThan, IsNull, Not, Brackets } = require("typeorm");
 const { 
     UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, PurchaseRequestEntity, 
     UserTrophyEntity, AdminAdjustmentEntity, SystemNotificationEntity, RewardTypeDefinitionEntity, 
@@ -254,8 +254,9 @@ const factoryReset = async () => {
 const getChronicles = async (queryParams) => {
     const manager = dataSource.manager;
     const { userId, guildId, viewMode, page = 1, limit = 50, filterTypes, startDate, endDate } = queryParams;
+    const user = await manager.findOneBy(UserEntity, { id: userId });
 
-    if (!filterTypes && !startDate) {
+    if ((!filterTypes && !startDate) || !user) {
         return { events: [], total: 0 };
     }
 
@@ -269,14 +270,22 @@ const getChronicles = async (queryParams) => {
         qb.where('event.type IN (:...filterTypesArray)', { filterTypesArray });
     }
 
-    if (viewMode === 'personal') {
-        qb.andWhere('event.userId = :userId', { userId });
-    }
+    const isDonegeonMaster = user.role === 'Donegeon Master';
+    if (viewMode === 'all' && isDonegeonMaster) {
+        const guildCondition = guildId !== 'null' ? 'event.guildId = :guildId' : 'event.guildId IS NULL';
+        qb.andWhere(new Brackets(sub => {
+            sub.where(`(event.userId IS NOT NULL AND ${guildCondition})`) // User-specific events in scope
+               .orWhere('event.userId IS NULL'); // All admin events
+        }));
+        if(guildId !== 'null') qb.setParameter('guildId', guildId);
 
-    if (guildId !== 'null') {
-        qb.andWhere('event.guildId = :guildId', { guildId });
-    } else if (viewMode === 'personal') {
-        qb.andWhere('event.guildId IS NULL');
+    } else { // Personal view
+        qb.andWhere('event.userId = :userId', { userId });
+        if (guildId !== 'null') {
+            qb.andWhere('event.guildId = :guildId', { guildId });
+        } else {
+            qb.andWhere('event.guildId IS NULL');
+        }
     }
 
     if (startDate && endDate) {

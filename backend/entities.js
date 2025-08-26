@@ -47,6 +47,8 @@ const ChronicleEventEntity = new EntitySchema({
         imageUrl: { type: "varchar", nullable: true },
         color: { type: "varchar" },
         userId: { type: "varchar", nullable: true }, // The primary user this event is about
+        userName: { type: "varchar", nullable: true }, // The name of the user this event is about
+        actorId: { type: "varchar", nullable: true }, // The ID of the user who performed the action
         actorName: { type: "varchar", nullable: true }, // The name of the user who performed the action
         recipientUserIds: { type: "simple-array", nullable: true },
         questType: { type: "varchar", nullable: true },

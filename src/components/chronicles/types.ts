@@ -30,7 +30,9 @@ export type ChronicleEvent = {
     icon: string;
     imageUrl?: string;
     color: string;
-    userId?: string; // The primary actor/user
+    userId?: string; // The primary subject user of the event
+    userName?: string; // The name of the subject user
+    actorId?: string; // The ID of the user who performed the action (e.g., admin)
     actorName?: string; // Name of the user who performed the action (e.g., admin)
     recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)
     questType?: QuestType;

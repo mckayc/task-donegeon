@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
@@ -147,6 +148,8 @@ const ChroniclesPage: React.FC = () => {
         }
     };
 
+    const isAdminView = currentUser.role !== Role.Explorer && viewMode === 'all';
+
     return (
         <div>
             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
@@ -195,11 +198,16 @@ const ChroniclesPage: React.FC = () => {
                         <ul className="space-y-4">
                             {events.map(activity => (
                                 <li key={activity.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-3 bg-stone-800/60 rounded-lg border-l-4" style={{ borderColor: activity.color }}>
-                                    {/* Column 1: Title & Icon */}
-                                    <p className="font-semibold text-stone-100 flex items-center gap-3 truncate md:col-span-1" title={activity.title}>
-                                        <span className="text-2xl flex-shrink-0">{activity.icon}</span>
-                                        <span className="truncate">{activity.title}</span>
-                                    </p>
+                                    {/* Column 1: Title, Icon, & Subject */}
+                                    <div className="flex items-start gap-3 md:col-span-1 min-w-0">
+                                        <span className="text-2xl flex-shrink-0 mt-1">{activity.icon}</span>
+                                        <div className="flex-grow overflow-hidden">
+                                            <p className="font-semibold text-stone-100 truncate" title={activity.title}>{activity.title}</p>
+                                            {isAdminView && activity.userName && (
+                                                <p className="text-xs text-stone-400 font-medium truncate" title={activity.userName}>{activity.userName}</p>
+                                            )}
+                                        </div>
+                                    </div>
 
                                     {/* Column 2: Note */}
                                     <div className="md:col-span-1 md:text-center min-w-0">
@@ -210,7 +218,7 @@ const ChroniclesPage: React.FC = () => {
                                         )}
                                     </div>
                                     
-                                    {/* Column 3: Status & Date */}
+                                    {/* Column 3: Rewards, Status, Actor, & Date */}
                                     <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
                                         <div className="font-semibold flex items-center justify-end gap-2">
                                             {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
@@ -221,7 +229,12 @@ const ChroniclesPage: React.FC = () => {
                                                 </Button>
                                             )}
                                         </div>
-                                        <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
+                                        <div className="text-xs text-stone-400 mt-1 space-y-0.5">
+                                            {activity.actorName && (isAdminView || (activity.actorName !== currentUser.gameName && activity.actorName !== activity.userName)) && (
+                                                <p>by {activity.actorName}</p>
+                                            )}
+                                            <p>{formatTimestamp(activity.date)}</p>
+                                        </div>
                                     </div>
                                 </li>
                             ))}

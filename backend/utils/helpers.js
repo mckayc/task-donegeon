@@ -190,9 +190,38 @@ const getFullAppData = async (manager) => {
     return data;
 };
 
+const logAdminAction = async (manager, { actorId, title, note, icon, color, guildId }) => {
+    const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+    const userRepo = manager.getRepository(UserEntity);
+
+    const actor = await userRepo.findOneBy({ id: actorId });
+    if (!actor) return;
+
+    const eventData = {
+        id: `chron-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        originalId: `admin-action-${Date.now()}`,
+        date: new Date().toISOString(),
+        type: 'System',
+        title,
+        note,
+        status: 'Executed',
+        icon,
+        color,
+        userId: null, // Admin actions have no subject user
+        userName: null,
+        actorId: actor.id,
+        actorName: actor.gameName,
+        guildId: guildId || undefined,
+    };
+
+    const chronicleEvent = chronicleRepo.create(eventData);
+    await manager.save(updateTimestamps(chronicleEvent, true));
+};
+
 module.exports = {
     updateTimestamps,
     checkAndAwardTrophies,
     asyncMiddleware,
     getFullAppData,
+    logAdminAction,
 };

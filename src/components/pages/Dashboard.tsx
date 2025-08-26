@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { Quest, QuestType, QuestKind } from '../../types';
@@ -26,6 +27,16 @@ const Dashboard: React.FC = () => {
     const { trophies } = useProgressionState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
+    
+    // FIX: Add a guard clause. This is the most robust way to prevent startup crashes.
+    // The component will not attempt to render until the core currentUser object is available.
+    if (!currentUser) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+            </div>
+        );
+    }
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useEffect, useState, useRef, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -13,6 +12,7 @@ import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
+import { ArrowLeftIcon } from '../user-interface/Icons';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
@@ -24,6 +24,14 @@ const MainLayout: React.FC = () => {
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
   const prevUserIdRef = useRef<string | undefined>(undefined);
   
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
@@ -91,6 +99,27 @@ const MainLayout: React.FC = () => {
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
       </div>
   );
+  
+  if (isMobile && activePage === 'Approvals') {
+    const PageComponent = routeConfig['Approvals'];
+    if (!PageComponent) return null;
+
+    return (
+      <div className="flex flex-col h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', color: 'hsl(var(--color-text-primary))' }}>
+        <header className="h-16 bg-stone-900 flex items-center px-4 border-b border-stone-700 flex-shrink-0">
+          <button onClick={() => setActivePage('Dashboard')} className="p-2 -ml-2 text-stone-300 hover:text-white">
+            <ArrowLeftIcon className="w-6 h-6" />
+          </button>
+          <h1 className="text-xl font-bold ml-4">Approvals</h1>
+        </header>
+        <main className="flex-1 overflow-y-auto p-4">
+          <Suspense fallback={<LoadingSpinner />}>
+            <PageComponent />
+          </Suspense>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <>

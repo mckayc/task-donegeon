@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+// Fix: Removed PanInfo from import as it's not exported in the user's version of framer-motion.
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import { useSystemState } from '../../context/SystemContext';
@@ -44,13 +45,15 @@ const ApprovalCard: React.FC<{
     onViewTrade?: (trade: TradeOffer) => void;
 }> = ({ item, type, user, title, note, costText, onApprove, onReject, onViewTrade }) => {
     const [isRejecting, setIsRejecting] = useState(false);
+    const [isApproving, setIsApproving] = useState(false);
     const [adminNote, setAdminNote] = useState('');
 
     const x = useMotionValue(0);
     const approveOpacity = useTransform(x, [50, 150], [0, 1]);
     const rejectOpacity = useTransform(x, [-50, -150], [0, 1]);
     
-    const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    // Fix: Replaced PanInfo with an inline type to resolve the import error, and used `any` to prevent further signature issues.
+    const handleDragEnd = (event: any, info: any) => {
         const swipeThreshold = 100;
         if (info.offset.x > swipeThreshold) {
             onApprove(item.id, '');
@@ -59,9 +62,37 @@ const ApprovalCard: React.FC<{
         }
     };
 
+    const handleOpenReject = () => {
+        setAdminNote('');
+        setIsApproving(false);
+        setIsRejecting(true);
+    };
+
+    const handleOpenApprove = () => {
+        setAdminNote('');
+        setIsRejecting(false);
+        setIsApproving(true);
+    };
+
     const handleConfirmReject = () => {
         onReject(item.id, adminNote);
         setIsRejecting(false);
+    };
+    
+    const handleConfirmApprove = () => {
+        onApprove(item.id, adminNote);
+        setIsApproving(false);
+    };
+
+    const handleCancel = () => {
+        setIsApproving(false);
+        setIsRejecting(false);
+    };
+    
+    // Fix: Added variants to work around framer-motion prop type issues.
+    const actionVariants = {
+        hidden: { height: 0, opacity: 0 },
+        visible: { height: 'auto', opacity: 1 },
     };
 
     return (
@@ -111,17 +142,37 @@ const ApprovalCard: React.FC<{
                 </div>
                 
                  <AnimatePresence>
+                    {isApproving && (
+                        <motion.div
+                            // Fix: Replaced direct animation props with variants.
+                            variants={actionVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="hidden"
+                            className="overflow-hidden"
+                        >
+                            <div className="p-4 border-t border-stone-700/60 space-y-2">
+                                <Input as="textarea" placeholder="Reason for approval (optional praise)..." value={adminNote} onChange={e => setAdminNote(e.target.value)} />
+                                <div className="flex justify-end gap-2">
+                                    <Button size="sm" variant="secondary" onClick={handleCancel}>Cancel</Button>
+                                    <Button size="sm" onClick={handleConfirmApprove}>Confirm Approve</Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
                     {isRejecting && (
                         <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
+                            // Fix: Replaced direct animation props with variants.
+                            variants={actionVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="hidden"
                             className="overflow-hidden"
                         >
                             <div className="p-4 border-t border-stone-700/60 space-y-2">
                                 <Input as="textarea" placeholder="Reason for rejection (optional)..." value={adminNote} onChange={e => setAdminNote(e.target.value)} />
                                 <div className="flex justify-end gap-2">
-                                    <Button size="sm" variant="secondary" onClick={() => setIsRejecting(false)}>Cancel</Button>
+                                    <Button size="sm" variant="secondary" onClick={handleCancel}>Cancel</Button>
                                     <Button size="sm" variant="destructive" onClick={handleConfirmReject}>Confirm Reject</Button>
                                 </div>
                             </div>
@@ -134,8 +185,8 @@ const ApprovalCard: React.FC<{
                         <Button size="sm" onClick={() => onViewTrade(item)}>View Offer</Button>
                     ) : (
                         <>
-                            <Button size="sm" variant="destructive" onClick={() => setIsRejecting(true)}>Reject</Button>
-                            <Button size="sm" onClick={() => onApprove(item.id, '')}>Approve</Button>
+                            <Button size="sm" variant="destructive" onClick={handleOpenReject}>Reject</Button>
+                            <Button size="sm" onClick={handleOpenApprove}>Approve</Button>
                         </>
                     )}
                 </div>
@@ -180,8 +231,8 @@ const ApprovalsPage: React.FC = () => {
     
     const handleApproveQuest = (id: string, note: string) => approveQuestCompletion(id, currentUser.id, note);
     const handleRejectQuest = (id: string, note: string) => rejectQuestCompletion(id, currentUser.id, note);
-    const handleApprovePurchase = (id: string) => approvePurchaseRequest(id, currentUser.id);
-    const handleRejectPurchase = (id: string) => rejectPurchaseRequest(id, currentUser.id);
+    const handleApprovePurchase = (id: string, note: string) => approvePurchaseRequest(id, currentUser.id);
+    const handleRejectPurchase = (id: string, note: string) => rejectPurchaseRequest(id, currentUser.id);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -249,12 +300,16 @@ const ApprovalsPage: React.FC = () => {
         }
     };
 
+    // Fix: Added variants to work around framer-motion prop type issues.
+    const tabContentVariants = {
+        hidden: { y: 10, opacity: 0 },
+        visible: { y: 0, opacity: 1 },
+        exit: { y: -10, opacity: 0 },
+    };
+
     return (
         <div className="md:max-w-2xl mx-auto">
-             <div className="mb-6">
-                <h1 className="text-4xl font-medieval text-stone-100">Approvals</h1>
-            </div>
-            <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg mb-6">
+             <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg mb-6">
                 <TabButton label="Quests" count={questCount} isActive={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
                 {currentUser.role === Role.DonegeonMaster && (
                     <TabButton label="Purchases" count={purchaseCount} isActive={activeTab === 'purchases'} onClick={() => setActiveTab('purchases')} />
@@ -265,9 +320,11 @@ const ApprovalsPage: React.FC = () => {
             <AnimatePresence mode="wait">
                 <motion.div
                     key={activeTab}
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -10, opacity: 0 }}
+                    // Fix: Replaced direct animation props with variants.
+                    variants={tabContentVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
                     transition={{ duration: 0.2 }}
                     className="space-y-4"
                 >

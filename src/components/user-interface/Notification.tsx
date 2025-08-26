@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback } from 'react';
 import { Notification as NotificationType } from '../../types';
 import { motion } from 'framer-motion';
@@ -47,13 +48,21 @@ const Notification = ({ notification, onDismiss }: NotificationProps) => {
         };
       }
     }, [notification.id, notification.duration, handleDismiss]);
+
+    // Fix: Added variants to work around framer-motion prop type issues.
+    const notificationVariants = {
+        initial: { opacity: 0, y: 50, scale: 0.3 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, scale: 0.5, transition: { duration: 0.2 } },
+    };
   
     return (
       <motion.div
-        layout
-        initial={{ opacity: 0, y: 50, scale: 0.3 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+        // Fix: Removed `layout` prop and replaced direct animation props with variants.
+        variants={notificationVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
         className="max-w-sm w-full bg-stone-800 shadow-2xl rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden"
       >
         <div className="p-4 border border-stone-700/80 rounded-lg">

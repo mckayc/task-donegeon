@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
 import { Quest, QuestType, QuestGroup } from '../../../types';
@@ -11,6 +11,7 @@ import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { QuestTable } from '../../quests/QuestTable';
+import { ArrowLeftIcon, ArrowRightIcon } from '../../user-interface/Icons';
 
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -33,6 +34,48 @@ const ManageQuestsPage: React.FC = () => {
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+
+    const scrollContainerRef = useRef<HTMLElement>(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(false);
+
+    const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
+
+    const checkArrows = useCallback(() => {
+        const el = scrollContainerRef.current;
+        if (el) {
+            const hasOverflow = el.scrollWidth > el.clientWidth;
+            setShowLeftArrow(hasOverflow && el.scrollLeft > 5);
+            setShowRightArrow(hasOverflow && el.scrollLeft < el.scrollWidth - el.clientWidth - 5);
+        }
+    }, []);
+
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (container) {
+            checkArrows();
+            container.addEventListener('scroll', checkArrows, { passive: true });
+            const resizeObserver = new ResizeObserver(checkArrows);
+            resizeObserver.observe(container);
+
+            return () => {
+                container.removeEventListener('scroll', checkArrows);
+                resizeObserver.disconnect();
+            };
+        }
+    }, [tabs, checkArrows]);
+
+    const handleScroll = (direction: 'left' | 'right') => {
+        const container = scrollContainerRef.current;
+        if (container) {
+            const scrollAmount = container.clientWidth * 0.75;
+            container.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth',
+            });
+        }
+    };
+
 
     const pageQuests = useMemo(() => {
         const group = questGroups.find(g => g.name === activeTab);
@@ -71,8 +114,6 @@ const ManageQuestsPage: React.FC = () => {
         
         return filtered;
     }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups, typeFilter, statusFilter]);
-
-    const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
     
     useEffect(() => {
         setSelectedQuests([]);
@@ -150,22 +191,34 @@ const ManageQuestsPage: React.FC = () => {
                 title={`All Created ${settings.terminology.tasks}`}
                 headerAction={headerActions}
             >
-                <div className="border-b border-stone-700 mb-4">
-                    <nav className="-mb-px flex space-x-4 overflow-x-auto">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                data-log-id={`manage-quests-tab-${tab.toLowerCase().replace(' ', '-')}`}
-                                className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                    activeTab === tab
-                                    ? 'border-emerald-500 text-emerald-400'
-                                    : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
-                                }`}>
-                                {tab}
-                            </button>
-                        ))}
-                    </nav>
+                <div className="border-b border-stone-700 mb-4 flex items-center gap-2">
+                    {showLeftArrow && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full flex-shrink-0" onClick={() => handleScroll('left')} aria-label="Scroll left">
+                            <ArrowLeftIcon className="w-5 h-5" />
+                        </Button>
+                    )}
+                    <div className="flex-grow overflow-hidden">
+                        <nav ref={scrollContainerRef} className="-mb-px flex space-x-4 overflow-x-auto scrollbar-hide">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    data-log-id={`manage-quests-tab-${tab.toLowerCase().replace(' ', '-')}`}
+                                    className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                        activeTab === tab
+                                        ? 'border-emerald-500 text-emerald-400'
+                                        : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
+                                    }`}>
+                                    {tab}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+                    {showRightArrow && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full flex-shrink-0" onClick={() => handleScroll('right')} aria-label="Scroll right">
+                            <ArrowRightIcon className="w-5 h-5" />
+                        </Button>
+                    )}
                 </div>
 
                 <div className="space-y-4 mb-4">

@@ -174,12 +174,20 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         updateTheme: (data) => apiAction(() => updateThemeAPI(data)),
         deleteTheme: (id) => apiAction(() => deleteThemeAPI(id)),
         updateSettings: (settings) => apiAction(() => updateSettingsAPI(settings), 'Settings saved!'),
-        resetSettings: () => apiAction(() => resetSettingsAPI()),
-        applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI()),
-        clearAllHistory: () => apiAction(() => clearAllHistoryAPI()),
-        resetAllPlayerData: (includeAdmins) => apiAction(() => resetAllPlayerDataAPI(includeAdmins)),
-        deleteAllCustomContent: () => apiAction(() => deleteAllCustomContentAPI()),
-        factoryReset: () => apiAction(() => factoryResetAPI()),
+        resetSettings: () => apiAction(() => resetSettingsAPI(), 'All application settings have been reset to their defaults.'),
+        applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI(), 'Feature updates applied successfully. New default settings have been merged.'),
+        clearAllHistory: () => apiAction(() => clearAllHistoryAPI(), 'All historical records have been permanently deleted.'),
+        resetAllPlayerData: (includeAdmins) => apiAction(() => resetAllPlayerDataAPI(includeAdmins), 'Player data has been reset for selected users.'),
+        deleteAllCustomContent: () => apiAction(() => deleteAllCustomContentAPI(), 'All custom content has been deleted.'),
+        factoryReset: async () => {
+            const result = await apiAction(() => factoryResetAPI(), "Factory reset complete. The application will now reload to the setup wizard.");
+            if (result === null) {
+                setTimeout(() => {
+                    localStorage.clear();
+                    window.location.reload();
+                }, 2000);
+            }
+        },
         addSystemNotification: (data) => apiAction(() => addSystemNotificationAPI(data)),
         markSystemNotificationsAsRead: (ids, userId) => apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)),
         addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
@@ -235,7 +243,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (!currentUser) return;
             await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
         },
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, createAddAction, createUpdateAction]);
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

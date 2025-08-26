@@ -181,13 +181,27 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                         </div>
                         <Input as="textarea" label="Description" value={formData.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(p => ({ ...p, description: e.target.value }))} rows={2} />
 
-                        {/* --- Section 2: Selections (Quests & Users) --- */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[400px]">
-                            {/* Left Column: Quest Selection */}
-                            <div className="flex flex-col space-y-4 h-full">
-                                <div>
-                                    <h3 className="text-sm font-medium text-stone-300 mb-1">Quest Groups ({questGroups.length})</h3>
-                                    <div className="p-2 border border-stone-600 rounded-md h-40 overflow-y-auto grid grid-cols-1 xl:grid-cols-2 gap-2">
+                        {/* --- Section 2: Users in Rotation --- */}
+                        <div className="space-y-2">
+                            <h3 className="text-lg font-semibold text-stone-200">Users in Rotation ({formData.userIds.length} selected)</h3>
+                            <div className="p-2 border border-stone-600 rounded-md max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                {users.map(user => (
+                                    <label key={user.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-700/50 cursor-pointer">
+                                        <input type="checkbox" checked={formData.userIds.includes(user.id)} onChange={() => handleToggleSelection('userIds', user.id)} />
+                                        <span>{user.gameName}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* --- Section 3: Quests Selection --- */}
+                        <div className="pt-6 border-t border-stone-700/60">
+                            <h3 className="text-lg font-semibold text-stone-200 mb-2">Quests to Rotate ({formData.questIds.length} selected)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[400px]">
+                                {/* Left Column: Quest Group Selection */}
+                                <div className="flex flex-col h-full">
+                                    <h3 className="text-sm font-medium text-stone-300 mb-1">Quest Groups</h3>
+                                    <div className="p-2 border border-stone-600 rounded-md h-full overflow-y-auto grid grid-cols-1 gap-2">
                                         {questGroups.map(group => {
                                             const questsInGroup = quests.filter(q => q.groupId === group.id);
                                             return (
@@ -202,10 +216,11 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                                         })}
                                     </div>
                                 </div>
-                                <div className="flex-grow flex flex-col min-h-0">
-                                    <h3 className="text-sm font-medium text-stone-300 mb-1">Quests to Rotate ({formData.questIds.length} selected)</h3>
+                                {/* Right Column: Individual Quest Selection */}
+                                <div className="flex flex-col h-full min-h-0">
+                                    <h3 className="text-sm font-medium text-stone-300 mb-1">Individual Quests</h3>
                                     <Input placeholder="Search quests..." value={questSearchTerm} onChange={e => setQuestSearchTerm(e.target.value)} className="mb-2"/>
-                                    <div className="p-2 border border-stone-600 rounded-md flex-grow overflow-y-auto grid grid-cols-1 xl:grid-cols-2 gap-2">
+                                    <div className="p-2 border border-stone-600 rounded-md flex-grow overflow-y-auto grid grid-cols-1 gap-2">
                                         {filteredQuests.map(quest => (
                                             <RotationQuestCard
                                                 key={quest.id}
@@ -217,21 +232,9 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                                     </div>
                                 </div>
                             </div>
-                             {/* Right Column: User Selection */}
-                             <div className="flex flex-col h-full">
-                                <h3 className="text-sm font-medium text-stone-300 mb-1">Users in Rotation ({formData.userIds.length} selected)</h3>
-                                <div className="p-2 border border-stone-600 rounded-md h-full overflow-y-auto">
-                                    {users.map(user => (
-                                        <label key={user.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-700/50 cursor-pointer">
-                                            <input type="checkbox" checked={formData.userIds.includes(user.id)} onChange={() => handleToggleSelection('userIds', user.id)} />
-                                            <span>{user.gameName}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
 
-                        {/* --- Section 3: Scheduling & Preview --- */}
+                        {/* --- Section 4: Scheduling & Preview --- */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-stone-700/60">
                             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="space-y-4">

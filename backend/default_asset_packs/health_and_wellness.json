@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.healthandwellness.v1",
@@ -15,6 +16,7 @@
         "title": "The Morning Ritual",
         "description": "Brush your teeth and wash your face before breakfast.",
         "type": "Duty",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🦷",
         "tags": [
@@ -51,6 +53,7 @@
         "title": "The Evening Ritual",
         "description": "Brush and floss your teeth before bed.",
         "type": "Duty",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌙",
         "tags": [
@@ -87,6 +90,7 @@
         "title": "Adventurer's Endurance",
         "description": "Spend at least 30 minutes doing a physical activity like playing outside, riding a bike, or dancing.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🏃",
         "tags": [
@@ -127,6 +131,7 @@
         "title": "Hydration Hero",
         "description": "Drink a full glass of water with every meal.",
         "type": "Duty",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💧",
         "tags": [

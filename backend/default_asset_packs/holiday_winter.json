@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.holiday.winter.v1",
@@ -15,72 +16,78 @@
         "title": "Decorate the Great Hall",
         "description": "Help hang decorations for the winter festival.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "✨",
         "rewards": [{ "rewardTypeId": "core-creative", "amount": 30 }],
         "tags": ["holiday", "decorating"],
         "isActive": true, "isOptional": true, "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "wq2",
         "title": "Shovel the Path",
         "description": "Clear a walkway of snow for safe passage.",
         "type": "Duty",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "❄️",
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 20 }],
         "tags": ["holiday", "yardwork"],
         "isActive": true, "isOptional": false, "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
       },
       {
         "id": "wq3",
         "title": "Bake Festive Treats",
         "description": "Help bake cookies or other treats for the festival.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🍪",
         "rewards": [{ "rewardTypeId": "core-creative", "amount": 25 }],
         "tags": ["holiday", "baking"],
         "isActive": true, "isOptional": true, "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "wq4",
         "title": "Wrap a Gift",
         "description": "Carefully wrap a gift for someone.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🎁",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
         "tags": ["holiday", "gifting"],
         "isActive": true, "isOptional": true, "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "wq5",
         "title": "Caroling Practice",
         "description": "Sing a festive song for the family.",
         "type": "Duty",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🎶",
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }],
         "tags": ["holiday", "music"],
         "isActive": true, "isOptional": true, "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
       },
       {
         "id": "wq6",
         "title": "Write a Thank You Note",
         "description": "Write a note expressing gratitude for a gift or kind act.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💌",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
         "tags": ["holiday", "writing"],
         "isActive": true, "isOptional": true, "requiresApproval": true,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       }
     ]
   }

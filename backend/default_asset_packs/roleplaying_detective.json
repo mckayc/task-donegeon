@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.roleplaying.detective.v1",
@@ -15,36 +16,39 @@
         "title": "The Case of the Missing Sock",
         "description": "A lone sock has been found, its partner vanished without a trace! Your mission, should you choose to accept it, is to search the laundry piles and restore order by finding its match.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧦",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
         "tags": ["mystery", "household"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "rdq2",
         "title": "Gather Fingerprints",
         "description": "The sock case is cold, but new evidence is needed. Help dust a room for 'fingerprints' (as part of a normal cleaning) to see who the culprit might be.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🖐️",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
         "tags": ["mystery", "cleaning"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "rdq3",
         "title": "Interview a Witness",
         "description": "You have a suspect! Ask a family member three questions about their day and listen carefully to their alibi.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🗣️",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
         "tags": ["mystery", "social"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       }
     ]
   }

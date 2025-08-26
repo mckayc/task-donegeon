@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.default.ventures.household.v1",
@@ -15,6 +16,7 @@
         "title": "Sanctuary Cleanup",
         "description": "Tidy up your personal room. Put away clothes, toys, and trash.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "✨",
         "tags": ["Cleaning", "Household", "Organization"],
@@ -23,13 +25,14 @@
         "isOptional": false,
         "groupId": "qg-household",
         "requiresApproval": true,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-2",
         "title": "Sous Chef Duty",
         "description": "Help a parent prepare, cook, or set the table for dinner.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧑‍🍳",
         "tags": ["Kitchen", "Helping", "Family Time"],
@@ -38,13 +41,14 @@
         "isOptional": true,
         "groupId": "qg-household",
         "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-3",
         "title": "Bathroom Blitz",
         "description": "Clean one bathroom: wipe the counter, clean the mirror, and scrub the toilet.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🚽",
         "tags": ["Cleaning", "Household"],
@@ -53,13 +57,14 @@
         "isOptional": false,
         "groupId": "qg-household",
         "requiresApproval": true,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-4",
         "title": "Carpet Crusade",
         "description": "Vacuum the entire floor of one designated room.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌪️",
         "tags": ["Cleaning", "Household"],
@@ -68,13 +73,14 @@
         "isOptional": true,
         "groupId": "qg-household",
         "requiresApproval": true,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-5",
         "title": "Garbage Disposal Run",
         "description": "Gather all the trash from the bins inside and take it to the main outdoor bin.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🗑️",
         "tags": ["Household", "Cleaning"],
@@ -83,13 +89,14 @@
         "isOptional": false,
         "groupId": "qg-household",
         "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-6",
         "title": "Dust Devil",
         "description": "Dust all the surfaces in one room (e.g., living room, bedroom).",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💨",
         "tags": ["Cleaning", "Household"],
@@ -98,13 +105,14 @@
         "isOptional": true,
         "groupId": "qg-household",
         "requiresApproval": true,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-7",
         "title": "Plant Whisperer",
         "description": "Water all the indoor plants.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🪴",
         "tags": ["Household", "Plants"],
@@ -113,13 +121,14 @@
         "isOptional": true,
         "groupId": "qg-household",
         "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-8",
         "title": "Groceries Unpacker",
         "description": "Help unpack the groceries and put everything away in its proper place.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🛍️",
         "tags": ["Kitchen", "Household", "Helping"],
@@ -128,13 +137,14 @@
         "isOptional": true,
         "groupId": "qg-household",
         "requiresApproval": false,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-9",
         "title": "Gratitude Scribe",
         "description": "Write a thank-you note or draw a picture for someone who did something nice for you.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💌",
         "tags": ["Kindness", "Family Time", "Creative"],
@@ -143,13 +153,14 @@
         "isOptional": true,
         "groupId": "qg-kindness",
         "requiresApproval": true,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "default-venture-10",
         "title": "Toy Bin Tamer",
         "description": "Completely organize one bookshelf, toy bin, or drawer.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧸",
         "tags": ["Organization", "Household", "Cleaning"],
@@ -158,7 +169,7 @@
         "isOptional": true,
         "groupId": "qg-household",
         "requiresApproval": true,
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       }
     ]
   }

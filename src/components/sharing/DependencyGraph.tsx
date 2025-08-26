@@ -40,7 +40,7 @@ const buildDependencyGraph = (pack: AssetPack): Node[] => {
             type: 'Market',
             icon: market.icon,
             contains: gameAssets
-                .filter(ga => ga.marketIds.includes(market.id))
+                .filter(ga => ga.marketIds && ga.marketIds.includes(market.id))
                 .map(ga => ({ id: ga.id, name: ga.name, type: 'Item', icon: ga.icon || '📦' })),
             requires: [],
         });
@@ -49,7 +49,9 @@ const buildDependencyGraph = (pack: AssetPack): Node[] => {
     // Process GameAssets
     gameAssets.forEach(ga => {
         const requiredRewards = new Set<string>();
-        ga.costGroups.forEach(group => group.forEach(cost => requiredRewards.add(cost.rewardTypeId)));
+        if (ga.costGroups) {
+          ga.costGroups.forEach(group => group.forEach(cost => requiredRewards.add(cost.rewardTypeId)));
+        }
         
         nodes.push({
             id: ga.id,
@@ -67,9 +69,9 @@ const buildDependencyGraph = (pack: AssetPack): Node[] => {
     // Process Quests
     quests.forEach(quest => {
         const requiredRewards = new Set<string>();
-        quest.rewards.forEach(r => requiredRewards.add(r.rewardTypeId));
-        quest.lateSetbacks.forEach(s => requiredRewards.add(s.rewardTypeId));
-        quest.incompleteSetbacks.forEach(s => requiredRewards.add(s.rewardTypeId));
+        if (quest.rewards) quest.rewards.forEach(r => requiredRewards.add(r.rewardTypeId));
+        if (quest.lateSetbacks) quest.lateSetbacks.forEach(s => requiredRewards.add(s.rewardTypeId));
+        if (quest.incompleteSetbacks) quest.incompleteSetbacks.forEach(s => requiredRewards.add(s.rewardTypeId));
         
         nodes.push({
             id: quest.id,
@@ -87,16 +89,18 @@ const buildDependencyGraph = (pack: AssetPack): Node[] => {
      // Process Trophies
     trophies.forEach(trophy => {
         const requirements = new Set<{id: string, name: string, type: string, icon: string}>();
-        trophy.requirements.forEach(req => {
-            if (req.type === TrophyRequirementType.AchieveRank) {
-                const rank = findRank(req.value);
-                if (rank) requirements.add({ id: rank.id, name: rank.name, type: 'Rank', icon: rank.icon });
-            }
-            if (req.type === TrophyRequirementType.QuestCompleted) {
-                const quest = findQuest(req.value);
-                if(quest) requirements.add({ id: quest.id, name: quest.title, type: 'Quest', icon: quest.icon });
-            }
-        });
+        if (trophy.requirements) {
+            trophy.requirements.forEach(req => {
+                if (req.type === TrophyRequirementType.AchieveRank) {
+                    const rank = findRank(req.value);
+                    if (rank) requirements.add({ id: rank.id, name: rank.name, type: 'Rank', icon: rank.icon });
+                }
+                if (req.type === TrophyRequirementType.QuestCompleted) {
+                    const quest = findQuest(req.value);
+                    if(quest) requirements.add({ id: quest.id, name: quest.title, type: 'Quest', icon: quest.icon });
+                }
+            });
+        }
 
         nodes.push({
             id: trophy.id,

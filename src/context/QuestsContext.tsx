@@ -153,7 +153,6 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {
-            // FIX: The API call requires the actorId (currentUser.id) as a second argument.
             if (!currentUser) {
                 addNotification({ type: 'error', message: 'You must be logged in to perform this action.' });
                 return;

@@ -32,7 +32,9 @@ const initialState: CommunityState = {
 const communityReducer = (state: CommunityState, action: CommunityAction): CommunityState => {
     switch (action.type) {
         case 'SET_COMMUNITY_DATA':
-            return { ...state, ...action.payload };
+            return {
+                guilds: action.payload.guilds || [],
+            };
         case 'UPDATE_COMMUNITY_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {

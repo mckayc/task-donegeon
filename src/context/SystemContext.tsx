@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
@@ -89,7 +90,20 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
         case 'SET_AI_CONFIGURED':
             return { ...state, isAiConfigured: action.payload };
         case 'SET_SYSTEM_DATA':
-            return { ...state, ...action.payload };
+            return {
+                ...state,
+                settings: action.payload.settings || state.settings,
+                themes: action.payload.themes || [],
+                systemLogs: action.payload.systemLogs || [],
+                adminAdjustments: action.payload.adminAdjustments || [],
+                systemNotifications: action.payload.systemNotifications || [],
+                scheduledEvents: action.payload.scheduledEvents || [],
+                chatMessages: action.payload.chatMessages || [],
+                bugReports: action.payload.bugReports || [],
+                modifierDefinitions: action.payload.modifierDefinitions || [],
+                appliedModifiers: action.payload.appliedModifiers || [],
+                chronicleEvents: action.payload.chronicleEvents || [],
+            };
         case 'UPDATE_SYSTEM_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {

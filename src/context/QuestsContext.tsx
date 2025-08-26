@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -67,7 +68,13 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
 
     switch (action.type) {
         case 'SET_QUESTS_DATA':
-            newState = { ...initialState, ...action.payload };
+            newState = {
+                quests: action.payload.quests || [],
+                questGroups: action.payload.questGroups || [],
+                questCompletions: action.payload.questCompletions || [],
+                rotations: action.payload.rotations || [],
+                allTags: [], // will be derived later
+            };
             break;
         case 'UPDATE_QUESTS_DATA': {
             const updatedState = { ...state };

@@ -119,7 +119,7 @@ export const markSystemNotificationsAsReadAPI = (ids: string[], userId: string) 
 export const addScheduledEventAPI = (data: Omit<ScheduledEvent, 'id'>) => apiRequest('POST', '/api/events', data);
 export const updateScheduledEventAPI = (data: ScheduledEvent) => apiRequest('PUT', `/api/events/${data.id}`, data);
 export const deleteScheduledEventAPI = (id: string) => apiRequest('DELETE', `/api/events/${id}`);
-export const importAssetPackAPI = (pack: AssetPack, resolutions: ImportResolution[]) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions });
+export const importAssetPackAPI = (pack: AssetPack, resolutions: ImportResolution[], userIdsToAssign?: string[]) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions, userIdsToAssign });
 export const addBugReportAPI = (data: Partial<BugReport>) => apiRequest('POST', '/api/bug-reports', data);
 export const updateBugReportAPI = (id: string, updates: Partial<BugReport>) => apiRequest('PUT', `/api/bug-reports/${id}`, updates);
 export const deleteBugReportsAPI = (ids: string[]) => apiRequest('DELETE', '/api/bug-reports', { ids });

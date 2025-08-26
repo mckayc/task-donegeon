@@ -1,4 +1,5 @@
 
+
 const { dataSource, ensureDatabaseDirectoryExists } = require('../data-source');
 const fs = require('fs').promises;
 const { In, MoreThan, IsNull, Not } = require("typeorm");
@@ -388,7 +389,7 @@ const resetSettings = async () => {
     await settingService.update(INITIAL_SETTINGS);
 };
 
-const importAssetPack = async (assetPack, resolutions) => {
+const importAssetPack = async (assetPack, resolutions, userIdsToAssign) => {
     return await dataSource.transaction(async manager => {
         const idMap = new Map();
 
@@ -409,10 +410,26 @@ const importAssetPack = async (assetPack, resolutions) => {
                     else if ('name' in newAssetData) newAssetData.name = resolution.newName;
                 }
                 
-                if(assetType === 'quests' && newAssetData.rewards) {
-                    newAssetData.rewards = newAssetData.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
-                    newAssetData.lateSetbacks = (newAssetData.lateSetbacks || []).map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
-                    newAssetData.incompleteSetbacks = (newAssetData.incompleteSetbacks || []).map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+                if(assetType === 'quests') {
+                    if (userIdsToAssign !== undefined) {
+                        if (userIdsToAssign.length > 0) {
+                            newAssetData.assignedUsers = await manager.findBy(UserEntity, { id: In(userIdsToAssign) });
+                        } else {
+                            newAssetData.assignedUsers = [];
+                        }
+                    } else { // Not passed, so respect the pack's data (for blueprints)
+                        if (asset.assignedUserIds && asset.assignedUserIds.length > 0) {
+                            newAssetData.assignedUsers = await manager.findBy(UserEntity, { id: In(asset.assignedUserIds) });
+                        } else {
+                            newAssetData.assignedUsers = [];
+                        }
+                    }
+                    delete newAssetData.assignedUserIds;
+
+                    // Remap dependencies
+                    if(newAssetData.rewards) newAssetData.rewards = newAssetData.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+                    if(newAssetData.lateSetbacks) newAssetData.lateSetbacks = (newAssetData.lateSetbacks || []).map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+                    if(newAssetData.incompleteSetbacks) newAssetData.incompleteSetbacks = (newAssetData.incompleteSetbacks || []).map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
                     if (newAssetData.groupId) newAssetData.groupId = idMap.get(newAssetData.groupId) || newAssetData.groupId;
                 }
                 if(assetType === 'gameAssets' && newAssetData.costGroups) {
@@ -451,7 +468,7 @@ const importAssetPack = async (assetPack, resolutions) => {
 
                 const newUser = {
                     ...userTemplate,
-                    id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    id: `user-${Date.now()}`,
                     avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
                     guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false
                 };

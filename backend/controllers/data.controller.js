@@ -1,4 +1,5 @@
 
+
 const { updateEmitter } = require('../utils/updateEmitter');
 const systemService = require('../services/system.service');
 const { asyncMiddleware } = require('../utils/helpers');
@@ -100,8 +101,8 @@ const resetSettings = async (req, res) => {
 };
 
 const importAssets = async (req, res) => {
-    const { assetPack, resolutions } = req.body;
-    await systemService.importAssetPack(assetPack, resolutions);
+    const { assetPack, resolutions, userIdsToAssign } = req.body;
+    await systemService.importAssetPack(assetPack, resolutions, userIdsToAssign);
     res.status(204).send();
 };
 

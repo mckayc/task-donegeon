@@ -47,7 +47,7 @@ export interface SystemDispatch {
   addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | null>;
   updateScheduledEvent: (eventData: ScheduledEvent) => Promise<ScheduledEvent | null>;
   deleteScheduledEvent: (eventId: string) => Promise<void>;
-  importAssetPack: (pack: any, resolutions: any) => Promise<void>;
+  importAssetPack: (pack: any, resolutions: any, userIdsToAssign?: string[]) => Promise<void>;
   addBugReport: (reportData: Partial<BugReport>) => Promise<void>;
   updateBugReport: (reportId: string, updates: Partial<BugReport>) => Promise<BugReport | null>;
   deleteBugReports: (reportIds: string[]) => Promise<void>;
@@ -193,7 +193,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
         updateScheduledEvent: (data) => apiAction(() => updateScheduledEventAPI(data)),
         deleteScheduledEvent: (id) => apiAction(() => deleteScheduledEventAPI(id)),
-        importAssetPack: (pack, resolutions) => apiAction(() => importAssetPackAPI(pack, resolutions)),
+        importAssetPack: (pack, resolutions, userIdsToAssign) => apiAction(() => importAssetPackAPI(pack, resolutions, userIdsToAssign), 'Asset pack imported successfully!'),
         addBugReport: async (report) => {
             await apiAction(() => addBugReportAPI(report));
         },

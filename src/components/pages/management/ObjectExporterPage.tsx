@@ -7,7 +7,7 @@ import { useAuthState } from '../../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
+import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useEconomyState } from '../../../context/EconomyContext';
 import { useProgressionState } from '../../../context/ProgressionContext';
@@ -49,8 +49,8 @@ const ObjectExporterPage: React.FC = () => {
         reader.readAsText(file);
     };
     
-    const handleConfirmImport = (pack: AssetPack, resolutions: ImportResolution[]) => {
-        importAssetPack(pack, resolutions);
+    const handleConfirmImport = (pack: AssetPack, resolutions: ImportResolution[], userIds?: string[]) => {
+        importAssetPack(pack, resolutions, userIds);
         setAssetPackToPreview(null);
         setInitialResolutions([]);
     };
@@ -70,11 +70,12 @@ const ObjectExporterPage: React.FC = () => {
             </Card>
 
             {assetPackToPreview && (
-                <BlueprintPreviewDialog
+                <AssetPackInstallDialog
                     assetPack={assetPackToPreview}
                     initialResolutions={initialResolutions}
                     onClose={() => setAssetPackToPreview(null)}
                     onConfirm={handleConfirmImport}
+                    allowUserAssignment={false}
                 />
             )}
         </div>

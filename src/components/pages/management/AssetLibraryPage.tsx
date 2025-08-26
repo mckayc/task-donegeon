@@ -134,8 +134,8 @@ const AssetLibraryPage: React.FC = () => {
         });
     };
 
-    const handleConfirmImport = async (pack: AssetPack, res: ImportResolution[]) => {
-        await importAssetPack(pack, res);
+    const handleConfirmImport = async (pack: AssetPack, res: ImportResolution[], userIdsToAssign?: string[]) => {
+        await importAssetPack(pack, res, userIdsToAssign);
         setPackToInstall(null);
         setResolutions([]);
     };
@@ -234,6 +234,7 @@ const AssetLibraryPage: React.FC = () => {
                     initialResolutions={resolutions}
                     onClose={() => setPackToInstall(null)}
                     onConfirm={handleConfirmImport}
+                    allowUserAssignment={true}
                 />
             )}
         </div>

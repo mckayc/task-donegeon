@@ -34,27 +34,43 @@ const PREDEFINED_CATEGORIES = [
     'Armor (Cosmetic)', 'Consumable', 'Real-World Reward', 'Trophy Display', 'Miscellaneous'
 ];
 
+type FormData = Omit<GameAsset, 'id' | 'creatorId' | 'purchaseCount' | 'createdAt' | 'updatedAt'> & {
+  id?: string;
+  creatorId?: string;
+  createdAt?: string;
+  // Explicitly type these to avoid 'never[]' inference on empty arrays
+  costGroups: RewardItem[][];
+  payouts: RewardItem[];
+  marketIds: string[];
+  allowExchange: boolean;
+};
+
+
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { uploadFile } = useSystemDispatch();
   const { addGameAsset, updateGameAsset } = useEconomyDispatch();
   const { addNotification } = useNotificationsDispatch();
   const { markets, rewardTypes } = useEconomyState();
 
-  const getInitialFormData = useCallback(() => {
+  const getInitialFormData = useCallback((): FormData => {
     // Base structure for a new asset
-    const baseData = {
+    const baseData: FormData = {
         name: '', description: '', imageUrl: '', category: 'Avatar', avatarSlot: '',
-        isForSale: false, requiresApproval: false, costGroups: [[]] as RewardItem[][],
-        payouts: [] as RewardItem[], marketIds: [] as string[], purchaseLimit: null,
-        purchaseLimitType: 'Total' as 'Total' | 'PerUser', purchaseCount: 0, allowExchange: false,
-        iconType: 'emoji' as 'emoji' | 'image', icon: '📦',
+        isForSale: false, requiresApproval: false, 
+        costGroups: [],
+        payouts: [],
+        marketIds: [],
+        purchaseLimit: null,
+        purchaseLimitType: 'Total', 
+        allowExchange: false,
+        iconType: 'emoji', 
+        icon: '📦',
     };
 
     if (mode === 'edit' && assetToEdit) {
         return {
             ...baseData, // start with base to ensure all fields are present
             ...assetToEdit,
-            imageUrl: assetToEdit.imageUrl || '',
             costGroups: assetToEdit.costGroups && assetToEdit.costGroups.length > 0 ? assetToEdit.costGroups.map(group => [...group]) : [[]],
             payouts: assetToEdit.payouts ? [...assetToEdit.payouts] : [],
             marketIds: [...(assetToEdit.marketIds || [])],
@@ -92,7 +108,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     return baseData;
   }, [assetToEdit, initialData, mode]);
   
-  const [formData, setFormData] = useState(getInitialFormData);
+  const [formData, setFormData] = useState<FormData>(getInitialFormData());
   const [limitTypeOption, setLimitTypeOption] = useState<'unlimited' | 'total' | 'perUser'>('unlimited');
   const [customCategory, setCustomCategory] = useState('');
   const [error, setError] = useState('');
@@ -208,7 +224,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     } else if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
-      const { purchaseCount, ...payloadForAdd } = finalPayload;
+      const { ...payloadForAdd } = finalPayload;
       addGameAsset({ ...payloadForAdd, createdAt: new Date().toISOString() });
     }
     onClose();

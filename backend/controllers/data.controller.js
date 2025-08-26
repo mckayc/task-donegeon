@@ -99,12 +99,6 @@ const resetSettings = async (req, res) => {
     res.status(204).send();
 };
 
-const importAssets = async (req, res) => {
-    const { assetPack, resolutions } = req.body;
-    await systemService.importAssetPack(assetPack, resolutions);
-    res.status(204).send();
-};
-
 module.exports = {
     handleSse,
     syncData: asyncMiddleware(syncData),
@@ -116,5 +110,4 @@ module.exports = {
     factoryReset: asyncMiddleware(factoryReset),
     getChronicles: asyncMiddleware(getChronicles),
     resetSettings: asyncMiddleware(resetSettings),
-    importAssets: asyncMiddleware(importAssets),
 };

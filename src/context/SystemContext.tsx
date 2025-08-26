@@ -39,7 +39,7 @@ export interface SystemDispatch {
   resetSettings: () => Promise<void>;
   applySettingsUpdates: () => Promise<void>;
   clearAllHistory: () => Promise<void>;
-  resetAllPlayerData: () => Promise<void>;
+  resetAllPlayerData: (includeAdmins: boolean) => Promise<void>;
   deleteAllCustomContent: () => Promise<void>;
   factoryReset: () => Promise<void>;
   addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<SystemNotification | null>;
@@ -177,7 +177,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         resetSettings: () => apiAction(() => resetSettingsAPI()),
         applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI()),
         clearAllHistory: () => apiAction(() => clearAllHistoryAPI()),
-        resetAllPlayerData: () => apiAction(() => resetAllPlayerDataAPI()),
+        resetAllPlayerData: (includeAdmins) => apiAction(() => resetAllPlayerDataAPI(includeAdmins)),
         deleteAllCustomContent: () => apiAction(() => deleteAllCustomContentAPI()),
         factoryReset: () => apiAction(() => factoryResetAPI()),
         addSystemNotification: (data) => apiAction(() => addSystemNotificationAPI(data)),

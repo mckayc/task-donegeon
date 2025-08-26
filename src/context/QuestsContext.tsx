@@ -6,7 +6,8 @@ import {
     completeQuestAPI, approveQuestCompletionAPI, rejectQuestCompletionAPI, 
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI, runRotationAPI,
-    completeCheckpointAPI
+    completeCheckpointAPI,
+    deleteSelectedAssetsAPI
 } from '../api';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
@@ -33,6 +34,7 @@ export interface QuestsDispatch {
   cloneQuest: (questId: string) => Promise<Quest | null>;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void>;
   bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
+  deleteQuests: (questIds: string[]) => Promise<void>;
   completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
   approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void>;
   rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void>;
@@ -150,6 +152,16 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         updateQuestsStatus: (ids, isActive) => apiAction(() => updateQuestsStatusAPI(ids, isActive)),
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
+        deleteQuests: async (questIds) => {
+            try {
+                await deleteSelectedAssetsAPI({ quests: questIds });
+                dispatch({ type: 'REMOVE_QUESTS_DATA', payload: { quests: questIds }});
+                addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` });
+            } catch (error) {
+                addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete quests.' });
+            }
+        },
+
         completeQuest: async (completionData) => {
             const result = await apiAction(() => completeQuestAPI(completionData));
             if (result) {

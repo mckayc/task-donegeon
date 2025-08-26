@@ -204,8 +204,9 @@ const ChroniclesPage: React.FC = () => {
                                     
                                     {/* Column 3: Status & Date */}
                                     <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
-                                        <div className={`font-semibold flex items-center justify-end gap-2 ${statusColor(activity.status)}`}>
-                                            <span>{activity.status}</span>
+                                        <div className="font-semibold flex items-center justify-end gap-2">
+                                            {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
+                                            <span className={statusColor(activity.status)}>{activity.status}</span>
                                             {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
                                                 <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>
                                                     Cancel

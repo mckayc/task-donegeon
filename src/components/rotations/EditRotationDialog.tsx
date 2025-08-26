@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { Rotation, Quest, User } from '../../types';
@@ -8,6 +7,7 @@ import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import RotationQuestCard from './RotationQuestCard';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import RotationForecastDialog from './RotationForecastDialog';
+import RotationQuestGroupCard from './RotationQuestGroupCard';
 
 interface EditRotationDialogProps {
     rotationToEdit: Rotation | null;
@@ -21,7 +21,7 @@ const WEEKDAYS = [
 
 const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit, onClose }) => {
     const { addRotation, updateRotation } = useQuestsDispatch();
-    const { quests } = useQuestsState();
+    const { quests, questGroups } = useQuestsState();
     const { users } = useAuthState();
 
     const [formData, setFormData] = useState<Omit<Rotation, 'id' | 'createdAt' | 'updatedAt'>>({
@@ -92,6 +92,22 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
         }));
     };
 
+    const handleToggleQuestGroup = (groupId: string) => {
+        const questsInGroup = quests.filter(q => q.groupId === groupId).map(q => q.id);
+        if (questsInGroup.length === 0) return;
+    
+        const selectedQuestIdsSet = new Set(formData.questIds);
+        const areAllSelected = questsInGroup.every(qId => selectedQuestIdsSet.has(qId));
+    
+        if (areAllSelected) {
+            questsInGroup.forEach(qId => selectedQuestIdsSet.delete(qId));
+        } else {
+            questsInGroup.forEach(qId => selectedQuestIdsSet.add(qId));
+        }
+    
+        setFormData(prev => ({ ...prev, questIds: Array.from(selectedQuestIdsSet) }));
+    };
+
     const handleToggleDay = (dayValue: number) => {
          setFormData(prev => ({
             ...prev,
@@ -155,6 +171,24 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                         <div className="space-y-4 overflow-y-auto pr-2 flex flex-col">
                             <Input label="Rotation Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))} required />
                             <Input as="textarea" label="Description" value={formData.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(p => ({ ...p, description: e.target.value }))} />
+                            
+                            <div>
+                                <h3 className="text-sm font-medium text-stone-300 mb-1">Quest Groups ({questGroups.length})</h3>
+                                <div className="p-2 border border-stone-600 rounded-md h-40 overflow-y-auto grid grid-cols-1 xl:grid-cols-2 gap-2">
+                                    {questGroups.map(group => {
+                                        const questsInGroup = quests.filter(q => q.groupId === group.id);
+                                        return (
+                                            <RotationQuestGroupCard
+                                                key={group.id}
+                                                group={group}
+                                                selectedQuestIds={formData.questIds}
+                                                questsInGroup={questsInGroup}
+                                                onToggle={handleToggleQuestGroup}
+                                            />
+                                        )
+                                    })}
+                                </div>
+                            </div>
                             
                             <div className="flex-grow flex flex-col min-h-0">
                                 <h3 className="text-sm font-medium text-stone-300 mb-1">Quests to Rotate ({formData.questIds.length} selected)</h3>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -66,7 +65,7 @@ const ApprovalsPage: React.FC = () => {
                                 </div>
                                  <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-stone-700/60">
                                     <Input 
-                                        placeholder="Add a rejection note (optional)..."
+                                        placeholder="Add a note (optional)..."
                                         value={notes[completion.id] || ''}
                                         onChange={(e) => handleNoteChange(completion.id, e.target.value)}
                                         className="flex-grow"

@@ -11,6 +11,7 @@ import { BugDetailDialog } from './BugDetailDialog';
 import { EllipsisVerticalIcon, PencilIcon, TrashIcon, PlayIcon, CheckCircleIcon, ArchiveBoxIcon, FolderOpenIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 import CreateBugReportDialog from './CreateBugReportDialog';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const BugTrackingPage: React.FC = () => {
     const { bugReports } = useSystemState();
@@ -19,11 +20,14 @@ const BugTrackingPage: React.FC = () => {
     
     const [detailedReportId, setDetailedReportId] = useState<string | null>(null);
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
-    const [activeTab, setActiveTab] = useState<BugReportStatus>('In Progress');
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [importingFileContent, setImportingFileContent] = useState<BugReport[] | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
+    const [activeTab, setActiveTab] = useState<BugReportStatus | 'All'>('All');
 
 
     const detailedReport = useMemo(() => {
@@ -31,15 +35,27 @@ const BugTrackingPage: React.FC = () => {
         return bugReports.find(r => r.id === detailedReportId) || null;
     }, [detailedReportId, bugReports]);
     
-    const statuses: BugReportStatus[] = ['Open', 'In Progress', 'Resolved', 'Closed'];
+    const statuses: (BugReportStatus | 'All')[] = ['All', 'Open', 'In Progress', 'Resolved', 'Closed'];
 
     useEffect(() => {
         setSelectedReports([]);
-    }, [activeTab]);
+    }, [activeTab, debouncedSearchTerm]);
 
     const filteredReports = useMemo(() => {
-        return bugReports.filter(r => r.status === activeTab);
-    }, [bugReports, activeTab]);
+        return bugReports.filter(r => {
+            const statusMatch = activeTab === 'All' || r.status === activeTab;
+            if (!statusMatch) return false;
+
+            const lowercasedTerm = debouncedSearchTerm.toLowerCase();
+            if (lowercasedTerm) {
+                const titleMatch = r.title.toLowerCase().includes(lowercasedTerm);
+                const idMatch = r.id.toLowerCase().includes(lowercasedTerm);
+                const tagsMatch = (r.tags || []).some(tag => tag.toLowerCase().includes(lowercasedTerm));
+                return titleMatch || idMatch || tagsMatch;
+            }
+            return true;
+        });
+    }, [bugReports, activeTab, debouncedSearchTerm]);
 
     const reportIds = useMemo(() => filteredReports.map(r => r.id), [filteredReports]);
     const handleCheckboxClick = useShiftSelect(reportIds, selectedReports, setSelectedReports);
@@ -154,8 +170,8 @@ const BugTrackingPage: React.FC = () => {
                     </div>
                 }
             >
-                 <div className="border-b border-stone-700 mb-6">
-                    <nav className="-mb-px flex space-x-6">
+                 <div className="border-b border-stone-700 mb-6 flex justify-between items-end flex-wrap gap-4">
+                    <nav className="-mb-px flex space-x-6 flex-wrap">
                         {statuses.map(status => (
                             <button
                                 key={status}
@@ -166,10 +182,16 @@ const BugTrackingPage: React.FC = () => {
                                     : 'border-transparent text-stone-400 hover:text-stone-200'
                                 }`}
                             >
-                                {status} ({bugReports.filter(r => r.status === status).length})
+                                {status} ({status === 'All' ? bugReports.length : bugReports.filter(r => r.status === status).length})
                             </button>
                         ))}
                     </nav>
+                     <Input 
+                        placeholder="Search reports..."
+                        value={searchTerm}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                        className="max-w-xs mb-2"
+                    />
                 </div>
 
                  {selectedReports.length > 0 && (
@@ -177,7 +199,7 @@ const BugTrackingPage: React.FC = () => {
                         <span className="font-semibold text-stone-300">{selectedReports.length} selected</span>
                         <Input as="select" label="" value="" onChange={e => handleBulkStatusChange(e.target.value as BugReportStatus)} className="h-9 text-sm w-48">
                             <option value="" disabled>Change status to...</option>
-                             {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                             {statuses.filter(s => s !== 'All').map(s => <option key={s} value={s}>{s}</option>)}
                         </Input>
                          <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedReports)}>Delete</Button>
                     </div>
@@ -257,7 +279,7 @@ const BugTrackingPage: React.FC = () => {
                         </tbody>
                     </table>
                     {filteredReports.length === 0 && (
-                        <p className="text-center text-stone-400 py-8">No reports with status "{activeTab}".</p>
+                        <p className="text-center text-stone-400 py-8">{debouncedSearchTerm ? 'No reports match your search.' : `No reports with status "${activeTab}".`}</p>
                     )}
                 </div>
             </Card>

@@ -35,4 +35,5 @@ export type ChronicleEvent = {
     recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)
     questType?: QuestType;
     guildId?: string; // The scope of the event
+    rewardsText?: string;
 };

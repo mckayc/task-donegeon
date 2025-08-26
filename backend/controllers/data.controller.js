@@ -185,7 +185,8 @@ const clearHistory = async (req, res) => {
 };
 
 const resetPlayers = async (req, res) => {
-    await systemService.resetAllPlayerData(req, res);
+    const { includeAdmins } = req.body;
+    await systemService.resetAllPlayerData(req, res, includeAdmins === true);
 };
 
 const deleteContent = async (req, res) => {
@@ -200,6 +201,10 @@ const getChronicles = async (req, res) => {
     await systemService.getChronicles(req, res);
 };
 
+const resetSettings = async (req, res) => {
+    await systemService.resetSettings(req, res);
+};
+
 module.exports = {
     handleSse,
     syncData,
@@ -210,4 +215,5 @@ module.exports = {
     deleteContent,
     factoryReset,
     getChronicles,
+    resetSettings,
 };

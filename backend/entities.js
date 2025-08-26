@@ -224,6 +224,7 @@ const QuestCompletionEntity = new EntitySchema({
         completedAt: { type: "varchar" },
         status: { type: "varchar" },
         note: { type: "text", nullable: true },
+        adminNote: { type: "text", nullable: true },
         guildId: { type: "varchar", nullable: true },
         actedById: { type: "varchar", nullable: true },
         actedAt: { type: "varchar", nullable: true },

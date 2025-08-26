@@ -40,14 +40,14 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 
 const DangerZoneAction: React.FC<{
     title: string;
-    description: string;
+    description: ReactNode;
     buttonText: string;
     onAction: () => void;
 }> = ({ title, description, buttonText, onAction }) => (
     <div className="p-4 border border-red-700/60 bg-red-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
             <h4 className="font-bold text-red-300">{title}</h4>
-            <p className="text-sm text-stone-300 mt-1 max-w-xl">{description}</p>
+            <div className="text-sm text-stone-300 mt-1 max-w-xl">{description}</div>
         </div>
         <Button onClick={onAction} variant="destructive" className="flex-shrink-0">
             {buttonText}
@@ -141,6 +141,7 @@ export const SettingsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<string | null>(null);
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState<{ general: boolean, chat: boolean }>({ general: false, chat: false });
     const [editingSchedule, setEditingSchedule] = useState<BackupSchedule | null>(null);
+    const [includeAdminsInReset, setIncludeAdminsInReset] = useState(false);
 
     const handleSettingChange = (section: keyof AppSettings, key: any, value: any) => {
         setFormState(prev => {
@@ -174,7 +175,7 @@ export const SettingsPage: React.FC = () => {
             case 'resetSettings': resetSettings(); break;
             case 'applyUpdates': applySettingsUpdates(); break;
             case 'clearHistory': clearAllHistory(); break;
-            case 'resetPlayers': resetAllPlayerData(); break;
+            case 'resetPlayers': resetAllPlayerData(includeAdminsInReset); break;
             case 'deleteContent': deleteAllCustomContent(); break;
             case 'factoryReset': factoryReset(); break;
         }
@@ -366,31 +367,46 @@ export const SettingsPage: React.FC = () => {
                      <div className="p-6 space-y-4">
                          <DangerZoneAction
                             title="Reset All Settings"
-                            description="Reverts all application settings to their defaults. User-created content (quests, items, users) will not be affected."
+                            description={<p>Reverts all application settings to their defaults. User-created content (quests, items, users) will not be affected.</p>}
                             buttonText="Reset Settings"
                             onAction={() => setConfirmation('resetSettings')}
                          />
                          <DangerZoneAction
                             title="Clear All History"
-                            description="Permanently deletes all historical records like quest completions and purchases. User accounts and created content are not affected."
+                            description={<p>Permanently deletes all historical records like quest completions and purchases. User accounts and created content are not affected.</p>}
                             buttonText="Clear History"
                             onAction={() => setConfirmation('clearHistory')}
                          />
                          <DangerZoneAction
                             title="Reset All Player Data"
-                            description="Resets progress for all non-admin users. Their currency, XP, and owned items will be cleared. User accounts will not be deleted."
+                            description={
+                                <div>
+                                    <p>Resets progress for all non-admin users. Their currency, XP, and owned items will be cleared. User accounts will not be deleted.</p>
+                                    <div className="mt-2">
+                                        <label className="flex items-center gap-2 text-sm text-amber-300">
+                                            <input
+                                                type="checkbox"
+                                                checked={includeAdminsInReset}
+                                                onChange={(e) => setIncludeAdminsInReset(e.target.checked)}
+                                                className="h-4 w-4 rounded text-amber-600 bg-stone-700 border-stone-600 focus:ring-amber-500"
+                                            />
+                                            Also reset Admin accounts.
+                                        </label>
+                                    </div>
+                                </div>
+                            }
                             buttonText="Reset Player Data"
                             onAction={() => setConfirmation('resetPlayers')}
                          />
                          <DangerZoneAction
                             title="Delete All Custom Content"
-                            description="Permanently deletes all content you created: quests, items, markets, rewards, ranks, and trophies. User accounts are not affected."
+                            description={<p>Permanently deletes all content you created: quests, items, markets, rewards, ranks, and trophies. User accounts are not affected.</p>}
                             buttonText="Delete Custom Content"
                             onAction={() => setConfirmation('deleteContent')}
                          />
                           <DangerZoneAction
                             title="Factory Reset Application"
-                            description="The ultimate reset. Wipes ALL data (users, quests, settings) and returns the app to its initial setup state. This cannot be undone."
+                            description={<p>The ultimate reset. Wipes ALL data (users, quests, settings) and returns the app to its initial setup state. This cannot be undone.</p>}
                             buttonText="Factory Reset"
                             onAction={() => setConfirmation('factoryReset')}
                          />

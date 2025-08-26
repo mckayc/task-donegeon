@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useEffect, useState, useRef, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -27,7 +28,7 @@ const MainLayout: React.FC = () => {
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
     'Appearance', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
-    'Manage Events', 'Bug Tracker', 'Triumphs & Trials', 'Test Cases'
+    'Manage Events', 'Bug Tracker', 'Triumphs & Trials'
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 

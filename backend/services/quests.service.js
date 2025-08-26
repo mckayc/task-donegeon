@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -222,7 +223,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
             completion.status = 'Approved';
             completion.actedById = approverId;
             completion.actedAt = new Date().toISOString();
-            if (note) completion.note = `${completion.note ? `${completion.note}\n` : ''}Approver note: ${note}`;
+            if (note) completion.adminNote = note;
             
             const updatedCompletion = await manager.save(updateTimestamps(completion));
             
@@ -336,7 +337,7 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
     completion.status = 'Rejected';
     completion.actedById = rejecterId;
     completion.actedAt = new Date().toISOString();
-    if (note) completion.note = `${completion.note ? `${completion.note}\n` : ''}Rejecter: ${note}`;
+    if (note) completion.adminNote = note;
     
     const updatedCompletion = await completionRepo.save(updateTimestamps(completion));
     updateEmitter.emit('update');

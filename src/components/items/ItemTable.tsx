@@ -87,8 +87,13 @@ const ItemTable: React.FC<ItemTableProps> = ({
                                     />
                                 </td>
                                 <td className="p-4">
-                                    <button onClick={() => onPreviewImage(asset.imageUrl || null)} className="w-12 h-12 bg-stone-700/50 rounded-md flex items-center justify-center overflow-hidden">
-                                        <DynamicIcon iconType={asset.iconType} icon={asset.icon} imageUrl={asset.imageUrl} className="w-full h-full object-contain" />
+                                    <button onClick={() => onPreviewImage(asset.imageUrl || null)} className="w-12 h-12 bg-transparent rounded-md flex items-center justify-center overflow-hidden">
+                                        <DynamicIcon
+                                            iconType={asset.iconType}
+                                            icon={asset.icon}
+                                            imageUrl={asset.imageUrl}
+                                            className={asset.iconType === 'image' ? "w-full h-full object-contain" : "text-3xl"}
+                                        />
                                     </button>
                                 </td>
                                 <td className="p-4 font-bold">

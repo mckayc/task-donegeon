@@ -325,7 +325,7 @@ const MarketplacePage: React.FC = () => {
                                                         iconType={market.iconType} 
                                                         icon={market.icon} 
                                                         imageUrl={market.imageUrl} 
-                                                        className="text-[10rem] !leading-none !text-[8rem] group-hover:scale-110 transition-transform duration-200"
+                                                        className="text-7xl leading-none group-hover:scale-110 transition-transform duration-200"
                                                         altText={`${market.title} icon`}
                                                     />
                                                 </div>

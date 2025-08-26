@@ -152,13 +152,13 @@ const Header: React.FC = () => {
             </Button>
         )}
         <div className="relative">
-            <button onClick={() => setProfileDropdownOpen(p => !p)} data-log-id="header-profile-dropdown" className="flex items-center gap-2">
+            <button 
+                onClick={() => setProfileDropdownOpen(p => !p)} 
+                data-log-id="header-profile-dropdown" 
+                className="flex items-center"
+                title={currentUser.gameName}
+            >
                 <Avatar user={currentUser} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600" />
-                <div className="hidden md:block text-left">
-                    <p className="font-semibold text-stone-100">{currentUser.gameName}</p>
-                    <p className="text-xs text-stone-400">{currentUser.role}</p>
-                </div>
-                <ChevronDownIcon className="w-5 h-5 text-stone-400 hidden md:block" />
             </button>
             {profileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">

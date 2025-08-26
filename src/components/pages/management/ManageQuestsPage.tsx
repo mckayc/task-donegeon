@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { useSystemState } from '../../../context/SystemContext';
 import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
 import { Quest, QuestType, QuestGroup } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -15,8 +15,7 @@ import { QuestTable } from '../../quests/QuestTable';
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { quests, questGroups } = useQuestsState();
-    const { deleteSelectedAssets } = useSystemDispatch();
-    const { updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useQuestsDispatch();
+    const { deleteQuests, updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useQuestsDispatch();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -28,7 +27,9 @@ const ManageQuestsPage: React.FC = () => {
     
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'status-asc' | 'status-desc'>('title-asc');
+    const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'status-asc' | 'status-desc' | 'type-asc' | 'type-desc'>('title-asc');
+    const [typeFilter, setTypeFilter] = useState<'All' | QuestType>('All');
+    const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
@@ -46,7 +47,13 @@ const ManageQuestsPage: React.FC = () => {
                 quest.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
                 quest.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
             
-            return groupMatch && searchMatch;
+            const typeMatch = typeFilter === 'All' || quest.type === typeFilter;
+
+            const statusMatch = statusFilter === 'All' || 
+                                (statusFilter === 'Active' && quest.isActive) ||
+                                (statusFilter === 'Inactive' && !quest.isActive);
+            
+            return groupMatch && searchMatch && typeMatch && statusMatch;
         });
 
         filtered.sort((a, b) => {
@@ -54,6 +61,8 @@ const ManageQuestsPage: React.FC = () => {
                 case 'title-desc': return b.title.localeCompare(a.title);
                 case 'status-asc': return (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0);
                 case 'status-desc': return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+                case 'type-asc': return a.type.localeCompare(b.type);
+                case 'type-desc': return b.type.localeCompare(a.type);
                 case 'title-asc': 
                 default: 
                     return a.title.localeCompare(b.title);
@@ -61,13 +70,13 @@ const ManageQuestsPage: React.FC = () => {
         });
         
         return filtered;
-    }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups]);
+    }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups, typeFilter, statusFilter]);
 
     const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
     
     useEffect(() => {
         setSelectedQuests([]);
-    }, [activeTab, searchTerm, sortBy]);
+    }, [activeTab, searchTerm, sortBy, typeFilter, statusFilter]);
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -86,7 +95,7 @@ const ManageQuestsPage: React.FC = () => {
         
         switch(confirmation.action) {
             case 'delete':
-                await deleteSelectedAssets({ quests: confirmation.ids });
+                await deleteQuests(confirmation.ids);
                 break;
             case 'activate':
                 await updateQuestsStatus(confirmation.ids, true);
@@ -160,15 +169,29 @@ const ManageQuestsPage: React.FC = () => {
                 </div>
 
                  <div className="flex flex-wrap gap-4 mb-4">
-                    <Input placeholder="Search quests..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
+                    <Input placeholder="Search quests..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="flex-grow sm:flex-grow-0 sm:max-w-xs" />
                     <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
-                        <option value="title-asc">Title (A-Z)</option>
-                        <option value="title-desc">Title (Z-A)</option>
-                        <option value="status-asc">Status (Inactive first)</option>
-                        <option value="status-desc">Status (Active first)</option>
+                        <option value="title-asc">Sort by Title (A-Z)</option>
+                        <option value="title-desc">Sort by Title (Z-A)</option>
+                        <option value="status-asc">Sort by Status (Inactive first)</option>
+                        <option value="status-desc">Sort by Status (Active first)</option>
+                        <option value="type-asc">Sort by Type (A-Z)</option>
+                        <option value="type-desc">Sort by Type (Z-A)</option>
                     </Input>
+                    <Input as="select" value={typeFilter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTypeFilter(e.target.value as any)}>
+                        <option value="All">All Types</option>
+                        <option value={QuestType.Duty}>{settings.terminology.recurringTask}</option>
+                        <option value={QuestType.Venture}>{settings.terminology.singleTask}</option>
+                        <option value={QuestType.Journey}>{settings.terminology.journey}</option>
+                    </Input>
+                    <Input as="select" value={statusFilter} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as any)}>
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </Input>
+                    
                     {selectedQuests.length > 0 && (
-                        <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
+                        <div className="w-full flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
                             <Button size="sm" variant="secondary" onClick={() => setIsBulkEditDialogOpen(true)} data-log-id="manage-quests-bulk-edit">Bulk Edit</Button>
                             <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })} data-log-id="manage-quests-bulk-activate">Mark Active</Button>

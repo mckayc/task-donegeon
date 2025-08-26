@@ -1,14 +1,177 @@
 
 
 const { dataSource } = require('../data-source');
+const { In, MoreThan, IsNull } = require("typeorm");
 const { 
-    QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
-    UserEntity, QuestEntity, SettingEntity, SystemNotificationEntity
+    UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, SystemNotificationEntity, RewardTypeDefinitionEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
-const { updateTimestamps } = require('../utils/helpers');
+const { getFullAppData, updateTimestamps } = require('../utils/helpers');
 const { INITIAL_SETTINGS } = require('../initialData');
-const { In, IsNull } = require('typeorm');
+const systemService = require('../services/system.service');
+
+
+// === Server-Sent Events Logic ===
+let clients = [];
+
+const handleSse = (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const clientId = Date.now();
+    const newClient = { id: clientId, res };
+    clients.push(newClient);
+    console.log(`[SSE] Client connected: ${clientId}`);
+
+    res.write('data: connected\n\n');
+
+    const heartbeatInterval = setInterval(() => {
+        try {
+            res.write(': heartbeat\n\n');
+        } catch (error) {
+            console.error(`[SSE] Error writing heartbeat to client ${clientId}, closing connection.`);
+            clearInterval(heartbeatInterval);
+            req.socket.end();
+        }
+    }, 20000);
+
+    req.on('close', () => {
+        clearInterval(heartbeatInterval);
+        console.log(`[SSE] Client disconnected: ${clientId}`);
+        clients = clients.filter(client => client.id !== clientId);
+    });
+};
+
+const sendUpdateToClients = () => {
+    console.log(`[SSE] Broadcasting sync event to ${clients.length} client(s).`);
+    clients.forEach(client => {
+        try {
+            client.res.write('data: sync\n\n');
+        } catch (error) {
+            console.error(`[SSE] Error writing to client ${client.id}:`, error.message);
+            // The 'close' event on req will handle cleanup.
+        }
+    });
+};
+
+updateEmitter.on('update', sendUpdateToClients);
+
+// === Data Syncing & First Run ===
+
+const getDeltaAppData = async (manager, lastSync) => {
+    const updates = {};
+    const entityMap = {
+        Market: 'markets', GameAsset: 'gameAssets', PurchaseRequest: 'purchaseRequests', RewardTypeDefinition: 'rewardTypes', TradeOffer: 'tradeOffers', Gift: 'gifts',
+        Rank: 'ranks', Trophy: 'trophies', UserTrophy: 'userTrophies',
+        SystemLog: 'systemLogs', AdminAdjustment: 'adminAdjustments', SystemNotification: 'systemNotifications', ScheduledEvent: 'scheduledEvents', ChatMessage: 'chatMessages',
+        BugReport: 'bugReports', ModifierDefinition: 'modifierDefinitions', AppliedModifier: 'appliedModifiers', ThemeDefinition: 'themes', QuestGroup: 'questGroups', Rotation: 'rotations'
+    };
+
+    // User sync is special because of relations
+    const updatedUsers = await manager.find('User', { where: { updatedAt: MoreThan(lastSync) }, relations: ['guilds'] });
+    if (updatedUsers.length > 0) {
+        updates.users = updatedUsers.map(u => {
+            const { guilds, ...userData } = u;
+            return { ...userData, guildIds: guilds.map(g => g.id) };
+        });
+    }
+
+    // Quest sync
+    const questRepo = manager.getRepository('Quest');
+    const updatedQuests = await questRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['assignedUsers'] });
+    if (updatedQuests.length > 0) {
+        updates.quests = updatedQuests.map(q => {
+            const { assignedUsers, ...questData } = q;
+            return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
+        });
+    }
+
+    // QuestCompletion sync
+    const qcRepo = manager.getRepository(QuestCompletionEntity);
+    const updatedQCs = await qcRepo.find({ 
+        where: { updatedAt: MoreThan(lastSync) }, 
+        relations: ['user', 'quest'] 
+    });
+    if (updatedQCs.length > 0) {
+        updates.questCompletions = updatedQCs
+            .filter(qc => qc.user && qc.quest)
+            .map(qc => {
+                // Explicitly create a new object to avoid TypeORM proxy issues
+                return {
+                    id: qc.id,
+                    completedAt: qc.completedAt,
+                    status: qc.status,
+                    note: qc.note,
+                    adminNote: qc.adminNote,
+                    guildId: qc.guildId,
+                    actedById: qc.actedById,
+                    actedAt: qc.actedAt,
+                    createdAt: qc.createdAt,
+                    updatedAt: qc.updatedAt,
+                    userId: qc.user.id,
+                    questId: qc.quest.id,
+                };
+            });
+    }
+
+    // Guild sync
+    const guildRepo = manager.getRepository('Guild');
+    const updatedGuilds = await guildRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['members'] });
+    if (updatedGuilds.length > 0) {
+        updates.guilds = updatedGuilds.map(g => {
+            const { members, ...guildData } = g;
+            return { ...guildData, memberIds: members?.map(m => m.id) || [] };
+        });
+    }
+    
+    for (const entityName in entityMap) {
+        const repo = manager.getRepository(entityName);
+        const keyName = entityMap[entityName];
+        
+        if (repo.metadata.hasColumnWithPropertyPath('updatedAt')) {
+            const changedItems = await repo.find({ where: { updatedAt: MoreThan(lastSync) } });
+            if (changedItems.length > 0) {
+                updates[keyName] = changedItems;
+            }
+        }
+    }
+
+    const settingRow = await manager.findOne('Setting', { where: { id: 1, updatedAt: MoreThan(lastSync) } });
+    if (settingRow) updates.settings = settingRow.settings;
+
+    const historyRow = await manager.findOne('LoginHistory', { where: { id: 1, updatedAt: MoreThan(lastSync) } });
+    if (historyRow) updates.loginHistory = historyRow.history;
+
+    return updates;
+};
+
+const syncData = async (req, res) => {
+    const { lastSync } = req.query;
+    const newSyncTimestamp = new Date().toISOString();
+    const manager = dataSource.manager;
+
+    if (!lastSync) {
+        // Full initial load
+        const userCount = await manager.count(UserEntity);
+        if (userCount === 0) {
+            console.log("No users found, triggering first run.");
+            return res.status(200).json({
+                updates: { settings: INITIAL_SETTINGS, users: [], loginHistory: [] },
+                newSyncTimestamp
+            });
+        }
+        console.log("[Sync] Performing full initial data load for client.");
+        const appData = await getFullAppData(manager);
+        res.status(200).json({ updates: appData, newSyncTimestamp });
+    } else {
+        // Delta sync
+        console.log(`[Sync] Performing delta sync for client since ${lastSync}`);
+        const updates = await getDeltaAppData(manager, lastSync);
+        res.status(200).json({ updates, newSyncTimestamp });
+    }
+};
 
 const getChronicles = async (req, res) => {
     const { userId, guildId, viewMode, page = 1, limit = 50, startDate, endDate, filterTypes } = req.query;
@@ -16,6 +179,12 @@ const getChronicles = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     let allEvents = [];
     const activeFilters = filterTypes ? filterTypes.split(',') : [];
+
+    const allUsers = await manager.find(UserEntity);
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    
+    const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+    const rewardTypeMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
 
     // --- Quest Completions ---
     if (activeFilters.includes('QuestCompletion')) {
@@ -34,12 +203,90 @@ const getChronicles = async (req, res) => {
         }
 
         const completions = await qcQb.orderBy("qc.completedAt", "DESC").getMany();
-        allEvents.push(...completions.map(c => ({
-            id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'QuestCompletion',
-            title: `${c.user?.gameName || 'Unknown User'} completed: ${c.quest?.title || 'Unknown Quest'}`,
-            note: c.note, status: c.status, icon: c.quest?.icon || '📜', color: '#10b981',
-            userId: c.user?.id
-        })));
+        
+        completions.forEach(c => {
+            const questRequiresApproval = c.quest?.requiresApproval;
+            const hasBeenActedOn = c.actedAt && c.actedById;
+
+            // If it doesn't require approval, it's a single "Approved" event.
+            if (!questRequiresApproval) {
+                let rewardsText = '';
+                if (c.quest?.rewards?.length > 0) {
+                     rewardsText = c.quest.rewards.map(r => {
+                        const rewardDef = rewardTypeMap.get(r.rewardTypeId);
+                        return `+${r.amount} ${rewardDef ? rewardDef.icon : '?'}`;
+                    }).join(' ');
+                }
+                allEvents.push({
+                    id: `c-${c.id}`,
+                    originalId: c.id,
+                    date: c.completedAt,
+                    type: 'QuestCompletion',
+                    title: `${c.user?.gameName || 'Unknown User'} completed: ${c.quest?.title || 'Unknown Quest'}`,
+                    note: c.note,
+                    status: 'Approved',
+                    icon: c.quest?.icon || '📜',
+                    color: '#22c55e', // Green for Approved
+                    userId: c.user?.id,
+                    rewardsText: rewardsText || undefined,
+                });
+                return; // Done with this completion record
+            }
+
+            // If it requires approval, handle potentially multiple events.
+            // Event 1: The initial submission (always shown)
+            allEvents.push({
+                id: `c-submit-${c.id}`,
+                originalId: c.id,
+                date: c.completedAt,
+                type: 'QuestCompletion',
+                title: `${c.user?.gameName || 'Unknown User'} submitted for approval: ${c.quest?.title || 'Unknown Quest'}`,
+                note: c.note,
+                status: 'Pending',
+                icon: c.quest?.icon || '📜',
+                color: '#ca8a04', // Yellow for Pending
+                userId: c.user?.id,
+            });
+
+            // Event 2: The admin action (if it exists)
+            if (hasBeenActedOn) {
+                const actorName = userMap.get(c.actedById)?.gameName || 'An Admin';
+                let actionTitle = '';
+                let actionColor = '';
+                let rewardsText = '';
+
+                if (c.status === 'Approved') {
+                    actionTitle = `${actorName} approved: ${c.quest?.title || 'Unknown Quest'}`;
+                    actionColor = '#22c55e'; // Green for Approved
+                    if (c.quest?.rewards?.length > 0) {
+                        rewardsText = c.quest.rewards.map(r => {
+                            const rewardDef = rewardTypeMap.get(r.rewardTypeId);
+                            return `+${r.amount} ${rewardDef ? rewardDef.icon : '?'}`;
+                        }).join(' ');
+                    }
+                } else if (c.status === 'Rejected') {
+                    actionTitle = `${actorName} rejected: ${c.quest?.title || 'Unknown Quest'}`;
+                    actionColor = '#ef4444'; // Red for Rejected
+                }
+
+                if(actionTitle) {
+                    allEvents.push({
+                        id: `c-action-${c.id}`,
+                        originalId: c.id,
+                        date: c.actedAt,
+                        type: 'QuestCompletion',
+                        title: actionTitle,
+                        note: c.adminNote,
+                        status: c.status,
+                        icon: c.quest?.icon || '📜',
+                        color: actionColor,
+                        userId: c.user?.id,
+                        actorName: actorName,
+                        rewardsText: rewardsText || undefined,
+                    });
+                }
+            }
+        });
     }
     
     // --- Quest Assignments ---
@@ -63,9 +310,7 @@ const getChronicles = async (req, res) => {
         }
         
         const assignments = await snQb.orderBy("sn.timestamp", "DESC").getMany();
-        const senderIds = [...new Set(assignments.map(a => a.senderId).filter(Boolean))];
-        const senders = senderIds.length > 0 ? await manager.findBy(UserEntity, { id: In(senderIds) }) : [];
-        const senderMap = new Map(senders.map(s => [s.id, s.gameName]));
+        const senderMap = new Map(allUsers.map(s => [s.id, s.gameName]));
 
         allEvents.push(...assignments.map(a => ({
             id: `assign-${a.id}`, originalId: a.id, date: a.timestamp, type: 'QuestAssigned',
@@ -160,173 +405,13 @@ const getChronicles = async (req, res) => {
     res.json({ events: paginatedEvents, total });
 };
 
-const applySettingsUpdates = async (req, res) => {
-    const manager = dataSource.manager;
-    const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
-    let currentSettings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
-    
-    const defaultSettings = INITIAL_SETTINGS;
-    const isObject = (item) => item && typeof item === 'object' && !Array.isArray(item);
-
-    const mergeNewProperties = (target, source) => {
-        for (const key in source) {
-            if (key === 'sidebars' && isObject(source[key]) && target[key] && source.sidebars.main) {
-                const userVisibilityMap = new Map();
-                (target.sidebars.main || []).forEach(item => {
-                    if (item.id) {
-                        userVisibilityMap.set(item.id, item.isVisible);
-                    }
-                });
-                const newSidebar = (source.sidebars.main || []).map(defaultItem => {
-                    if (defaultItem.id && userVisibilityMap.has(defaultItem.id)) {
-                        return { ...defaultItem, isVisible: userVisibilityMap.get(defaultItem.id) };
-                    }
-                    return defaultItem;
-                });
-                target.sidebars.main = newSidebar;
-            } else if (isObject(source[key])) {
-                if (!target[key] || !isObject(target[key])) {
-                    target[key] = {};
-                }
-                mergeNewProperties(target[key], source[key]);
-            } else if (!target.hasOwnProperty(key)) {
-                target[key] = source[key];
-            }
-        }
-    };
-    mergeNewProperties(currentSettings, defaultSettings);
-
-    await manager.save(SettingEntity, updateTimestamps({ id: 1, settings: currentSettings }));
-    updateEmitter.emit('update');
-    res.status(200).json({ message: 'Settings updated successfully.' });
+const resetSettings = async (req, res) => {
+    await systemService.resetSettings(req, res);
 };
 
-const clearAllHistory = async (req, res) => {
-    const manager = dataSource.manager;
-    const historyEntities = [
-        QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity,
-        GiftEntity, TradeOfferEntity, AppliedModifierEntity, SystemLogEntity,
-        ChatMessageEntity, SystemNotificationEntity
-    ];
-    for (const entity of historyEntities) {
-        await manager.clear(entity);
-    }
-    updateEmitter.emit('update');
-    res.status(200).json({ message: 'All history cleared.' });
-};
-
-const resetAllPlayerData = async (req, res) => {
-    const manager = dataSource.manager;
-    const usersToReset = await manager.find(UserEntity, { where: { role: In(['Explorer', 'Gatekeeper']) } });
-    
-    for (const user of usersToReset) {
-        user.personalPurse = {};
-        user.personalExperience = {};
-        user.guildBalances = {};
-        user.ownedAssetIds = [];
-        user.ownedThemes = ['emerald', 'rose', 'sky'];
-    }
-
-    await manager.save(usersToReset.map(u => updateTimestamps(u)));
-    updateEmitter.emit('update');
-    res.status(200).json({ message: 'Player data reset.' });
-};
-
-const deleteAllCustomContent = async (req, res) => {
-    const manager = dataSource.manager;
-    
-    await manager.clear(QuestEntity);
-    await manager.clear(QuestGroupEntity);
-    await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS.map(qg => updateTimestamps(qg, true)));
-    
-    await manager.clear(MarketEntity);
-    await manager.clear(GameAssetEntity);
-    
-    await manager.delete(RewardTypeDefinitionEntity, { isCore: false });
-
-    const initialRankIds = INITIAL_RANKS.map(r => r.id);
-    if (initialRankIds.length > 0) {
-        await manager.getRepository(RankEntity).createQueryBuilder()
-            .delete()
-            .where("id NOT IN (:...ids)", { ids: initialRankIds })
-            .execute();
-    }
-    
-    const initialTrophyIds = INITIAL_TROPHIES.map(t => t.id);
-    if (initialTrophyIds.length > 0) {
-        await manager.getRepository(TrophyEntity).createQueryBuilder()
-            .delete()
-            .where("id NOT IN (:...ids)", { ids: initialTrophyIds })
-            .execute();
-    }
-
-    updateEmitter.emit('update');
-    res.status(200).json({ message: 'All custom content deleted.' });
-};
-
-const factoryReset = async (req, res) => {
-    const manager = dataSource.manager;
-    const entitiesToClear = [
-        UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, QuestGroupEntity,
-        MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity,
-        GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity,
-        SystemNotificationEntity, ScheduledEventEntity, RankEntity, TrophyEntity,
-        UserTrophyEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity,
-        AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity, SettingEntity
-    ];
-
-    for (const entity of entitiesToClear) {
-        await manager.clear(entity);
-    }
-    
-    updateEmitter.emit('update');
-    res.status(200).json({ message: 'Factory reset successful.' });
-};
-
-const firstRun = async (req, res) => {
-    const { adminUserData } = req.body;
-    const manager = dataSource.manager;
-
-    const userCount = await manager.count(UserEntity);
-    if (userCount > 0) {
-        return res.status(400).json({ error: 'First run has already been completed.' });
-    }
-
-    const adminUser = manager.create(UserEntity, {
-        ...adminUserData,
-        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
-        guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: true,
-    });
-    await manager.save(updateTimestamps(adminUser, true));
-    
-    await manager.save(SettingEntity, updateTimestamps({ id: 1, settings: INITIAL_SETTINGS }, true));
-    await manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES.map(rt => updateTimestamps(rt, true)));
-    await manager.save(RankEntity, INITIAL_RANKS.map(r => updateTimestamps(r, true)));
-    await manager.save(TrophyEntity, INITIAL_TROPHIES.map(t => updateTimestamps(t, true)));
-    await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS.map(qg => updateTimestamps(qg, true)));
-    await manager.save(ThemeDefinitionEntity, INITIAL_THEMES.map(th => updateTimestamps(th, true)));
-
-    const defaultGuild = manager.create(GuildEntity, {
-        id: `guild-default-${Date.now()}`,
-        name: 'My Guild',
-        purpose: 'A place for our adventures!',
-        isDefault: true,
-        treasury: { purse: {}, ownedAssetIds: [] },
-        members: [adminUser]
-    });
-    await manager.save(updateTimestamps(defaultGuild, true));
-    
-    updateEmitter.emit('update');
-    res.status(201).json({ message: 'First run completed successfully.' });
-};
-
+// Remove duplicated function declarations
 module.exports = {
+    handleSse,
+    syncData,
     getChronicles,
-    applySettingsUpdates,
-    clearAllHistory,
-    resetAllPlayerData,
-    deleteAllCustomContent,
-    factoryReset,
-    firstRun
 };

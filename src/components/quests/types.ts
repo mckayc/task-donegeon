@@ -94,6 +94,7 @@ export interface QuestCompletion {
   completedAt: string; // ISO 8601 format string
   status: QuestCompletionStatus;
   note?: string;
+  adminNote?: string;
   guildId?: string;
   actedById?: string;
   actedAt?: string;

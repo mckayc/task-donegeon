@@ -55,13 +55,13 @@ export const createMockUsers = (): User[] => {
 
 export const INITIAL_REWARD_TYPES: RewardTypeDefinition[] = [
     { id: 'core-gold', name: 'Gold Coins', category: RewardCategory.Currency, description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 0.20 },
-    { id: 'core-gems', name: 'Gems', category: RewardCategory.Currency, description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 2.00 },
-    { id: 'core-crystal', name: 'Crystals', category: RewardCategory.Currency, description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.01 },
-    { id: 'core-strength', name: 'Strength', category: RewardCategory.XP, description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.02 },
-    { id: 'core-diligence', name: 'Diligence', category: RewardCategory.XP, description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.02 },
-    { id: 'core-wisdom', name: 'Wisdom', category: RewardCategory.XP, description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.04 },
-    { id: 'core-skill', name: 'Skill', category: RewardCategory.XP, description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯', baseValue: 0.04 },
-    { id: 'core-creative', name: 'Creativity', category: RewardCategory.XP, description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨', baseValue: 0.04 },
+    { id: 'core-gems', name: 'Gems', category: RewardCategory.Currency, description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 1.00 },
+    { id: 'core-crystal', name: 'Crystals', category: RewardCategory.Currency, description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.10 },
+    { id: 'core-strength', name: 'Strength', category: RewardCategory.XP, description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.05 },
+    { id: 'core-diligence', name: 'Diligence', category: RewardCategory.XP, description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.05 },
+    { id: 'core-wisdom', name: 'Wisdom', category: RewardCategory.XP, description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.05 },
+    { id: 'core-skill', name: 'Skill', category: RewardCategory.XP, description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯', baseValue: 0.05 },
+    { id: 'core-creative', name: 'Creativity', category: RewardCategory.XP, description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨', baseValue: 0.05 },
 ];
 
 export const INITIAL_TAGS: string[] = [
@@ -146,8 +146,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_asset_library' },
   { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_suggestion_engine' },
   { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_bug_tracker' },
-  { type: 'link', id: 'Test Cases', emoji: '🧪', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_test_cases' },
-
+  
   { type: 'separator', id: 'sep-system-settings', level: 0, role: Role.DonegeonMaster, isVisible: true },
 
   // Top Level
@@ -235,7 +234,6 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_calendar: 'Calendar',
       link_avatar: 'Avatar',
       link_collection: 'Collection',
-      link_themes: 'Themes',
       link_guild: 'Guild',
       link_progress: 'Progress',
       link_trophies: 'Trophies',
@@ -265,6 +263,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_help_guide: 'Help Guide',
       link_chat: 'Chat',
       link_bug_tracker: 'Bug Tracker',
+      link_themes: 'Themes',
       link_test_cases: 'Test Cases',
     },
     enableAiFeatures: false,

@@ -9,10 +9,12 @@ import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
+import EmojiPicker from '../user-interface/EmojiPicker';
+import DynamicIcon from '../user-interface/DynamicIcon';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
-  initialData: { url: string; name: string; category: string; description?: string; } | null;
+  initialData: { url?: string; imageUrl?: string; name: string; category: string; description?: string; icon?: string; } | null;
   onClose: () => void;
   mode?: 'create' | 'edit' | 'ai-creation';
   onTryAgain?: () => void;
@@ -39,55 +41,61 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   const { markets, rewardTypes } = useEconomyState();
 
   const getInitialFormData = useCallback(() => {
-    const data = assetToEdit || initialData;
-    if (mode !== 'create' && data) {
-      const d = data as Partial<GameAsset> & { url?: string; name: string; category: string; description?: string; };
-      return {
-        name: d.name,
-        description: d.description || '',
-        url: d.imageUrl || d.url || '',
-        category: PREDEFINED_CATEGORIES.includes(d.category) ? d.category : 'Other',
-        avatarSlot: d.avatarSlot || '',
-        isForSale: typeof d.isForSale === 'boolean' ? d.isForSale : false,
-        requiresApproval: typeof d.requiresApproval === 'boolean' ? d.requiresApproval : false,
-        costGroups: d.costGroups && d.costGroups.length > 0 ? d.costGroups.map((group: RewardItem[]) => [...group]) : [[]],
-        payouts: d.payouts ? [...d.payouts] : [],
-        marketIds: [...(d.marketIds || [])],
-        purchaseLimit: typeof d.purchaseLimit === 'number' ? d.purchaseLimit : null,
-        purchaseLimitType: d.purchaseLimitType || 'Total',
-        purchaseCount: d.purchaseCount || 0,
-        allowExchange: !!(d.payouts && d.payouts.length > 0),
-      };
-    }
-    
-    // Default for create or ai-creation
-    let baseData = {
-        name: '', description: '', url: '', category: 'Avatar', avatarSlot: '',
-        isForSale: false, requiresApproval: false, costGroups: [[]] as RewardItem[][],
-        payouts: [] as RewardItem[], marketIds: [] as string[], purchaseLimit: null as number | null,
-        purchaseLimitType: 'Total' as 'Total' | 'PerUser', purchaseCount: 0, allowExchange: false,
+    // Base structure for a new asset
+    // FIX: Explicitly type baseData to prevent type widening on iconType.
+    const baseData: {
+        name: string; description: string; imageUrl: string; category: string; avatarSlot: string;
+        isForSale: boolean; requiresApproval: boolean; costGroups: RewardItem[][];
+        payouts: RewardItem[]; marketIds: string[]; purchaseLimit: number | null;
+        purchaseLimitType: 'Total' | 'PerUser'; purchaseCount: number; allowExchange: boolean;
+        iconType: 'emoji' | 'image'; icon: string;
+    } = {
+        name: '', description: '', imageUrl: '', category: 'Avatar', avatarSlot: '',
+        isForSale: false, requiresApproval: false, costGroups: [[]],
+        payouts: [], marketIds: [], purchaseLimit: null,
+        purchaseLimitType: 'Total', purchaseCount: 0, allowExchange: false,
+        iconType: 'emoji', icon: '📦',
     };
 
-    if (initialData) {
-        const { url, name, category: rawCategory, description } = initialData;
+    if (mode === 'edit' && assetToEdit) {
+        return {
+            ...baseData, // start with base to ensure all fields are present
+            ...assetToEdit,
+            imageUrl: assetToEdit.imageUrl || '',
+            costGroups: assetToEdit.costGroups && assetToEdit.costGroups.length > 0 ? assetToEdit.costGroups.map(group => [...group]) : [[]],
+            payouts: assetToEdit.payouts ? [...assetToEdit.payouts] : [],
+            marketIds: [...(assetToEdit.marketIds || [])],
+            allowExchange: !!(assetToEdit.payouts && assetToEdit.payouts.length > 0),
+        };
+    }
+    
+    if (initialData) { // From AI or from Gallery
+        const { url, imageUrl, name, category: rawCategory, description, icon } = initialData;
+        const finalImageUrl = imageUrl || url || '';
+        
         let finalCategory = rawCategory;
         let finalAvatarSlot = '';
 
-        if (rawCategory.toLowerCase().startsWith('avatar-')) {
+        if (rawCategory && rawCategory.toLowerCase().startsWith('avatar-')) {
             const parts = rawCategory.split('-');
             finalCategory = 'Avatar';
             finalAvatarSlot = parts.slice(1).join('-').toLowerCase();
         }
         const isPredefined = PREDEFINED_CATEGORIES.includes(finalCategory);
 
-        baseData = {
+        return {
             ...baseData,
-            url, name,
+            name: name || '',
             description: description || '',
+            imageUrl: finalImageUrl,
             category: isPredefined ? finalCategory : 'Other',
             avatarSlot: finalAvatarSlot,
+            iconType: finalImageUrl ? 'image' : 'emoji', // if image url is provided, it's an image
+            icon: icon || (finalImageUrl ? '🖼️' : '📦'),
         };
     }
+
+    // Default for create
     return baseData;
   }, [assetToEdit, initialData, mode]);
   
@@ -98,6 +106,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   const [isUploading, setIsUploading] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isInfoVisible, setIsInfoVisible] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   
   useEffect(() => {
     const data = getInitialFormData();
@@ -188,22 +197,17 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     }
 
 
-    const payload = {
-      ...formData,
+    const { allowExchange, ...payload } = formData;
+    const finalPayload = {
+      ...payload,
       category: finalCategory,
       avatarSlot: formData.category.toLowerCase() === 'avatar' ? formData.avatarSlot : undefined,
       purchaseLimit: finalLimit,
       purchaseLimitType: finalLimitType,
       payouts: formData.isForSale && formData.allowExchange ? formData.payouts.filter((p: RewardItem) => p.amount > 0 && p.rewardTypeId) : undefined,
       costGroups: formData.costGroups.map((g: RewardItem[]) => g.filter((c: RewardItem) => c.amount > 0 && c.rewardTypeId)).filter((g: RewardItem[]) => g.length > 0),
-    };
-    
-    const { allowExchange, url, ...intermediatePayload } = payload;
-    const finalPayload = {
-        ...intermediatePayload,
-        iconType: 'image' as const,
-        icon: '🖼️',
-        imageUrl: url,
+      icon: formData.iconType === 'emoji' ? formData.icon : '🖼️',
+      imageUrl: formData.iconType === 'image' ? formData.imageUrl : undefined,
     };
 
     if (onSave) {
@@ -211,7 +215,9 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     } else if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
-      addGameAsset({ ...finalPayload, createdAt: new Date().toISOString() } as any);
+      // FIX: Remove purchaseCount from the payload for addGameAsset, as it's not expected in the type.
+      const { purchaseCount, ...payloadForAdd } = finalPayload;
+      addGameAsset({ ...payloadForAdd, createdAt: new Date().toISOString() });
     }
     onClose();
   };
@@ -222,7 +228,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         setIsUploading(true);
         const uploaded = await uploadFile(file);
         if(uploaded?.url) {
-            setFormData(p => ({...p, url: uploaded.url}));
+            setFormData(p => ({...p, imageUrl: uploaded.url}));
             addNotification({type: 'success', message: 'Image uploaded!'}) 
         }
         setIsUploading(false);
@@ -245,9 +251,15 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                     {isUploading ? (
                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
                     ) : (
-                       <img src={formData.url || 'https://placehold.co/150x150/1c1917/FFFFFF?text=?'} alt="Asset preview" className="w-full h-full object-contain" />
+                       <DynamicIcon 
+                           iconType={formData.iconType} 
+                           icon={formData.icon} 
+                           imageUrl={formData.imageUrl}
+                           className={formData.iconType === 'image' ? "w-full h-full object-contain" : "text-8xl"}
+                           altText="Asset preview"
+                       />
                     )}
-                    {formData.url && (
+                    {formData.imageUrl && formData.iconType === 'image' && (
                          <button type="button" onClick={() => setIsInfoVisible(true)} className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors" aria-label="Show image info">
                             <InfoIcon />
                         </button>
@@ -256,15 +268,41 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                 <div className="flex-grow space-y-4">
                   <Input label="Asset Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, name: e.target.value}))} required />
                   <Input label="Description" value={formData.description} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, description: e.target.value}))} />
-                  <input id="image-upload-input" type="file" accept="image/*" onChange={handleManualUpload} className="hidden" />
-                  <div className="flex gap-2">
-                      <Button type="button" variant="secondary" onClick={() => document.getElementById('image-upload-input')?.click()} disabled={isUploading} className="flex-grow">
-                          {isUploading ? 'Uploading...' : 'Upload New'}
-                      </Button>
-                       <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)} className="flex-grow">
-                          Select Existing
-                      </Button>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-300 mb-1">Icon Type</label>
+                    <div className="flex gap-4 p-2 bg-stone-700/50 rounded-md">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" value="emoji" name="iconType" checked={formData.iconType === 'emoji'} onChange={() => setFormData(p => ({...p, iconType: 'emoji'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500"/>
+                            <span>Emoji</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" value="image" name="iconType" checked={formData.iconType === 'image'} onChange={() => setFormData(p => ({...p, iconType: 'image'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500" />
+                            <span>Image</span>
+                        </label>
+                    </div>
                   </div>
+                  {formData.iconType === 'emoji' ? (
+                    <div>
+                        <div className="relative">
+                            <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2 h-10">
+                            <span className="text-2xl">{formData.icon}</span> <span className="text-stone-300">Click to change</span>
+                            </button>
+                            {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                        </div>
+                    </div>
+                  ) : (
+                     <>
+                        <input id="image-upload-input" type="file" accept="image/*" onChange={handleManualUpload} className="hidden" />
+                        <div className="flex gap-2">
+                            <Button type="button" variant="secondary" onClick={() => document.getElementById('image-upload-input')?.click()} disabled={isUploading} className="flex-grow">
+                                {isUploading ? 'Uploading...' : 'Upload New'}
+                            </Button>
+                            <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)} className="flex-grow">
+                                Select Existing
+                            </Button>
+                        </div>
+                     </>
+                  )}
                 </div>
             </div>
 
@@ -386,7 +424,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={() => setIsInfoVisible(false)}>
             <div className="bg-stone-900 border border-stone-700 rounded-lg p-6 max-w-lg w-full" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <h3 className="font-bold text-lg text-stone-200 mb-4">Asset Information</h3>
-                <Input label="Image URL" readOnly value={formData.url} onFocus={(e: React.FocusEvent<HTMLInputElement>) => (e.target as HTMLInputElement).select()} />
+                <Input label="Image URL" readOnly value={formData.imageUrl} onFocus={(e: React.FocusEvent<HTMLInputElement>) => (e.target as HTMLInputElement).select()} />
                 <div className="text-right mt-4">
                     <Button variant="secondary" onClick={() => setIsInfoVisible(false)}>Close</Button>
                 </div>
@@ -397,7 +435,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       {isGalleryOpen && (
           <ImageSelectionDialog 
               onSelect={(url: string) => {
-                  setFormData(p => ({...p, url}));
+                  setFormData(p => ({...p, imageUrl: url}));
                   setIsGalleryOpen(false);
               }}
               onClose={() => setIsGalleryOpen(false)}

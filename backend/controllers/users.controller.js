@@ -1,3 +1,4 @@
+
 const userService = require('../services/user.service');
 
 const getAllUsers = async (req, res) => {
@@ -27,7 +28,8 @@ const updateUser = async (req, res) => {
 };
 
 const deleteUsers = async (req, res) => {
-    await userService.deleteMany(req.body.ids);
+    const { ids, actorId } = req.body;
+    await userService.deleteMany(ids, actorId);
     res.status(204).send();
 };
 

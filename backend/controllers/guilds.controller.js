@@ -1,3 +1,4 @@
+
 const guildService = require('../services/guild.service');
 
 const getAllGuilds = async (req, res) => {
@@ -17,7 +18,8 @@ const updateGuild = async (req, res) => {
 };
 
 const deleteGuild = async (req, res) => {
-    await guildService.remove(req.params.id);
+    const { ids, actorId } = req.body;
+    await guildService.remove(ids, actorId);
     res.status(204).send();
 };
 

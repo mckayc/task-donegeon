@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -127,17 +128,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [addNotification]);
 
   const deleteUsers = useCallback(async (userIds: string[]) => {
-      if (userIds.length === 0) return;
+      if (userIds.length === 0 || !currentUser) return;
       if (bugLogger.isRecording()) {
           bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
       }
       try {
-        await deleteUsersAPI(userIds);
+        await deleteUsersAPI(userIds, currentUser.id);
         setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
       } catch (error) {
         addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete users.' });
       }
-  }, [addNotification]);
+  }, [addNotification, currentUser]);
   
   const completeFirstRun = useCallback(async (adminUserData: any) => {
       try {

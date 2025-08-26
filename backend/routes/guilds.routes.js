@@ -1,3 +1,4 @@
+
 const express = require('express');
 const { asyncMiddleware } = require('../utils/helpers');
 const {
@@ -12,6 +13,6 @@ const router = express.Router();
 router.get('/', asyncMiddleware(getAllGuilds));
 router.post('/', asyncMiddleware(createGuild));
 router.put('/:id', asyncMiddleware(updateGuild));
-router.delete('/:id', asyncMiddleware(deleteGuild));
+router.delete('/', asyncMiddleware(deleteGuild));
 
 module.exports = router;

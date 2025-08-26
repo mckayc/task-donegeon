@@ -1,8 +1,10 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Guild } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
 import { addGuildAPI, updateGuildAPI, deleteGuildAPI } from '../api';
+import { useAuthState } from './AuthContext';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -64,6 +66,7 @@ const communityReducer = (state: CommunityState, action: CommunityAction): Commu
 export const CommunityProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(communityReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
+    const { currentUser } = useAuthState();
     
     const actions = useMemo<CommunityDispatch>(() => ({
         addGuild: async (data) => {
@@ -93,15 +96,16 @@ export const CommunityProvider: React.FC<{ children: ReactNode }> = ({ children 
             }
         },
         deleteGuild: async (id) => {
+            if (!currentUser) return;
             try {
-                await deleteGuildAPI(id);
+                await deleteGuildAPI(id, currentUser.id);
                 dispatch({ type: 'REMOVE_COMMUNITY_DATA', payload: { guilds: [id] } });
                 addNotification({ type: 'info', message: 'Guild deleted.' });
             } catch (error) {
                 addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete guild.' });
             }
         },
-    }), [addNotification]);
+    }), [addNotification, currentUser]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

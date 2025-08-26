@@ -3,20 +3,19 @@ import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
-// FIX: Import ChronicleEvent and ChronicleEventType to create compliant activity objects.
-import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment, ChronicleEvent, ChronicleEventType } from '../../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment, ChronicleEvent } from '../../../types';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../../utils/quests';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useProgressionState } from '../../../context/ProgressionContext';
 import { useEconomyState } from '../../../context/EconomyContext';
 import { useCommunityState } from '../../../context/CommunityContext';
+import { CHRONICLE_EVENT_TYPES, DEFAULT_FILTERS } from '../../pages/ChroniclesPage';
 
 export const useDashboardData = () => {
     const { 
-        settings, scheduledEvents, 
-        adminAdjustments 
+        settings, scheduledEvents
     } = useSystemState();
-    const { rewardTypes, purchaseRequests } = useEconomyState();
+    const { rewardTypes } = useEconomyState();
     const { guilds } = useCommunityState();
     const { quests, questCompletions } = useQuestsState();
     const { ranks, userTrophies, trophies } = useProgressionState();
@@ -30,13 +29,17 @@ export const useDashboardData = () => {
 
         const fetchActivities = async () => {
             try {
+                const savedFilters = localStorage.getItem('chronicleFilters');
+                const filters = savedFilters ? JSON.parse(savedFilters) : DEFAULT_FILTERS;
+
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
                 const params = new URLSearchParams({
                     page: '1',
-                    limit: '10',
+                    limit: '10', // Fetch a small number for the dashboard widget
                     userId: currentUser.id,
                     guildId,
                     viewMode: 'personal',
+                    filterTypes: filters.join(','),
                 });
                 const response = await fetch(`/api/chronicles?${params.toString()}`);
                 if (!response.ok) throw new Error('Failed to fetch recent activities');

@@ -1,3 +1,4 @@
+
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem,
 } from './types';
@@ -31,14 +32,14 @@ const apiUpload = async (path: string, file: File, category?: string) => {
 // --- Auth API ---
 export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('POST', '/api/users', data);
 export const updateUserAPI = (id: string, data: Partial<User>) => apiRequest('PUT', `/api/users/${id}`, data);
-export const deleteUsersAPI = (ids: string[]) => apiRequest('DELETE', '/api/users', { ids });
+export const deleteUsersAPI = (ids: string[], actorId: string) => apiRequest('DELETE', '/api/users', { ids, actorId });
 export const completeFirstRunAPI = (adminUserData: any) => apiRequest('POST', '/api/data/first-run', { adminUserData });
 
 
 // --- Community API ---
 export const addGuildAPI = (data: Omit<Guild, 'id'>) => apiRequest('POST', '/api/guilds', data);
 export const updateGuildAPI = (data: Guild) => apiRequest('PUT', `/api/guilds/${data.id}`, data);
-export const deleteGuildAPI = (id: string) => apiRequest('DELETE', `/api/guilds/${id}`);
+export const deleteGuildAPI = (id: string, actorId: string) => apiRequest('DELETE', `/api/guilds`, { ids: [id], actorId });
 
 // --- Economy API ---
 export const addMarketAPI = (data: Omit<Market, 'id'>) => apiRequest('POST', '/api/markets', data);
@@ -92,11 +93,11 @@ export const completeCheckpointAPI = (questId: string, userId: string) => apiReq
 
 
 // --- System & Dev API ---
-export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }) => {
+export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }, actorId: string) => {
     const promises = Object.entries(assets).map(([type, ids]) => {
         if (ids && ids.length > 0) {
             const apiPath = type === 'modifierDefinitions' ? 'setbacks' : type;
-            return apiRequest('DELETE', `/api/${apiPath}`, { ids });
+            return apiRequest('DELETE', `/api/${apiPath}`, { ids, actorId });
         }
         return Promise.resolve();
     });
@@ -106,7 +107,7 @@ export const applyManualAdjustmentAPI = (adjustment: Omit<AdminAdjustment, 'id' 
 export const uploadFileAPI = (file: File, category?: string) => apiUpload('/api/media/upload', file, category);
 export const addThemeAPI = (data: Omit<ThemeDefinition, 'id'>) => apiRequest('POST', '/api/themes', data);
 export const updateThemeAPI = (data: ThemeDefinition) => apiRequest('PUT', `/api/themes/${data.id}`, data);
-export const deleteThemeAPI = (id: string) => apiRequest('DELETE', `/api/themes`, { ids: [id] });
+export const deleteThemeAPI = (id: string, actorId: string) => apiRequest('DELETE', `/api/themes`, { ids: [id], actorId });
 export const updateSettingsAPI = (settings: AppSettings) => apiRequest('PUT', '/api/settings', settings);
 export const resetSettingsAPI = () => apiRequest('POST', '/api/data/reset-settings');
 export const applySettingsUpdatesAPI = () => apiRequest('POST', '/api/data/apply-updates');

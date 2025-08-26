@@ -13,18 +13,20 @@ interface RecentActivityCardProps {
 
 const statusColorClass = (status: string) => {
     switch (status) {
-        case "Awarded!":
+        case "Awarded":
         case QuestCompletionStatus.Approved:
         case "Completed":
-        case "Exchanged!":
+        case "Exchanged":
         case "Gifted":
             return 'text-green-400';
         case QuestCompletionStatus.Pending:
+        case "Requested":
             return 'text-yellow-400';
         case QuestCompletionStatus.Rejected:
+        case "Setback":
             return 'text-red-400';
-        case 'Executed':
-            return 'text-stone-300';
+        case "Cancelled":
+            return 'text-stone-400';
         default:
             return 'text-stone-400';
     }

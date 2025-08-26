@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
@@ -151,7 +152,8 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const actions = useMemo<SystemDispatch>(() => ({
         deleteSelectedAssets: async (assets, callback) => {
-            await apiAction(() => deleteSelectedAssetsAPI(assets));
+            if (!currentUser) return;
+            await apiAction(() => deleteSelectedAssetsAPI(assets, currentUser.id));
             const assetsToRemove: { [key in keyof SystemState]?: string[] } = {};
             if (assets.users) { deleteUsers(assets.users); }
             Object.keys(assets).forEach(key => {
@@ -174,7 +176,10 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         uploadFile: (file, category) => apiAction(() => uploadFileAPI(file, category)),
         addTheme: (data) => apiAction(() => addThemeAPI(data)),
         updateTheme: (data) => apiAction(() => updateThemeAPI(data)),
-        deleteTheme: (id) => apiAction(() => deleteThemeAPI(id)),
+        deleteTheme: (id) => {
+            if (!currentUser) return Promise.resolve();
+            return apiAction(() => deleteThemeAPI(id, currentUser.id))
+        },
         updateSettings: (settings) => apiAction(() => updateSettingsAPI(settings), 'Settings saved!'),
         resetSettings: () => apiAction(() => resetSettingsAPI(), 'All application settings have been reset to their defaults.'),
         applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI(), 'Feature updates applied successfully. New default settings have been merged.'),

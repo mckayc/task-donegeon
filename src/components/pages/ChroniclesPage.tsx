@@ -9,12 +9,12 @@ import { useAuthState } from '../../context/AuthContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { FilterIcon, ChevronDownIcon } from '../user-interface/Icons';
 
-const CHRONICLE_EVENT_TYPES = Object.values(ChronicleEventType).map(type => ({
+export const CHRONICLE_EVENT_TYPES = Object.values(ChronicleEventType).map(type => ({
     type,
     label: type.replace(/([A-Z])/g, ' $1').trim(),
 }));
 
-const DEFAULT_FILTERS = CHRONICLE_EVENT_TYPES
+export const DEFAULT_FILTERS = CHRONICLE_EVENT_TYPES
     .map(t => t.type)
     .filter(t => t !== ChronicleEventType.QuestAssigned);
 

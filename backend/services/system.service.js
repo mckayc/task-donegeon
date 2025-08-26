@@ -1,6 +1,6 @@
 
-
-const { dataSource } = require('../data-source');
+const { dataSource, ensureDatabaseDirectoryExists } = require('../data-source');
+const fs = require('fs').promises;
 const { In, MoreThan, IsNull, Not } = require("typeorm");
 const { 
     UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, PurchaseRequestEntity, 
@@ -201,12 +201,47 @@ const deleteAllCustomContent = async () => {
 };
 
 const factoryReset = async () => {
-    const manager = dataSource.manager;
-    for (const entity of dataSource.entityMetadatas) {
-        await manager.query(`DELETE FROM ${entity.tableName};`);
+    const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
+
+    // 1. Close the connection if it's open
+    if (dataSource.isInitialized) {
+        await dataSource.destroy();
+        console.log('[Factory Reset] Database connection closed.');
     }
-    await manager.query(`DELETE FROM sqlite_sequence;`); // Reset auto-incrementing IDs for sqlite
-    updateEmitter.emit('update');
+
+    // 2. Delete the file
+    try {
+        await fs.unlink(dbPath);
+        console.log(`[Factory Reset] Database file deleted: ${dbPath}`);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.log(`[Factory Reset] Database file not found, which is an acceptable state for a reset.`);
+        } else {
+            console.error(`[Factory Reset] Error deleting database file:`, error);
+            // Attempt to re-initialize to restore the app to a working state before failing.
+            try {
+                if (!dataSource.isInitialized) {
+                    await ensureDatabaseDirectoryExists();
+                    await dataSource.initialize();
+                }
+            } catch (reinitError) {
+                 console.error(`[Factory Reset] CRITICAL: Failed to re-initialize previous database after deletion failure.`, reinitError);
+            }
+            throw new Error(`Factory reset failed: Could not delete the database file. Please check server file permissions.`);
+        }
+    }
+    
+    // 3. Re-initialize the database connection. This will create a new, empty database file.
+    try {
+        await ensureDatabaseDirectoryExists();
+        await dataSource.initialize();
+        console.log("[Factory Reset] Data Source has been re-initialized successfully, creating a new empty database.");
+    } catch (initError) {
+        console.error(`[Factory Reset] Failed to re-initialize data source after deletion:`, initError);
+        throw new Error("Factory reset failed: The database file was deleted, but a new one could not be created.");
+    }
+
+    // No need to emit update, the frontend handles a full reload and will fetch everything fresh.
 };
 
 const getChronicles = async (queryParams) => {

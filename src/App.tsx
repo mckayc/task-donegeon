@@ -22,7 +22,7 @@ const App: React.FC = () => {
   const { guilds } = useCommunityState();
   const { appMode, activePage } = useUIState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
-  const { isRecording, isPickingElement } = useDeveloperState();
+  const { isRecording, isPickingElement, trackClicks, trackElementDetails } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
   const isDataLoaded = useIsDataLoaded();
 
@@ -74,7 +74,7 @@ const App: React.FC = () => {
   }, [settings.favicon]);
 
   useEffect(() => {
-    if (!isRecording) {
+    if (!isRecording || !trackClicks) {
       return;
     }
 
@@ -94,18 +94,25 @@ const App: React.FC = () => {
               message: `Clicked: ${logId}`,
           });
       } else {
-          const elementInfo = {
-            tag: target.tagName.toLowerCase(),
-            id: target.id || undefined,
-            classes: typeof target.className === 'string' ? target.className : undefined,
-            text: target.innerText?.substring(0, 50).replace(/\n/g, ' ') || undefined,
-          };
+          if (trackElementDetails) {
+            const elementInfo = {
+              tag: target.tagName.toLowerCase(),
+              id: target.id || undefined,
+              classes: typeof target.className === 'string' ? target.className : undefined,
+              text: target.innerText?.substring(0, 50).replace(/\n/g, ' ') || undefined,
+            };
 
-          addLogEntry({
-            type: 'ACTION',
-            message: `Clicked element: <${elementInfo.tag}>`,
-            element: elementInfo,
-          });
+            addLogEntry({
+              type: 'ACTION',
+              message: `Clicked element: <${elementInfo.tag}>`,
+              element: elementInfo,
+            });
+          } else {
+             addLogEntry({
+              type: 'ACTION',
+              message: `Clicked element: <${target.tagName.toLowerCase()}>`,
+            });
+          }
       }
     };
 
@@ -115,7 +122,7 @@ const App: React.FC = () => {
     return () => {
       document.removeEventListener('click', handleGlobalClick, true);
     };
-  }, [isRecording, addLogEntry]);
+  }, [isRecording, addLogEntry, trackClicks, trackElementDetails]);
 
   useEffect(() => {
     document.body.style.cursor = isPickingElement ? 'crosshair' : 'default';

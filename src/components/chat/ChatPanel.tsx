@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -158,11 +157,10 @@ export const ChatPanel: React.FC = () => {
 
     return (
         <motion.div
-            // Fix: Reordered props to potentially fix a TS parsing issue.
-            variants={panelVariants}
             initial="hidden"
             animate="visible"
             exit="hidden"
+            variants={panelVariants}
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
             className="fixed top-0 right-0 h-full w-full md:w-[420px] bg-stone-900/80 border-l border-stone-700/60 shadow-2xl z-50 flex flex-col backdrop-blur-sm"
             data-bug-reporter-ignore

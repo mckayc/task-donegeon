@@ -1,9 +1,8 @@
-import React, { lazy } from 'react';
+import { lazy } from 'react';
 import { Page } from '../../types/app';
 
 // This is a mapping of page names to their lazy-loaded components.
-export const routeConfig: Partial<Record<Page | 'Menu', React.LazyExoticComponent<React.FC<{}>>>> = {
-    'Menu': lazy(() => Promise.resolve({ default: () => null })), // Placeholder for mobile navigation
+export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.FC<{}>>>> = {
     'Dashboard': lazy(() => import('../pages/Dashboard')),
     'Avatar': lazy(() => import('../pages/AvatarPage')),
     'Collection': lazy(() => import('../pages/CollectionPage')),
@@ -28,20 +27,17 @@ export const routeConfig: Partial<Record<Page | 'Menu', React.LazyExoticComponen
     'Manage Trophies': lazy(() => import('../pages/management/ManageTrophiesPage')),
     'Manage Events': lazy(() => import('../pages/management/ManageEventsPage')),
     'Triumphs & Trials': lazy(() => import('../pages/management/ManageSetbacksPage')),
-    'Approvals': lazy(() => import('../pages/ApprovalsPage')),
-    // FIX: Correctly handle named export for React.lazy
-    'Settings': lazy(() => import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage }))),
-    'Profile': lazy(() => import('../pages/ProfilePage')),
     'Suggestion Engine': lazy(() => import('../pages/SuggestionEnginePage')),
+    'Approvals': lazy(() => import('../pages/ApprovalsPage')),
+    'Settings': lazy(() => import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage }))),
     'Appearance': lazy(() => import('../pages/AppearancePage')),
     'Object Exporter': lazy(() => import('../pages/management/ObjectExporterPage')),
     'Asset Manager': lazy(() => import('../pages/management/AssetManagerPage')),
-    // FIX: Correctly handle named export for React.lazy
     'Backup & Import': lazy(() => import('../pages/management/BackupAndImportPage').then(module => ({ default: module.BackupAndImportPage }))),
     'Asset Library': lazy(() => import('../pages/management/AssetLibraryPage')),
-    'Help Guide': lazy(() => import('../pages/HelpPage')),
-    // FIX: Correctly handle named export for React.lazy
+    'Profile': lazy(() => import('../pages/ProfilePage')),
     'About': lazy(() => import('../pages/AboutPage').then(module => ({ default: module.AboutPage }))),
-    'Bug Tracker': lazy(() => import('../pages/management/BugTrackingPage')),
+    'Help Guide': lazy(() => import('../pages/HelpPage')),
+    'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
 };

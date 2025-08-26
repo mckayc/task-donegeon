@@ -1,11 +1,8 @@
-
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
 const trophyRepository = require('../repositories/trophy.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
-const { logAdminAction, dataSource } = require('../utils/helpers');
-const { UserEntity } = require('../entities');
 
 const getAll = (options) => userRepository.findAll(options);
 
@@ -78,26 +75,11 @@ const update = async (id, userData) => {
     return { success: true, user: saved };
 };
 
-const deleteMany = async (ids, actorId) => {
-    if (ids.length === 0) return;
-    
-    await dataSource.transaction(async manager => {
-        const userRepo = manager.getRepository(UserEntity);
-        const usersToDelete = await userRepo.findByIds(ids);
-        
-        if (actorId && usersToDelete.length > 0) {
-            await logAdminAction(manager, {
-                actorId,
-                title: `Deleted ${ids.length} User(s)`,
-                note: usersToDelete.map(u => u.gameName).join(', '),
-                icon: '🗑️',
-                color: '#ef4444'
-            });
-        }
-
-        await userRepo.delete(ids);
+const deleteMany = async (ids) => {
+    if (ids.length > 0) {
+        await userRepository.deleteMany(ids);
         updateEmitter.emit('update');
-    });
+    }
 };
 
 const adjust = async (adjustmentData) => {

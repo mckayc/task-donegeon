@@ -1,199 +1,307 @@
-
-import React, { useState, useMemo } from 'react';
-// Fix: Removed PanInfo from import as it's not exported in the user's version of framer-motion.
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import { useSystemState } from '../../context/SystemContext';
-import { QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer, User } from '../../types';
+import { QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer, QuestCompletion, PurchaseRequest, RewardTypeDefinition } from '../../types';
 import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
 import TradeDialog from '../trading/TradeDialog';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
-import Avatar from '../user-interface/Avatar';
-import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 
-type Tab = 'quests' | 'purchases' | 'trades';
+// --- Desktop View Components ---
 
-const TabButton: React.FC<{ label: string; count: number; isActive: boolean; onClick: () => void; }> = ({ label, count, isActive, onClick }) => (
-    <button
-        onClick={onClick}
-        className={`relative flex-grow text-center py-3 px-3 rounded-md font-semibold text-sm transition-colors ${
-            isActive ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'
-        }`}
-    >
-        {label}
-        {count > 0 && (
-            <span className="absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full border-2 border-stone-800">
-                {count > 9 ? '9+' : count}
-            </span>
-        )}
-    </button>
+const QuestApprovalTable: React.FC<{
+    completions: QuestCompletion[];
+    notes: { [key: string]: string };
+    handleNoteChange: (id: string, text: string) => void;
+    onApprove: (id: string, note?: string) => void;
+    onReject: (id: string, note?: string) => void;
+    getUserName: (id: string) => string;
+    getQuestTitle: (id: string) => string;
+    getGuildName: (id?: string) => string;
+}> = ({ completions, notes, handleNoteChange, onApprove, onReject, getUserName, getQuestTitle, getGuildName }) => (
+    <div className="overflow-x-auto">
+        <table className="w-full text-left">
+            <thead className="border-b border-stone-700/60">
+                <tr>
+                    <th className="p-4 font-semibold">User</th>
+                    <th className="p-4 font-semibold">Quest</th>
+                    <th className="p-4 font-semibold">Scope</th>
+                    <th className="p-4 font-semibold">User Note</th>
+                    <th className="p-4 font-semibold w-1/4">Admin Note</th>
+                    <th className="p-4 font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {completions.map(c => (
+                    <tr key={c.id} className="border-b border-stone-700/40 last:border-b-0">
+                        <td className="p-4 font-semibold text-emerald-300">{getUserName(c.userId)}</td>
+                        <td className="p-4 text-stone-200">{getQuestTitle(c.questId)}</td>
+                        <td className="p-4 text-stone-400">{getGuildName(c.guildId)}</td>
+                        <td className="p-4 text-stone-400 italic truncate max-w-xs" title={c.note}>"{c.note || 'None'}"</td>
+                        <td className="p-4">
+                            <Input 
+                                placeholder="Optional note..."
+                                value={notes[c.id] || ''}
+                                onChange={(e) => handleNoteChange(c.id, e.target.value)}
+                                className="h-9 text-sm"
+                            />
+                        </td>
+                        <td className="p-4">
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="destructive" onClick={() => onReject(c.id, notes[c.id])}>Reject</Button>
+                                <Button size="sm" onClick={() => onApprove(c.id, notes[c.id])}>Approve</Button>
+                            </div>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
 );
 
-const ApprovalCard: React.FC<{
-    item: any;
-    type: Tab;
-    user: User;
-    title: string;
-    note?: string;
-    costText?: string;
-    onApprove: (id: string, adminNote: string) => void;
-    onReject: (id: string, adminNote: string) => void;
-    onViewTrade?: (trade: TradeOffer) => void;
-}> = ({ item, type, user, title, note, costText, onApprove, onReject, onViewTrade }) => {
-    const [isRejecting, setIsRejecting] = useState(false);
-    const [isApproving, setIsApproving] = useState(false);
-    const [adminNote, setAdminNote] = useState('');
+const PurchaseApprovalTable: React.FC<{
+    purchases: PurchaseRequest[];
+    onApprove: (id: string) => void;
+    onReject: (id: string) => void;
+    getUserName: (id: string) => string;
+    getGuildName: (id?: string) => string;
+    rewardTypes: RewardTypeDefinition[];
+}> = ({ purchases, onApprove, onReject, getUserName, getGuildName, rewardTypes }) => (
+    <div className="overflow-x-auto">
+        <table className="w-full text-left">
+            <thead className="border-b border-stone-700/60">
+                <tr>
+                    <th className="p-4 font-semibold">User</th>
+                    <th className="p-4 font-semibold">Item</th>
+                    <th className="p-4 font-semibold">Cost</th>
+                    <th className="p-4 font-semibold">Scope</th>
+                    <th className="p-4 font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {purchases.map(p => (
+                    <tr key={p.id} className="border-b border-stone-700/40 last:border-b-0">
+                        <td className="p-4 font-semibold text-emerald-300">{getUserName(p.userId)}</td>
+                        <td className="p-4 text-amber-300">{p.assetDetails.name}</td>
+                        <td className="p-4 text-stone-300">{p.assetDetails.cost.map(c => `${c.amount} ${rewardTypes.find(rt => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</td>
+                        <td className="p-4 text-stone-400">{getGuildName(p.guildId)}</td>
+                        <td className="p-4">
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="destructive" onClick={() => onReject(p.id)}>Reject</Button>
+                                <Button size="sm" onClick={() => onApprove(p.id)}>Approve</Button>
+                            </div>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
+);
 
-    const x = useMotionValue(0);
-    const approveOpacity = useTransform(x, [50, 150], [0, 1]);
-    const rejectOpacity = useTransform(x, [-50, -150], [0, 1]);
+const TradeApprovalTable: React.FC<{
+    trades: TradeOffer[];
+    onView: (trade: TradeOffer) => void;
+    getUserName: (id: string) => string;
+    getGuildName: (id?: string) => string;
+}> = ({ trades, onView, getUserName, getGuildName }) => (
+     <div className="overflow-x-auto">
+        <table className="w-full text-left">
+            <thead className="border-b border-stone-700/60">
+                <tr>
+                    <th className="p-4 font-semibold">From</th>
+                    <th className="p-4 font-semibold">Scope</th>
+                    <th className="p-4 font-semibold">Status</th>
+                    <th className="p-4 font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {trades.map(t => (
+                    <tr key={t.id} className="border-b border-stone-700/40 last:border-b-0">
+                        <td className="p-4 font-semibold text-emerald-300">{getUserName(t.initiatorId)}</td>
+                        <td className="p-4 text-stone-400">{getGuildName(t.guildId)}</td>
+                        <td className="p-4 text-yellow-400">{t.status === TradeStatus.OfferUpdated ? 'Offer Updated' : 'New Offer'}</td>
+                        <td className="p-4">
+                            <Button size="sm" onClick={() => onView(t)}>View Offer</Button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
+);
+
+
+const DesktopApprovalsView: React.FC<any> = ({
+    pendingCompletions, pendingPurchases, pendingTrades, notes,
+    handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
+    approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
+    getQuestTitle, getUserName, getGuildName, rewardTypes, currentUser
+}) => {
+    const [activeTab, setActiveTab] = useState('quests');
     
-    // Fix: Replaced PanInfo with an inline type to resolve the import error, and used `any` to prevent further signature issues.
-    const handleDragEnd = (event: any, info: any) => {
-        const swipeThreshold = 100;
-        if (info.offset.x > swipeThreshold) {
-            onApprove(item.id, '');
-        } else if (info.offset.x < -swipeThreshold) {
-            onReject(item.id, '');
-        }
-    };
-
-    const handleOpenReject = () => {
-        setAdminNote('');
-        setIsApproving(false);
-        setIsRejecting(true);
-    };
-
-    const handleOpenApprove = () => {
-        setAdminNote('');
-        setIsRejecting(false);
-        setIsApproving(true);
-    };
-
-    const handleConfirmReject = () => {
-        onReject(item.id, adminNote);
-        setIsRejecting(false);
-    };
+    const isAdmin = currentUser.role === Role.DonegeonMaster;
     
-    const handleConfirmApprove = () => {
-        onApprove(item.id, adminNote);
-        setIsApproving(false);
-    };
-
-    const handleCancel = () => {
-        setIsApproving(false);
-        setIsRejecting(false);
-    };
-    
-    // Fix: Added variants to work around framer-motion prop type issues.
-    const actionVariants = {
-        hidden: { height: 0, opacity: 0 },
-        visible: { height: 'auto', opacity: 1 },
-    };
+    const tabs = [
+        { id: 'quests', label: 'Quests', count: pendingCompletions.length, show: true },
+        { id: 'purchases', label: 'Purchases', count: pendingPurchases.length, show: isAdmin },
+        { id: 'trades', label: 'Trades', count: pendingTrades.length, show: true },
+    ].filter(t => t.show);
 
     return (
-        <div className="relative">
-             <motion.div
-                style={{ opacity: approveOpacity }}
-                className="absolute inset-0 bg-green-500 rounded-lg flex items-center justify-start px-6 text-white font-bold"
-            >
-                <CheckCircleIcon className="w-6 h-6 mr-2" /> Approve
-            </motion.div>
-            <motion.div
-                style={{ opacity: rejectOpacity }}
-                className="absolute inset-0 bg-red-500 rounded-lg flex items-center justify-end px-6 text-white font-bold"
-            >
-                Reject <XCircleIcon className="w-6 h-6 ml-2" />
-            </motion.div>
-
-            <motion.div
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                style={{ x }}
-                onDragEnd={handleDragEnd}
-                className="relative bg-stone-800 rounded-lg shadow-md cursor-grab active:cursor-grabbing"
-            >
-                <div className="p-4">
-                    <div className="flex items-center gap-3">
-                        <Avatar user={user} className="w-10 h-10 rounded-full flex-shrink-0" />
-                        <div>
-                            <p className="font-bold text-stone-100 text-sm">
-                                <span className="text-emerald-300">{user.gameName}</span>
-                                <span className="text-stone-300 font-normal"> {
-                                    type === 'quests' ? 'completed a quest:' :
-                                    type === 'purchases' ? 'requests to purchase:' :
-                                    'sent you a trade offer'
-                                }</span>
-                            </p>
-                             <p className="text-stone-200 font-semibold text-base">"{title}"</p>
-                        </div>
-                    </div>
-
-                    {(note || costText) && (
-                        <div className="mt-3 pl-12 text-sm">
-                            {note && <p className="text-stone-400 italic">"{note}"</p>}
-                            {costText && <p className="text-amber-300">{costText}</p>}
-                        </div>
-                    )}
-                </div>
-                
-                 <AnimatePresence>
-                    {isApproving && (
-                        <motion.div
-                            // Fix: Replaced direct animation props with variants.
-                            variants={actionVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="hidden"
-                            className="overflow-hidden"
+        <Card title="Approvals Queue">
+            <div className="border-b border-stone-700 mb-6">
+                <nav className="-mb-px flex space-x-6">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                activeTab === tab.id
+                                ? 'border-emerald-500 text-emerald-400'
+                                : 'border-transparent text-stone-400 hover:text-stone-200'
+                            }`}
                         >
-                            <div className="p-4 border-t border-stone-700/60 space-y-2">
-                                <Input as="textarea" placeholder="Reason for approval (optional praise)..." value={adminNote} onChange={e => setAdminNote(e.target.value)} />
-                                <div className="flex justify-end gap-2">
-                                    <Button size="sm" variant="secondary" onClick={handleCancel}>Cancel</Button>
-                                    <Button size="sm" onClick={handleConfirmApprove}>Confirm Approve</Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                    {isRejecting && (
-                        <motion.div
-                            // Fix: Replaced direct animation props with variants.
-                            variants={actionVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="hidden"
-                            className="overflow-hidden"
-                        >
-                            <div className="p-4 border-t border-stone-700/60 space-y-2">
-                                <Input as="textarea" placeholder="Reason for rejection (optional)..." value={adminNote} onChange={e => setAdminNote(e.target.value)} />
-                                <div className="flex justify-end gap-2">
-                                    <Button size="sm" variant="secondary" onClick={handleCancel}>Cancel</Button>
-                                    <Button size="sm" variant="destructive" onClick={handleConfirmReject}>Confirm Reject</Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                
-                <div className="bg-black/20 p-2 flex justify-end gap-2 rounded-b-lg">
-                    {type === 'trades' && onViewTrade ? (
-                        <Button size="sm" onClick={() => onViewTrade(item)}>View Offer</Button>
-                    ) : (
-                        <>
-                            <Button size="sm" variant="destructive" onClick={handleOpenReject}>Reject</Button>
-                            <Button size="sm" onClick={handleOpenApprove}>Approve</Button>
-                        </>
-                    )}
-                </div>
-            </motion.div>
-        </div>
+                            {tab.label} ({tab.count})
+                        </button>
+                    ))}
+                </nav>
+            </div>
+
+            {activeTab === 'quests' && (
+                pendingCompletions.length > 0 ? (
+                    <QuestApprovalTable
+                        completions={pendingCompletions}
+                        notes={notes}
+                        handleNoteChange={handleNoteChange}
+                        onApprove={(id, note) => approveQuestCompletion(id, currentUser.id, note)}
+                        onReject={(id, note) => rejectQuestCompletion(id, currentUser.id, note)}
+                        getUserName={getUserName}
+                        getQuestTitle={getQuestTitle}
+                        getGuildName={getGuildName}
+                    />
+                ) : <p className="text-stone-400 text-center py-8">No quests are currently pending approval.</p>
+            )}
+
+            {activeTab === 'purchases' && isAdmin && (
+                pendingPurchases.length > 0 ? (
+                    <PurchaseApprovalTable
+                        purchases={pendingPurchases}
+                        onApprove={(id) => approvePurchaseRequest(id, currentUser.id)}
+                        onReject={(id) => rejectPurchaseRequest(id, currentUser.id)}
+                        getUserName={getUserName}
+                        getGuildName={getGuildName}
+                        rewardTypes={rewardTypes}
+                    />
+                ) : <p className="text-stone-400 text-center py-8">No item purchases are currently pending approval.</p>
+            )}
+            
+            {activeTab === 'trades' && (
+                 pendingTrades.length > 0 ? (
+                    <TradeApprovalTable
+                        trades={pendingTrades}
+                        onView={setTradeToView}
+                        getUserName={getUserName}
+                        getGuildName={getGuildName}
+                    />
+                ) : <p className="text-stone-400 text-center py-8">You have no pending trade offers.</p>
+            )}
+
+        </Card>
     );
 };
+
+const MobileApprovalsView: React.FC<any> = ({
+    pendingCompletions, pendingPurchases, pendingTrades, notes,
+    handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
+    approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
+    getQuestTitle, getUserName, getGuildName, rewardTypes, currentUser
+}) => (
+    <div className="space-y-8">
+        <Card title="Quests Awaiting Verification">
+            {pendingCompletions.length > 0 ? (
+                <ul className="space-y-4">
+                    {pendingCompletions.map((completion: QuestCompletion) => (
+                        <li key={completion.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col justify-between">
+                            <div className="flex flex-col sm:flex-row justify-between sm:items-center">
+                                <div className="mb-4 sm:mb-0">
+                                    <p className="font-bold text-stone-100 flex items-center gap-2 flex-wrap">
+                                        <span className="text-emerald-300">{getUserName(completion.userId)}</span>
+                                        <span className="text-stone-300 font-normal"> completed </span>
+                                        "{getQuestTitle(completion.questId)}"
+                                        <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(completion.guildId)}</span>
+                                    </p>
+                                    <p className="text-stone-400 text-sm mt-1">{completion.note ? `Note: "${completion.note}"` : 'No note provided.'}</p>
+                                </div>
+                            </div>
+                             <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-stone-700/60">
+                                <Input 
+                                    placeholder="Add a note (optional)..."
+                                    value={notes[completion.id] || ''}
+                                    onChange={(e) => handleNoteChange(completion.id, e.target.value)}
+                                    className="flex-grow"
+                                />
+                                 <div className="flex gap-2 justify-end">
+                                    <Button size="sm" variant="destructive" onClick={() => rejectQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Reject</Button>
+                                    <Button size="sm" onClick={() => approveQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Approve</Button>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            ) : <p className="text-stone-400">No quests are currently pending approval.</p>}
+        </Card>
+
+        {currentUser.role === Role.DonegeonMaster && (
+            <>
+            <Card title="Item Purchases Requiring Approval">
+                {pendingPurchases.length > 0 ? (
+                    <ul className="space-y-4">
+                        {pendingPurchases.map((purchase: PurchaseRequest) => (
+                            <li key={purchase.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center">
+                                <div className="mb-4 sm:mb-0">
+                                    <p className="font-bold text-stone-100">
+                                        <span className="text-emerald-300">{getUserName(purchase.userId)}</span> wants to purchase <span className="text-amber-300">"{purchase.assetDetails.name}"</span>
+                                        <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(purchase.guildId)}</span>
+                                    </p>
+                                    <p className="text-stone-400 text-sm mt-1">Cost: {purchase.assetDetails.cost.map(c => `${c.amount} ${rewardTypes.find((rt: RewardTypeDefinition) => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="destructive" onClick={() => rejectPurchaseRequest(purchase.id, currentUser.id)}>Reject</Button>
+                                    <Button size="sm" onClick={() => approvePurchaseRequest(purchase.id, currentUser.id)}>Approve</Button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                ) : <p className="text-stone-400">No item purchases are currently pending approval.</p>}
+            </Card>
+
+            <Card title="Pending Trade Offers">
+                 {pendingTrades.length > 0 ? (
+                    <ul className="space-y-4">
+                        {pendingTrades.map((trade: TradeOffer) => (
+                            <li key={trade.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center">
+                                <div>
+                                    <p className="font-bold text-stone-100">
+                                        <span className="text-emerald-300">{getUserName(trade.initiatorId)}</span> sent you a trade offer.
+                                         <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(trade.guildId)}</span>
+                                    </p>
+                                    <p className="text-stone-400 text-sm mt-1">{trade.status === TradeStatus.OfferUpdated ? 'The offer has been updated.' : 'A new offer has been proposed.'}</p>
+                                </div>
+                                <div className="flex gap-2 mt-4 sm:mt-0">
+                                    <Button size="sm" onClick={() => setTradeToView(trade)}>View Offer</Button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                ) : <p className="text-stone-400">You have no pending trade offers.</p>}
+            </Card>
+            </>
+        )}
+    </div>
+);
 
 
 const ApprovalsPage: React.FC = () => {
@@ -204,8 +312,16 @@ const ApprovalsPage: React.FC = () => {
     const { approveQuestCompletion, rejectQuestCompletion } = useQuestsDispatch();
     const { approvePurchaseRequest, rejectPurchaseRequest } = useEconomyDispatch();
     
-    const [activeTab, setActiveTab] = useState<Tab>('quests');
+    const [notes, setNotes] = useState<{ [key: string]: string }>({});
     const [tradeToView, setTradeToView] = useState<TradeOffer | null>(null);
+
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     if (!currentUser || (currentUser.role !== Role.DonegeonMaster && currentUser.role !== Role.Gatekeeper)) {
         return (
@@ -222,116 +338,25 @@ const ApprovalsPage: React.FC = () => {
     const pendingPurchases = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending);
     const pendingTrades = tradeOffers.filter(t => t.recipientId === currentUser.id && (t.status === TradeStatus.Pending || t.status === TradeStatus.OfferUpdated));
 
+
     const getQuestTitle = (questId: string) => quests.find(q => q.id === questId)?.title || 'Unknown Quest';
-    const getUser = (userId: string) => users.find(u => u.id === userId);
-
-    const questCount = pendingCompletions.length;
-    const purchaseCount = currentUser.role === Role.DonegeonMaster ? pendingPurchases.length : 0;
-    const tradeCount = pendingTrades.length;
+    const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
+    const getGuildName = (guildId?: string) => guildId ? guilds.find(g => g.id === guildId)?.name : 'Personal';
     
-    const handleApproveQuest = (id: string, note: string) => approveQuestCompletion(id, currentUser.id, note);
-    const handleRejectQuest = (id: string, note: string) => rejectQuestCompletion(id, currentUser.id, note);
-    const handleApprovePurchase = (id: string, note: string) => approvePurchaseRequest(id, currentUser.id);
-    const handleRejectPurchase = (id: string, note: string) => rejectPurchaseRequest(id, currentUser.id);
-
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'quests':
-                return pendingCompletions.length > 0 ? (
-                    pendingCompletions.map(c => {
-                        const user = getUser(c.userId);
-                        if (!user) return null;
-                        return (
-                            <ApprovalCard
-                                key={c.id}
-                                item={c}
-                                type="quests"
-                                user={user}
-                                title={getQuestTitle(c.questId)}
-                                note={c.note}
-                                onApprove={handleApproveQuest}
-                                onReject={handleRejectQuest}
-                            />
-                        );
-                    })
-                ) : <p className="text-stone-400 text-center py-8">No quests are currently pending approval.</p>;
-            case 'purchases':
-                 return pendingPurchases.length > 0 ? (
-                    pendingPurchases.map(p => {
-                        const user = getUser(p.userId);
-                        if (!user) return null;
-                        const costText = `Cost: ${p.assetDetails.cost.map(c => `${c.amount} ${rewardTypes.find(rt => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}`;
-                        return (
-                            <ApprovalCard
-                                key={p.id}
-                                item={p}
-                                type="purchases"
-                                user={user}
-                                title={p.assetDetails.name}
-                                costText={costText}
-                                onApprove={handleApprovePurchase}
-                                onReject={handleRejectPurchase}
-                            />
-                        );
-                    })
-                ) : <p className="text-stone-400 text-center py-8">No purchases are currently pending approval.</p>;
-            case 'trades':
-                return pendingTrades.length > 0 ? (
-                    pendingTrades.map(t => {
-                        const user = getUser(t.initiatorId);
-                        if (!user) return null;
-                        const title = t.status === TradeStatus.OfferUpdated ? 'Offer Updated' : 'New Trade Offer';
-                        return (
-                            <ApprovalCard
-                                key={t.id}
-                                item={t}
-                                type="trades"
-                                user={user}
-                                title={title}
-                                onApprove={() => {}} // Not applicable
-                                onReject={() => {}} // Not applicable
-                                onViewTrade={setTradeToView}
-                            />
-                        );
-                    })
-                ) : <p className="text-stone-400 text-center py-8">You have no pending trade offers.</p>;
-            default:
-                return null;
-        }
+    const handleNoteChange = (completionId: string, text: string) => {
+        setNotes(prev => ({ ...prev, [completionId]: text }));
     };
 
-    // Fix: Added variants to work around framer-motion prop type issues.
-    const tabContentVariants = {
-        hidden: { y: 10, opacity: 0 },
-        visible: { y: 0, opacity: 1 },
-        exit: { y: -10, opacity: 0 },
+    const viewProps = {
+        pendingCompletions, pendingPurchases, pendingTrades, notes,
+        handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
+        approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
+        getQuestTitle, getUserName, getGuildName, rewardTypes, currentUser
     };
 
     return (
-        <div className="md:max-w-2xl mx-auto">
-             <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg mb-6">
-                <TabButton label="Quests" count={questCount} isActive={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
-                {currentUser.role === Role.DonegeonMaster && (
-                    <TabButton label="Purchases" count={purchaseCount} isActive={activeTab === 'purchases'} onClick={() => setActiveTab('purchases')} />
-                )}
-                 <TabButton label="Trades" count={tradeCount} isActive={activeTab === 'trades'} onClick={() => setActiveTab('trades')} />
-            </div>
-
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={activeTab}
-                    // Fix: Replaced direct animation props with variants.
-                    variants={tabContentVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    transition={{ duration: 0.2 }}
-                    className="space-y-4"
-                >
-                    {renderContent()}
-                </motion.div>
-            </AnimatePresence>
-
+        <div>
+            {isMobile ? <MobileApprovalsView {...viewProps} /> : <DesktopApprovalsView {...viewProps} />}
             {tradeToView && <TradeDialog tradeOffer={tradeToView} onClose={() => setTradeToView(null)} />}
         </div>
     );

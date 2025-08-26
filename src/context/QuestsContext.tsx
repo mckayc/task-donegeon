@@ -153,12 +153,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {
-            if (!currentUser) {
-                addNotification({ type: 'error', message: 'You must be logged in to perform this action.' });
-                return;
-            }
             try {
-                await deleteSelectedAssetsAPI({ quests: questIds }, currentUser.id);
+                await deleteSelectedAssetsAPI({ quests: questIds });
                 dispatch({ type: 'REMOVE_QUESTS_DATA', payload: { quests: questIds }});
                 addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` });
             } catch (error) {

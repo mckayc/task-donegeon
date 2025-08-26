@@ -7,9 +7,10 @@ import { ChevronDownIcon, ChevronUpIcon } from '../user-interface/Icons';
 import { BugReportType } from '../../../types';
 import { useSystemState } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 const BugReporter: React.FC = () => {
-    const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId } = useDeveloper();
+    const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId, trackClicks, setTrackClicks, trackElementDetails, setTrackElementDetails } = useDeveloper();
     const { bugReports } = useSystemState();
     const { currentUser } = useAuthState();
 
@@ -176,7 +177,7 @@ const BugReporter: React.FC = () => {
                     </div>
                 )}
                 <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
                         <span className="font-bold text-white">Recording: {activeReportTitle}</span>
                          <Button variant="secondary" size="sm" className="!text-xs !py-1 !px-2 !h-auto" onClick={() => {
@@ -188,7 +189,8 @@ const BugReporter: React.FC = () => {
                             {isLogVisible ? 'Hide Log' : 'Show Log'}
                         </Button>
                     </div>
-                    <div className="flex-grow flex items-center gap-2">
+
+                    <div className="flex-grow flex items-center gap-4">
                         <form onSubmit={handleAddNote} className="flex-grow flex items-center gap-2">
                             <Input 
                                 value={note} 
@@ -196,13 +198,35 @@ const BugReporter: React.FC = () => {
                                 placeholder="Add a note to the log..."
                                 className="h-10"
                             />
-                             <Button type="button" variant="secondary" onClick={handleElementPick} className={`h-10 ${isPickingElement ? '!bg-blue-600 text-white' : ''}`}>
-                                {isPickingElement ? 'Cancel Pick' : 'Pick Element'}
-                            </Button>
                             <Button type="submit" variant="secondary" className="h-10">Add Note</Button>
                         </form>
+                         <Button type="button" variant="secondary" onClick={handleElementPick} className={`h-10 ${isPickingElement ? '!bg-blue-600 text-white' : ''} flex-shrink-0`}>
+                            {isPickingElement ? 'Cancel Pick' : 'Pick Element'}
+                        </Button>
+                        <div className="flex items-center gap-3 pl-4 border-l border-red-700/60 flex-shrink-0">
+                            <ToggleSwitch
+                                label="Track Clicks"
+                                enabled={trackClicks}
+                                setEnabled={(enabled) => {
+                                    setTrackClicks(enabled);
+                                    addLogEntry({ type: 'STATE_CHANGE', message: `Click tracking ${enabled ? 'enabled' : 'disabled'}.` });
+                                }}
+                            />
+                            <div className={!trackClicks ? 'opacity-50' : ''}>
+                                <ToggleSwitch
+                                    label="Log Details"
+                                    enabled={trackElementDetails && trackClicks}
+                                    setEnabled={(enabled) => {
+                                        if (!trackClicks) return;
+                                        setTrackElementDetails(enabled);
+                                        addLogEntry({ type: 'STATE_CHANGE', message: `Element detail logging ${enabled ? 'enabled' : 'disabled'}.` });
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div className="border-l border-red-700/60 pl-4 ml-4 flex-shrink-0">
+                    
+                    <div className="border-l border-red-700/60 pl-4 flex-shrink-0">
                         <p className="text-xs font-semibold text-white/80 mb-1">Server-Side Logging</p>
                         {isServerLogging ? (
                             <div className="flex items-center gap-2 h-10">
@@ -218,7 +242,7 @@ const BugReporter: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         <Button onClick={handleStop} className="!bg-red-600 hover:!bg-red-500 text-white h-10">Stop Recording</Button>
                         <Button variant="ghost" size="icon" onClick={handleMinimizeToggle} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
                             <ChevronDownIcon className="w-6 h-6 text-white" />

@@ -10,6 +10,9 @@ interface DeveloperState {
   isPickingElement: boolean;
   logs: BugReportLogEntry[];
   activeBugId: string | null;
+  // FIX: Add missing properties to state
+  trackClicks: boolean;
+  trackElementDetails: boolean;
 }
 
 // Dispatch
@@ -19,6 +22,9 @@ interface DeveloperDispatch {
   addLogEntry: (entry: Omit<BugReportLogEntry, 'timestamp'>) => void;
   startPickingElement: (onPick: (elementInfo: any) => void) => void;
   stopPickingElement: () => void;
+  // FIX: Add missing dispatch functions
+  setTrackClicks: (enabled: boolean) => void;
+  setTrackElementDetails: (enabled: boolean) => void;
 }
 
 const DeveloperStateContext = createContext<DeveloperState | undefined>(undefined);
@@ -29,6 +35,9 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isPickingElement, setIsPickingElement] = useState(false);
   const [logs, setLogs] = useState<BugReportLogEntry[]>([]);
   const [activeBugId, setActiveBugId] = useState<string | null>(null);
+  // FIX: Add state for tracking clicks and element details
+  const [trackClicks, setTrackClicks] = useState(true);
+  const [trackElementDetails, setTrackElementDetails] = useState(false);
 
   const onPickCallbackRef = useRef<((info: any) => void) | null>(null);
   const highlightedElementRef = useRef<HTMLElement | null>(null);
@@ -163,15 +172,19 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, [isPickingElement, stopPickingElement]);
 
-  const state = useMemo(() => ({ isRecording, isPickingElement, logs, activeBugId }), [isRecording, isPickingElement, logs, activeBugId]);
+  // FIX: Include new state properties in the memoized state object
+  const state = useMemo(() => ({ isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails }), [isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails]);
 
+  // FIX: Include new dispatch functions in the memoized dispatch object
   const dispatch = useMemo(() => ({
     startRecording,
     stopRecording,
     addLogEntry,
     startPickingElement,
-    stopPickingElement
-  }), [startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement]);
+    stopPickingElement,
+    setTrackClicks,
+    setTrackElementDetails
+  }), [startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement, setTrackClicks, setTrackElementDetails]);
 
   return (
     <DeveloperStateContext.Provider value={state}>

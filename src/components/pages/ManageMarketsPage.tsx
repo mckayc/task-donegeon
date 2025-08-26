@@ -11,12 +11,14 @@ import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import MarketTable from '../markets/MarketTable';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useAuthState } from '../../context/AuthContext';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { markets } = useEconomyState();
     const { updateMarketsStatus, cloneMarket } = useEconomyDispatch();
+    const { currentUser } = useAuthState();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -50,11 +52,12 @@ const ManageMarketsPage: React.FC = () => {
     };
     
     const handleConfirmAction = () => {
-        if (!confirmation) return;
+        if (!confirmation || !currentUser) return;
         
         switch(confirmation.action) {
             case 'delete':
-                deleteSelectedAssets({ markets: confirmation.ids });
+                // FIX: The deleteSelectedAssets function requires an actorId (the current user's ID) to log the action.
+                deleteSelectedAssets({ markets: confirmation.ids }, currentUser.id);
                 break;
             case 'open':
                 updateMarketsStatus(confirmation.ids, 'open');

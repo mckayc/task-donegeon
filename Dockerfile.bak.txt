@@ -1,4 +1,4 @@
-# Stage 1: Build the application
+# Stage 1: Build the application.
 FROM node:20-alpine AS builder
 
 # Set the working directory in the container

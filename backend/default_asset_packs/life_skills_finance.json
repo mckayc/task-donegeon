@@ -1,4 +1,5 @@
 
+
 {
   "manifest": {
     "id": "com.taskdonegeon.lifeskills.finance.v1",
@@ -16,72 +17,78 @@
         "title": "Open a Savings Account",
         "description": "Set up a jar or box to act as your personal savings account.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🏦",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }],
         "tags": ["finance", "planning"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-personal",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "lfq2",
         "title": "Make a Deposit",
         "description": "Add a portion of your earnings to your savings account.",
         "type": "Duty",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "📥",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
         "tags": ["finance", "saving"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=FR", "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=FR"
       },
       {
         "id": "lfq3",
         "title": "Create a Budget",
         "description": "With help, write down a simple weekly budget for your weekly spending and saving.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "📊",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }],
         "tags": ["finance", "planning"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-personal",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "lfq4",
         "title": "Track Your Spending",
         "description": "Keep a log of everything you spend money on for one week.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "📝",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
         "tags": ["finance", "tracking"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "lfq5",
         "title": "Research a Big Purchase",
         "description": "Research and compare prices for an item you want to buy.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🔍",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
         "tags": ["finance", "planning"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       },
       {
         "id": "lfq6",
         "title": "Chore for Hire",
         "description": "Offer to do an extra chore to earn some extra money.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💪",
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 5 }],
         "tags": ["finance", "earning"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-personal",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
       }
     ]
   }

@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.cookingkitchen.v1",
@@ -15,6 +16,7 @@
         "title": "The Sous Chef",
         "description": "Help prepare a part of a meal (e.g., wash vegetables, set the table, measure ingredients).",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧑‍🍳",
         "tags": [
@@ -51,6 +53,7 @@
         "title": "Countertop Cleanup",
         "description": "Wipe down all the kitchen counters after a meal.",
         "type": "Duty",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧼",
         "tags": [
@@ -87,6 +90,7 @@
         "title": "The Baker's Apprentice",
         "description": "Help bake a treat, like cookies or a cake.",
         "type": "Venture",
+        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🍪",
         "tags": [

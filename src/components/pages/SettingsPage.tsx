@@ -280,8 +280,14 @@ export const SettingsPage: React.FC = () => {
 
                  <CollapsibleSection title="Game Rules">
                     <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val: boolean) => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
-                        <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, setbacks are only applied if a quest is incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
+                        <ToggleSwitch enabled={formState.setbacks.enabled} setEnabled={(val: boolean) => handleSettingChange('setbacks', 'enabled', val)} label="Enable Setbacks" />
+                        <p className="text-xs text-stone-400 -mt-3 ml-12">Globally enable or disable all negative points (Setbacks) for late or incomplete quests.</p>
+
+                        <div className={`pl-8 transition-opacity duration-300 ${!formState.setbacks.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                             <ToggleSwitch enabled={formState.setbacks.forgiveLate} setEnabled={(val: boolean) => handleSettingChange('setbacks', 'forgiveLate', val)} label="Forgive Late Setbacks" />
+                            <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, late setbacks are only applied if a quest is still incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
+                        </div>
+                        
                         <div className="pt-4 border-t border-stone-700/60">
                             <h4 className="font-semibold text-stone-200 mb-2">Quest Defaults</h4>
                             <div className="flex flex-col sm:flex-row gap-4">

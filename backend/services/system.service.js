@@ -164,6 +164,10 @@ const resetAllPlayerData = async (includeAdmins) => {
 
 const deleteAllCustomContent = async () => {
     const manager = dataSource.manager;
+
+    // Delete non-default guilds
+    await manager.getRepository(GuildEntity).delete({ isDefault: Not(true) });
+    
     const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
 
     // Delete non-core reward types

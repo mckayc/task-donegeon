@@ -148,7 +148,10 @@ export interface BackupSchedule {
 export interface AppSettings {
   contentVersion: number;
   favicon: string;
-  forgivingSetbacks: boolean;
+  setbacks: {
+    enabled: boolean;
+    forgiveLate: boolean;
+  };
   questDefaults: {
     requiresApproval: boolean;
     isOptional: boolean;

@@ -1,3 +1,4 @@
+
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -146,6 +147,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_asset_library' },
   { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_suggestion_engine' },
   { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_bug_tracker' },
+  { type: 'link', id: 'Test Cases', emoji: '🧪', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_test_cases' },
   
   { type: 'separator', id: 'sep-system-settings', level: 0, role: Role.DonegeonMaster, isVisible: true },
 
@@ -165,7 +167,10 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
 export const INITIAL_SETTINGS: AppSettings = {
     contentVersion: 0,
     favicon: '🏰',
-    forgivingSetbacks: true,
+    setbacks: {
+        enabled: true,
+        forgiveLate: true,
+    },
     questDefaults: {
         requiresApproval: false,
         isOptional: false,
@@ -234,6 +239,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_calendar: 'Calendar',
       link_avatar: 'Avatar',
       link_collection: 'Collection',
+      link_themes: 'Themes',
       link_guild: 'Guild',
       link_progress: 'Progress',
       link_trophies: 'Trophies',
@@ -263,7 +269,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_help_guide: 'Help Guide',
       link_chat: 'Chat',
       link_bug_tracker: 'Bug Tracker',
-      link_themes: 'Themes',
+      // FIX: Corrected duplicate link_themes key to link_test_cases
       link_test_cases: 'Test Cases',
     },
     enableAiFeatures: false,
@@ -404,7 +410,7 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-78', name: 'Speed Runner', description: 'For getting ready for school in record time.', iconType: 'emoji', icon: '⏱️', isManual: true, requirements: [] },
     { id: 'trophy-79', name: 'Completionist', description: 'For finishing all your homework before dinner.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] },
     { id: 'trophy-80', name: 'The Strategist', description: 'For winning a board game with a clever strategy.', iconType: 'emoji', icon: '♟️', isManual: true, requirements: [] },
-    { id: 'trophy-81', 'name': 'The Farmer', 'description': 'For helping with gardening or yard work.', iconType: 'emoji', 'icon': '🧑‍🌾', 'isManual': true, 'requirements': [] },
+    { id: 'trophy-81', name: 'The Farmer', description: 'For helping with gardening or yard work.', iconType: 'emoji', icon: '🧑‍🌾', isManual: true, requirements: [] },
     { id: 'trophy-82', name: 'The Co-op King', description: 'For successfully completing a two-person chore with a sibling.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] },
     { id: 'trophy-83', name: 'The Patient One', description: 'For waiting patiently without complaining.', iconType: 'emoji', icon: '⏳', isManual: true, requirements: [] },
     { id: 'trophy-84', name: 'The Brave', description: 'For going to the doctor or dentist without any fuss.', iconType: 'emoji', icon: '🛡️', isManual: true, requirements: [] },

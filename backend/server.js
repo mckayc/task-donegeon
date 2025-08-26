@@ -1,10 +1,11 @@
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
-const { GuildEntity, UserEntity } = require('./entities');
+const { GuildEntity, UserEntity, MarketEntity } = require('./entities');
 const { updateTimestamps } = require('./utils/helpers');
 
 // --- Routers ---
@@ -122,23 +123,51 @@ const initializeApp = async () => {
 
     const manager = dataSource.manager;
 
-    // MIGRATION/SYNC: Ensure all users are in the default guild if one exists.
-    const defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });
-    if (defaultGuild) {
-        const allUsers = await manager.find(UserEntity);
-        const guildMemberIds = new Set(defaultGuild.members.map(m => m.id));
-        let needsSave = false;
-        allUsers.forEach(user => {
-            if (!guildMemberIds.has(user.id)) {
-                console.log(`[Data Sync] Adding user "${user.gameName}" (${user.id}) to default guild.`);
-                defaultGuild.members.push(user);
-                needsSave = true;
-            }
+    // MIGRATION/SYNC: Ensure a default guild exists and all users are members.
+    let defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });
+    if (!defaultGuild) {
+        console.log('[Data Sync] No default guild found. Creating one...');
+        defaultGuild = manager.create(GuildEntity, {
+            id: 'guild-default',
+            name: "Adventurer's Guild",
+            purpose: 'The main guild for all adventurers.',
+            isDefault: true,
+            treasury: { purse: {}, ownedAssetIds: [] },
+            members: [],
         });
-        if (needsSave) {
-            await manager.save(updateTimestamps(defaultGuild));
-            console.log(`[Data Sync] Default guild membership updated.`);
+        await manager.save(updateTimestamps(defaultGuild, true));
+        console.log('[Data Sync] Default guild created.');
+    }
+    
+    const allUsers = await manager.find(UserEntity);
+    const guildMemberIds = new Set(defaultGuild.members.map(m => m.id));
+    let needsSave = false;
+    allUsers.forEach(user => {
+        if (!guildMemberIds.has(user.id)) {
+            console.log(`[Data Sync] Adding user "${user.gameName}" (${user.id}) to default guild.`);
+            defaultGuild.members.push(user);
+            needsSave = true;
         }
+    });
+    if (needsSave) {
+        await manager.save(updateTimestamps(defaultGuild));
+        console.log(`[Data Sync] Default guild membership updated.`);
+    }
+
+    // MIGRATION/SYNC: Ensure a default exchange market exists.
+    let defaultMarket = await manager.findOne(MarketEntity, { where: { id: 'market-bank' } });
+    if (!defaultMarket) {
+        console.log('[Data Sync] No default market found. Creating one...');
+        defaultMarket = manager.create(MarketEntity, {
+            id: 'market-bank',
+            title: "Exchange Post",
+            description: "Exchange your various currencies and experience points.",
+            iconType: 'emoji',
+            icon: '⚖️',
+            status: { type: 'open' },
+        });
+        await manager.save(updateTimestamps(defaultMarket, true));
+        console.log('[Data Sync] Default market created.');
     }
 
     // Ensure asset and backup directories exist

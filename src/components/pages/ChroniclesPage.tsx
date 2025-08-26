@@ -35,7 +35,15 @@ const ChroniclesPage: React.FC = () => {
     const [selectedFilters, setSelectedFilters] = useState<string[]>(() => {
         try {
             const savedFilters = localStorage.getItem('chronicleFilters');
-            return savedFilters ? JSON.parse(savedFilters) : DEFAULT_FILTERS;
+            if (savedFilters) {
+                const parsed = JSON.parse(savedFilters);
+                // If the saved value is an empty array, it's likely a bug or invalid state.
+                // Fall back to the default filters instead.
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+            }
+            return DEFAULT_FILTERS; // Fallback for null, empty array, or invalid JSON
         } catch {
             return DEFAULT_FILTERS;
         }

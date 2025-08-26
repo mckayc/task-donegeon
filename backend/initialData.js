@@ -1,3 +1,4 @@
+
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -47,6 +48,8 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
   { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_asset_library' },
   { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_suggestion_engine' },
   { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_bug_tracker' },
+  // FIX: Added missing test cases link for consistency
+  { type: 'link', id: 'Test Cases', emoji: '🧪', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_test_cases' },
   
   { type: 'separator', id: 'sep-system-settings', level: 0, role: 'Donegeon Master', isVisible: true },
 
@@ -135,7 +138,6 @@ const INITIAL_SETTINGS = {
       link_calendar: 'Calendar',
       link_avatar: 'Avatar',
       link_collection: 'Collection',
-      link_themes: 'Themes',
       link_guild: 'Guild',
       link_progress: 'Progress',
       link_trophies: 'Trophies',
@@ -166,6 +168,8 @@ const INITIAL_SETTINGS = {
       link_chat: 'Chat',
       link_bug_tracker: 'Bug Tracker',
       link_themes: 'Themes',
+      // FIX: Added missing link_test_cases terminology
+      link_test_cases: 'Test Cases',
     },
     enableAiFeatures: false,
     rewardValuation: {
@@ -262,27 +266,27 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
-  styles: styles,
+  styles: styles as ThemeStyle,
 }));
 
 // This function is for creating mock data, but is not used on initial load.
 // It remains here in case it's needed for testing or blueprints.
-const createInitialQuestCompletions = (users, quests) => {
+export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
     // This function can be used to populate some initial "completed" quests for demonstration
     return [];
 };
 
-const INITIAL_TROPHIES = [
-    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },
+export const INITIAL_TROPHIES: Trophy[] = [
+    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },
     { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] },
     { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] },
     { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] },
-    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: 'ACHIEVE_RANK', value: 'rank-2', count: 1}]},
+    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]},
     { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] },
     { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', iconType: 'emoji', icon: '💰', isManual: true, requirements: [] },
     { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] },
@@ -357,7 +361,7 @@ const INITIAL_TROPHIES = [
     { id: 'trophy-78', name: 'Speed Runner', description: 'For getting ready for school in record time.', iconType: 'emoji', icon: '⏱️', isManual: true, requirements: [] },
     { id: 'trophy-79', name: 'Completionist', description: 'For finishing all your homework before dinner.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] },
     { id: 'trophy-80', name: 'The Strategist', description: 'For winning a board game with a clever strategy.', iconType: 'emoji', icon: '♟️', isManual: true, requirements: [] },
-    { id: 'trophy-81', 'name': 'The Farmer', 'description': 'For helping with gardening or yard work.', iconType: 'emoji', 'icon': '🧑‍🌾', 'isManual': true, 'requirements': [] },
+    { id: 'trophy-81', name: 'The Farmer', description: 'For helping with gardening or yard work.', iconType: 'emoji', icon: '🧑‍🌾', isManual: true, requirements: [] },
     { id: 'trophy-82', name: 'The Co-op King', description: 'For successfully completing a two-person chore with a sibling.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] },
     { id: 'trophy-83', name: 'The Patient One', description: 'For waiting patiently without complaining.', iconType: 'emoji', icon: '⏳', isManual: true, requirements: [] },
     { id: 'trophy-84', name: 'The Brave', description: 'For going to the doctor or dentist without any fuss.', iconType: 'emoji', icon: '🛡️', isManual: true, requirements: [] },
@@ -375,14 +379,3 @@ const INITIAL_TROPHIES = [
     { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] },
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
-
-module.exports = {
-  INITIAL_MAIN_SIDEBAR_CONFIG,
-  INITIAL_SETTINGS,
-  INITIAL_QUEST_GROUPS,
-  INITIAL_REWARD_TYPES,
-  INITIAL_RANKS,
-  INITIAL_THEMES,
-  createInitialQuestCompletions,
-  INITIAL_TROPHIES,
-};

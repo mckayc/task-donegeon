@@ -9,11 +9,13 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useProgressionState } from '../../../context/ProgressionContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import TrophyTable from '../../trophies/TrophyTable';
+import { useAuthState } from '../../../context/AuthContext';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies } = useProgressionState();
     const { settings, isAiConfigured } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
+    const { currentUser } = useAuthState();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -43,8 +45,9 @@ const ManageTrophiesPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingIds.length > 0) {
-            deleteSelectedAssets({ trophies: deletingIds }, () => {
+        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
+        if (deletingIds.length > 0 && currentUser) {
+            deleteSelectedAssets({ trophies: deletingIds }, currentUser.id, () => {
                 setSelectedTrophies(prev => prev.filter(id => !deletingIds.includes(id)));
                 setDeletingIds([]);
             });

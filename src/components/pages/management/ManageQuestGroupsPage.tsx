@@ -9,11 +9,13 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useQuestsState } from '../../../context/QuestsContext';
 import QuestGroupTable from '../../quest-groups/QuestGroupTable';
+import { useAuthState } from '../../../context/AuthContext';
 
 const ManageQuestGroupsPage: React.FC = () => {
     const { settings } = useSystemState();
     const { questGroups } = useQuestsState();
     const { deleteSelectedAssets } = useSystemDispatch();
+    const { currentUser } = useAuthState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);
@@ -39,8 +41,9 @@ const ManageQuestGroupsPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingIds.length > 0) {
-            deleteSelectedAssets({ questGroups: deletingIds });
+        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
+        if (deletingIds.length > 0 && currentUser) {
+            deleteSelectedAssets({ questGroups: deletingIds }, currentUser.id);
         }
         setDeletingIds([]);
         setSelectedGroups(prev => prev.filter(id => !deletingIds.includes(id)));

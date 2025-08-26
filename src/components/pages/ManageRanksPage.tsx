@@ -8,11 +8,13 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import RankTable from '../ranks/RankTable';
+import { useAuthState } from '../../context/AuthContext';
 
 const ManageRanksPage: React.FC = () => {
     const { ranks } = useProgressionState();
     const { settings } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
+    const { currentUser } = useAuthState();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -45,8 +47,9 @@ const ManageRanksPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingIds.length > 0) {
-            deleteSelectedAssets({ ranks: deletingIds }, () => {
+        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
+        if (deletingIds.length > 0 && currentUser) {
+            deleteSelectedAssets({ ranks: deletingIds }, currentUser.id, () => {
                 setDeletingIds([]);
                 setSelectedRanks(prev => prev.filter(id => !deletingIds.includes(id)));
             });

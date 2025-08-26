@@ -9,6 +9,7 @@ import { useRewardValuePerUnit } from '../rewards/hooks/useRewardValue';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { useAuthState } from '../../context/AuthContext';
 
 const RewardItem: React.FC<{
     reward: RewardTypeDefinition;
@@ -80,6 +81,7 @@ const RewardsPage: React.FC = () => {
     const { rewardTypes } = useEconomyState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { cloneRewardType } = useEconomyDispatch();
+    const { currentUser } = useAuthState();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingReward, setEditingReward] = useState<RewardTypeDefinition | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -106,8 +108,9 @@ const RewardsPage: React.FC = () => {
     }
     
     const handleConfirmDelete = () => {
-        if (deletingId) {
-            deleteSelectedAssets({ rewardTypes: [deletingId] });
+        // FIX: Add currentUser check and pass currentUser.id to deleteSelectedAssets
+        if (deletingId && currentUser) {
+            deleteSelectedAssets({ rewardTypes: [deletingId] }, currentUser.id);
         }
         setIsConfirmOpen(false);
         setDeletingId(null);

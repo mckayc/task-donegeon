@@ -203,7 +203,7 @@ const ChroniclesPage: React.FC = () => {
                                         <span className="text-2xl flex-shrink-0 mt-1">{activity.icon}</span>
                                         <div className="flex-grow overflow-hidden">
                                             <p className="font-semibold text-stone-100 truncate" title={activity.title}>{activity.title}</p>
-                                            {isAdminView && activity.userName && (
+                                            {viewMode === 'all' && activity.userName && (
                                                 <p className="text-xs text-stone-400 font-medium truncate" title={activity.userName}>{activity.userName}</p>
                                             )}
                                         </div>

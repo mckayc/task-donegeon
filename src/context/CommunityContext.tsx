@@ -125,3 +125,12 @@ export const useCommunityDispatch = (): CommunityDispatch => {
     if (context === undefined) throw new Error('useCommunityDispatch must be used within a CommunityProvider');
     return context.actions;
 };
+
+// FIX: Export useCommunityReducerDispatch
+export const useCommunityReducerDispatch = (): React.Dispatch<CommunityAction> => {
+  const context = useContext(CommunityDispatchContext);
+  if (!context) {
+    throw new Error('useCommunityReducerDispatch must be used within a CommunityProvider');
+  }
+  return context.dispatch;
+};

@@ -15,6 +15,7 @@ const ManageSetbacksPage: React.FC = () => {
     const { settings, modifierDefinitions, appliedModifiers } = useSystemState();
     const { users } = useAuthState();
     const { deleteSelectedAssets } = useSystemDispatch();
+    const { currentUser } = useAuthState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
@@ -55,8 +56,9 @@ const ManageSetbacksPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingIds.length > 0) {
-            deleteSelectedAssets({ modifierDefinitions: deletingIds });
+        // FIX: Pass currentUser.id as the second argument to deleteSelectedAssets.
+        if (deletingIds.length > 0 && currentUser) {
+            deleteSelectedAssets({ modifierDefinitions: deletingIds }, currentUser.id);
         }
         setDeletingIds([]);
         setSelectedModifiers(prev => prev.filter(id => !deletingIds.includes(id)));

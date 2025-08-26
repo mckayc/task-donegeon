@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -7,7 +8,7 @@ import {
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI, runRotationAPI,
     completeCheckpointAPI,
-    deleteSelectedAssetsAPI
+    deleteQuestsAPI
 } from '../api';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
@@ -153,8 +154,9 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {
+            if (!currentUser) return;
             try {
-                await deleteSelectedAssetsAPI({ quests: questIds });
+                await deleteQuestsAPI(questIds, currentUser.id);
                 dispatch({ type: 'REMOVE_QUESTS_DATA', payload: { quests: questIds }});
                 addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` });
             } catch (error) {
@@ -249,4 +251,13 @@ export const useQuestsDispatch = (): QuestsDispatch => {
     const context = useContext(QuestsDispatchContext);
     if (context === undefined) throw new Error('useQuestsDispatch must be used within a QuestsProvider');
     return context.actions;
+};
+
+// FIX: Export useQuestsReducerDispatch
+export const useQuestsReducerDispatch = (): React.Dispatch<QuestsAction> => {
+  const context = useContext(QuestsDispatchContext);
+  if (!context) {
+    throw new Error('useQuestsReducerDispatch must be used within a QuestsProvider');
+  }
+  return context.dispatch;
 };

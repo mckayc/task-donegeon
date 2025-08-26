@@ -1,5 +1,4 @@
 
-
 const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity, ChronicleEventEntity } = require('../entities');
 const { In, IsNull } = require("typeorm");
 const { SystemNotificationEntity: SysNotifEntity } = require('../entities'); // alias for checkAndAwardTrophies
@@ -190,7 +189,8 @@ const getFullAppData = async (manager) => {
     return data;
 };
 
-const logAdminAction = async (manager, { actorId, title, note, icon, color, guildId }) => {
+const logAdminAction = async (manager, { actorId, action, entity, entityId, entityName, guildId }) => {
+    if (!actorId) return; // Cannot log without an actor
     const chronicleRepo = manager.getRepository(ChronicleEventEntity);
     const userRepo = manager.getRepository(UserEntity);
 
@@ -199,15 +199,15 @@ const logAdminAction = async (manager, { actorId, title, note, icon, color, guil
 
     const eventData = {
         id: `chron-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        originalId: `admin-action-${Date.now()}`,
+        originalId: entityId || `admin-action-${Date.now()}`,
         date: new Date().toISOString(),
         type: 'System',
-        title,
-        note,
+        title: `${entity}: ${entityName}`,
+        note: `The ${entity.toLowerCase()} "${entityName}" was ${action}.`,
         status: 'Executed',
-        icon,
-        color,
-        userId: null, // Admin actions have no subject user
+        icon: '⚙️',
+        color: '#a8a29e', // stone-400
+        userId: null,
         userName: null,
         actorId: actor.id,
         actorName: actor.gameName,

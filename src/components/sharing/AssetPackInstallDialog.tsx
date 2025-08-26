@@ -18,6 +18,7 @@ interface AssetPackInstallDialogProps {
   allowUserAssignment: boolean;
 }
 
+// FIX: Added 'chronicles' to the terminology map to satisfy the ShareableAssetType.
 const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     quests: 'tasks',
     questGroups: 'link_manage_quest_groups',
@@ -29,6 +30,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     users: 'link_manage_users',
     rotations: 'link_manage_rotations',
     modifierDefinitions: 'link_triumphs_trials',
+    chronicles: 'link_chronicles',
 };
 
 const AssetCard: React.FC<{

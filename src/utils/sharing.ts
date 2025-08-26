@@ -33,7 +33,8 @@ export const generateAssetPack = (
     description: string,
     author: string,
     selectedAssets: { [key in ShareableAssetType]: string[] },
-    allAssets: IAppData
+    allAssets: IAppData,
+    chronicleUserFilter?: string[]
 ) => {
     const assetPack: AssetPack = {
         manifest: {
@@ -52,6 +53,7 @@ export const generateAssetPack = (
             markets: [],
             gameAssets: [],
             users: [],
+            chronicles: [],
         }
     };
 
@@ -92,6 +94,13 @@ export const generateAssetPack = (
             personalPurse, personalExperience, guildBalances, avatar, 
             ownedAssetIds, ownedThemes, hasBeenOnboarded, ...userTemplate 
         }) => userTemplate);
+        
+    // Add filtered chronicles
+    if (chronicleUserFilter && chronicleUserFilter.length > 0) {
+        const userFilterSet = new Set(chronicleUserFilter);
+        assetPack.assets.chronicles = allAssets.chronicleEvents.filter(c => c.userId && userFilterSet.has(c.userId));
+    }
+
 
     // Download the file
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(assetPack, null, 2));

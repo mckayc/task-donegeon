@@ -12,6 +12,7 @@ import { SystemLog, SystemNotification } from '../components/system/types';
 import { ChatMessage } from '../components/chat/types';
 import { BugReport } from '../components/dev/types';
 import { TradeOffer, Gift } from '../components/trading/types';
+import { ChronicleEvent } from '../components/chronicles/types';
 
 
 // This file is for truly global types that don't belong to a specific feature domain.
@@ -238,4 +239,5 @@ export interface IAppData {
   appliedModifiers: AppliedModifier[];
   tradeOffers: TradeOffer[];
   gifts: Gift[];
+  chronicleEvents: ChronicleEvent[];
 }

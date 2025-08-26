@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User } from '../types';
+import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
@@ -20,6 +20,8 @@ export interface SystemState {
     bugReports: BugReport[];
     modifierDefinitions: ModifierDefinition[];
     appliedModifiers: AppliedModifier[];
+    // FIX: Added missing chronicleEvents property to the state interface
+    chronicleEvents: ChronicleEvent[];
 }
 
 export type SystemAction = 
@@ -75,6 +77,8 @@ const initialState: SystemState = {
     bugReports: [],
     modifierDefinitions: [],
     appliedModifiers: [],
+    // FIX: Added missing chronicleEvents property to the initial state
+    chronicleEvents: [],
 };
 
 const systemReducer = (state: SystemState, action: SystemAction): SystemState => {

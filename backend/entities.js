@@ -29,6 +29,34 @@ class AppliedModifier {}
 class Rotation {}
 class TradeOffer {}
 class Gift {}
+class ChronicleEvent {}
+
+const ChronicleEventEntity = new EntitySchema({
+    name: "ChronicleEvent",
+    target: ChronicleEvent,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        originalId: { type: "varchar" }, // ID of the source object (e.g., QuestCompletion id)
+        date: { type: "varchar" },
+        type: { type: "varchar" },
+        title: { type: "varchar" },
+        note: { type: "text", nullable: true },
+        status: { type: "varchar" },
+        iconType: { type: "varchar", nullable: true },
+        icon: { type: "varchar" },
+        imageUrl: { type: "varchar", nullable: true },
+        color: { type: "varchar" },
+        userId: { type: "varchar", nullable: true }, // The primary user this event is about
+        actorName: { type: "varchar", nullable: true }, // The name of the user who performed the action
+        recipientUserIds: { type: "simple-array", nullable: true },
+        questType: { type: "varchar", nullable: true },
+        guildId: { type: "varchar", nullable: true },
+        rewardsText: { type: "varchar", nullable: true },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    }
+});
+
 
 const BugReportEntity = new EntitySchema({
     name: "BugReport",
@@ -394,7 +422,8 @@ const allEntities = [
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity
+    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
+    ChronicleEventEntity,
 ];
 
 module.exports = { 
@@ -403,5 +432,6 @@ module.exports = {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity
+    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
+    ChronicleEventEntity,
 };

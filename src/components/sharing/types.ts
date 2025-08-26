@@ -5,8 +5,9 @@ import { Trophy } from '../trophies/types';
 import { UserTemplate, Role } from '../users/types';
 import { Rotation } from '../rotations/types';
 import { ModifierDefinition } from '../modifiers/types';
+import { ChronicleEvent } from '../chronicles/types';
 
-export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups' | 'users' | 'rotations' | 'modifierDefinitions';
+export type ShareableAssetType = 'quests' | 'questGroups' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'users' | 'rotations' | 'modifierDefinitions' | 'chronicles';
 
 export interface AssetPackAssets {
   quests?: Quest[];
@@ -19,6 +20,7 @@ export interface AssetPackAssets {
   users?: UserTemplate[];
   rotations?: Rotation[];
   modifierDefinitions?: ModifierDefinition[];
+  chronicles?: ChronicleEvent[];
 }
 
 export interface AssetPackManifest {

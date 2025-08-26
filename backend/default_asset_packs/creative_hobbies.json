@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.creativehobbies.v1",
@@ -17,7 +16,6 @@
         "title": "The Sketch Artist",
         "description": "Spend 15 minutes drawing or doodling anything you like.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "✏️",
         "tags": [
@@ -35,6 +33,7 @@
         "requiresApproval": false,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
+        "availabilityCount": null,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-creative",
@@ -52,7 +51,6 @@
         "title": "The Minstrel's Practice",
         "description": "Practice a musical instrument for 20 minutes.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🎵",
         "tags": [
@@ -74,6 +72,7 @@
         "requiresApproval": false,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
+        "availabilityCount": null,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-creative",
@@ -91,7 +90,6 @@
         "title": "The Storyteller",
         "description": "Write a short story or a journal entry (at least one paragraph).",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "📖",
         "tags": [
@@ -113,6 +111,7 @@
         "requiresApproval": true,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
+        "availabilityCount": null,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-creative",
@@ -130,7 +129,6 @@
         "title": "The LEGO Master",
         "description": "Build something cool with LEGOs or other building blocks.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧱",
         "tags": [
@@ -148,6 +146,7 @@
         "requiresApproval": true,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
+        "availabilityCount": null,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-creative",

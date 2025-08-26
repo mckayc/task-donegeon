@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { In, MoreThan, IsNull } = require("typeorm");
 const { 
@@ -386,14 +385,6 @@ const importAssetPack = async (assetPack, resolutions) => {
                     if (newAssetData.marketIds) {
                         newAssetData.marketIds = newAssetData.marketIds.map(mid => idMap.get(mid) || mid);
                     }
-                }
-                if (assetType === 'trophies' && newAssetData.requirements) {
-                    newAssetData.requirements = newAssetData.requirements.map(req => {
-                        if (req.type === 'ACHIEVE_RANK' || req.type === 'QUEST_COMPLETED') {
-                            return { ...req, value: idMap.get(req.value) || req.value };
-                        }
-                        return req;
-                    });
                 }
 
                 const newId = `${assetType.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;

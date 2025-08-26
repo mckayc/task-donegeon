@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.educational.science.v1",
@@ -17,7 +16,6 @@
         "title": "Kitchen Chemistry",
         "description": "Perform a simple and safe science experiment using kitchen supplies (e.g., vinegar and baking soda volcano).",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "⚗️",
         "rewards": [
@@ -34,14 +32,13 @@
         "isOptional": true,
         "requiresApproval": true,
         "groupId": "qg-school",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq2",
         "title": "Stargazing",
         "description": "Identify three constellations in the night sky.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🔭",
         "rewards": [
@@ -59,14 +56,13 @@
         "isOptional": true,
         "requiresApproval": false,
         "groupId": "qg-school",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq3",
         "title": "The Botanist",
         "description": "Identify three different types of plants in your yard or a park.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌿",
         "rewards": [
@@ -84,14 +80,13 @@
         "isOptional": true,
         "requiresApproval": false,
         "groupId": "qg-school",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq4",
         "title": "Build a Simple Machine",
         "description": "Create a simple lever, pulley, or inclined plane and demonstrate how it works.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "⚙️",
         "rewards": [
@@ -109,14 +104,13 @@
         "isOptional": true,
         "requiresApproval": true,
         "groupId": "qg-school",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq5",
         "title": "Weather Watcher",
         "description": "Keep a log of the weather (temperature, clouds, precipitation) for three days.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "☁️",
         "rewards": [
@@ -133,14 +127,13 @@
         "isOptional": true,
         "requiresApproval": false,
         "groupId": "qg-school",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "esq6",
         "title": "Animal Researcher",
         "description": "Learn and share five interesting facts about an animal of your choice.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🐾",
         "rewards": [
@@ -157,7 +150,7 @@
         "isOptional": true,
         "requiresApproval": false,
         "groupId": "qg-school",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

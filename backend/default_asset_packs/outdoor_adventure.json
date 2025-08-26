@@ -1,4 +1,3 @@
-
 {
   "manifest": {
     "id": "com.taskdonegeon.outdooradventure.v1",
@@ -16,7 +15,6 @@
         "title": "Weed Patrol",
         "description": "Spend 15 minutes pulling weeds from the garden or flower beds.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌿",
         "tags": [
@@ -57,7 +55,6 @@
         "title": "Tidy the Path",
         "description": "Sweep the front porch, walkway, or back patio.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧹",
         "tags": [
@@ -94,7 +91,6 @@
         "title": "Nature's Scavenger",
         "description": "Find three interesting things in the yard or on a walk (a cool rock, a unique leaf, a pretty flower).",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🔍",
         "tags": [

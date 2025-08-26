@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.fitness.gym.v1",
@@ -17,78 +16,72 @@
         "title": "Morning Stretch",
         "description": "Do a 10-minute stretching routine after waking up.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧘",
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }],
         "tags": ["fitness", "health"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fgq2",
         "title": "Cardio Conquest",
         "description": "Complete 20 minutes of cardiovascular exercise (running, cycling, etc.).",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🏃",
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 25 }],
         "tags": ["fitness", "health"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fgq3",
         "title": "Strength Training",
         "description": "Complete a full strength training workout session.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🏋️",
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 40 }],
         "tags": ["fitness", "health"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fgq4",
         "title": "Hydration Station",
         "description": "Drink a full bottle of water during your workout.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💧",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
         "tags": ["fitness", "health"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fgq5",
         "title": "Try a New Exercise",
         "description": "Incorporate a new exercise or machine into your routine.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💡",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
         "tags": ["fitness", "learning"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fgq6",
         "title": "Post-Workout Cooldown",
         "description": "Perform a 5-minute cooldown and stretching routine after your workout.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌬️",
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }],
         "tags": ["fitness", "health"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.artisan.woodworker.v1",
@@ -17,78 +16,72 @@
         "title": "Safety First",
         "description": "Review safety rules and clean the workshop area before starting.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🥽",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
         "tags": ["woodworking", "safety"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "awq2",
         "title": "Measure Twice, Cut Once",
         "description": "Carefully measure and mark all pieces for a project.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "📏",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
         "tags": ["woodworking", "planning"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "awq3",
         "title": "Sanding Session",
         "description": "Spend 20 minutes sanding a project to a smooth finish.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "⏳",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
         "tags": ["woodworking", "finishing"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "awq4",
         "title": "Joinery Practice",
         "description": "Practice making a specific type of wood joint.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🔗",
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 30 }],
         "tags": ["woodworking", "practice"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "awq5",
         "title": "The Finishing Touch",
         "description": "Apply a coat of stain, oil, or paint to a project.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🖌️",
         "rewards": [{ "rewardTypeId": "core-creative", "amount": 20 }],
         "tags": ["woodworking", "finishing"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "awq6",
         "title": "Workshop Cleanup",
         "description": "Sweep the floor and put away all tools after working.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧹",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
         "tags": ["woodworking", "cleaning"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

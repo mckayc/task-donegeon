@@ -1,4 +1,3 @@
-
 {
   "manifest": {
     "id": "com.taskdonegeon.householdchores.v1",
@@ -16,7 +15,6 @@
         "title": "Conquer Mount Laundry",
         "description": "Wash, dry, and fold a load of laundry from start to finish.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧺",
         "imageUrl": null,
@@ -33,6 +31,7 @@
         "claimedByUserIds": [],
         "dismissals": [],
         "todoUserIds": [],
+        "nextQuestId": null,
         "startDateTime": null,
         "endDateTime": null,
         "allDay": true,
@@ -47,7 +46,6 @@
         "title": "The Dishwashing Duel",
         "description": "Empty the dishwasher if it's clean, or load it up if it's dirty.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🍽️",
         "imageUrl": null,
@@ -64,6 +62,7 @@
         "claimedByUserIds": [],
         "dismissals": [],
         "todoUserIds": [],
+        "nextQuestId": null,
         "startDateTime": null,
         "endDateTime": null,
         "allDay": true,
@@ -78,7 +77,6 @@
         "title": "The Vacuuming Vortex",
         "description": "Banish the dust bunnies by vacuuming one room of the house.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌪️",
         "imageUrl": null,
@@ -95,6 +93,7 @@
         "claimedByUserIds": [],
         "dismissals": [],
         "todoUserIds": [],
+        "nextQuestId": null,
         "startDateTime": null,
         "endDateTime": null,
         "allDay": true,

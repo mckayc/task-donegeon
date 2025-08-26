@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.fitness.sports.v1",
@@ -17,78 +16,72 @@
         "title": "Attend Practice",
         "description": "Attend your team's scheduled practice session.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🗓️",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
         "tags": ["sports", "practice"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=TU,TH"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=TU,TH", "availabilityCount": null
       },
       {
         "id": "fsq2",
         "title": "Drill Master",
         "description": "Spend 20 minutes practicing a specific skill for your sport.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🎯",
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }],
         "tags": ["sports", "practice"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fsq3",
         "title": "Game Day Ready",
         "description": "Prepare your uniform and equipment for the upcoming game.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "👕",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
         "tags": ["sports", "organization"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fsq4",
         "title": "Good Sport",
         "description": "Show good sportsmanship by congratulating the other team, win or lose.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🤝",
         "rewards": [{ "rewardTypeId": "core-gems", "amount": 30 }],
         "tags": ["sports", "character"],
         "isActive": true, "isOptional": false, "requiresApproval": true, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fsq5",
         "title": "Team Huddle",
         "description": "Listen attentively to the coach during a game or practice.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🗣️",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 10 }],
         "tags": ["sports", "character"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fsq6",
         "title": "Clean Your Gear",
         "description": "Clean your sports equipment after a game or practice.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🧼",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
         "tags": ["sports", "cleaning"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

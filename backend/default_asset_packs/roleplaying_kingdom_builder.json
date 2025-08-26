@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.roleplaying.kingdom.v1",
@@ -17,78 +16,72 @@
         "title": "Royal Decree: Tidy Room",
         "description": "Issue a royal decree (and follow it) to tidy your personal chambers (bedroom).",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "📜",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
         "tags": ["kingdom", "cleaning"],
         "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "rkq2",
         "title": "Manage the Royal Treasury",
         "description": "Help create a simple weekly budget or savings plan.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💰",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }],
         "tags": ["kingdom", "planning"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "rkq3",
         "title": "Diplomatic Mission",
         "description": "Perform a kind act for a member of a neighboring kingdom (a sibling or parent).",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🤝",
         "rewards": [{ "rewardTypeId": "core-gems", "amount": 15 }],
         "tags": ["kingdom", "social"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "rkq4",
         "title": "Fortify the Defenses",
         "description": "Help with a household repair or maintenance task.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🛠️",
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }],
         "tags": ["kingdom", "household"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "rkq5",
         "title": "Survey the Lands",
         "description": "Help with yard work, like raking leaves or watering plants.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌳",
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 20 }],
         "tags": ["kingdom", "yardwork"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=SU,SA"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=SU,SA", "availabilityCount": null
       },
       {
         "id": "rkq6",
         "title": "Train the Royal Guard",
         "description": "Do 15 minutes of physical exercise or practice a sport.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "⚔️",
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 15 }],
         "tags": ["kingdom", "fitness"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

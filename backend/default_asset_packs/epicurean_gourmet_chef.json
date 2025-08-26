@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.epicurean.chef.v1",
@@ -17,78 +16,72 @@
         "title": "Master a New Sauce",
         "description": "Learn to make a new type of sauce from scratch (e.g., marinara, béchamel).",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🍝",
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 30 }],
         "tags": ["cooking", "learning"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq2",
         "title": "Bake Artisan Bread",
         "description": "Bake a loaf of bread from scratch.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🍞",
         "rewards": [{ "rewardTypeId": "core-creative", "amount": 40 }],
         "tags": ["cooking", "baking"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq3",
         "title": "Cook a Three-Course Meal",
         "description": "Plan and cook an appetizer, main course, and dessert.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🍽️",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 50 }],
         "tags": ["cooking", "planning"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq4",
         "title": "Explore a New Cuisine",
         "description": "Cook a dish from a cuisine you've never tried before.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🌏",
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }],
         "tags": ["cooking", "learning"],
         "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq5",
         "title": "Perfect Your Knife Skills",
         "description": "Practice different vegetable cuts (julienne, dice, etc.) for 15 minutes.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🔪",
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 20 }],
         "tags": ["cooking", "practice"],
         "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "egq6",
         "title": "Meal Prep Sunday",
         "description": "Help prepare ingredients or full meals for the week ahead.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🗓️",
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 35 }],
         "tags": ["cooking", "planning"],
         "isActive": true, "isOptional": false, "requiresApproval": true, "groupId": "qg-creative",
-        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=SU"
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=SU", "availabilityCount": null
       }
     ]
   }

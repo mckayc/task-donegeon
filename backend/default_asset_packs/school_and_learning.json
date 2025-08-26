@@ -1,5 +1,4 @@
 
-
 {
   "manifest": {
     "id": "com.taskdonegeon.schoolandlearning.v1",
@@ -17,7 +16,6 @@
         "title": "The Homework Gauntlet",
         "description": "Complete all of today's homework assignments without being reminded.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "✍️",
         "tags": [
@@ -35,6 +33,7 @@
         "requiresApproval": true,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
+        "availabilityCount": null,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-school",
@@ -52,7 +51,6 @@
         "title": "Sage's Wisdom",
         "description": "Read a book for 20 minutes.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "📖",
         "tags": [
@@ -70,6 +68,7 @@
         "requiresApproval": false,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
+        "availabilityCount": null,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-school",
@@ -87,7 +86,6 @@
         "title": "Prepare for the Morrow",
         "description": "Pack your backpack and lay out your clothes for the next school day.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🎒",
         "tags": [
@@ -105,6 +103,7 @@
         "requiresApproval": false,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
+        "availabilityCount": null,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-school",

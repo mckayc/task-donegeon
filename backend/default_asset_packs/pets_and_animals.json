@@ -1,4 +1,3 @@
-
 {
   "manifest": {
     "id": "com.taskdonegeon.petsandanimals.v1",
@@ -16,7 +15,6 @@
         "title": "Feed the Beast",
         "description": "Give your pet their morning or evening meal.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🦴",
         "tags": [
@@ -53,7 +51,6 @@
         "title": "The Great Outdoors",
         "description": "Take the dog for a walk or let them out in the yard.",
         "type": "Duty",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "🐕",
         "tags": [
@@ -90,7 +87,6 @@
         "title": "Litter Box Duty",
         "description": "Clean out the cat's litter box.",
         "type": "Venture",
-        "kind": "Personal",
         "iconType": "emoji",
         "icon": "💩",
         "tags": [

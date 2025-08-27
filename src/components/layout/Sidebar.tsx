@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role, QuestCompletionStatus, PurchaseRequestStatus, Page, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
@@ -176,7 +177,7 @@ const Sidebar: React.FC = () => {
   const { settings, isAiConfigured, chatMessages } = useSystemState();
   const { guilds } = useCommunityState();
   const { purchaseRequests, tradeOffers } = useEconomyState();
-  const { questCompletions } = useQuestsState();
+  const { quests, questCompletions } = useQuestsState();
   const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
   const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
   const { currentUser } = useAuthState();
@@ -197,7 +198,8 @@ const Sidebar: React.FC = () => {
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;
   const pendingTrades = tradeOffers.filter(t => t.recipientId === currentUser.id && (t.status === TradeStatus.Pending || t.status === TradeStatus.OfferUpdated)).length;
-  const totalApprovals = pendingQuestApprovals + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0) + pendingTrades;
+  const pendingClaimsCount = quests.reduce((sum, quest) => sum + (quest.pendingClaims?.length || 0), 0);
+  const totalApprovals = pendingQuestApprovals + pendingClaimsCount + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0) + pendingTrades;
 
   const unreadMessagesCount = useMemo(() => {
     if (!currentUser) return 0;

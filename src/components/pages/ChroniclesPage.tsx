@@ -9,7 +9,28 @@ import { useAuthState } from '../../context/AuthContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { FilterIcon, ChevronDownIcon } from '../user-interface/Icons';
 
-const CHRONICLE_EVENT_TYPES = Object.values(ChronicleEventType).map(type => ({
+const CHRONICLE_EVENT_TYPES = [
+    ChronicleEventType.QuestCompletion,
+    ChronicleEventType.Checkpoint,
+    ChronicleEventType.QuestClaimed,
+    ChronicleEventType.QuestClaimApproved,
+    ChronicleEventType.QuestClaimRejected,
+    ChronicleEventType.QuestClaimCancelled,
+    ChronicleEventType.QuestUnclaimed,
+    ChronicleEventType.Purchase,
+    ChronicleEventType.TrophyAwarded,
+    ChronicleEventType.AdminAdjustment,
+    ChronicleEventType.GiftReceived,
+    ChronicleEventType.Trade,
+    ChronicleEventType.Crafting,
+    ChronicleEventType.System,
+    ChronicleEventType.Announcement,
+    ChronicleEventType.ScheduledEvent,
+    ChronicleEventType.Donation,
+    ChronicleEventType.Triumph,
+    ChronicleEventType.Trial,
+    ChronicleEventType.QuestAssigned,
+].map(type => ({
     type,
     label: type.replace(/([A-Z])/g, ' $1').trim(),
 }));
@@ -122,6 +143,7 @@ const ChroniclesPage: React.FC = () => {
           case "Setback":
             return 'text-red-400';
           case "Cancelled":
+          case "Unclaimed":
             return 'text-stone-400';
           default:
             return 'text-stone-400';

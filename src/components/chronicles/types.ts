@@ -16,6 +16,11 @@ export enum ChronicleEventType {
     Triumph = 'Triumph',
     Trial = 'Trial',
     Checkpoint = 'Checkpoint',
+    QuestClaimed = 'QuestClaimed',
+    QuestClaimApproved = 'QuestClaimApproved',
+    QuestClaimRejected = 'QuestClaimRejected',
+    QuestClaimCancelled = 'QuestClaimCancelled',
+    QuestUnclaimed = 'QuestUnclaimed',
 }
 
 export type ChronicleEvent = {

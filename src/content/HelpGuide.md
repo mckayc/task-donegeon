@@ -159,6 +159,29 @@ This is the central queue for all actions that require an admin's attention.
 
 This section serves as the definitive source of truth for the application's intended functionality. All development and changes should adhere to the standards and behaviors documented here.
 
+### Shared / Kiosk Mode
+
+**Purpose:** This mode is designed for shared family devices (like a tablet in the living room). It provides a fast user-switching interface and can automatically log users out after a period of inactivity to protect their accounts.
+
+**Enabling Kiosk Mode:**
+1.  Navigate to the **{link_settings}** page.
+2.  Open the **"Shared / Kiosk Mode"** section.
+3.  Toggle **"Enable Shared Mode"** on.
+4.  Select which users should appear on the shared login screen.
+
+**How it Works:**
+- When enabled, logging out or clicking the **"Exit"** button in the header will take you to a special Kiosk screen showing avatars for all selected users.
+- Tapping an avatar allows that user to log in quickly with their PIN or password.
+
+**Auto-Exit Feature:**
+To prevent a user's session from being left open on a shared device, you can enable auto-exit.
+- In the Kiosk Mode settings, toggle on **"Auto-exit user session after inactivity"**.
+- Set the desired timeout duration in minutes (e.g., 2 minutes).
+- When a user is logged in, any activity on the page (mouse movement, clicks, typing, scrolling) will reset the inactivity timer.
+- If the user is inactive for the entire duration of the timer, they will be automatically logged out and returned to the Kiosk Mode user selection screen.
+
+---
+
 ### {link_chronicles}
 
 **Purpose:** The primary goal of the {history} is to provide a comprehensive log of all significant actions within the application.
@@ -187,6 +210,7 @@ Each entry in the {history} represents a specific event:
 - **Trade:** Logs the initiation, update, and completion of trades.
 - **Crafting:** Appears when a user crafts a new item from a recipe.
 - **System:** Logs automated system actions, such as applying {negativePoints} for overdue {tasks}.
+- **Quest Claiming:** Logs when a user claims, cancels a claim, has a claim approved/rejected, or unclaims an approved {task}.
 
 **Visual Cues:**
 The status of each event is color-coded for quick reference:
@@ -210,12 +234,13 @@ The status of each event is color-coded for quick reference:
 1.  **Viewing an Unclaimed {task}:** An available {task} that requires a claim will display a **"Claim {task}"** button in its detail view.
 2.  **Claiming a {task}:**
     - When a {user} clicks "Claim {task}", their request is submitted to the {admin}s.
-    - The button immediately changes to **"Claim Pending Approval"** and becomes disabled.
+    - The button immediately changes to **"Claim Pending"** and becomes disabled. A **"Cancel Claim"** button will appear, allowing the user to withdraw their request.
 3.  **Viewing a Pending/Approved Claim:**
     - For all other {users}, the {task} card will now clearly display a status like **"Claimed by [User's Name]"** (or "Claims: 1/3") to show that a slot is taken.
     - The "Claim {task}" button will be disabled for all {users} once the claim limit is reached.
 4.  **Admin Approval:**
     - A new **"Pending Claims"** tab will appear on the {link_approvals} page.
+    - {admin}s will see a notification badge in the sidebar when new claims are pending.
     - {admin}s can **Approve** or **Reject** the claim.
 5.  **Claim Approved:**
     - The claiming {user} receives a notification that their claim was approved.
@@ -224,7 +249,8 @@ The status of each event is color-coded for quick reference:
     - The claiming {user} receives a notification that their claim was rejected.
     - The claim is removed, and the slot becomes available again for others to claim.
 7.  **Unclaiming a {task}:** If a {user} has an **approved** claim but decides not to do the {task}, they will have an **"Unclaim"** option in the detail view. This will free up their slot, making the {task} available for others.
-8.  **Admin Oversight:**
+8.  **Chronicles Logging:** Every step of this process—claiming, cancelling, approval, rejection, unclaiming, and eventual completion—is recorded in the {history} for full visibility.
+9.  **Admin Oversight:**
     - To prevent {tasks} from being locked indefinitely, an {admin} will have a **"Force Unclaim"** option on the "Manage Quests" page for any claimed {task}. This will remove all current claims (both pending and approved) and make the {task} available again.
 
 ### Bug Tracker

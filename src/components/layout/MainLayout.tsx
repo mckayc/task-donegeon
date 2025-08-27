@@ -1,12 +1,12 @@
 
 
-import React, { useMemo, useEffect, useState, useRef, Suspense } from 'react';
+import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { Role, Page, SystemNotification } from '../../types';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
-import { useAuthState } from '../../context/AuthContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { ChatPanel } from '../chat/ChatPanel';
 import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
@@ -20,9 +20,11 @@ const MainLayout: React.FC = () => {
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage } = useUIDispatch();
+  const { exitToSharedView } = useAuthDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
   const prevUserIdRef = useRef<string | undefined>(undefined);
+  const timerRef = useRef<number | null>(null);
   
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
@@ -74,6 +76,38 @@ const MainLayout: React.FC = () => {
       setActivePage('Dashboard');
     }
   }, [activePage, currentUser, setActivePage, addNotification]);
+
+  // --- Kiosk Mode Auto-Exit Timer ---
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) {
+        clearTimeout(timerRef.current);
+    }
+    timerRef.current = window.setTimeout(() => {
+        addNotification({ type: 'info', message: 'Session timed out due to inactivity.' });
+        exitToSharedView();
+    }, settings.sharedMode.autoExitMinutes * 60 * 1000);
+  }, [settings.sharedMode.autoExitMinutes, exitToSharedView, addNotification]);
+
+  useEffect(() => {
+      if (settings.sharedMode.enabled && settings.sharedMode.autoExit) {
+          const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+          
+          events.forEach(event => {
+              window.addEventListener(event, resetTimer);
+          });
+
+          resetTimer(); // Start the timer initially
+
+          return () => {
+              if (timerRef.current) {
+                  clearTimeout(timerRef.current);
+              }
+              events.forEach(event => {
+                  window.removeEventListener(event, resetTimer);
+              });
+          };
+      }
+  }, [settings.sharedMode.enabled, settings.sharedMode.autoExit, resetTimer]);
 
 
   const renderPage = () => {

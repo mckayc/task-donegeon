@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useMemo } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus } from '../../types';
 import Button from '../user-interface/Button';
@@ -111,7 +112,14 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const handleUnclaim = () => {
         if (!currentUser) return;
         unclaimQuest(quest.id, currentUser.id);
-        addNotification({ type: 'info', message: 'Quest has been unclaimed.' });
+        addNotification({ type: 'info', message: 'Quest claim removed.' });
+        onClose();
+    };
+
+    const handleCancelClaim = () => {
+        if (!currentUser) return;
+        unclaimQuest(quest.id, currentUser.id);
+        addNotification({ type: 'info', message: 'Claim request cancelled.' });
         onClose();
     };
 
@@ -126,7 +134,12 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
             const isClaimLimitReached = (quest.approvedClaims?.length || 0) >= (quest.claimLimit || 1);
 
             if (userPendingClaim) {
-                return <Button disabled>Claim Pending Approval</Button>;
+                return (
+                    <>
+                        <Button variant="secondary" onClick={handleCancelClaim}>Cancel Claim</Button>
+                        <Button disabled>Claim Pending</Button>
+                    </>
+                );
             }
             if (userApprovedClaim) {
                 return (
@@ -136,7 +149,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     </>
                 );
             }
-            if (isClaimLimitReached) {
+            if (isClaimLimitReached && !userApprovedClaim) {
                 return <Button disabled>Claim Limit Reached</Button>;
             }
             // User has no claim and there's space

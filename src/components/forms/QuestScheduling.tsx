@@ -151,7 +151,7 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
 
     return (
         <fieldset className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-            <legend className="text-lg font-semibold text-stone-200 mb-2">Scheduling & Type</legend>
+            <legend className="text-xl font-medieval text-accent mb-2">Scheduling & Type</legend>
             <div className="flex gap-2 p-1 bg-stone-700/50 rounded-lg">
                 <TypeButton type={QuestType.Duty} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For recurring tasks, like daily or weekly chores." />
                 <TypeButton type={QuestType.Venture} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For one-time tasks or projects with a specific deadline." />

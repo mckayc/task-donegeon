@@ -1,12 +1,14 @@
 
 
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { User } from '../../../types';
 import Avatar from '../user-interface/Avatar';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { useSystemState } from '../../context/SystemContext';
-import { SwitchUserIcon } from '../user-interface/Icons';
+import { SwitchUserIcon, ChartBarIcon, CalendarDaysIcon } from '../user-interface/Icons';
+import { SharedView } from './SharedLayout';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -21,7 +23,12 @@ const Clock: React.FC = () => {
     );
 };
 
-const SharedHeader: React.FC = () => {
+interface SharedHeaderProps {
+    activeView: SharedView;
+    setActiveView: (view: SharedView) => void;
+}
+
+const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }) => {
   const { settings } = useSystemState();
   const { users } = useAuthState();
   const { setTargetedUserForLogin, setIsSwitchingUser } = useAuthDispatch();
@@ -54,6 +61,24 @@ const SharedHeader: React.FC = () => {
       <div className="flex items-center gap-3">
         <Clock />
         <FullscreenToggle />
+        
+        <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60 ml-2">
+            <button 
+                onClick={() => setActiveView('calendar')} 
+                className={`p-2 rounded-full transition-colors ${activeView === 'calendar' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
+                title="Calendar View"
+            >
+                <CalendarDaysIcon className="w-5 h-5" />
+            </button>
+            <button 
+                onClick={() => setActiveView('leaderboard')} 
+                className={`p-2 rounded-full transition-colors ${activeView === 'leaderboard' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
+                title="Leaderboard View"
+            >
+                <ChartBarIcon className="w-5 h-5" />
+            </button>
+        </div>
+
         <div className="h-full border-l border-stone-700/60 mx-2"></div>
         {sharedUsers.map(user => (
           <button

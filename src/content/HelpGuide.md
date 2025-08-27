@@ -172,8 +172,9 @@ This section serves as the definitive source of truth for the application's inte
 6.  If completions are allowed, you can also toggle **"Require PIN for quest completion"** for added security.
 
 **How it Works:**
-- When enabled, logging out or clicking the **"Exit"** button in the header will take you to a special Kiosk screen. This screen shows a calendar view of today's available {tasks} for each selected user.
+- When enabled, logging out or clicking the **"Exit"** button in the header will take you to a special Kiosk screen. This screen defaults to a calendar view of today's available {tasks} for each selected user.
 - The header displays the avatars and **usernames** of the users in Kiosk mode for quick identification. Tapping an avatar allows that user to log in.
+- The header also contains icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊). The Leaderboard shows a detailed progress card for each user.
 - A **"Switch"** icon is also present in the header, allowing any user (even one not configured for Kiosk mode) to access the full user-switching screen.
 
 **Completing {tasks} in Kiosk Mode:**

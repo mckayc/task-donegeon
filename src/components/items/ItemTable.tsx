@@ -1,5 +1,5 @@
 import React from 'react';
-import { GameAsset, Terminology } from '../../types';
+import { GameAsset, Terminology, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { ItemManagerIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';
@@ -18,6 +18,7 @@ interface ItemTableProps {
     searchTerm: string;
     terminology: Terminology;
     onCreate: () => void;
+    rewardTypes: RewardTypeDefinition[];
 }
 
 const ItemTable: React.FC<ItemTableProps> = ({
@@ -32,7 +33,8 @@ const ItemTable: React.FC<ItemTableProps> = ({
     isLoading,
     searchTerm,
     terminology,
-    onCreate
+    onCreate,
+    rewardTypes,
 }) => {
     if (isLoading) {
         return (
@@ -69,6 +71,7 @@ const ItemTable: React.FC<ItemTableProps> = ({
                         <th className="p-4 font-semibold w-20">Image</th>
                         <th className="p-4 font-semibold">Name</th>
                         <th className="p-4 font-semibold">Category</th>
+                        <th className="p-4 font-semibold">Cost</th>
                         <th className="p-4 font-semibold">For Sale</th>
                         <th className="p-4 font-semibold">Actions</th>
                     </tr>
@@ -102,6 +105,33 @@ const ItemTable: React.FC<ItemTableProps> = ({
                                     </button>
                                 </td>
                                 <td className="p-4 text-stone-400">{asset.category}</td>
+                                <td className="p-4">
+                                    {(() => {
+                                        const costGroup = asset.costGroups?.[0];
+                                        if (!asset.isForSale) {
+                                            return <span className="text-sm text-stone-500">N/A</span>;
+                                        }
+                                        if (!costGroup || costGroup.length === 0) {
+                                            return <span className="text-sm font-semibold text-green-400">Free</span>;
+                                        }
+
+                                        const costString = costGroup.map(c => {
+                                            const rewardType = rewardTypes.find(rt => rt.id === c.rewardTypeId);
+                                            return `${c.amount} ${rewardType ? rewardType.icon : '?'}`;
+                                        }).join(', ');
+
+                                        return (
+                                            <div className="flex items-center gap-1 font-semibold text-amber-300 text-sm">
+                                                <span title={costString}>{costString}</span>
+                                                {asset.costGroups.length > 1 && (
+                                                    <span className="text-xs text-stone-400 font-normal" title={`${asset.costGroups.length - 1} more cost options`}>
+                                                        ...
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                </td>
                                 <td className="p-4">
                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${asset.isForSale ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
                                         {asset.isForSale ? 'Yes' : 'No'}

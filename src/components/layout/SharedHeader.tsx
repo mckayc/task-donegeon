@@ -6,6 +6,7 @@ import { User } from '../../../types';
 import Avatar from '../user-interface/Avatar';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { useSystemState } from '../../context/SystemContext';
+import { SwitchUserIcon } from '../user-interface/Icons';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -62,9 +63,19 @@ const SharedHeader: React.FC = () => {
             className="group flex flex-col items-center gap-1"
           >
             <Avatar user={user} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors overflow-hidden" />
-            <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">{user.gameName}</span>
+            <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">{user.username}</span>
           </button>
         ))}
+         <button
+            onClick={() => setIsSwitchingUser(true)}
+            title="Switch to another user"
+            className="group flex flex-col items-center gap-1"
+        >
+            <div className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors flex items-center justify-center">
+                <SwitchUserIcon className="w-6 h-6 text-stone-300 group-hover:text-white" />
+            </div>
+            <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">Switch</span>
+        </button>
       </div>
     </header>
   );

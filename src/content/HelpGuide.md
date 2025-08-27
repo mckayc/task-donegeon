@@ -168,17 +168,17 @@ This section serves as the definitive source of truth for the application's inte
 2.  Open the **"Shared / Kiosk Mode"** section.
 3.  Toggle **"Enable Shared Mode"** on.
 4.  Select which users should appear on the shared login screen.
+5.  Optionally, enable **"Allow quest completion from shared view"** to let users complete their tasks without a full login.
 
 **How it Works:**
-- When enabled, logging out or clicking the **"Exit"** button in the header will take you to a special Kiosk screen showing avatars for all selected users.
-- Tapping an avatar allows that user to log in quickly with their PIN or password.
+- When enabled, logging out or clicking the **"Exit"** button in the header will take you to a special Kiosk screen. This screen shows a calendar view of today's available {tasks} for each selected user.
+- The header displays the avatars and **usernames** of the users in Kiosk mode for quick identification. Tapping an avatar allows that user to log in.
+- A **"Switch"** icon is also present in the header, allowing any user (even one not configured for Kiosk mode) to access the full user-switching screen.
 
-**Auto-Exit Feature:**
-To prevent a user's session from being left open on a shared device, you can enable auto-exit.
-- In the Kiosk Mode settings, toggle on **"Auto-exit user session after inactivity"**.
-- Set the desired timeout duration in minutes (e.g., 2 minutes).
-- When a user is logged in, any activity on the page (mouse movement, clicks, typing, scrolling) will reset the inactivity timer.
-- If the user is inactive for the entire duration of the timer, they will be automatically logged out and returned to the Kiosk Mode user selection screen.
+**Completing {tasks} in Kiosk Mode:**
+- If enabled in settings, users can click on a {task} in the Kiosk calendar view.
+- This opens a detail dialog where they can mark the {task} as complete.
+- If PINs are required for users in the security settings, the user will be prompted to enter their PIN to confirm the completion. Otherwise, the {task} is completed immediately.
 
 ---
 
@@ -244,12 +244,12 @@ The status of each event is color-coded for quick reference:
     - {admin}s can **Approve** or **Reject** the claim.
 5.  **Claim Approved:**
     - The claiming {user} receives a notification that their claim was approved.
-    - Their button in the {task} detail view changes to **"Complete {task}"**. They can now proceed with the {task}.
+    - Their button in the {task} detail view changes to **"Complete {task}"**. They can now proceed with the {task}. Once the {task} is completed, their claim is automatically released.
 6.  **Claim Rejected:**
     - The claiming {user} receives a notification that their claim was rejected.
     - The claim is removed, and the slot becomes available again for others to claim.
 7.  **Unclaiming a {task}:** If a {user} has an **approved** claim but decides not to do the {task}, they will have an **"Unclaim"** option in the detail view. This will free up their slot, making the {task} available for others.
-8.  **Chronicles Logging:** Every step of this process—claiming, cancelling, approval, rejection, unclaiming, and eventual completion—is recorded in the {history} for full visibility.
+8.  **Chronicles Logging:** Every step of this process—from the initial claim request, to its approval or rejection, cancellation by the user, and unclaiming of an approved quest—is recorded in the {history} for full visibility.
 9.  **Admin Oversight:**
     - To prevent {tasks} from being locked indefinitely, an {admin} will have a **"Force Unclaim"** option on the "Manage Quests" page for any claimed {task}. This will remove all current claims (both pending and approved) and make the {task} available again.
 

@@ -1,7 +1,7 @@
 
 
 import React, { useEffect, useMemo } from 'react';
-import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus } from '../../types';
+import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User } from '../../types';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
@@ -19,15 +19,19 @@ interface QuestDetailDialogProps {
   onToggleTodo?: () => void;
   isTodo?: boolean;
   dialogTitle?: string;
+  userForView?: User;
 }
 
-const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
+const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle, userForView }) => {
     const { settings } = useSystemState();
     const { rewardTypes } = useEconomyState();
     const { questCompletions } = useQuestsState();
-    const { currentUser } = useAuthState();
+    const { currentUser: loggedInUser } = useAuthState();
     const { completeCheckpoint, claimQuest, unclaimQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
+    
+    // Prioritize the user passed in props (for shared view), fallback to logged-in user
+    const currentUser = userForView || loggedInUser;
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -124,7 +128,25 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     };
 
     const renderActionButtons = () => {
-        if (!currentUser) return null;
+        // The main completion button is driven by the onComplete prop.
+        // It's used in contexts (like Shared View) that handle their own completion logic.
+        if (onComplete) {
+            const isJourney = quest.type === QuestType.Journey;
+            // Journey logic relies on a user context which is now available via `currentUser` proxy
+            const disabled = isJourney && hasPendingCompletion;
+
+            return (
+                <Button onClick={handleComplete} disabled={disabled}>
+                    {isJourney
+                        ? (disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`)
+                        : 'Complete'
+                    }
+                </Button>
+            );
+        }
+
+        // All other actions (claiming, etc.) require a logged-in user context.
+        if (!currentUser || userForView) return null;
 
         const isClaimableType = quest.type === QuestType.Venture || quest.type === QuestType.Journey;
 
@@ -155,19 +177,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
             // User has no claim and there's space
             return <Button onClick={handleClaim}>Claim Quest</Button>;
         }
-
-        // Default non-claimable logic
-        if (onComplete) {
-            const isJourney = quest.type === QuestType.Journey;
-            return (
-                <Button onClick={handleComplete} disabled={isJourney && hasPendingCompletion}>
-                    {isJourney
-                        ? (hasPendingCompletion ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`)
-                        : 'Complete'
-                    }
-                </Button>
-            );
-        }
+        
         return null;
     };
 

@@ -186,6 +186,12 @@ const complete = async (completionData) => {
         
         let updatedUser = null;
         if (completionData.status === 'Approved') {
+            // Auto-release claim if applicable
+            if (quest.requiresClaim && quest.approvedClaims?.some(c => c.userId === user.id)) {
+                quest.approvedClaims = quest.approvedClaims.filter(c => c.userId !== user.id);
+                await manager.save(QuestEntity, updateTimestamps(quest));
+            }
+
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
             const isGuildScope = !!completionData.guildId;
             const balances = isGuildScope ? user.guildBalances[completionData.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
@@ -258,6 +264,12 @@ const approveQuestCompletion = async (id, approverId, note) => {
             console.log('[APPROVE_QUEST] User:', user?.gameName, 'Quest:', quest?.title);
 
             if (user && quest) {
+                // Auto-release claim if applicable
+                if (quest.requiresClaim && quest.approvedClaims?.some(c => c.userId === user.id)) {
+                    quest.approvedClaims = quest.approvedClaims.filter(c => c.userId !== user.id);
+                    await manager.save(QuestEntity, updateTimestamps(quest));
+                }
+
                 const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
                 const isGuildScope = !!completion.guildId;
 
@@ -572,7 +584,6 @@ const completeCheckpoint = async (questId, userId) => {
     });
 };
 
-// Fix: Added missing claimQuest function to the service layer.
 const claimQuest = async (questId, userId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
@@ -585,31 +596,55 @@ const claimQuest = async (questId, userId) => {
         quest.pendingClaims.push({ userId, claimedAt: new Date().toISOString() });
         const saved = await questRepo.save(updateTimestamps(quest));
         
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        await manager.save(ChronicleEventEntity, updateTimestamps(manager.getRepository(ChronicleEventEntity).create({
+            id: `chron-claim-${quest.id}-${userId}-${Date.now()}`,
+            originalId: quest.id, date: new Date().toISOString(), type: 'QuestClaimed',
+            title: `Claimed "${quest.title}"`, status: 'Pending', icon: '🤔',
+            color: '#facc15', userId: userId, userName: user?.gameName,
+            actorId: userId, actorName: user?.gameName, guildId: quest.guildId
+        }), true));
+
         updateEmitter.emit('update');
         const { assignedUsers: users, ...rest } = saved;
         return { ...rest, assignedUserIds: users.map(u => u.id) };
     });
 };
 
-// Fix: Added missing unclaimQuest function to the service layer.
 const unclaimQuest = async (questId, userId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
         const quest = await questRepo.findOne({where: { id: questId }, relations: ['assignedUsers']});
         if (!quest) return null;
 
+        const wasPending = quest.pendingClaims?.some(c => c.userId === userId);
+        const wasApproved = quest.approvedClaims?.some(c => c.userId === userId);
         let changed = false;
-        if (quest.pendingClaims && quest.pendingClaims.some(c => c.userId === userId)) {
+
+        if (wasPending) {
             quest.pendingClaims = quest.pendingClaims.filter(c => c.userId !== userId);
             changed = true;
         }
-        if (quest.approvedClaims && quest.approvedClaims.some(c => c.userId === userId)) {
+        if (wasApproved) {
             quest.approvedClaims = quest.approvedClaims.filter(c => c.userId !== userId);
             changed = true;
         }
 
         if (changed) {
             const saved = await questRepo.save(updateTimestamps(quest));
+
+            const user = await manager.findOneBy(UserEntity, { id: userId });
+            const eventType = wasPending ? 'QuestClaimCancelled' : 'QuestUnclaimed';
+            const eventTitle = wasPending ? `Cancelled claim for "${quest.title}"` : `Unclaimed "${quest.title}"`;
+            const eventIcon = wasPending ? '❌' : '↩️';
+            await manager.save(ChronicleEventEntity, updateTimestamps(manager.getRepository(ChronicleEventEntity).create({
+                id: `chron-unclaim-${quest.id}-${userId}-${Date.now()}`,
+                originalId: quest.id, date: new Date().toISOString(), type: eventType,
+                title: eventTitle, status: wasPending ? 'Cancelled' : 'Unclaimed', icon: eventIcon,
+                color: '#a8a29e', userId: userId, userName: user?.gameName,
+                actorId: userId, actorName: user?.gameName, guildId: quest.guildId
+            }), true));
+
             updateEmitter.emit('update');
             const { assignedUsers: users, ...rest } = saved;
             return { ...rest, assignedUserIds: users.map(u => u.id) };
@@ -620,7 +655,6 @@ const unclaimQuest = async (questId, userId) => {
     });
 };
 
-// Fix: Added missing approveClaim function to the service layer.
 const approveClaim = async (questId, userId, adminId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
@@ -635,13 +669,23 @@ const approveClaim = async (questId, userId, adminId) => {
         quest.pendingClaims = quest.pendingClaims.filter(c => c.userId !== userId);
 
         const saved = await questRepo.save(updateTimestamps(quest));
+        
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        const admin = await manager.findOneBy(UserEntity, { id: adminId });
+        await manager.save(ChronicleEventEntity, updateTimestamps(manager.getRepository(ChronicleEventEntity).create({
+            id: `chron-approveclaim-${quest.id}-${userId}-${Date.now()}`,
+            originalId: quest.id, date: new Date().toISOString(), type: 'QuestClaimApproved',
+            title: `Claim approved for "${quest.title}"`, status: 'Approved', icon: '👍',
+            color: '#4ade80', userId: userId, userName: user?.gameName,
+            actorId: adminId, actorName: admin?.gameName, guildId: quest.guildId
+        }), true));
+
         updateEmitter.emit('update');
         const { assignedUsers: users, ...rest } = saved;
         return { ...rest, assignedUserIds: users.map(u => u.id) };
     });
 }
 
-// Fix: Added missing rejectClaim function to the service layer.
 const rejectClaim = async (questId, userId, adminId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
@@ -651,6 +695,17 @@ const rejectClaim = async (questId, userId, adminId) => {
         quest.pendingClaims = quest.pendingClaims.filter(c => c.userId !== userId);
         
         const saved = await questRepo.save(updateTimestamps(quest));
+
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        const admin = await manager.findOneBy(UserEntity, { id: adminId });
+        await manager.save(ChronicleEventEntity, updateTimestamps(manager.getRepository(ChronicleEventEntity).create({
+            id: `chron-rejectclaim-${quest.id}-${userId}-${Date.now()}`,
+            originalId: quest.id, date: new Date().toISOString(), type: 'QuestClaimRejected',
+            title: `Claim rejected for "${quest.title}"`, status: 'Rejected', icon: '👎',
+            color: '#f87171', userId: userId, userName: user?.gameName,
+            actorId: adminId, actorName: admin?.gameName, guildId: quest.guildId
+        }), true));
+        
         updateEmitter.emit('update');
         const { assignedUsers: users, ...rest } = saved;
         return { ...rest, assignedUserIds: users.map(u => u.id) };
@@ -661,6 +716,5 @@ const rejectClaim = async (questId, userId, adminId) => {
 module.exports = {
     getAll, create, clone, update, deleteMany, bulkUpdateStatus, bulkUpdate, complete,
     approveQuestCompletion, rejectQuestCompletion, markAsTodo, unmarkAsTodo, completeCheckpoint,
-    // Fix: Exported the newly added claim functions.
     claimQuest, unclaimQuest, approveClaim, rejectClaim,
 };

@@ -209,6 +209,7 @@ const SharedCalendarPage: React.FC = () => {
              {selectedQuestDetails && (
                 <QuestDetailDialog
                     quest={selectedQuestDetails.quest}
+                    userForView={selectedQuestDetails.user}
                     onClose={() => setSelectedQuestDetails(null)}
                     onComplete={settings.sharedMode.allowCompletion ? handleStartCompletionFromDialog : undefined}
                     onToggleTodo={handleToggleTodo}

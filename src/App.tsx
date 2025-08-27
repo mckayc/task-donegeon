@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -26,7 +27,7 @@ const App: React.FC = () => {
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { isRecording, isPickingElement, trackClicks, trackElementDetails } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
-  const { setUpdateAvailable, installUpdate } = useSystemDispatch();
+  const { installUpdate } = useSystemDispatch();
   const { setIsMobileView } = useUIDispatch();
   const isDataLoaded = useIsDataLoaded();
   
@@ -144,45 +145,9 @@ const App: React.FC = () => {
   }, [isPickingElement]);
 
   // --- Service Worker Update Listener ---
-
-  // This effect now simply watches the centralized state
   useEffect(() => {
       setShowUpdateToast(!!isUpdateAvailable);
   }, [isUpdateAvailable]);
-
-  // This effect sets up the listeners that update the centralized state
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        // Check for a waiting worker on page load
-        if (registration.waiting) {
-            setUpdateAvailable(registration.waiting);
-        }
-        
-        // Listen for new updates being found
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // A new SW is now installed and waiting to take control.
-                setUpdateAvailable(newWorker);
-              }
-            });
-          }
-        });
-      });
-
-      // When the new SW takes control, reload the page.
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-          window.location.reload();
-          refreshing = true;
-        }
-      });
-    }
-  }, [setUpdateAvailable]);
 
 
   if (!isDataLoaded) {

@@ -1,5 +1,8 @@
 
-import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
+
+
+// Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
+import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -135,6 +138,40 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
     const { currentUser } = useAuthState();
 
+    const setUpdateAvailable = useCallback((worker: ServiceWorker | null) => {
+        dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
+    }, []);
+
+    // --- Service Worker Logic ---
+    useEffect(() => {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                if (registration.waiting) {
+                    setUpdateAvailable(registration.waiting);
+                }
+                
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                setUpdateAvailable(newWorker);
+                            }
+                        });
+                    }
+                });
+            });
+
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    window.location.reload();
+                    refreshing = true;
+                }
+            });
+        }
+    }, [setUpdateAvailable]);
+
     const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
         try {
             const result = await apiFn();
@@ -167,25 +204,30 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return;
         }
 
-        addNotification({ type: 'info', message: 'Checking for updates...' });
-        
         try {
             const registration = await navigator.serviceWorker.ready;
+
+            if (registration.waiting) {
+                setUpdateAvailable(registration.waiting);
+                return;
+            }
+
+            addNotification({ type: 'info', message: 'Checking for updates...' });
+            
             await registration.update();
             
-            // Re-check for a waiting worker after the update call.
-            // This is more reliable for manual checks.
+            // Check again after the update() call completes. This makes the manual check more responsive.
             const updatedRegistration = await navigator.serviceWorker.getRegistration();
             if (updatedRegistration?.waiting) {
-                dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: updatedRegistration.waiting });
+                setUpdateAvailable(updatedRegistration.waiting);
             } else {
-                 addNotification({ type: 'success', message: 'You are on the latest version.' });
+                addNotification({ type: 'success', message: 'You are on the latest version.' });
             }
         } catch (error) {
             console.error('Error checking for service worker update:', error);
             addNotification({ type: 'error', message: 'Failed to check for updates.' });
         }
-    }, [addNotification]);
+    }, [addNotification, setUpdateAvailable]);
 
     const installUpdate = useCallback(() => {
         if (state.isUpdateAvailable) {
@@ -299,7 +341,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         installUpdate,
         checkForUpdate,
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate]);
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate, setUpdateAvailable]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

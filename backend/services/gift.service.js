@@ -1,3 +1,4 @@
+
 const giftRepository = require('../repositories/gift.repository');
 const userRepository = require('../repositories/user.repository');
 const assetRepository = require('../repositories/asset.repository');
@@ -52,6 +53,7 @@ const send = async (senderId, recipientId, assetId, guildId) => {
         type: 'GiftReceived',
         message: `${sender.gameName} sent you a gift: "${asset.name}"!`,
         recipientUserIds: [recipientId],
+        readByUserIds: [],
         link: 'Collection',
         guildId,
     };

@@ -17,7 +17,7 @@ import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyCon
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
-    // FIX: Destructure rewardTypes from useEconomyState as it is required by ItemTable.
+    // Fix: Destructure rewardTypes as it is required by the ItemTable component.
     const { gameAssets: allGameAssets, rewardTypes } = useEconomyState();
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();

@@ -2,6 +2,8 @@
 
 This guide is the single source of truth for how {appName} works. It's designed to be a comprehensive resource for both players ({users}) and administrators ({admin}s). The terminology used here (like "{task}", "{group}", etc.) is dynamic and will always match what you've configured in the Settings page.
 
+## Table of Contents
+
 ---
 
 ## The Basics: Core Concepts

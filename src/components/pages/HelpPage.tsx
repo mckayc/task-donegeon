@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
 import helpContent from '../../content/HelpGuide.md?raw';
+import CollapsibleSection from '../user-interface/CollapsibleSection';
 
 // A simple function to replace terminology placeholders like {appName}
 const applyTerminology = (text: string, terminology: any): string => {
@@ -9,6 +10,9 @@ const applyTerminology = (text: string, terminology: any): string => {
         return terminology[key] || placeholder;
     });
 };
+
+// A function to create a URL-friendly slug from a string.
+const createSlug = (text: string) => text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/[\s-]+/g, '-').replace(/^-+|-+$/g, '');
 
 // A simple inline markdown parser to convert markdown text to JSX
 const parseMarkdown = (text: string) => {
@@ -65,26 +69,97 @@ const parseMarkdown = (text: string) => {
   return elements;
 };
 
+interface Section {
+    title: string;
+    slug: string;
+    content: React.ReactNode[];
+}
+
+interface TocEntry {
+    title: string;
+    slug: string;
+}
 
 const HelpPage: React.FC = () => {
     const { settings } = useSystemState();
-    const [content, setContent] = useState<React.ReactNode[]>([]);
+    const [sections, setSections] = useState<Section[]>([]);
+    const [toc, setToc] = useState<TocEntry[]>([]);
+    const [intro, setIntro] = useState<React.ReactNode[]>([]);
 
     useEffect(() => {
         const processedContent = applyTerminology(helpContent, settings.terminology);
-        const parsedContent = parseMarkdown(processedContent);
-        setContent(parsedContent);
+        const rawSections = processedContent.split('\n## ');
+
+        const introContent = parseMarkdown(rawSections.shift() || '');
+        setIntro(introContent);
+
+        const newSections: Section[] = [];
+        const newToc: TocEntry[] = [];
+
+        rawSections.forEach((sectionText, index) => {
+            const lines = sectionText.split('\n');
+            const title = lines.shift()?.trim() || `Section ${index + 1}`;
+            const content = lines.join('\n');
+            const slug = createSlug(title);
+
+            if (title.toLowerCase() !== 'table of contents') {
+                newToc.push({ title, slug });
+            }
+
+            newSections.push({
+                title,
+                slug,
+                content: parseMarkdown(content),
+            });
+        });
+
+        setSections(newSections);
+        setToc(newToc);
     }, [helpContent, settings.terminology]);
 
+    const handleTocClick = (slug: string) => {
+        document.getElementById(slug)?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const TocComponent = (
+        <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+            <ul className="list-none p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                {toc.map(item => (
+                    <li key={item.slug}>
+                        <a 
+                            href={`#${item.slug}`} 
+                            onClick={(e) => { e.preventDefault(); handleTocClick(item.slug); }}
+                            className="text-accent hover:underline text-base"
+                        >
+                            {item.title}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
 
     return (
         <div className="max-w-4xl mx-auto">
             <Card className="p-0 overflow-hidden">
                 <div className="px-6 py-4">
                     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-                        {content}
+                        {intro}
                     </div>
                 </div>
+
+                {sections.map((section, index) => (
+                    <CollapsibleSection
+                        key={section.slug}
+                        id={section.slug}
+                        title={section.title}
+                        defaultOpen={index < 2} // Open "TOC" and "The Basics" by default
+                    >
+                        <div className="px-6 prose prose-invert max-w-none text-stone-300 space-y-4">
+                            {section.title.toLowerCase() === 'table of contents' ? TocComponent : section.content}
+                        </div>
+                    </CollapsibleSection>
+                ))}
             </Card>
         </div>
     );

@@ -329,12 +329,11 @@ const Sidebar: React.FC = () => {
   const sidebarWidthClass = isSidebarCollapsed && !isMobileView ? 'w-20' : 'w-72';
 
   return (
-    <div className={`flex flex-col flex-shrink-0 transition-all duration-300 ${sidebarWidthClass}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
+    <div className={`flex flex-col flex-shrink-0 transition-all duration-300 bg-stone-900 border-r border-stone-700 ${sidebarWidthClass}`}>
       <button 
         onClick={() => handleNavigate('Dashboard')} 
         data-log-id="sidebar-header-logo"
-        className="flex items-center justify-center h-20 border-b cursor-pointer hover:bg-stone-800/50 transition-colors" 
-        style={{ borderColor: 'hsl(var(--color-border))' }}
+        className="flex items-center justify-center h-20 border-b border-stone-700 cursor-pointer hover:bg-stone-800/50 transition-colors"
       >
         <h1 className={`font-medieval text-accent transition-opacity duration-200 ${isSidebarCollapsed && !isMobileView ? 'opacity-0' : 'opacity-100'}`}>{settings.terminology.appName}</h1>
       </button>
@@ -342,7 +341,7 @@ const Sidebar: React.FC = () => {
         {renderNavItems()}
       </nav>
       {!isMobileView && (
-        <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
+        <div className="px-2 py-4 border-t border-stone-700">
            <button 
               onClick={toggleSidebar}
               data-log-id="sidebar-toggle-collapse"

@@ -144,7 +144,7 @@ const MainLayout: React.FC = () => {
                 {!isSidebarCollapsed && (
                     <div 
                         onClick={toggleSidebar} 
-                        className="fixed inset-0 bg-black/60 z-30"
+                        className="fixed inset-0 bg-black/80 z-30"
                     />
                 )}
                 <div 

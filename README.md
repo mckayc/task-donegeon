@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.49
+**Version:** 0.1.50
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.50 (August 27, 2025)
+-   **UI Opacity Adjustments:** Made several UI overlays, such as the header and chat panel, fully opaque to improve readability and provide a more solid feel. The mobile sidebar overlay is also now darker to improve focus on the menu.
 
 ### What's New in Version 0.1.49 (August 26, 2025)
 -   **Mobile Responsiveness:** Implemented a fully responsive design. The application now adapts its layout for mobile devices, featuring an off-canvas sidebar, a condensed header, and touch-friendly card-based views on management pages to ensure a great user experience on any screen size.

@@ -162,7 +162,7 @@ export const ChatPanel: React.FC = () => {
             exit="hidden"
             variants={panelVariants}
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-            className="fixed top-0 right-0 h-full w-full md:w-[420px] bg-stone-900/80 border-l border-stone-700/60 shadow-2xl z-50 flex flex-col backdrop-blur-sm"
+            className="fixed top-0 right-0 h-full w-full md:w-[420px] bg-stone-900 border-l border-stone-700/60 shadow-2xl z-50 flex flex-col"
             data-bug-reporter-ignore
         >
             <div className="p-4 border-b border-stone-700/60 flex items-center justify-between flex-shrink-0">

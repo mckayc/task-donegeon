@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -19,7 +20,7 @@ import { Role, Guild, ThemeDefinition } from './types';
 import UpdateAvailable from './components/user-interface/UpdateAvailable';
 
 const App: React.FC = () => {
-  const { settings, themes } = useSystemState();
+  const { settings, themes, isUpdateAvailable } = useSystemState();
   const { guilds } = useCommunityState();
   const { appMode, activePage } = useUIState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
@@ -142,26 +143,30 @@ const App: React.FC = () => {
     document.body.style.cursor = isPickingElement ? 'crosshair' : 'default';
   }, [isPickingElement]);
 
-  // Service Worker Update Listener
+  // --- Service Worker Update Listener ---
+
+  // This effect now simply watches the centralized state
+  useEffect(() => {
+      setShowUpdateToast(!!isUpdateAvailable);
+  }, [isUpdateAvailable]);
+
+  // This effect sets up the listeners that update the centralized state
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
-        // This is the first time the page loads.
+        // Check for a waiting worker on page load
         if (registration.waiting) {
             setUpdateAvailable(registration.waiting);
-            setShowUpdateToast(true);
         }
         
+        // Listen for new updates being found
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed') {
-                if (navigator.serviceWorker.controller) {
-                  // A new SW is waiting to take control.
-                  setUpdateAvailable(newWorker);
-                  setShowUpdateToast(true);
-                }
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // A new SW is now installed and waiting to take control.
+                setUpdateAvailable(newWorker);
               }
             });
           }

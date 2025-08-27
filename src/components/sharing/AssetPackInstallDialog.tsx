@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AssetPack, ImportResolution, ShareableAssetType, Quest, RewardItem, GameAsset, User } from '../../../types';
 import { Terminology } from '../../types/app';
@@ -18,7 +19,6 @@ interface AssetPackInstallDialogProps {
   allowUserAssignment: boolean;
 }
 
-// FIX: Added 'chronicles' to the terminology map to satisfy the ShareableAssetType.
 const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     quests: 'tasks',
     questGroups: 'link_manage_quest_groups',

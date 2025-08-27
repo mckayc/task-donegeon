@@ -155,7 +155,7 @@ This is the central queue for all actions that require an admin's attention.
 
 ---
 
-## AI Instructions
+## Functional Specifications
 
 This section serves as the definitive source of truth for the application's intended functionality. All development and changes should adhere to the standards and behaviors documented here.
 

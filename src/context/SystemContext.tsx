@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
@@ -21,7 +22,6 @@ export interface SystemState {
     modifierDefinitions: ModifierDefinition[];
     appliedModifiers: AppliedModifier[];
     chronicleEvents: ChronicleEvent[];
-    // Fix: Add isUpdateAvailable to SystemState
     isUpdateAvailable: ServiceWorker | null;
 }
 
@@ -30,7 +30,6 @@ export type SystemAction =
   | { type: 'UPDATE_SYSTEM_DATA', payload: Partial<SystemState> }
   | { type: 'REMOVE_SYSTEM_DATA', payload: { [key in keyof SystemState]?: string[] } }
   | { type: 'SET_AI_CONFIGURED', payload: boolean }
-  // Fix: Add SET_UPDATE_AVAILABLE action type
   | { type: 'SET_UPDATE_AVAILABLE', payload: ServiceWorker | null };
 
 export interface SystemDispatch {
@@ -101,7 +100,10 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
                 const typedKey = key as keyof SystemState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 } else if (typeof updatedState[typedKey] === 'object' && updatedState[typedKey] !== null) {
                     (updatedState as any)[typedKey] = { ...(updatedState[typedKey] as object), ...(action.payload[typedKey] as object) };
@@ -170,12 +172,27 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         try {
             const registration = await navigator.serviceWorker.ready;
             await registration.update();
-            addNotification({ type: 'success', message: 'Update check initiated. You will be notified if a new version is found.' });
+            
+            // Re-check for a waiting worker after the update call.
+            // This is more reliable for manual checks.
+            const updatedRegistration = await navigator.serviceWorker.getRegistration();
+            if (updatedRegistration?.waiting) {
+                dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: updatedRegistration.waiting });
+            } else {
+                 addNotification({ type: 'success', message: 'You are on the latest version.' });
+            }
         } catch (error) {
             console.error('Error checking for service worker update:', error);
             addNotification({ type: 'error', message: 'Failed to check for updates.' });
         }
     }, [addNotification]);
+
+    const installUpdate = useCallback(() => {
+        if (state.isUpdateAvailable) {
+            addNotification({ type: 'info', message: 'Installing update... The app will reload shortly.' });
+            state.isUpdateAvailable.postMessage({ type: 'SKIP_WAITING' });
+        }
+    }, [state.isUpdateAvailable, addNotification]);
 
     const actions = useMemo<SystemDispatch>(() => ({
         deleteSelectedAssets: async (assets, callback) => {
@@ -280,13 +297,9 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setUpdateAvailable: (worker: ServiceWorker | null) => {
             dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
         },
-        installUpdate: () => {
-            if (state.isUpdateAvailable) {
-                state.isUpdateAvailable.postMessage({ type: 'SKIP_WAITING' });
-            }
-        },
+        installUpdate,
         checkForUpdate,
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate]);
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

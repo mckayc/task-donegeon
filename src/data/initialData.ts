@@ -1,3 +1,4 @@
+
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -239,7 +240,6 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_calendar: 'Calendar',
       link_avatar: 'Avatar',
       link_collection: 'Collection',
-      link_themes: 'Themes',
       link_guild: 'Guild',
       link_progress: 'Progress',
       link_trophies: 'Trophies',
@@ -269,7 +269,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_help_guide: 'Help Guide',
       link_chat: 'Chat',
       link_bug_tracker: 'Bug Tracker',
-      // FIX: Corrected duplicate link_themes key to link_test_cases
+      link_themes: 'Themes',
       link_test_cases: 'Test Cases',
     },
     enableAiFeatures: false,

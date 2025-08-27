@@ -109,7 +109,7 @@ const Header: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
+    <header className="h-20 bg-stone-900 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
       {/* Left Group */}
       <div className="flex items-center gap-2 md:gap-4">
         {isMobileView && (

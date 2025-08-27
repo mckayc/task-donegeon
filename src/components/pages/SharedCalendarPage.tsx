@@ -98,12 +98,7 @@ const SharedCalendarPage: React.FC = () => {
         return questsMap;
     }, [sharedUsers, quests, currentDate, questCompletions, guilds, scheduledEvents]);
     
-    const completeQuestWithoutPin = (quest: Quest, user: User) => {
-        if (quest.requiresApproval) {
-            setQuestForNoteCompletion({ quest, user });
-            return;
-        }
-
+    const dispatchQuickComplete = (quest: Quest, user: User) => {
         const completionData = {
           questId: quest.id,
           userId: user.id,
@@ -112,44 +107,39 @@ const SharedCalendarPage: React.FC = () => {
           note: 'Quick completed from shared view.',
           guildId: quest.guildId
         };
-        
         completeQuest(completionData);
         addNotification({ type: 'success', message: `"${quest.title}" completed for ${user.gameName}!` });
     };
-
-    const handleNoteCompletion = (quest: Quest, user: User) => {
-        setQuestForNoteCompletion({ quest, user });
-    };
     
-    const handleQuickComplete = (quest: Quest, user: User) => {
-        if (settings.sharedMode.requirePinForCompletion && user.pin) {
-            setVerifyingQuest({ quest, user });
+    const proceedWithCompletion = (quest: Quest, user: User) => {
+        if (quest.requiresApproval) {
+            setQuestForNoteCompletion({ quest, user });
         } else {
-            completeQuestWithoutPin(quest, user);
+            dispatchQuickComplete(quest, user);
         }
     };
-    
+
     const onPinSuccess = () => {
         if (verifyingQuest) {
-            completeQuestWithoutPin(verifyingQuest.quest, verifyingQuest.user);
+            proceedWithCompletion(verifyingQuest.quest, verifyingQuest.user);
             setVerifyingQuest(null);
         }
     };
-
-    const handleDetailView = (quest: Quest, user: User) => {
-        setSelectedQuestDetails({ quest, user });
-    };
-
+    
     const handleStartCompletionFromDialog = () => {
         if (!selectedQuestDetails) return;
         const { quest, user } = selectedQuestDetails;
 
-        if (quest.requiresApproval) {
-            handleNoteCompletion(quest, user);
+        if (settings.sharedMode.requirePinForCompletion && user.pin) {
+            setVerifyingQuest({ quest, user });
         } else {
-            handleQuickComplete(quest, user);
+            proceedWithCompletion(quest, user);
         }
         setSelectedQuestDetails(null);
+    };
+
+    const handleDetailView = (quest: Quest, user: User) => {
+        setSelectedQuestDetails({ quest, user });
     };
 
     const handleToggleTodo = () => {

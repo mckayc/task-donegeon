@@ -7,7 +7,7 @@ import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus } from '../../types';
-import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
+import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -15,47 +15,6 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
-
-const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
-    if (quest.type === QuestType.Journey) {
-        return `A multi-step adventure!`
-    }
-    
-    if (quest.rrule) {
-        if (quest.rrule.includes('FREQ=DAILY')) return 'Resets Daily';
-        if (quest.rrule.includes('FREQ=WEEKLY')) {
-            const byday = quest.rrule.split(';').find(p => p.startsWith('BYDAY='))?.split('=')[1] || '';
-            const days = byday.split(',').map(d => ({'SU':'Sun','MO':'Mon','TU':'Tue','WE':'Wed','TH':'Thu','FR':'Fri','SA':'Sat'}[d as string])).join(', ');
-            return `Resets on ${days}`;
-        }
-        if (quest.rrule.includes('FREQ=MONTHLY')) {
-            const bymonthday = quest.rrule.split(';').find(p => p.startsWith('BYMONTHDAY='))?.split('=')[1] || '';
-            return `Resets on date(s) ${bymonthday}`;
-        }
-    }
-
-    if (quest.totalCompletionsLimit && quest.totalCompletionsLimit > 0) {
-        return `${completionsCount} / ${quest.totalCompletionsLimit} completed`;
-    }
-    
-    return 'One-time Venture';
-};
-
-const formatTimeRemaining = (targetDate: Date, now: Date): string => {
-    let diffMs = targetDate.getTime() - now.getTime();
-
-    if (diffMs <= 0) return '0m';
-
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    diffMs -= days * 1000 * 60 * 60 * 24;
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    diffMs -= hours * 1000 * 60 * 60;
-    const minutes = Math.floor(diffMs / (1000 * 60));
-
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
-};
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
     const { settings, scheduledEvents } = useSystemState();

@@ -16,7 +16,7 @@ import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput,
 import { useChronicles } from '../chronicles/hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode, isQuestScheduledForDay } from '../../utils/quests';
+import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
@@ -207,30 +207,26 @@ const CalendarPage: React.FC = () => {
                     if (quest.rrule) {
                         const dutyEvent: EventInput = {
                             ...baseProps,
-                            allDay: !quest.startTime,
+                            allDay: quest.allDay,
                         };
 
                         const rruleObj = rruleStringToObject(quest.rrule);
-
-                        if (quest.startTime) {
+                        
+                        if (!quest.allDay && quest.startTime) {
                             rruleObj.dtstart = `1970-01-01T${quest.startTime}`;
-                            dutyEvent.title = `LATE: ${quest.title}`;
-                            dutyEvent.classNames = ['duty-late-period-event'];
                         } else {
-                            rruleObj.dtstart = `1970-01-01`;
+                             rruleObj.dtstart = `1970-01-01`;
                         }
                         
                         dutyEvent.rrule = rruleObj;
 
-                        if (quest.startTime && quest.endTime) {
+                        if (!quest.allDay && quest.startTime && quest.endTime) {
                             const start = new Date(`1970-01-01T${quest.startTime}`);
                             const end = new Date(`1970-01-01T${quest.endTime}`);
                             const diffMs = end.getTime() - start.getTime();
 
                             if (diffMs > 0) {
-                                const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                                dutyEvent.duration = { hours, minutes };
+                                dutyEvent.duration = { milliseconds: diffMs };
                             }
                         }
                         

@@ -572,8 +572,95 @@ const completeCheckpoint = async (questId, userId) => {
     });
 };
 
+// Fix: Added missing claimQuest function to the service layer.
+const claimQuest = async (questId, userId) => {
+    return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers']});
+        if (!quest || !quest.requiresClaim) return null;
+
+        if (!quest.pendingClaims) quest.pendingClaims = [];
+        if (quest.pendingClaims.some(c => c.userId === userId)) return { ...quest, assignedUserIds: quest.assignedUsers.map(u => u.id) }; // Already pending
+
+        quest.pendingClaims.push({ userId, claimedAt: new Date().toISOString() });
+        const saved = await questRepo.save(updateTimestamps(quest));
+        
+        updateEmitter.emit('update');
+        const { assignedUsers: users, ...rest } = saved;
+        return { ...rest, assignedUserIds: users.map(u => u.id) };
+    });
+};
+
+// Fix: Added missing unclaimQuest function to the service layer.
+const unclaimQuest = async (questId, userId) => {
+    return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const quest = await questRepo.findOne({where: { id: questId }, relations: ['assignedUsers']});
+        if (!quest) return null;
+
+        let changed = false;
+        if (quest.pendingClaims && quest.pendingClaims.some(c => c.userId === userId)) {
+            quest.pendingClaims = quest.pendingClaims.filter(c => c.userId !== userId);
+            changed = true;
+        }
+        if (quest.approvedClaims && quest.approvedClaims.some(c => c.userId === userId)) {
+            quest.approvedClaims = quest.approvedClaims.filter(c => c.userId !== userId);
+            changed = true;
+        }
+
+        if (changed) {
+            const saved = await questRepo.save(updateTimestamps(quest));
+            updateEmitter.emit('update');
+            const { assignedUsers: users, ...rest } = saved;
+            return { ...rest, assignedUserIds: users.map(u => u.id) };
+        }
+        
+        const { assignedUsers, ...restOfQuest } = quest;
+        return { ...restOfQuest, assignedUserIds: assignedUsers ? assignedUsers.map(u => u.id) : [] };
+    });
+};
+
+// Fix: Added missing approveClaim function to the service layer.
+const approveClaim = async (questId, userId, adminId) => {
+    return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers']});
+        if (!quest || !quest.requiresClaim) return null;
+        
+        const pendingClaim = quest.pendingClaims?.find(c => c.userId === userId);
+        if (!pendingClaim) return null; // No pending claim to approve
+
+        if (!quest.approvedClaims) quest.approvedClaims = [];
+        quest.approvedClaims.push({ userId, claimedAt: pendingClaim.claimedAt, approvedBy: adminId, approvedAt: new Date().toISOString() });
+        quest.pendingClaims = quest.pendingClaims.filter(c => c.userId !== userId);
+
+        const saved = await questRepo.save(updateTimestamps(quest));
+        updateEmitter.emit('update');
+        const { assignedUsers: users, ...rest } = saved;
+        return { ...rest, assignedUserIds: users.map(u => u.id) };
+    });
+}
+
+// Fix: Added missing rejectClaim function to the service layer.
+const rejectClaim = async (questId, userId, adminId) => {
+    return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers']});
+        if (!quest || !quest.requiresClaim || !quest.pendingClaims?.some(c => c.userId === userId)) return null;
+
+        quest.pendingClaims = quest.pendingClaims.filter(c => c.userId !== userId);
+        
+        const saved = await questRepo.save(updateTimestamps(quest));
+        updateEmitter.emit('update');
+        const { assignedUsers: users, ...rest } = saved;
+        return { ...rest, assignedUserIds: users.map(u => u.id) };
+    });
+}
+
 
 module.exports = {
     getAll, create, clone, update, deleteMany, bulkUpdateStatus, bulkUpdate, complete,
     approveQuestCompletion, rejectQuestCompletion, markAsTodo, unmarkAsTodo, completeCheckpoint,
+    // Fix: Exported the newly added claim functions.
+    claimQuest, unclaimQuest, approveClaim, rejectClaim,
 };

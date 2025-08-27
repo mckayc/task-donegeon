@@ -7,6 +7,8 @@ import {
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, cloneRotationAPI, runRotationAPI,
     completeCheckpointAPI,
+    claimQuestAPI, unclaimQuestAPI,
+    approveClaimAPI, rejectClaimAPI,
     deleteSelectedAssetsAPI
 } from '../api';
 import { useAuthDispatch, useAuthState } from './AuthContext';
@@ -48,6 +50,10 @@ export interface QuestsDispatch {
   cloneRotation: (rotationId: string) => Promise<Rotation | null>;
   runRotation: (rotationId: string) => Promise<void>;
   completeCheckpoint: (questId: string, userId: string) => Promise<void>;
+  claimQuest: (questId: string, userId: string) => Promise<void>;
+  unclaimQuest: (questId: string, userId: string) => Promise<void>;
+  approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
+  rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);
@@ -153,10 +159,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {
-            // FIX: Add a guard for currentUser to ensure it exists before use.
             if (!currentUser) return;
             try {
-                // FIX: Pass the current user's ID as the second argument (actorId) to the API call.
                 await deleteSelectedAssetsAPI({ quests: questIds }, currentUser.id);
                 dispatch({ type: 'REMOVE_QUESTS_DATA', payload: { quests: questIds }});
                 addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` });
@@ -216,6 +220,26 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 addNotification({ type: 'success', message });
             }
         },
+        claimQuest: async (questId, userId) => {
+            const result = await apiAction(() => claimQuestAPI(questId, userId));
+            if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
+        },
+        unclaimQuest: async (questId, userId) => {
+            const result = await apiAction(() => unclaimQuestAPI(questId, userId));
+            if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
+        },
+        approveClaim: async (questId, userId, adminId) => {
+            const result = await apiAction(() => approveClaimAPI(questId, userId, adminId), 'Claim approved!');
+            if (result) {
+                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
+            }
+        },
+        rejectClaim: async (questId, userId, adminId) => {
+            const result = await apiAction(() => rejectClaimAPI(questId, userId, adminId), 'Claim rejected.');
+            if (result) {
+                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
+            }
+        },
         addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data)),
         updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data)),
         assignQuestGroupToUsers: (groupId, userIds) => {
@@ -229,7 +253,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => runRotationAPI(id));
             if (result) addNotification({ type: 'success', message: (result as any).message });
         },
-    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch]);
+    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

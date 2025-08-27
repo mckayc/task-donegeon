@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -10,7 +9,7 @@ import { useAuthState } from '../../context/AuthContext';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 const BugReporter: React.FC = () => {
-    const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId, trackClicks, setTrackClicks, trackElementDetails, setTrackElementDetails } = useDeveloper();
+    const { isRecording, startRecording, stopRecording, cancelRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId, trackClicks, setTrackClicks, trackElementDetails, setTrackElementDetails } = useDeveloper();
     const { bugReports } = useSystemState();
     const { currentUser } = useAuthState();
 
@@ -112,6 +111,20 @@ const BugReporter: React.FC = () => {
         setReportType(BugReportType.Bug);
         setIsLogVisible(false);
         setIsMinimized(false);
+        if (serverLogIntervalRef.current) {
+            clearInterval(serverLogIntervalRef.current);
+        }
+        setIsServerLogging(false);
+        setServerLogCountdown(0);
+    };
+
+    const handleCancel = () => {
+        cancelRecording();
+        setTitle('');
+        setNote('');
+        setReportType(BugReportType.Bug);
+        setIsLogVisible(false);
+        setIsMinimized(true);
         if (serverLogIntervalRef.current) {
             clearInterval(serverLogIntervalRef.current);
         }
@@ -243,6 +256,7 @@ const BugReporter: React.FC = () => {
                         )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button variant="secondary" onClick={handleCancel} className="h-10">Cancel</Button>
                         <Button onClick={handleStop} className="!bg-red-600 hover:!bg-red-500 text-white h-10">Stop Recording</Button>
                         <Button variant="ghost" size="icon" onClick={handleMinimizeToggle} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
                             <ChevronDownIcon className="w-6 h-6 text-white" />

@@ -227,6 +227,33 @@ The status of each event is color-coded for quick reference:
 8.  **Admin Oversight:**
     - To prevent {tasks} from being locked indefinitely, an {admin} will have a **"Force Unclaim"** option on the "Manage Quests" page for any claimed {task}. This will remove all current claims (both pending and approved) and make the {task} available again.
 
+### Bug Tracker
+
+**Purpose:** A tool for `{admin}`s to systematically track bugs, feedback, and feature requests. It records user actions to help reproduce issues.
+
+**Enabling the Tracker:** The Bug Tracker is a developer tool. It must first be enabled in `Settings > General > Enable Developer Mode`. Once enabled, a 🐞 icon will appear in the sidebar, providing access to the main tracking page.
+
+**The Reporter UI:** When developer mode is on, a bug reporting bar appears at the bottom of the screen.
+- **Creating a Report:** From the initial view, select a report type (Bug, Feature, etc.), give it a descriptive title, and click "Start Recording."
+- **Continuing a Report:** You can also choose to continue recording for a previously created report that is still "In Progress."
+
+**During a Recording Session:**
+- **Automatic Logging:** The app automatically logs key events like page navigation and major state changes.
+- **Click Tracking:** This can be toggled on or off. When on, it logs all user clicks. The "Log Details" sub-option can be enabled to capture more specific information about the HTML element that was clicked.
+- **Adding Notes:** Manually add text notes to the log to provide context, describe what you're seeing, or explain your actions.
+- **Picking Elements:** This special mode turns your cursor into a crosshair, allowing you to click on any specific UI element. The details of that element (like its type, ID, and classes) are then added to the log. This is extremely useful for identifying problematic buttons or components.
+- **Server-Side Logging:** For advanced debugging, an admin can enable temporary logging of their own backend API calls for a set duration (e.g., 30 seconds). This helps diagnose issues that may originate from the server.
+- **Cancelling:** A "Cancel" button allows you to discard the current recording session at any time without saving a report.
+- **Stopping:** When you're finished, click "Stop Recording" to save the report with all the captured logs.
+
+**The {link_bug_tracker} Page:** This is the central hub where all reports are managed.
+- **Viewing Reports:** Click on any report to open a detailed view.
+- **Managing Status:** Change a report's status to keep track of its lifecycle: `Open`, `In Progress`, `Resolved`, or `Closed`.
+- **Tagging:** Add or remove tags to categorize and filter reports.
+- **Commenting:** {admin}s can add comments to a report, creating a discussion thread to collaborate on a fix.
+- **Copying Logs:** Easily copy selected log entries or the entire log to your clipboard for sharing or external documentation.
+- **Converting to Quest:** With one click, you can turn a bug report into a completable `{task}`. This automatically creates a new {singleTask}, populates its description with the bug's title and logs, and marks the original bug report as 'Resolved'.
+
 ---
 
 ## Appendix: Default Content

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import { BugReport, BugReportLogEntry, BugReportStatus, BugReportType } from '../types';
 import { useSystemDispatch, useSystemState } from './SystemContext';
@@ -10,7 +9,6 @@ interface DeveloperState {
   isPickingElement: boolean;
   logs: BugReportLogEntry[];
   activeBugId: string | null;
-  // FIX: Add missing properties to state
   trackClicks: boolean;
   trackElementDetails: boolean;
 }
@@ -19,10 +17,10 @@ interface DeveloperState {
 interface DeveloperDispatch {
   startRecording: (bugId?: string) => void;
   stopRecording: (title: string, reportType: BugReportType) => void;
+  cancelRecording: () => void;
   addLogEntry: (entry: Omit<BugReportLogEntry, 'timestamp'>) => void;
   startPickingElement: (onPick: (elementInfo: any) => void) => void;
   stopPickingElement: () => void;
-  // FIX: Add missing dispatch functions
   setTrackClicks: (enabled: boolean) => void;
   setTrackElementDetails: (enabled: boolean) => void;
 }
@@ -35,7 +33,6 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isPickingElement, setIsPickingElement] = useState(false);
   const [logs, setLogs] = useState<BugReportLogEntry[]>([]);
   const [activeBugId, setActiveBugId] = useState<string | null>(null);
-  // FIX: Add state for tracking clicks and element details
   const [trackClicks, setTrackClicks] = useState(true);
   const [trackElementDetails, setTrackElementDetails] = useState(false);
 
@@ -106,6 +103,13 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     stopPickingElement();
   }, [stopPickingElement]);
 
+  const cancelRecording = useCallback(() => {
+    bugLogger.stop(); // Stop and discard logs
+    setIsRecording(false);
+    setActiveBugId(null);
+    stopPickingElement();
+  }, [stopPickingElement]);
+
   const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
     bugLogger.add(entry);
   }, []);
@@ -141,6 +145,9 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     const handleClick = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const target = e.target as HTMLElement;
         if (target?.closest('[data-bug-reporter-ignore]')) {
             stopPickingElement();
@@ -172,19 +179,18 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, [isPickingElement, stopPickingElement]);
 
-  // FIX: Include new state properties in the memoized state object
   const state = useMemo(() => ({ isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails }), [isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails]);
 
-  // FIX: Include new dispatch functions in the memoized dispatch object
   const dispatch = useMemo(() => ({
     startRecording,
     stopRecording,
+    cancelRecording,
     addLogEntry,
     startPickingElement,
     stopPickingElement,
     setTrackClicks,
     setTrackElementDetails
-  }), [startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement, setTrackClicks, setTrackElementDetails]);
+  }), [startRecording, stopRecording, cancelRecording, addLogEntry, startPickingElement, stopPickingElement, setTrackClicks, setTrackElementDetails]);
 
   return (
     <DeveloperStateContext.Provider value={state}>

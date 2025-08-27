@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
-import { useSystemState } from '../../context/SystemContext';
-import { QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer, QuestCompletion, PurchaseRequest, RewardTypeDefinition } from '../../types';
+import { Quest, QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer, QuestCompletion, PurchaseRequest, RewardTypeDefinition } from '../../types';
 import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
 import TradeDialog from '../trading/TradeDialog';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import QuestDetailDialog from '../quests/QuestDetailDialog';
 
 // --- Desktop View Components ---
 
@@ -19,9 +19,10 @@ const QuestApprovalTable: React.FC<{
     onApprove: (id: string, note?: string) => void;
     onReject: (id: string, note?: string) => void;
     getUserName: (id: string) => string;
-    getQuestTitle: (id: string) => string;
+    getQuest: (id: string) => Quest | undefined;
     getGuildName: (id?: string) => string;
-}> = ({ completions, notes, handleNoteChange, onApprove, onReject, getUserName, getQuestTitle, getGuildName }) => (
+    onViewQuest: (quest: Quest) => void;
+}> = ({ completions, notes, handleNoteChange, onApprove, onReject, getUserName, getQuest, getGuildName, onViewQuest }) => (
     <div className="overflow-x-auto">
         <table className="w-full text-left">
             <thead className="border-b border-stone-700/60">
@@ -35,24 +36,76 @@ const QuestApprovalTable: React.FC<{
                 </tr>
             </thead>
             <tbody>
-                {completions.map(c => (
-                    <tr key={c.id} className="border-b border-stone-700/40 last:border-b-0">
-                        <td className="p-4 font-semibold text-emerald-300">{getUserName(c.userId)}</td>
-                        <td className="p-4 text-stone-200">{getQuestTitle(c.questId)}</td>
-                        <td className="p-4 text-stone-400">{getGuildName(c.guildId)}</td>
-                        <td className="p-4 text-stone-400 italic truncate max-w-xs" title={c.note}>"{c.note || 'None'}"</td>
-                        <td className="p-4">
-                            <Input 
-                                placeholder="Optional note..."
-                                value={notes[c.id] || ''}
-                                onChange={(e) => handleNoteChange(c.id, e.target.value)}
-                                className="h-9 text-sm"
-                            />
+                {completions.map(c => {
+                    const quest = getQuest(c.questId);
+                    return (
+                        <tr key={c.id} className="border-b border-stone-700/40 last:border-b-0">
+                            <td className="p-4 font-semibold text-emerald-300">{getUserName(c.userId)}</td>
+                            <td className="p-4 text-stone-200">
+                                {quest ? (
+                                    <button onClick={() => onViewQuest(quest)} className="hover:underline text-left">
+                                        {quest.title}
+                                    </button>
+                                ) : 'Unknown Quest'}
+                            </td>
+                            <td className="p-4 text-stone-400">{getGuildName(c.guildId)}</td>
+                            <td className="p-4 text-stone-400 italic truncate max-w-xs" title={c.note}>"{c.note || 'None'}"</td>
+                            <td className="p-4">
+                                <Input 
+                                    placeholder="Optional note..."
+                                    value={notes[c.id] || ''}
+                                    onChange={(e) => handleNoteChange(c.id, e.target.value)}
+                                    className="h-9 text-sm"
+                                />
+                            </td>
+                            <td className="p-4">
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="destructive" onClick={() => onReject(c.id, notes[c.id])}>Reject</Button>
+                                    <Button size="sm" onClick={() => onApprove(c.id, notes[c.id])}>Approve</Button>
+                                </div>
+                            </td>
+                        </tr>
+                    );
+                })}
+            </tbody>
+        </table>
+    </div>
+);
+
+const ClaimApprovalTable: React.FC<{
+    claims: { quest: Quest; userId: string; claimedAt: string }[];
+    onApprove: (questId: string, userId: string) => void;
+    onReject: (questId: string, userId: string) => void;
+    getUserName: (id: string) => string;
+    getGuildName: (id?: string) => string;
+    onViewQuest: (quest: Quest) => void;
+}> = ({ claims, onApprove, onReject, getUserName, getGuildName, onViewQuest }) => (
+    <div className="overflow-x-auto">
+        <table className="w-full text-left">
+            <thead className="border-b border-stone-700/60">
+                <tr>
+                    <th className="p-4 font-semibold">User</th>
+                    <th className="p-4 font-semibold">Quest</th>
+                    <th className="p-4 font-semibold">Scope</th>
+                    <th className="p-4 font-semibold">Claimed At</th>
+                    <th className="p-4 font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {claims.map(claim => (
+                    <tr key={`${claim.quest.id}-${claim.userId}`} className="border-b border-stone-700/40 last:border-b-0">
+                        <td className="p-4 font-semibold text-emerald-300">{getUserName(claim.userId)}</td>
+                        <td className="p-4 text-stone-200">
+                            <button onClick={() => onViewQuest(claim.quest)} className="hover:underline text-left">
+                                {claim.quest.title}
+                            </button>
                         </td>
+                        <td className="p-4 text-stone-400">{getGuildName(claim.quest.guildId)}</td>
+                        <td className="p-4 text-stone-400">{new Date(claim.claimedAt).toLocaleString()}</td>
                         <td className="p-4">
                             <div className="flex gap-2">
-                                <Button size="sm" variant="destructive" onClick={() => onReject(c.id, notes[c.id])}>Reject</Button>
-                                <Button size="sm" onClick={() => onApprove(c.id, notes[c.id])}>Approve</Button>
+                                <Button size="sm" variant="destructive" onClick={() => onReject(claim.quest.id, claim.userId)}>Reject</Button>
+                                <Button size="sm" onClick={() => onApprove(claim.quest.id, claim.userId)}>Approve</Button>
                             </div>
                         </td>
                     </tr>
@@ -61,6 +114,7 @@ const QuestApprovalTable: React.FC<{
         </table>
     </div>
 );
+
 
 const PurchaseApprovalTable: React.FC<{
     purchases: PurchaseRequest[];
@@ -135,10 +189,11 @@ const TradeApprovalTable: React.FC<{
 
 
 const DesktopApprovalsView: React.FC<any> = ({
-    pendingCompletions, pendingPurchases, pendingTrades, notes,
+    pendingCompletions, pendingPurchases, pendingTrades, pendingClaims, notes,
     handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
     approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
-    getQuestTitle, getUserName, getGuildName, rewardTypes, currentUser
+    getQuest, getUserName, getGuildName, rewardTypes, currentUser,
+    approveClaim, rejectClaim, setViewingQuest
 }) => {
     const [activeTab, setActiveTab] = useState('quests');
     
@@ -146,6 +201,7 @@ const DesktopApprovalsView: React.FC<any> = ({
     
     const tabs = [
         { id: 'quests', label: 'Quests', count: pendingCompletions.length, show: true },
+        { id: 'claims', label: 'Pending Claims', count: pendingClaims.length, show: true },
         { id: 'purchases', label: 'Purchases', count: pendingPurchases.length, show: isAdmin },
         { id: 'trades', label: 'Trades', count: pendingTrades.length, show: true },
     ].filter(t => t.show);
@@ -179,10 +235,24 @@ const DesktopApprovalsView: React.FC<any> = ({
                         onApprove={(id, note) => approveQuestCompletion(id, currentUser.id, note)}
                         onReject={(id, note) => rejectQuestCompletion(id, currentUser.id, note)}
                         getUserName={getUserName}
-                        getQuestTitle={getQuestTitle}
+                        getQuest={getQuest}
                         getGuildName={getGuildName}
+                        onViewQuest={setViewingQuest}
                     />
                 ) : <p className="text-stone-400 text-center py-8">No quests are currently pending approval.</p>
+            )}
+            
+            {activeTab === 'claims' && (
+                pendingClaims.length > 0 ? (
+                    <ClaimApprovalTable
+                        claims={pendingClaims}
+                        onApprove={(questId, userId) => approveClaim(questId, userId, currentUser.id)}
+                        onReject={(questId, userId) => rejectClaim(questId, userId, currentUser.id)}
+                        getUserName={getUserName}
+                        getGuildName={getGuildName}
+                        onViewQuest={setViewingQuest}
+                    />
+                ) : <p className="text-stone-400 text-center py-8">No quests are currently pending claims.</p>
             )}
 
             {activeTab === 'purchases' && isAdmin && (
@@ -217,7 +287,7 @@ const MobileApprovalsView: React.FC<any> = ({
     pendingCompletions, pendingPurchases, pendingTrades, notes,
     handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
     approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
-    getQuestTitle, getUserName, getGuildName, rewardTypes, currentUser
+    getQuest, getUserName, getGuildName, rewardTypes, currentUser
 }) => (
     <div className="space-y-8">
         <Card title="Quests Awaiting Verification">
@@ -230,7 +300,7 @@ const MobileApprovalsView: React.FC<any> = ({
                                     <p className="font-bold text-stone-100 flex items-center gap-2 flex-wrap">
                                         <span className="text-emerald-300">{getUserName(completion.userId)}</span>
                                         <span className="text-stone-300 font-normal"> completed </span>
-                                        "{getQuestTitle(completion.questId)}"
+                                        "{getQuest(completion.questId)?.title || 'Unknown Quest'}"
                                         <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(completion.guildId)}</span>
                                     </p>
                                     <p className="text-stone-400 text-sm mt-1">{completion.note ? `Note: "${completion.note}"` : 'No note provided.'}</p>
@@ -309,11 +379,12 @@ const ApprovalsPage: React.FC = () => {
     const { quests, questCompletions } = useQuestsState();
     const { purchaseRequests, tradeOffers, rewardTypes } = useEconomyState();
     const { currentUser, users } = useAuthState();
-    const { approveQuestCompletion, rejectQuestCompletion } = useQuestsDispatch();
+    const { approveQuestCompletion, rejectQuestCompletion, approveClaim, rejectClaim } = useQuestsDispatch();
     const { approvePurchaseRequest, rejectPurchaseRequest } = useEconomyDispatch();
     
     const [notes, setNotes] = useState<{ [key: string]: string }>({});
     const [tradeToView, setTradeToView] = useState<TradeOffer | null>(null);
+    const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -338,8 +409,20 @@ const ApprovalsPage: React.FC = () => {
     const pendingPurchases = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending);
     const pendingTrades = tradeOffers.filter(t => t.recipientId === currentUser.id && (t.status === TradeStatus.Pending || t.status === TradeStatus.OfferUpdated));
 
+    const pendingClaims = useMemo(() => {
+        const claims: { quest: Quest; userId: string; claimedAt: string }[] = [];
+        quests.forEach(quest => {
+            if (quest.pendingClaims && quest.pendingClaims.length > 0) {
+                quest.pendingClaims.forEach(claim => {
+                    claims.push({ quest, userId: claim.userId, claimedAt: claim.claimedAt });
+                });
+            }
+        });
+        return claims.sort((a, b) => new Date(a.claimedAt).getTime() - new Date(b.claimedAt).getTime());
+    }, [quests]);
 
-    const getQuestTitle = (questId: string) => quests.find(q => q.id === questId)?.title || 'Unknown Quest';
+
+    const getQuest = (questId: string) => quests.find(q => q.id === questId);
     const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
     const getGuildName = (guildId?: string) => guildId ? guilds.find(g => g.id === guildId)?.name : 'Personal';
     
@@ -348,16 +431,24 @@ const ApprovalsPage: React.FC = () => {
     };
 
     const viewProps = {
-        pendingCompletions, pendingPurchases, pendingTrades, notes,
+        pendingCompletions, pendingPurchases, pendingTrades, pendingClaims, notes,
         handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
         approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
-        getQuestTitle, getUserName, getGuildName, rewardTypes, currentUser
+        getQuest, getUserName, getGuildName, rewardTypes, currentUser,
+        approveClaim, rejectClaim, setViewingQuest,
     };
 
     return (
         <div>
             {isMobile ? <MobileApprovalsView {...viewProps} /> : <DesktopApprovalsView {...viewProps} />}
             {tradeToView && <TradeDialog tradeOffer={tradeToView} onClose={() => setTradeToView(null)} />}
+            {viewingQuest && (
+                <QuestDetailDialog
+                    quest={viewingQuest}
+                    onClose={() => setViewingQuest(null)}
+                    dialogTitle={`Details for "${viewingQuest.title}"`}
+                />
+            )}
         </div>
     );
 };

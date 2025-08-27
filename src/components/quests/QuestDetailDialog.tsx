@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useMemo } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus } from '../../types';
 import Button from '../user-interface/Button';
@@ -26,7 +25,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { rewardTypes } = useEconomyState();
     const { questCompletions } = useQuestsState();
     const { currentUser } = useAuthState();
-    const { completeCheckpoint } = useQuestsDispatch();
+    const { completeCheckpoint, claimQuest, unclaimQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
 
     useEffect(() => {
@@ -62,7 +61,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
             onComplete();
         }
     };
-
+    
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
         return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
@@ -101,6 +100,63 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         const total = quest.checkpoints?.length || 0;
         return { completed: completedCount, total, currentIdx: completedCount };
     }, [quest.type, quest.checkpoints, currentUser, completedCount]);
+
+    const handleClaim = () => {
+        if (!currentUser) return;
+        claimQuest(quest.id, currentUser.id);
+        addNotification({ type: 'info', message: 'Claim request sent for approval.' });
+        onClose();
+    };
+
+    const handleUnclaim = () => {
+        if (!currentUser) return;
+        unclaimQuest(quest.id, currentUser.id);
+        addNotification({ type: 'info', message: 'Quest has been unclaimed.' });
+        onClose();
+    };
+
+    const renderActionButtons = () => {
+        if (!currentUser) return null;
+
+        const isClaimableType = quest.type === QuestType.Venture || quest.type === QuestType.Journey;
+
+        if (quest.requiresClaim && isClaimableType) {
+            const userPendingClaim = quest.pendingClaims?.find(c => c.userId === currentUser.id);
+            const userApprovedClaim = quest.approvedClaims?.find(c => c.userId === currentUser.id);
+            const isClaimLimitReached = (quest.approvedClaims?.length || 0) >= (quest.claimLimit || 1);
+
+            if (userPendingClaim) {
+                return <Button disabled>Claim Pending Approval</Button>;
+            }
+            if (userApprovedClaim) {
+                return (
+                    <>
+                        <Button variant="secondary" onClick={handleUnclaim}>Unclaim</Button>
+                        <Button onClick={handleComplete}>Complete Quest</Button>
+                    </>
+                );
+            }
+            if (isClaimLimitReached) {
+                return <Button disabled>Claim Limit Reached</Button>;
+            }
+            // User has no claim and there's space
+            return <Button onClick={handleClaim}>Claim Quest</Button>;
+        }
+
+        // Default non-claimable logic
+        if (onComplete) {
+            const isJourney = quest.type === QuestType.Journey;
+            return (
+                <Button onClick={handleComplete} disabled={isJourney && hasPendingCompletion}>
+                    {isJourney
+                        ? (hasPendingCompletion ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`)
+                        : 'Complete'
+                    }
+                </Button>
+            );
+        }
+        return null;
+    };
 
 
     const themeClasses = quest.type === QuestType.Duty
@@ -199,13 +255,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                 label="To-Do"
                             />
                         )}
-                        {onComplete && (
-                            <Button onClick={handleComplete} disabled={hasPendingCompletion}>
-                                {quest.type === QuestType.Journey 
-                                    ? (hasPendingCompletion ? 'Awaiting Approval' : 'Complete Checkpoint')
-                                    : 'Complete'}
-                            </Button>
-                        )}
+                        {renderActionButtons()}
                     </div>
                 </div>
             </div>

@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -241,6 +243,7 @@ const ManageItemsPage: React.FC = () => {
                     searchTerm={debouncedSearchTerm}
                     terminology={settings.terminology}
                     onCreate={handleCreate}
+                    // Fix: Pass the required rewardTypes prop
                     rewardTypes={rewardTypes}
                 />
             </Card>

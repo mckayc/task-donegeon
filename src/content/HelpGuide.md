@@ -155,6 +155,48 @@ This is the central queue for all actions that require an admin's attention.
 
 ---
 
+## AI Instructions
+
+This section serves as the definitive source of truth for the application's intended functionality. All development and changes should adhere to the standards and behaviors documented here.
+
+### {link_chronicles}
+
+**Purpose:** The primary goal of the {history} is to provide a comprehensive log of all significant actions within the application.
+- **For {users}:** It serves as a motivational tool, allowing them to see a clear history of their progress, achievements, and transactions.
+- **For {admin}s:** It provides an audit trail to see what other administrators are doing and to monitor the progress and activities of all users in their scope.
+
+**Locations & Views:**
+The {history} are accessible in two main locations:
+1.  **Dashboard ("Recent Activity"):** This widget on the main {link_dashboard} displays a user's most recent personal activity.
+2.  **{history} Page:** A dedicated page with more powerful viewing options.
+    -   **My Activity View:** This view shows all historical events for the currently logged-in user within their current scope (Personal or {group}).
+    -   **All Activity View:** Available to {admin}s and {moderator}s, this view shows a combined feed of all user activities within the current scope.
+
+**Functional Specification:**
+- The **"Recent Activity"** widget on the {link_dashboard} and the **"My Activity"** view on the {history} page should display the **exact same information and event types**.
+- The only functional difference is that the **"Recent Activity"** widget on the dashboard is limited to displaying events from the **last 7 days**.
+- The main **{history} Page** is paginated, allowing users to browse through their entire history. It also features a powerful filtering system, allowing users to show or hide different types of events.
+
+**Event Breakdown:**
+Each entry in the {history} represents a specific event:
+- **Quest Completion:** Records when a {task} is completed, approved, or rejected.
+- **Purchase:** Logs when an item is purchased from a {store}.
+- **Trophy Awarded:** Appears when a user unlocks a new {award}.
+- **Admin Adjustment:** Shows when an {admin} manually gives or takes away {points} or {awards}.
+- **Gift Received:** Records when a user receives a gift from another player.
+- **Trade:** Logs the initiation, update, and completion of trades.
+- **Crafting:** Appears when a user crafts a new item from a recipe.
+- **System:** Logs automated system actions, such as applying {negativePoints} for overdue {tasks}.
+
+**Visual Cues:**
+The status of each event is color-coded for quick reference:
+- `Green:` Indicates a positive or completed action (e.g., 'Approved', 'Completed', 'Awarded').
+- `Yellow:` Indicates a pending action (e.g., 'Pending', 'Requested').
+- `Red:` Indicates a negative action (e.g., 'Rejected', 'Setback').
+- `Gray:` Indicates a neutral or cancelled action (e.g., 'Cancelled').
+
+---
+
 ## Appendix: Default Content
 
 {appName} comes with a set of default content to get you started. You can edit or delete any of this content as you see fit.

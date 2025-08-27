@@ -115,6 +115,18 @@ Edit your personal and account details.
 
 This section details the powerful management tools available to administrators.
 
+### Asset Management Actions: Edit, Clone, Delete
+
+Most management pages in the Admin's Toolkit (e.g., {link_manage_quests}, {link_manage_items}, {link_manage_markets}) share a common set of powerful actions for handling content.
+
+-   **Editing:** To modify an existing asset, you can typically click on its name in the table or use an "Edit" button (often represented by a ✏️ icon). This will open a dialog pre-filled with the asset's current details, allowing you to make and save changes.
+
+-   **Cloning:** To quickly create a new asset based on an existing one, use the "Clone" button (usually a 📄 icon). This creates an exact copy of the selected item (e.g., "My Awesome Quest" becomes "My Awesome Quest (Copy)"), which you can then edit. This is a great time-saver for creating series of similar {tasks} or items. Note that some unique, system-critical assets (like the default Exchange Post {store}) cannot be cloned.
+
+-   **Deleting:** To permanently remove an asset, use the "Delete" button (a 🗑️ icon). Because this action cannot be undone, a confirmation dialog will always appear to prevent accidental deletions.
+
+-   **Bulk Actions:** All management tables feature checkboxes. You can select multiple items to perform actions on them simultaneously. Once you've selected one or more items, a bulk action bar will appear at the top of the table, allowing you to perform actions like **Delete**, **Mark Active**, or **Mark Inactive** on your entire selection at once.
+
 ### {link_approvals}
 This is the central queue for all actions that require an admin's attention.
 - **{task} Completions:** Approve or reject {tasks} that users have submitted for verification. You can add an optional note when approving or rejecting.

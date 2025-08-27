@@ -1,5 +1,6 @@
 
 
+
 const { dataSource, ensureDatabaseDirectoryExists } = require('../data-source');
 const fs = require('fs').promises;
 const { In, MoreThan, IsNull, Not, Brackets } = require("typeorm");
@@ -432,6 +433,52 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId)
     });
 };
 
+const deleteSelectedAssets = async (assets, actorId) => {
+    return await dataSource.transaction(async manager => {
+        if (assets.users) {
+            await manager.getRepository(UserEntity).delete(assets.users);
+        }
+        if (assets.quests) {
+            await manager.getRepository(QuestEntity).delete(assets.quests);
+        }
+        if (assets.questGroups) {
+            await manager.update(QuestEntity, { groupId: In(assets.questGroups) }, { groupId: null });
+            await manager.getRepository(QuestGroupEntity).delete(assets.questGroups);
+        }
+        if (assets.markets) {
+            const safeIds = assets.markets.filter(id => id !== 'market-bank');
+            if (safeIds.length > 0) {
+                 await manager.getRepository(MarketEntity).delete(safeIds);
+            }
+        }
+        if (assets.rewardTypes) {
+            const safeIds = (await manager.findBy(RewardTypeDefinitionEntity, { id: In(assets.rewardTypes), isCore: false })).map(r => r.id);
+            if (safeIds.length > 0) {
+                 await manager.getRepository(RewardTypeDefinitionEntity).delete(safeIds);
+            }
+        }
+        if (assets.ranks) {
+            const safeIds = (await manager.findBy(RankEntity, { id: In(assets.ranks) })).filter(r => r.xpThreshold !== 0).map(r => r.id);
+            if (safeIds.length > 0) {
+                await manager.getRepository(RankEntity).delete(safeIds);
+            }
+        }
+        if (assets.trophies) {
+            await manager.getRepository(TrophyEntity).delete(assets.trophies);
+        }
+        if (assets.gameAssets) {
+            await manager.getRepository(GameAssetEntity).delete(assets.gameAssets);
+        }
+        if (assets.rotations) {
+            await manager.getRepository(RotationEntity).delete(assets.rotations);
+        }
+        if (assets.modifierDefinitions) {
+            await manager.getRepository(ModifierDefinitionEntity).delete(assets.modifierDefinitions);
+        }
+    });
+};
+
+
 module.exports = {
     syncData,
     firstRun,
@@ -443,4 +490,5 @@ module.exports = {
     getChronicles,
     resetSettings,
     importAssetPack,
+    deleteSelectedAssets,
 };

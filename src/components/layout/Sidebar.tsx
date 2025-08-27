@@ -174,7 +174,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages } = useSystemState();
+  const { settings, isAiConfigured, chatMessages, isUpdateAvailable } = useSystemState();
   const { guilds } = useCommunityState();
   const { purchaseRequests, tradeOffers } = useEconomyState();
   const { quests, questCompletions } = useQuestsState();
@@ -284,13 +284,17 @@ const Sidebar: React.FC = () => {
                     </a>
                 );
             } else {
+                let badgeCount = item.id === 'Approvals' ? totalApprovals : 0;
+                if (item.id === 'Settings' && isUpdateAvailable) {
+                    badgeCount = 1; // Show a generic "1" or dot for update
+                }
                 navTree.push(
                     <NavLink 
                         key={item.id} 
                         item={item} 
                         activePage={activePage} 
                         setActivePage={setActivePage} 
-                        badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
+                        badgeCount={badgeCount}
                         isCollapsed={isSidebarCollapsed}
                     />
                 );

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useUIState } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
@@ -12,10 +12,11 @@ import SharedLayout from './components/layout/SharedLayout';
 import BugReporter from './components/dev/BugReporter';
 import { useDeveloperState, useDeveloperDispatch } from './context/DeveloperContext';
 import { useCommunityState } from './context/CommunityContext';
-import { useSystemState } from './context/SystemContext';
+import { useSystemState, useSystemDispatch } from './context/SystemContext';
 import { useIsDataLoaded } from './context/DataProvider';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import { Role, Guild, ThemeDefinition } from './types';
+import UpdateAvailable from './components/user-interface/UpdateAvailable';
 
 const App: React.FC = () => {
   const { settings, themes } = useSystemState();
@@ -24,7 +25,11 @@ const App: React.FC = () => {
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { isRecording, isPickingElement, trackClicks, trackElementDetails } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
+  const { setUpdateAvailable, installUpdate } = useSystemDispatch();
   const isDataLoaded = useIsDataLoaded();
+  
+  const [showUpdateToast, setShowUpdateToast] = useState(false);
+
 
   useEffect(() => {
     // If we are on a page that handles its own theme preview, don't apply the global theme.
@@ -128,6 +133,43 @@ const App: React.FC = () => {
     document.body.style.cursor = isPickingElement ? 'crosshair' : 'default';
   }, [isPickingElement]);
 
+  // Service Worker Update Listener
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        // This is the first time the page loads.
+        if (registration.waiting) {
+            setUpdateAvailable(registration.waiting);
+            setShowUpdateToast(true);
+        }
+        
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  // A new SW is waiting to take control.
+                  setUpdateAvailable(newWorker);
+                  setShowUpdateToast(true);
+                }
+              }
+            });
+          }
+        });
+      });
+
+      // When the new SW takes control, reload the page.
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          window.location.reload();
+          refreshing = true;
+        }
+      });
+    }
+  }, [setUpdateAvailable]);
+
 
   if (!isDataLoaded) {
     return (
@@ -143,6 +185,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <NotificationContainer />
+      {showUpdateToast && <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setShowUpdateToast(false)} />}
       {showOnboarding && <OnboardingWizard />}
 
       {(() => {

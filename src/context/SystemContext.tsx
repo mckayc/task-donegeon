@@ -21,13 +21,17 @@ export interface SystemState {
     modifierDefinitions: ModifierDefinition[];
     appliedModifiers: AppliedModifier[];
     chronicleEvents: ChronicleEvent[];
+    // Fix: Add isUpdateAvailable to SystemState
+    isUpdateAvailable: ServiceWorker | null;
 }
 
 export type SystemAction = 
   | { type: 'SET_SYSTEM_DATA', payload: Partial<SystemState> }
   | { type: 'UPDATE_SYSTEM_DATA', payload: Partial<SystemState> }
   | { type: 'REMOVE_SYSTEM_DATA', payload: { [key in keyof SystemState]?: string[] } }
-  | { type: 'SET_AI_CONFIGURED', payload: boolean };
+  | { type: 'SET_AI_CONFIGURED', payload: boolean }
+  // Fix: Add SET_UPDATE_AVAILABLE action type
+  | { type: 'SET_UPDATE_AVAILABLE', payload: ServiceWorker | null };
 
 export interface SystemDispatch {
   deleteSelectedAssets: (assets: { [key in ShareableAssetType]?: string[] }, callback?: () => void) => Promise<void>;
@@ -59,6 +63,9 @@ export interface SystemDispatch {
   cloneUser: (userId: string) => Promise<User | null>;
   sendMessage: (messageData: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => Promise<ChatMessage | null>;
   markMessagesAsRead: (payload: { partnerId?: string; guildId?: string }) => Promise<void>;
+  // Fix: Add setUpdateAvailable and installUpdate to SystemDispatch
+  setUpdateAvailable: (worker: ServiceWorker | null) => void;
+  installUpdate: () => void;
 }
 
 const SystemStateContext = createContext<SystemState | undefined>(undefined);
@@ -77,12 +84,17 @@ const initialState: SystemState = {
     modifierDefinitions: [],
     appliedModifiers: [],
     chronicleEvents: [],
+    // Fix: Initialize isUpdateAvailable
+    isUpdateAvailable: null,
 };
 
 const systemReducer = (state: SystemState, action: SystemAction): SystemState => {
     switch (action.type) {
         case 'SET_AI_CONFIGURED':
             return { ...state, isAiConfigured: action.payload };
+        // Fix: Add reducer case for setting update availability
+        case 'SET_UPDATE_AVAILABLE':
+            return { ...state, isUpdateAvailable: action.payload };
         case 'SET_SYSTEM_DATA':
             return { ...state, ...action.payload };
         case 'UPDATE_SYSTEM_DATA': {
@@ -249,7 +261,16 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (!currentUser) return;
             await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
         },
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers]);
+        // Fix: Add implementation for setUpdateAvailable and installUpdate
+        setUpdateAvailable: (worker: ServiceWorker | null) => {
+            dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
+        },
+        installUpdate: () => {
+            if (state.isUpdateAvailable) {
+                state.isUpdateAvailable.postMessage({ type: 'SKIP_WAITING' });
+            }
+        },
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

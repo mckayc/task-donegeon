@@ -131,9 +131,9 @@ const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
 
 
 export const SettingsPage: React.FC = () => {
-    const { settings, themes } = useSystemState();
+    const { settings, themes, isUpdateAvailable } = useSystemState();
     const { users } = useAuthState();
-    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useSystemDispatch();
+    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset, installUpdate } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     // Create a local copy of settings for form manipulation
@@ -400,6 +400,19 @@ export const SettingsPage: React.FC = () => {
                 </CollapsibleSection>
                 <CollapsibleSection title="Maintenance">
                      <div className="p-6 space-y-4">
+                        {isUpdateAvailable && (
+                            <Card className="!border-emerald-500 !bg-emerald-900/30 mb-4">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div>
+                                        <h4 className="font-bold text-lg text-emerald-300">Update Available!</h4>
+                                        <p className="text-sm text-stone-200 mt-1">A new version of the application is ready to be installed.</p>
+                                    </div>
+                                    <Button onClick={installUpdate} className="flex-shrink-0">
+                                        Install Update Now
+                                    </Button>
+                                </div>
+                            </Card>
+                        )}
                         <div className="p-4 border border-stone-600 bg-stone-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                             <div>
                                 <h4 className="font-bold text-emerald-300">Apply Feature Updates</h4>

@@ -17,6 +17,13 @@ self.addEventListener('install', event => {
   );
 });
 
+// Listen for a message from the client to skip waiting.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Cache and return requests
 self.addEventListener('fetch', event => {
   // Let the browser do its default thing

@@ -7,7 +7,7 @@ import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import RewardDisplay from '../user-interface/RewardDisplay';
 import { useCommunityState } from '../../context/CommunityContext';
-import { useSystemState } from '../../context/SystemContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useSyncStatus } from '../../context/DataProvider';
 import Button from '../user-interface/Button';
 
@@ -40,7 +40,8 @@ const Clock: React.FC = () => {
 };
 
 const Header: React.FC = () => {
-  const { settings } = useSystemState();
+  const { settings, isUpdateAvailable } = useSystemState();
+  const { installUpdate } = useSystemDispatch();
   const { guilds } = useCommunityState();
   const { appMode } = useUIState();
   const { setAppMode, setActivePage } = useUIDispatch();
@@ -155,13 +156,23 @@ const Header: React.FC = () => {
             <button 
                 onClick={() => setProfileDropdownOpen(p => !p)} 
                 data-log-id="header-profile-dropdown" 
-                className="flex items-center"
+                className="relative flex items-center"
                 title={currentUser.gameName}
             >
                 <Avatar user={currentUser} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600" />
+                {isUpdateAvailable && (
+                    <span className="absolute top-0 right-0 block h-3.5 w-3.5 rounded-full bg-red-500 ring-2 ring-stone-900" />
+                )}
             </button>
             {profileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
+                    {isUpdateAvailable && (
+                        <div className="border-b border-stone-700">
+                            <a href="#" onClick={(e) => { e.preventDefault(); installUpdate(); }} data-log-id="header-profile-link-update" className="block px-4 py-3 text-emerald-300 bg-emerald-900/50 hover:bg-emerald-800/60 font-semibold">
+                                Update Available
+                            </a>
+                        </div>
+                    )}
                     <div className="px-4 py-3 border-b border-stone-700">
                         <p className="font-semibold text-stone-100">{currentUser.gameName}</p>
                         <p className="text-sm text-stone-400">{currentUser.email}</p>

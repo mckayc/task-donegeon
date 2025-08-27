@@ -62,11 +62,15 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
     const [recurrenceType, setRecurrenceType] = useState('DAILY');
     const [weeklyDays, setWeeklyDays] = useState<string[]>([]);
     const [monthlyDays, setMonthlyDays] = useState<string>('');
+    const [interval, setInterval] = useState(1);
+
 
     useEffect(() => {
         if (value.rrule) {
             const parts = value.rrule.split(';');
             const freqPart = parts.find(p => p.startsWith('FREQ='));
+            const intervalPart = parts.find(p => p.startsWith('INTERVAL='));
+
             if (freqPart) {
                 const freq = freqPart.split('=')[1];
                 setRecurrenceType(freq);
@@ -78,10 +82,12 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                     setMonthlyDays(bymonthdayPart ? bymonthdayPart.split('=')[1] : '');
                 }
             }
+            setInterval(intervalPart ? parseInt(intervalPart.split('=')[1]) || 1 : 1);
         } else {
             setRecurrenceType('DAILY');
             setWeeklyDays([]);
             setMonthlyDays('');
+            setInterval(1);
         }
     }, [value.rrule]);
     
@@ -110,28 +116,11 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
         }
     };
     
-    const handleRecurrenceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newRecurrence = e.target.value;
-        setRecurrenceType(newRecurrence);
-        updateRrule(newRecurrence, weeklyDays, monthlyDays);
-    };
-
-    const handleWeeklyDayToggle = (day: string) => {
-        const newWeeklyDays = weeklyDays.includes(day)
-            ? weeklyDays.filter(d => d !== day)
-            : [...weeklyDays, day].sort((a,b) => WEEKDAYS.findIndex(d => d.value === a) - WEEKDAYS.findIndex(d => d.value === b));
-        setWeeklyDays(newWeeklyDays);
-        updateRrule('WEEKLY', newWeeklyDays, monthlyDays);
-    };
-
-    const handleMonthlyDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMonthlyDays = e.target.value.replace(/[^0-9,]/g, '');
-        setMonthlyDays(newMonthlyDays);
-        updateRrule('MONTHLY', weeklyDays, newMonthlyDays);
-    };
-
-    const updateRrule = (freq: string, weekly: string[], monthly: string) => {
+    const updateRrule = (freq: string, weekly: string[], monthly: string, currentInterval: number) => {
         let rrule = `FREQ=${freq}`;
+        if (currentInterval > 1) {
+            rrule += `;INTERVAL=${currentInterval}`;
+        }
         if (freq === 'WEEKLY' && weekly.length > 0) {
             rrule += `;BYDAY=${weekly.join(',')}`;
         }
@@ -139,6 +128,32 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
             rrule += `;BYMONTHDAY=${monthly.trim()}`;
         }
         onChange({ rrule });
+    };
+
+    const handleRecurrenceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newRecurrence = e.target.value;
+        setRecurrenceType(newRecurrence);
+        updateRrule(newRecurrence, weeklyDays, monthlyDays, interval);
+    };
+
+    const handleIntervalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newInterval = parseInt(e.target.value) || 1;
+        setInterval(newInterval);
+        updateRrule(recurrenceType, weeklyDays, monthlyDays, newInterval);
+    };
+
+    const handleWeeklyDayToggle = (day: string) => {
+        const newWeeklyDays = weeklyDays.includes(day)
+            ? weeklyDays.filter(d => d !== day)
+            : [...weeklyDays, day].sort((a,b) => WEEKDAYS.findIndex(d => d.value === a) - WEEKDAYS.findIndex(d => d.value === b));
+        setWeeklyDays(newWeeklyDays);
+        updateRrule('WEEKLY', newWeeklyDays, monthlyDays, interval);
+    };
+
+    const handleMonthlyDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMonthlyDays = e.target.value.replace(/[^0-9,]/g, '');
+        setMonthlyDays(newMonthlyDays);
+        updateRrule('MONTHLY', weeklyDays, newMonthlyDays, interval);
     };
     
     const handleAllDayToggle = (allDay: boolean) => {
@@ -149,9 +164,11 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
         }
     };
 
+    const intervalUnit = recurrenceType === 'DAILY' ? 'day(s)' : recurrenceType === 'WEEKLY' ? 'week(s)' : 'month(s)';
+
     return (
         <fieldset className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-            <legend className="text-xl font-medieval text-accent mb-2">Scheduling & Type</legend>
+            <legend className="font-medieval text-xl text-accent mb-2">Scheduling &amp; Type</legend>
             <div className="flex gap-2 p-1 bg-stone-700/50 rounded-lg">
                 <TypeButton type={QuestType.Duty} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For recurring tasks, like daily or weekly chores." />
                 <TypeButton type={QuestType.Venture} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For one-time tasks or projects with a specific deadline." />
@@ -191,11 +208,18 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                 </div>
             ) : ( // Duty
                 <div className="space-y-4">
-                    <Input as="select" label="Repeats" value={recurrenceType} onChange={handleRecurrenceChange}>
-                        <option value="DAILY">Daily</option>
-                        <option value="WEEKLY">Weekly</option>
-                        <option value="MONTHLY">Monthly</option>
-                    </Input>
+                    <div className="grid grid-cols-3 items-end gap-2">
+                        <Input as="select" label="Repeats" value={recurrenceType} onChange={handleRecurrenceChange} className="col-span-2">
+                            <option value="DAILY">Daily</option>
+                            <option value="WEEKLY">Weekly</option>
+                            <option value="MONTHLY">Monthly</option>
+                        </Input>
+                         <div className="flex items-center gap-2">
+                            <Input label="Every" type="number" min="1" value={interval} onChange={handleIntervalChange} className="w-16" />
+                            <span className="text-sm text-stone-400 pt-7">{intervalUnit}</span>
+                        </div>
+                    </div>
+
                     {recurrenceType === 'WEEKLY' && (
                         <div>
                             <label className="block text-sm font-medium text-stone-300 mb-1">On</label>

@@ -15,6 +15,10 @@ const {
     markQuestAsTodo,
     unmarkQuestAsTodo,
     completeCheckpoint,
+    claimQuest,
+    unclaimQuest,
+    approveClaim,
+    rejectClaim,
 } = require('../controllers/quests.controller');
 
 const router = express.Router();
@@ -34,5 +38,10 @@ router.post('/reject/:id', asyncMiddleware(rejectQuestCompletion));
 router.post('/mark-todo', asyncMiddleware(markQuestAsTodo));
 router.post('/unmark-todo', asyncMiddleware(unmarkQuestAsTodo));
 router.post('/complete-checkpoint', asyncMiddleware(completeCheckpoint));
+router.post('/claim', asyncMiddleware(claimQuest));
+router.post('/unclaim', asyncMiddleware(unclaimQuest));
+router.post('/approve-claim', asyncMiddleware(approveClaim));
+router.post('/reject-claim', asyncMiddleware(rejectClaim));
+
 
 module.exports = router;

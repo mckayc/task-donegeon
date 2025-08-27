@@ -60,6 +60,13 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
             const total = quest.checkpoints?.length || 0;
             return `Checkpoint: ${completed + 1} / ${total}`;
         }
+        if (quest.requiresClaim && currentUser) {
+            const totalApproved = quest.approvedClaims?.length || 0;
+            const limit = quest.claimLimit || 1;
+            if (quest.pendingClaims?.some(c => c.userId === currentUser.id)) return 'Claim Pending Approval';
+            if (quest.approvedClaims?.some(c => c.userId === currentUser.id)) return 'Claimed by You!';
+            return `Claims: ${totalApproved}/${limit}`;
+        }
         return getDueDateString(quest);
     }, [quest, currentUser, isCollaborative, isJourney]);
 

@@ -62,6 +62,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         todoUserIds: [],
         checkpoints: [],
         checkpointCompletionTimestamps: {},
+        requiresClaim: false,
+        claimLimit: 1,
+        pendingClaims: [],
+        approvedClaims: [],
     };
 
     // Mode: Edit
@@ -264,6 +268,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         todoUserIds: formData.todoUserIds,
         checkpoints: formData.type === QuestType.Journey ? (formData.checkpoints || []) : undefined,
         checkpointCompletionTimestamps: formData.type === QuestType.Journey ? (formData.checkpointCompletionTimestamps || {}) : undefined,
+        requiresClaim: formData.type === QuestType.Duty ? false : formData.requiresClaim,
+        claimLimit: formData.type === QuestType.Duty ? 1 : formData.claimLimit,
+        pendingClaims: formData.pendingClaims || [],
+        approvedClaims: formData.approvedClaims || [],
     };
 
     if (onSave) {
@@ -427,6 +435,18 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
              <h3 className="font-semibold text-lg text-stone-200">Approval</h3>
             <ToggleSwitch enabled={formData.requiresApproval} setEnabled={(val: boolean) => setFormData(p => ({...p, requiresApproval: val}))} label="Requires Approval" />
           </div>
+          
+          {(formData.type === QuestType.Venture || formData.type === QuestType.Journey) && (
+              <div className="pt-4 border-t border-stone-700/60">
+                <h3 className="font-semibold text-lg text-stone-200 mb-2">Claiming</h3>
+                 <ToggleSwitch enabled={formData.requiresClaim ?? false} setEnabled={(val: boolean) => setFormData(p => ({...p, requiresClaim: val}))} label="Requires Claim Before Starting" />
+                 {formData.requiresClaim && (
+                      <div className="pl-6 mt-2">
+                         <Input label="Claim Limit" type="number" min="1" value={formData.claimLimit ?? 1} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, claimLimit: parseInt(e.target.value) || 1}))} />
+                      </div>
+                 )}
+              </div>
+          )}
 
           {hasDeadlines && (
             <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">

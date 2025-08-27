@@ -102,6 +102,34 @@ const completeCheckpoint = async (req, res) => {
     }
 };
 
+const claimQuest = async (req, res) => {
+    const { questId, userId } = req.body;
+    const result = await questService.claimQuest(questId, userId);
+    if (!result) return res.status(400).json({ error: 'Could not claim quest.'});
+    res.json(result);
+}
+
+const unclaimQuest = async (req, res) => {
+    const { questId, userId } = req.body;
+    const result = await questService.unclaimQuest(questId, userId);
+    if (!result) return res.status(400).json({ error: 'Could not unclaim quest.'});
+    res.json(result);
+}
+
+const approveClaim = async (req, res) => {
+    const { questId, userId, adminId } = req.body;
+    const result = await questService.approveClaim(questId, userId, adminId);
+    if (!result) return res.status(400).json({ error: 'Could not approve claim.'});
+    res.json(result);
+}
+
+const rejectClaim = async (req, res) => {
+    const { questId, userId, adminId } = req.body;
+    const result = await questService.rejectClaim(questId, userId, adminId);
+    if (!result) return res.status(400).json({ error: 'Could not reject claim.'});
+    res.json(result);
+}
+
 module.exports = {
     getAllQuests,
     createQuest,
@@ -116,4 +144,8 @@ module.exports = {
     markQuestAsTodo,
     unmarkQuestAsTodo,
     completeCheckpoint,
+    claimQuest,
+    unclaimQuest,
+    approveClaim,
+    rejectClaim,
 };

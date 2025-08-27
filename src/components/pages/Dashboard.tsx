@@ -88,6 +88,11 @@ const Dashboard: React.FC = () => {
 
     const handleStartAction = (questToAction: Quest) => {
         setSelectedQuest(null);
+        if (questToAction.requiresClaim) {
+            // Re-select the quest to open the detail dialog, which handles the claim flow
+            setSelectedQuest(questToAction);
+            return;
+        }
         if (questToAction.kind === QuestKind.GuildCollaborative) {
             setContributingQuest(questToAction);
         } else {

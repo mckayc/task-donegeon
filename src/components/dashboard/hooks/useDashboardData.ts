@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -30,12 +29,14 @@ export const useDashboardData = () => {
             try {
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
                 
+                // Get filters from localStorage to match Chronicles page
                 const savedFilters = localStorage.getItem('chronicleFilters');
                 const filterTypes = savedFilters ? JSON.parse(savedFilters).join(',') : '';
                 
+                // Calculate date range for the last 4 days
                 const endDate = new Date();
                 const startDate = new Date();
-                startDate.setDate(endDate.getDate() - 6); // Get last 7 days (today + 6 previous days)
+                startDate.setDate(endDate.getDate() - 3); // -3 to get today + 3 previous days = 4 days total
 
                 const params = new URLSearchParams({
                     page: '1',
@@ -154,10 +155,20 @@ export const useDashboardData = () => {
     const quickActionQuests = useMemo(() => {
         const today = new Date();
         const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
-        const completableQuests = quests.filter(quest => 
-            isQuestVisibleToUserInMode(quest, currentUser.id, appMode) &&
-            isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode)
-        );
+        const completableQuests = quests.filter(quest => {
+            if (!isQuestVisibleToUserInMode(quest, currentUser.id, appMode)) return false;
+            
+            // If it requires a claim, it's always an "action" to open the dialog
+            if (quest.requiresClaim) {
+                const totalApproved = quest.approvedClaims?.length || 0;
+                const claimLimit = quest.claimLimit || 1;
+                // Show if it's not full, or if I have an approved claim
+                return totalApproved < claimLimit || quest.approvedClaims?.some(c => c.userId === currentUser.id);
+            }
+
+            // Otherwise, check if it's completable in the traditional way
+            return isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode)
+        });
         const uniqueQuests = Array.from(new Map(completableQuests.map(q => [q.id, q])).values());
         return uniqueQuests.sort(questSorter(currentUser, userCompletions, scheduledEvents, today));
     }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);

@@ -195,6 +195,38 @@ The status of each event is color-coded for quick reference:
 - `Red:` Indicates a negative action (e.g., 'Rejected', 'Setback').
 - `Gray:` Indicates a neutral or cancelled action (e.g., 'Cancelled').
 
+### Quest Claiming
+
+**Purpose:** The "Claim" feature is designed for {singleTasks} and {journeys} to solve two main problems:
+1.  **Preventing Redundant Work:** It stops {users} from starting a {task} that may no longer be necessary (e.g., "Take out the trash" when it has already been taken out).
+2.  **Avoiding Overlap:** It prevents multiple {users} from working on the same single-person {task} simultaneously.
+
+**Admin Setup:**
+- In the "Create/Edit Quest" dialog, a new toggle switch labeled **"Requires Claim Before Starting"** will be available for {singleTasks} and {journeys}.
+- When this toggle is enabled, a new input field appears next to it: **"Claim Limit"**. This is a number that defaults to `1`.
+- A `Claim Limit` of `1` means the {task} is a solo job. A limit of `2` or more means it's a small group task that multiple people can claim.
+
+**User Workflow:**
+1.  **Viewing an Unclaimed {task}:** An available {task} that requires a claim will display a **"Claim {task}"** button in its detail view.
+2.  **Claiming a {task}:**
+    - When a {user} clicks "Claim {task}", their request is submitted to the {admin}s.
+    - The button immediately changes to **"Claim Pending Approval"** and becomes disabled.
+3.  **Viewing a Pending/Approved Claim:**
+    - For all other {users}, the {task} card will now clearly display a status like **"Claimed by [User's Name]"** (or "Claims: 1/3") to show that a slot is taken.
+    - The "Claim {task}" button will be disabled for all {users} once the claim limit is reached.
+4.  **Admin Approval:**
+    - A new **"Pending Claims"** tab will appear on the {link_approvals} page.
+    - {admin}s can **Approve** or **Reject** the claim.
+5.  **Claim Approved:**
+    - The claiming {user} receives a notification that their claim was approved.
+    - Their button in the {task} detail view changes to **"Complete {task}"**. They can now proceed with the {task}.
+6.  **Claim Rejected:**
+    - The claiming {user} receives a notification that their claim was rejected.
+    - The claim is removed, and the slot becomes available again for others to claim.
+7.  **Unclaiming a {task}:** If a {user} has an **approved** claim but decides not to do the {task}, they will have an **"Unclaim"** option in the detail view. This will free up their slot, making the {task} available for others.
+8.  **Admin Oversight:**
+    - To prevent {tasks} from being locked indefinitely, an {admin} will have a **"Force Unclaim"** option on the "Manage Quests" page for any claimed {task}. This will remove all current claims (both pending and approved) and make the {task} available again.
+
 ---
 
 ## Appendix: Default Content

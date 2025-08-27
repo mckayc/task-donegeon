@@ -89,6 +89,10 @@ export const updateRotationAPI = (data: Rotation) => apiRequest('PUT', `/api/rot
 export const cloneRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/clone/${id}`);
 export const runRotationAPI = (id: string) => apiRequest('POST', `/api/rotations/run/${id}`);
 export const completeCheckpointAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/complete-checkpoint', { questId, userId });
+export const claimQuestAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/claim', { questId, userId });
+export const unclaimQuestAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/unclaim', { questId, userId });
+export const approveClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/approve-claim', { questId, userId, adminId });
+export const rejectClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/reject-claim', { questId, userId, adminId });
 
 
 // --- System & Dev API ---

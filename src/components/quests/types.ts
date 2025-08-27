@@ -55,6 +55,12 @@ export interface Quest {
   checkpointCompletionTimestamps?: { [userId: string]: { [checkpointId: string]: string } }; // For Journeys
   contributions?: { userId: string, contributedAt: string }[]; // For collaborative quests
 
+  // Claiming Feature
+  requiresClaim?: boolean;
+  claimLimit?: number;
+  pendingClaims?: { userId: string; claimedAt: string; }[];
+  approvedClaims?: { userId: string; claimedAt: string; approvedBy: string; approvedAt: string; }[];
+
   rewards: RewardItem[];
   lateSetbacks: RewardItem[];
   incompleteSetbacks: RewardItem[];

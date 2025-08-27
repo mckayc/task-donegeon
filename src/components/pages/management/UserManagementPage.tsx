@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuthState, useAuthDispatch } from '../../../context/AuthContext';
 import Button from '../../user-interface/Button';
 import AddUserDialog from '../../users/AddUserDialog';
@@ -11,12 +11,68 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import Input from '../../user-interface/Input';
 import UserTable from '../../users/UserTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { useUIState } from '../../../context/UIContext';
+import { EllipsisVerticalIcon } from '../../user-interface/Icons';
+import Avatar from '../../user-interface/Avatar';
+
+const UserCard: React.FC<{
+    user: User;
+    roleName: (role: Role) => string;
+    onEdit: (user: User) => void;
+    onClone: (userId: string) => void;
+    onAdjust: (user: User) => void;
+    onDeleteRequest: (userId: string) => void;
+}> = ({ user, roleName, onEdit, onClone, onAdjust, onDeleteRequest }) => {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4">
+            <Avatar user={user} className="w-12 h-12 rounded-full flex-shrink-0" />
+            <div className="flex-grow overflow-hidden">
+                <p className="font-bold text-stone-100 truncate">{user.gameName}</p>
+                <p className="text-sm text-stone-400 truncate">{user.username}</p>
+                 <span className={`mt-1 inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${
+                    user.role === 'Donegeon Master' ? 'bg-yellow-500/20 text-yellow-300' : 
+                    user.role === 'Gatekeeper' ? 'bg-sky-500/20 text-sky-300' : 
+                    'bg-green-500/20 text-green-300'
+                }`}>
+                    {roleName(user.role)}
+                </span>
+            </div>
+            <div className="relative flex-shrink-0" ref={dropdownRef}>
+                <Button variant="ghost" size="icon" onClick={() => setDropdownOpen(p => !p)}>
+                    <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                </Button>
+                {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                        <button onClick={() => { onEdit(user); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</button>
+                        <button onClick={() => { onClone(user.id); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Clone</button>
+                        <button onClick={() => { onAdjust(user); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Adjust</button>
+                        <button onClick={() => { onDeleteRequest(user.id); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Delete</button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const UserManagementPage: React.FC = () => {
     const { settings } = useSystemState();
     const { users } = useAuthState();
     const { deleteUsers } = useAuthDispatch();
     const { cloneUser } = useSystemDispatch();
+    const { isMobileView } = useUIState();
     
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'gameName-asc' | 'gameName-desc' | 'username-asc' | 'username-desc' | 'role-asc' | 'role-desc'>('gameName-asc');
@@ -47,7 +103,7 @@ const UserManagementPage: React.FC = () => {
                 case 'role-asc': return a.role.localeCompare(b.role);
                 case 'role-desc': return b.role.localeCompare(a.role);
                 case 'gameName-asc':
-                default: return a.gameName.localeCompare(a.gameName);
+                default: return a.gameName.localeCompare(b.gameName);
             }
         });
     }, [users, debouncedSearchTerm, sortBy]);
@@ -102,16 +158,32 @@ const UserManagementPage: React.FC = () => {
                     )}
                 </div>
 
-                <UserTable
-                    users={pageUsers}
-                    selectedUsers={selectedUsers}
-                    setSelectedUsers={setSelectedUsers}
-                    roleName={roleName}
-                    onEdit={setEditingUser}
-                    onClone={cloneUser}
-                    onAdjust={setAdjustingUser}
-                    onDeleteRequest={(id) => setDeletingIds([id])}
-                />
+                {isMobileView ? (
+                    <div className="space-y-3">
+                        {pageUsers.map(user => (
+                            <UserCard 
+                                key={user.id}
+                                user={user}
+                                roleName={roleName}
+                                onEdit={setEditingUser}
+                                onClone={cloneUser}
+                                onAdjust={setAdjustingUser}
+                                onDeleteRequest={(id) => setDeletingIds([id])}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <UserTable
+                        users={pageUsers}
+                        selectedUsers={selectedUsers}
+                        setSelectedUsers={setSelectedUsers}
+                        roleName={roleName}
+                        onEdit={setEditingUser}
+                        onClone={cloneUser}
+                        onAdjust={setAdjustingUser}
+                        onDeleteRequest={(id) => setDeletingIds([id])}
+                    />
+                )}
             </Card>
 
             {isAddUserDialogOpen && <AddUserDialog onClose={() => setIsAddUserDialogOpen(false)} onUserAdded={() => {}} />}

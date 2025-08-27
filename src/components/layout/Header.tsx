@@ -4,7 +4,7 @@ import Avatar from '../user-interface/Avatar';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
-import { ChevronDownIcon } from '../user-interface/Icons';
+import { ChevronDownIcon, MenuIcon, DeviceDesktopIcon, DevicePhoneMobileIcon } from '../user-interface/Icons';
 import RewardDisplay from '../user-interface/RewardDisplay';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
@@ -39,12 +39,28 @@ const Clock: React.FC = () => {
     );
 };
 
+const ViewModeToggle: React.FC = () => {
+    const { isMobileView } = useUIState();
+    const { setIsMobileView } = useUIDispatch();
+
+    return (
+        <button
+            onClick={() => setIsMobileView(!isMobileView)}
+            title={isMobileView ? 'Switch to Desktop View' : 'Switch to Mobile View'}
+            className="p-2 rounded-full text-stone-300 hover:bg-stone-700/50 hover:text-white transition-colors"
+            aria-label="Toggle device view mode"
+        >
+            {isMobileView ? <DeviceDesktopIcon className="w-6 h-6" /> : <DevicePhoneMobileIcon className="w-6 h-6" />}
+        </button>
+    );
+};
+
 const Header: React.FC = () => {
   const { settings, isUpdateAvailable } = useSystemState();
   const { installUpdate } = useSystemDispatch();
   const { guilds } = useCommunityState();
-  const { appMode } = useUIState();
-  const { setAppMode, setActivePage } = useUIDispatch();
+  const { appMode, isMobileView } = useUIState();
+  const { setAppMode, setActivePage, toggleSidebar } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAuthDispatch();
 
@@ -93,9 +109,14 @@ const Header: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50">
+    <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
       {/* Left Group */}
       <div className="flex items-center gap-2 md:gap-4">
+        {isMobileView && (
+            <button onClick={toggleSidebar} className="p-2 -ml-2 text-stone-300 hover:text-white">
+                <MenuIcon className="w-6 h-6" />
+            </button>
+        )}
         <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60">
             <button data-log-id="header-mode-personal" onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
                 Personal
@@ -138,15 +159,16 @@ const Header: React.FC = () => {
       </div>
       
       {/* Right Group */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
+        <ViewModeToggle />
         <FullscreenToggle />
-        <Clock />
+        {!isMobileView && <Clock />}
         {settings.sharedMode.enabled && (
             <Button
                 onClick={exitToSharedView}
                 data-log-id="header-exit-shared-view"
                 variant="secondary"
-                className="font-bold text-lg"
+                className="font-bold text-lg hidden sm:inline-flex"
                 title="Exit to Shared View"
             >
                 Exit

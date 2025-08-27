@@ -16,10 +16,10 @@ import { useSystemState } from '../../context/SystemContext';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  const { activePage, isChatOpen } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
-  const { setActivePage } = useUIDispatch();
+  const { setActivePage, toggleSidebar } = useUIDispatch();
   const { exitToSharedView } = useAuthDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
@@ -135,11 +135,29 @@ const MainLayout: React.FC = () => {
             onClose={() => setShowLoginNotifications(false)} 
         />
       )}
-      <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+      <div className="flex h-screen bg-stone-800 text-stone-100">
+        
+        {!isMobileView && <Sidebar />}
+
+        {isMobileView && (
+            <>
+                {!isSidebarCollapsed && (
+                    <div 
+                        onClick={toggleSidebar} 
+                        className="fixed inset-0 bg-black/60 z-30"
+                    />
+                )}
+                <div 
+                    className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300 ease-in-out ${isSidebarCollapsed ? '-translate-x-full' : 'translate-x-0'}`}
+                >
+                    <Sidebar />
+                </div>
+            </>
+        )}
+
+        <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
+          <main className="main-content flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
             <VacationModeBanner />
             <Suspense fallback={<LoadingSpinner />}>
                 {renderPage()}

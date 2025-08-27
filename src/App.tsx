@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useUIState } from './context/UIContext';
+import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
@@ -26,10 +26,19 @@ const App: React.FC = () => {
   const { isRecording, isPickingElement, trackClicks, trackElementDetails } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
   const { setUpdateAvailable, installUpdate } = useSystemDispatch();
+  const { setIsMobileView } = useUIDispatch();
   const isDataLoaded = useIsDataLoaded();
   
   const [showUpdateToast, setShowUpdateToast] = useState(false);
 
+  useEffect(() => {
+    const checkMobile = () => {
+        setIsMobileView(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [setIsMobileView]);
 
   useEffect(() => {
     // If we are on a page that handles its own theme preview, don't apply the global theme.

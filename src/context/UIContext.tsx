@@ -6,6 +6,7 @@ export interface UIState {
   activePage: Page;
   isSidebarCollapsed: boolean;
   isChatOpen: boolean;
+  isMobileView: boolean;
   appMode: AppMode;
   activeMarketId: string | null;
 }
@@ -14,6 +15,7 @@ export interface UIDispatch {
   setActivePage: (page: Page) => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
+  setIsMobileView: (isMobile: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   setActiveMarketId: (marketId: string | null) => void;
 }
@@ -23,8 +25,15 @@ const UIDispatchContext = createContext<UIDispatch | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activePage, _setActivePage] = useState<Page>('Dashboard');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => localStorage.getItem('isSidebarCollapsed') === 'true');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    // Default to collapsed on mobile, respect storage on desktop
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return true;
+    }
+    return localStorage.getItem('isSidebarCollapsed') === 'true'
+  });
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [appMode, _setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [activeMarketId, _setActiveMarketId] = useState<string | null>(null);
 
@@ -36,7 +45,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const toggleSidebar = () => {
     setIsSidebarCollapsed(prev => {
       const newState = !prev;
-      localStorage.setItem('isSidebarCollapsed', String(newState));
+      if (!isMobileView) {
+        localStorage.setItem('isSidebarCollapsed', String(newState));
+      }
       return newState;
     });
   };
@@ -69,22 +80,20 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     _setActiveMarketId(marketId);
   };
 
-  // Memoize the state value to prevent consumers that only use dispatch from re-rendering.
   const state = useMemo(() => ({
     activePage,
     isSidebarCollapsed,
     isChatOpen,
+    isMobileView,
     appMode,
     activeMarketId
-  }), [activePage, isSidebarCollapsed, isChatOpen, appMode, activeMarketId]);
+  }), [activePage, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId]);
 
-  // Create a stable dispatch object. These functions don't depend on props or state,
-  // so they don't need to be wrapped in useCallback. A new object is created on each render,
-  // which is fine and more robust against potential stale closure issues.
   const dispatch: UIDispatch = {
     setActivePage,
     toggleSidebar,
     toggleChat,
+    setIsMobileView,
     setAppMode,
     setActiveMarketId,
   };

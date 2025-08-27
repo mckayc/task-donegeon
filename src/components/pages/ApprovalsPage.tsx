@@ -9,6 +9,7 @@ import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
+import { useUIState } from '../../context/UIContext';
 
 // --- Desktop View Components ---
 
@@ -381,18 +382,11 @@ const ApprovalsPage: React.FC = () => {
     const { currentUser, users } = useAuthState();
     const { approveQuestCompletion, rejectQuestCompletion, approveClaim, rejectClaim } = useQuestsDispatch();
     const { approvePurchaseRequest, rejectPurchaseRequest } = useEconomyDispatch();
+    const { isMobileView } = useUIState();
     
     const [notes, setNotes] = useState<{ [key: string]: string }>({});
     const [tradeToView, setTradeToView] = useState<TradeOffer | null>(null);
     const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
-
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
 
     if (!currentUser || (currentUser.role !== Role.DonegeonMaster && currentUser.role !== Role.Gatekeeper)) {
         return (
@@ -440,7 +434,7 @@ const ApprovalsPage: React.FC = () => {
 
     return (
         <div>
-            {isMobile ? <MobileApprovalsView {...viewProps} /> : <DesktopApprovalsView {...viewProps} />}
+            {isMobileView ? <MobileApprovalsView {...viewProps} /> : <DesktopApprovalsView {...viewProps} />}
             {tradeToView && <TradeDialog tradeOffer={tradeToView} onClose={() => setTradeToView(null)} />}
             {viewingQuest && (
                 <QuestDetailDialog

@@ -44,7 +44,7 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
 };
 
 
-const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isCollapsed: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isCollapsed }) => {
+const NavLink: React.FC<{ item: SidebarLink, activePage: Page, onNavigate: (page: Page) => void, badgeCount?: number, isCollapsed: boolean }> = ({ item, activePage, onNavigate, badgeCount = 0, isCollapsed }) => {
     const { settings } = useSystemState();
     const [isHovered, setIsHovered] = useState(false);
     const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
@@ -57,7 +57,7 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (p
           href="#"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
+          onClick={(e) => { e.preventDefault(); onNavigate(item.id); }}
           data-log-id={`sidebar-link-${item.id.toLowerCase().replace(' ', '-')}`}
           className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'pl-12' : 'px-4'} ${ isCollapsed ? 'justify-center' : ''} ${
             isActive
@@ -86,10 +86,10 @@ interface CollapsibleNavGroupProps {
     badgeCount: number;
     isCollapsed: boolean;
     totalApprovals: number;
+    onNavigate: (page: Page) => void;
 }
 
-const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, childItems, activePage, badgeCount, isCollapsed, totalApprovals }) => {
-    const { setActivePage } = useUIDispatch();
+const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, childItems, activePage, badgeCount, isCollapsed, totalApprovals, onNavigate }) => {
     const isGroupActive = childItems.some(child => child.id === activePage);
     const [isOpen, setIsOpen] = useState(isGroupActive);
     const [isHovered, setIsHovered] = useState(false);
@@ -122,7 +122,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
                                 key={item.id} 
                                 item={item} 
                                 activePage={activePage} 
-                                setActivePage={setActivePage} 
+                                onNavigate={onNavigate}
                                 isCollapsed={true} 
                                 badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
                             />
@@ -161,7 +161,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
                             key={item.id} 
                             item={item} 
                             activePage={activePage} 
-                            setActivePage={setActivePage} 
+                            onNavigate={onNavigate}
                             isCollapsed={false}
                             badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
                         />
@@ -178,12 +178,27 @@ const Sidebar: React.FC = () => {
   const { guilds } = useCommunityState();
   const { purchaseRequests, tradeOffers } = useEconomyState();
   const { quests, questCompletions } = useQuestsState();
-  const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
+  const { activePage, isSidebarCollapsed, isChatOpen, isMobileView } = useUIState();
   const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
   const { currentUser } = useAuthState();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
   if (!currentUser) return null;
+
+  const handleNavigate = (page: Page) => {
+    setActivePage(page);
+    if (isMobileView) {
+      // Use a small timeout to allow the navigation to register before the sidebar closes
+      setTimeout(() => toggleSidebar(), 150);
+    }
+  };
+
+  const handleChatToggle = () => {
+    toggleChat();
+    if (isMobileView) {
+      setTimeout(() => toggleSidebar(), 150);
+    }
+  }
 
   const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
     if (!link.isVisible) return false;
@@ -258,8 +273,9 @@ const Sidebar: React.FC = () => {
                     childItems={childItems}
                     activePage={activePage} 
                     badgeCount={groupBadgeCount}
-                    isCollapsed={isSidebarCollapsed}
+                    isCollapsed={isSidebarCollapsed && !isMobileView}
                     totalApprovals={totalApprovals}
+                    onNavigate={handleNavigate}
                 />
             );
         } else if (item.type === 'link') {
@@ -270,14 +286,14 @@ const Sidebar: React.FC = () => {
                       key={item.id}
                       href="#"
                       data-log-id="sidebar-chat-toggle"
-                      onClick={(e) => { e.preventDefault(); toggleChat(); }}
-                      className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${isSidebarCollapsed ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
-                      title={isSidebarCollapsed ? linkName : ''}
+                      onClick={(e) => { e.preventDefault(); handleChatToggle(); }}
+                      className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${isSidebarCollapsed && !isMobileView ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
+                      title={isSidebarCollapsed && !isMobileView ? linkName : ''}
                     >
-                      <span className={`text-xl ${!isSidebarCollapsed ? 'mr-3' : ''}`}>{item.emoji}</span>
-                      {!isSidebarCollapsed && <span>{linkName}</span>}
+                      <span className={`text-xl ${!isSidebarCollapsed || isMobileView ? 'mr-3' : ''}`}>{item.emoji}</span>
+                      {(!isSidebarCollapsed || isMobileView) && <span>{linkName}</span>}
                       {unreadMessagesCount > 0 && !isChatOpen && (
-                        <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
+                        <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed && !isMobileView ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
                             {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
                         </span>
                       )}
@@ -293,9 +309,9 @@ const Sidebar: React.FC = () => {
                         key={item.id} 
                         item={item} 
                         activePage={activePage} 
-                        setActivePage={setActivePage} 
+                        onNavigate={handleNavigate}
                         badgeCount={badgeCount}
-                        isCollapsed={isSidebarCollapsed}
+                        isCollapsed={isSidebarCollapsed && !isMobileView}
                     />
                 );
             }
@@ -309,30 +325,34 @@ const Sidebar: React.FC = () => {
     }
     return navTree;
   }
+  
+  const sidebarWidthClass = isSidebarCollapsed && !isMobileView ? 'w-20' : 'w-72';
 
   return (
-    <div className={`flex flex-col flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
+    <div className={`flex flex-col flex-shrink-0 transition-all duration-300 ${sidebarWidthClass}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
       <button 
-        onClick={() => setActivePage('Dashboard')} 
+        onClick={() => handleNavigate('Dashboard')} 
         data-log-id="sidebar-header-logo"
         className="flex items-center justify-center h-20 border-b cursor-pointer hover:bg-stone-800/50 transition-colors" 
         style={{ borderColor: 'hsl(var(--color-border))' }}
       >
-        <h1 className={`font-medieval text-accent transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>{settings.terminology.appName}</h1>
+        <h1 className={`font-medieval text-accent transition-opacity duration-200 ${isSidebarCollapsed && !isMobileView ? 'opacity-0' : 'opacity-100'}`}>{settings.terminology.appName}</h1>
       </button>
       <nav className="flex-1 px-2 py-6 space-y-1 overflow-y-auto scrollbar-hide">
         {renderNavItems()}
       </nav>
-      <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
-         <button 
-            onClick={toggleSidebar}
-            data-log-id="sidebar-toggle-collapse"
-            title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-            className="w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors"
-         >
-            {isSidebarCollapsed ? <ArrowRightIcon className="w-6 h-6" /> : <ArrowLeftIcon className="w-6 h-6" />}
-         </button>
-      </div>
+      {!isMobileView && (
+        <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
+           <button 
+              onClick={toggleSidebar}
+              data-log-id="sidebar-toggle-collapse"
+              title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              className="w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors"
+           >
+              {isSidebarCollapsed ? <ArrowRightIcon className="w-6 h-6" /> : <ArrowLeftIcon className="w-6 h-6" />}
+           </button>
+        </div>
+      )}
     </div>
   );
 };

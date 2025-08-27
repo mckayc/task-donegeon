@@ -1,4 +1,5 @@
 
+
 const fs = require('fs').promises;
 const path = require('path');
 const { dataSource } = require('../data-source');
@@ -8,6 +9,8 @@ const { updateEmitter } = require('../utils/updateEmitter');
 
 const BACKUP_DIR = '/app/data/backups';
 const DB_PATH = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
+const HELP_GUIDE_PATH = path.join(__dirname, '..', '..', 'src', 'content', 'HelpGuide.md');
+
 
 const parseBackupFilename = (filename) => {
     const match = filename.match(/^backup-(manual|auto-.+?)-(\d{14})-(.+)\.(json|sqlite)$/);
@@ -67,6 +70,12 @@ const create = async (format, type = 'manual') => {
 
     if (format === 'json') {
         const appData = await getFullAppData(manager);
+        try {
+            appData.helpGuideContent = await fs.readFile(HELP_GUIDE_PATH, 'utf-8');
+        } catch (err) {
+            console.warn("Could not read HelpGuide.md during backup:", err.message);
+            appData.helpGuideContent = '# Help Guide could not be backed up.';
+        }
         await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
     } else if (format === 'sqlite') {
         await fs.copyFile(DB_PATH, filePath);
@@ -97,8 +106,21 @@ const removeMany = async (filenames) => {
 const restore = async (file) => {
     console.log(`Starting restore from ${file.originalname}`);
     if (file.mimetype === 'application/json' || file.originalname.endsWith('.json')) {
-        // Complex restore logic for JSON would go here
-        console.log("JSON restore is a complex operation and is placeholder for now.");
+        const fileContent = await fs.readFile(file.path, 'utf-8');
+        const parsedData = JSON.parse(fileContent);
+
+        if (parsedData.helpGuideContent) {
+            try {
+                await fs.writeFile(HELP_GUIDE_PATH, parsedData.helpGuideContent, 'utf-8');
+                console.log("[Restore] HelpGuide.md restored successfully.");
+            } catch (err) {
+                console.error("Failed to restore HelpGuide.md:", err);
+                // Do not throw; continue with DB restore
+            }
+        }
+        // Complex restore logic for JSON database would go here
+        console.log("JSON restore is a complex operation and is placeholder for now for database.");
+
     } else if (file.originalname.endsWith('.sqlite')) {
         await dataSource.destroy();
         await fs.copyFile(file.path, DB_PATH);

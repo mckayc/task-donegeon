@@ -223,13 +223,13 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                     <p><span className="font-semibold text-green-400">Starts:</span> {new Date(quest.startDateTime).toLocaleString()}</p>
                                 )}
                                 {quest.startTime && (
-                                    <p><span className="font-semibold text-green-400">Starts:</span> Daily at {new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
+                                    <p><span className="font-semibold text-green-400">Due:</span> Daily at {new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
                                 )}
                                 {quest.endDateTime && (
                                     <p><span className="font-semibold text-red-400">Due:</span> {new Date(quest.endDateTime).toLocaleString()}</p>
                                 )}
                                 {quest.endTime && (
-                                    <p><span className="font-semibold text-red-400">Due:</span> Daily at {new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
+                                    <p><span className="font-semibold text-amber-400">Incomplete at:</span> Daily at {new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
                                 )}
                             </div>
                         </div>

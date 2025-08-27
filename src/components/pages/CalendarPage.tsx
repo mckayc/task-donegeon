@@ -214,6 +214,8 @@ const CalendarPage: React.FC = () => {
 
                         if (quest.startTime) {
                             rruleObj.dtstart = `1970-01-01T${quest.startTime}`;
+                            dutyEvent.title = `LATE: ${quest.title}`;
+                            dutyEvent.classNames = ['duty-late-period-event'];
                         } else {
                             rruleObj.dtstart = `1970-01-01`;
                         }
@@ -415,6 +417,12 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; color: hsl(var(--primary-foreground)); }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
                 .fc-event.birthday-event { background-color: hsl(50 90% 60%) !important; border-color: hsl(50 90% 50%) !important; color: hsl(50 100% 10%) !important; font-weight: bold; }
+                .fc-event.duty-late-period-event {
+                    background-color: hsl(40 90% 50% / 0.7) !important;
+                    border-color: hsl(40 90% 40%) !important;
+                    color: hsl(40 100% 10%) !important;
+                    font-weight: bold;
+                }
                 .fc-theme-standard .fc-list-day-cushion, .fc-theme-standard .fc-list-table th {
                     background-color: hsl(var(--color-bg-secondary-hsl));
                 }

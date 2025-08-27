@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus } from '../../types';
 import { AppMode } from '../../types/app';
@@ -124,7 +122,7 @@ const SharedCalendarPage: React.FC = () => {
     };
     
     const handleQuickComplete = (quest: Quest, user: User) => {
-        if (settings.security.requirePinForUsers && user.pin) {
+        if (settings.sharedMode.requirePinForCompletion && user.pin) {
             setVerifyingQuest({ quest, user });
         } else {
             completeQuestWithoutPin(quest, user);

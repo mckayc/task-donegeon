@@ -218,8 +218,8 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                     <ToggleSwitch label="All Day" enabled={value.allDay} setEnabled={handleAllDayToggle} />
                     {!value.allDay && (
                          <div className="pl-4 border-l-2 border-stone-700 grid grid-cols-2 gap-4">
-                            <Input label="Start Time" type="time" value={value.startTime || ''} onChange={e => onChange({ startTime: e.target.value })} />
-                            <Input label="End Time" type="time" value={value.endTime || ''} onChange={e => onChange({ endTime: e.target.value })} />
+                            <Input label="Due Time" type="time" value={value.startTime || ''} onChange={e => onChange({ startTime: e.target.value })} />
+                            <Input label="Incomplete Time" type="time" value={value.endTime || ''} onChange={e => onChange({ endTime: e.target.value })} />
                         </div>
                     )}
                 </div>

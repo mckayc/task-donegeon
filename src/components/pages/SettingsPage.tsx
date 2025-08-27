@@ -269,6 +269,15 @@ export const SettingsPage: React.FC = () => {
                             <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
                                 <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(val) => handleSettingChange('sharedMode', 'userIds', val)} label="Users in Shared View" />
                                 <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'allowCompletion', val)} label="Allow quest completion from shared view" />
+                                {formState.sharedMode.allowCompletion && (
+                                    <div className="pl-6 mt-2">
+                                        <ToggleSwitch 
+                                            enabled={formState.sharedMode.requirePinForCompletion} 
+                                            setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'requirePinForCompletion', val)} 
+                                            label="Require PIN for quest completion" 
+                                        />
+                                    </div>
+                                )}
                                 <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'autoExit', val)} label="Auto-exit user session after inactivity" />
                                 {formState.sharedMode.autoExit && (
                                     <Input label="Auto-exit after (minutes)" type="number" min="1" value={formState.sharedMode.autoExitMinutes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoExitMinutes', parseInt(e.target.value) || 2)} />

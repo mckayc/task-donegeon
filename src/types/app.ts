@@ -168,6 +168,7 @@ export interface AppSettings {
     enabled: boolean;
     quickUserSwitchingEnabled: boolean;
     allowCompletion: boolean;
+    requirePinForCompletion: boolean;
     autoExit: boolean;
     autoExitMinutes: number;
     userIds: string[];

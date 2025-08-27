@@ -1,4 +1,3 @@
-
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -186,6 +185,7 @@ export const INITIAL_SETTINGS: AppSettings = {
         enabled: false,
         quickUserSwitchingEnabled: true,
         allowCompletion: false,
+        requirePinForCompletion: true,
         autoExit: false,
         autoExitMinutes: 2,
         userIds: [],

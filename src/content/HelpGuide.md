@@ -25,7 +25,7 @@ The app has two primary contexts, which you can switch between using the dropdow
 
 ### The Three {task} Types
 All tasks fall into one of three categories:
-- **{recurringTasks}:** These are repeating tasks that happen on a schedule, like daily, weekly, or on specific dates of the month. They are great for building habits.
+- **{recurringTasks}:** These are repeating tasks that happen on a schedule. They are great for building habits. For {recurringTasks} with a specific time, you can set a **Due Time** (the deadline) and an optional **Incomplete Time** (the final cutoff). The time between these two appears on the calendar as a colored "late period" to show the grace period before penalties are applied.
   _Example: "Take out the trash every Tuesday" or "Make your bed every morning"._
 - **{singleTasks}:** These are one-time tasks or projects. They can be completable once, or have a certain number of available "slots" for multiple people to complete.
   _Example: "Organize the garage" (completable once) or "Help wash the car" (could have 2 slots)._
@@ -169,6 +169,7 @@ This section serves as the definitive source of truth for the application's inte
 3.  Toggle **"Enable Shared Mode"** on.
 4.  Select which users should appear on the shared login screen.
 5.  Optionally, enable **"Allow quest completion from shared view"** to let users complete their tasks without a full login.
+6.  If completions are allowed, you can also toggle **"Require PIN for quest completion"** for added security.
 
 **How it Works:**
 - When enabled, logging out or clicking the **"Exit"** button in the header will take you to a special Kiosk screen. This screen shows a calendar view of today's available {tasks} for each selected user.
@@ -178,7 +179,7 @@ This section serves as the definitive source of truth for the application's inte
 **Completing {tasks} in Kiosk Mode:**
 - If enabled in settings, users can click on a {task} in the Kiosk calendar view.
 - This opens a detail dialog where they can mark the {task} as complete.
-- If PINs are required for users in the security settings, the user will be prompted to enter their PIN to confirm the completion. Otherwise, the {task} is completed immediately.
+- If **"Require PIN for quest completion"** is enabled in the Kiosk settings (and the user has a PIN set), the user will be prompted to enter their PIN to confirm the completion. Otherwise, if the setting is disabled, the {task} is completed immediately.
 
 ---
 

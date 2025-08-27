@@ -63,9 +63,9 @@ export interface SystemDispatch {
   cloneUser: (userId: string) => Promise<User | null>;
   sendMessage: (messageData: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => Promise<ChatMessage | null>;
   markMessagesAsRead: (payload: { partnerId?: string; guildId?: string }) => Promise<void>;
-  // Fix: Add setUpdateAvailable and installUpdate to SystemDispatch
   setUpdateAvailable: (worker: ServiceWorker | null) => void;
   installUpdate: () => void;
+  checkForUpdate: () => Promise<void>;
 }
 
 const SystemStateContext = createContext<SystemState | undefined>(undefined);
@@ -84,7 +84,6 @@ const initialState: SystemState = {
     modifierDefinitions: [],
     appliedModifiers: [],
     chronicleEvents: [],
-    // Fix: Initialize isUpdateAvailable
     isUpdateAvailable: null,
 };
 
@@ -92,7 +91,6 @@ const systemReducer = (state: SystemState, action: SystemAction): SystemState =>
     switch (action.type) {
         case 'SET_AI_CONFIGURED':
             return { ...state, isAiConfigured: action.payload };
-        // Fix: Add reducer case for setting update availability
         case 'SET_UPDATE_AVAILABLE':
             return { ...state, isUpdateAvailable: action.payload };
         case 'SET_SYSTEM_DATA':
@@ -160,6 +158,24 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
             return result as T | null;
         }, [apiAction]);
+
+    const checkForUpdate = useCallback(async () => {
+        if (!('serviceWorker' in navigator)) {
+            addNotification({ type: 'error', message: 'Service workers are not supported in this browser.' });
+            return;
+        }
+
+        addNotification({ type: 'info', message: 'Checking for updates...' });
+        
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.update();
+            addNotification({ type: 'success', message: 'Update check initiated. You will be notified if a new version is found.' });
+        } catch (error) {
+            console.error('Error checking for service worker update:', error);
+            addNotification({ type: 'error', message: 'Failed to check for updates.' });
+        }
+    }, [addNotification]);
 
     const actions = useMemo<SystemDispatch>(() => ({
         deleteSelectedAssets: async (assets, callback) => {
@@ -261,7 +277,6 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (!currentUser) return;
             await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
         },
-        // Fix: Add implementation for setUpdateAvailable and installUpdate
         setUpdateAvailable: (worker: ServiceWorker | null) => {
             dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
         },
@@ -270,7 +285,8 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 state.isUpdateAvailable.postMessage({ type: 'SKIP_WAITING' });
             }
         },
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable]);
+        checkForUpdate,
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

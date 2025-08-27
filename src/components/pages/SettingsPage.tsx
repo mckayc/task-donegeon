@@ -12,6 +12,7 @@ import EmojiPicker from '../user-interface/EmojiPicker';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Card from '../user-interface/Card';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
+import { version } from '../../../package.json';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onToggle?: (isOpen: boolean) => void; }> = ({ title, children, defaultOpen = false, onToggle }) => {
@@ -133,7 +134,7 @@ const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
 export const SettingsPage: React.FC = () => {
     const { settings, themes, isUpdateAvailable } = useSystemState();
     const { users } = useAuthState();
-    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset, installUpdate } = useSystemDispatch();
+    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset, installUpdate, checkForUpdate } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     // Create a local copy of settings for form manipulation
@@ -413,6 +414,13 @@ export const SettingsPage: React.FC = () => {
                                 </div>
                             </Card>
                         )}
+                        <div className="p-4 border border-stone-600 bg-stone-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div>
+                                <h4 className="font-bold text-stone-200">Application Version</h4>
+                                <p className="text-sm text-stone-300 mt-1">Current version: <span className="font-mono font-bold text-accent">{version}</span></p>
+                            </div>
+                            <Button onClick={checkForUpdate}>Check for Updates</Button>
+                        </div>
                         <div className="p-4 border border-stone-600 bg-stone-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                             <div>
                                 <h4 className="font-bold text-emerald-300">Apply Feature Updates</h4>

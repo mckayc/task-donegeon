@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_57_DATE = new Date(2025, 8, 5);
 const V0_1_56_DATE = new Date(2025, 8, 4);
 const V0_1_55_DATE = new Date(2025, 8, 3);
 const V0_1_54_DATE = new Date(2025, 8, 2);
@@ -61,19 +62,20 @@ const WhatsNewContent: React.FC = () => {
             <p className="text-sm">Here are the latest updates to {settings.terminology.appName}.</p>
             <div>
                 <h4 className="text-lg font-bold text-stone-100">
-                    Version 0.1.56 ({V0_1_56_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                    Version 0.1.57 ({V0_1_57_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
                 </h4>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>Update Test Release:</strong> Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.</li>
+                    <li><strong>Granular Chronicle Logging:</strong> The Chronicles system is now more detailed. Actions that require multiple steps (like a task completion followed by an admin approval) will now correctly generate separate, distinct log entries for each step, providing a clearer and more complete audit trail.</li>
+                    <li><strong>Help Guide Enhancements:</strong> The in-app Help Guide is now easier to navigate, with clickable links for every major heading and subheading. The Table of Contents has also been streamlined into a single-column layout for better readability.</li>
+                    <li><strong>Dashboard & Chronicles Sync:</strong> The "Recent Activity" widget on the Dashboard now correctly uses the same user-defined filters as the main Chronicles page, ensuring a consistent view of your activity across the app.</li>
                 </ul>
             </div>
             <div>
                 <h4 className="text-lg font-bold text-stone-100">
-                    Version 0.1.55 ({V0_1_55_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                    Version 0.1.56 ({V0_1_56_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
                 </h4>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>PWA Update Reliability:</strong> Completely overhauled the service worker's caching strategy to resolve a critical bug that could cause the app to crash or show a blank screen after an update. The new "cache-first" approach for navigation ensures that the application and its assets are always in sync, providing a seamless and reliable update experience.</li>
-                    <li><strong>Automatic Background Updates:</strong> The app now automatically checks for new versions every hour for all users, not just admins. When an update is found, a notification will appear, allowing any user to install the latest version.</li>
+                    <li><strong>Update Test Release:</strong> Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.</li>
                 </ul>
             </div>
         </div>
@@ -82,6 +84,15 @@ const WhatsNewContent: React.FC = () => {
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.55 ({V0_1_55_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>PWA Update Reliability:</strong> Completely overhauled the service worker's caching strategy to resolve a critical bug that could cause the app to crash or show a blank screen after an update. The new "cache-first" approach for navigation ensures that the application and its assets are always in sync, providing a seamless and reliable update experience.</li>
+                <li><strong>Automatic Background Updates:</strong> The app now automatically checks for new versions every hour for all users, not just admins. When an update is found, a notification will appear, allowing any user to install the latest version.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.1.54 ({V0_1_54_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -359,7 +370,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.56</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.57</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">

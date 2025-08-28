@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.56
+**Version:** 0.1.57
 
 ---
 
@@ -14,6 +14,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.57 (September 5, 2025)
+-   **Granular Chronicle Logging:** The Chronicles system is now more detailed. Actions that require multiple steps (like a {task} completion followed by an admin approval) will now correctly generate separate, distinct log entries for each step, providing a clearer and more complete audit trail.
+-   **Help Guide Enhancements:** The in-app Help Guide is now easier to navigate, with clickable links for every major heading and subheading. The Table of Contents has also been streamlined into a single-column layout for better readability.
+-   **Dashboard & Chronicles Sync:** The "Recent Activity" widget on the Dashboard now correctly uses the same user-defined filters as the main Chronicles page, ensuring a consistent view of your activity across the app.
 
 ### What's New in Version 0.1.56 (September 4, 2025)
 -   **Update Test Release:** Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.

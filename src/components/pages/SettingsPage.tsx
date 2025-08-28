@@ -13,6 +13,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Card from '../user-interface/Card';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 import { version } from '../../../package.json';
+import ServiceWorkerLogger from '../settings/ServiceWorkerLogger';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onToggle?: (isOpen: boolean) => void; }> = ({ title, children, defaultOpen = false, onToggle }) => {
@@ -429,6 +430,10 @@ export const SettingsPage: React.FC = () => {
                             <Button onClick={() => setConfirmation('applyUpdates')} className="flex-shrink-0">
                                 Apply Updates
                             </Button>
+                        </div>
+                        <div className="pt-4 border-t border-stone-700/60">
+                            <h4 className="font-bold text-lg text-emerald-300 mb-2">Update Service Log</h4>
+                            <ServiceWorkerLogger />
                         </div>
                     </div>
                 </CollapsibleSection>

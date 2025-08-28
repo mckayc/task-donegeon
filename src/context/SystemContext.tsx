@@ -1,6 +1,3 @@
-
-
-
 // Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
@@ -9,6 +6,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI } from '../api';
+import { swLogger } from '../utils/swLogger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -146,15 +144,21 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     useEffect(() => {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(registration => {
+                swLogger.log('SW_READY');
                 if (registration.waiting) {
+                    swLogger.log('UPDATE_WAITING_ON_READY', { state: registration.waiting.state });
                     setUpdateAvailable(registration.waiting);
                 }
                 
                 registration.addEventListener('updatefound', () => {
+                    swLogger.log('UPDATE_FOUND');
                     const newWorker = registration.installing;
                     if (newWorker) {
+                        swLogger.log('NEW_WORKER_INSTALLING', { state: newWorker.state });
                         newWorker.addEventListener('statechange', () => {
+                            swLogger.log('WORKER_STATE_CHANGE', { state: newWorker.state });
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                swLogger.log('UPDATE_INSTALLED_AND_WAITING');
                                 setUpdateAvailable(newWorker);
                             }
                         });
@@ -164,6 +168,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
+                swLogger.log('CONTROLLER_CHANGE_EVENT');
                 if (!refreshing) {
                     window.location.reload();
                     refreshing = true;
@@ -200,39 +205,42 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const checkForUpdate = useCallback(async () => {
         if (!('serviceWorker' in navigator)) {
+            swLogger.log('MANUAL_CHECK_FAILED', { reason: 'Service workers not supported.' });
             addNotification({ type: 'error', message: 'Service workers are not supported in this browser.' });
             return;
         }
 
         try {
             const registration = await navigator.serviceWorker.ready;
-
-            if (registration.waiting) {
-                setUpdateAvailable(registration.waiting);
-                return;
-            }
-
+            swLogger.log('MANUAL_UPDATE_CHECK_INITIATED');
             addNotification({ type: 'info', message: 'Checking for updates...' });
             
             await registration.update();
+            swLogger.log('REGISTRATION_UPDATE_CALLED');
             
             // Check again after the update() call completes. This makes the manual check more responsive.
             const updatedRegistration = await navigator.serviceWorker.getRegistration();
             if (updatedRegistration?.waiting) {
+                swLogger.log('MANUAL_CHECK_SUCCESS', { reason: 'Update found and waiting.' });
                 setUpdateAvailable(updatedRegistration.waiting);
             } else {
+                swLogger.log('MANUAL_CHECK_SUCCESS', { reason: 'No new update found.' });
                 addNotification({ type: 'success', message: 'You are on the latest version.' });
             }
         } catch (error) {
             console.error('Error checking for service worker update:', error);
+            swLogger.log('MANUAL_CHECK_FAILED', { error: error instanceof Error ? error.message : 'Unknown error' });
             addNotification({ type: 'error', message: 'Failed to check for updates.' });
         }
     }, [addNotification, setUpdateAvailable]);
 
     const installUpdate = useCallback(() => {
         if (state.isUpdateAvailable) {
+            swLogger.log('INSTALL_UPDATE_TRIGGERED');
             addNotification({ type: 'info', message: 'Installing update... The app will reload shortly.' });
             state.isUpdateAvailable.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+            swLogger.log('INSTALL_UPDATE_FAILED', { reason: 'No update available to install.' });
         }
     }, [state.isUpdateAvailable, addNotification]);
 

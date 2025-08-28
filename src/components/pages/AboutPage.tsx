@@ -25,6 +25,8 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_56_DATE = new Date(2025, 8, 4);
+const V0_1_55_DATE = new Date(2025, 8, 3);
 const V0_1_54_DATE = new Date(2025, 8, 2);
 const V0_1_53_DATE = new Date(2025, 8, 1);
 const V0_1_40_DATE = new Date(2025, 7, 26);
@@ -59,11 +61,19 @@ const WhatsNewContent: React.FC = () => {
             <p className="text-sm">Here are the latest updates to {settings.terminology.appName}.</p>
             <div>
                 <h4 className="text-lg font-bold text-stone-100">
-                    Version 0.1.54 ({V0_1_54_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                    Version 0.1.56 ({V0_1_56_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
                 </h4>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>Test Release & UI Improvement:</strong> Incremented version to test the new robust app update functionality.</li>
-                    <li><strong>New "What's New" Section:</strong> Added this dedicated "What's New" section to provide users with a clear and concise summary of the latest features and fixes directly within the app.</li>
+                    <li><strong>Update Test Release:</strong> Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.</li>
+                </ul>
+            </div>
+            <div>
+                <h4 className="text-lg font-bold text-stone-100">
+                    Version 0.1.55 ({V0_1_55_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                </h4>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>PWA Update Reliability:</strong> Completely overhauled the service worker's caching strategy to resolve a critical bug that could cause the app to crash or show a blank screen after an update. The new "cache-first" approach for navigation ensures that the application and its assets are always in sync, providing a seamless and reliable update experience.</li>
+                    <li><strong>Automatic Background Updates:</strong> The app now automatically checks for new versions every hour for all users, not just admins. When an update is found, a notification will appear, allowing any user to install the latest version.</li>
                 </ul>
             </div>
         </div>
@@ -72,6 +82,15 @@ const WhatsNewContent: React.FC = () => {
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.54 ({V0_1_54_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Test Release & UI Improvement:</strong> Incremented version to test the new robust app update functionality.</li>
+                <li><strong>New "What's New" Section:</strong> Added this dedicated "What's New" section to provide users with a clear and concise summary of the latest features and fixes directly within the app.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.1.53 ({V0_1_53_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -340,7 +359,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.54</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.56</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">

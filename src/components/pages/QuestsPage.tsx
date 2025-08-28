@@ -42,7 +42,6 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     }, [questCompletions, quest.id]);
     
     let deadline: Date | null = null;
-    let borderClass = 'border-stone-700';
     let timeStatusText = '';
     let timeStatusColor = 'text-green-400';
 
@@ -54,13 +53,21 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     }
 
     const isOverdue = deadline ? now > deadline : false;
+    const isDueSoon = deadline ? (deadline.getTime() - now.getTime()) < 24 * 60 * 60 * 1000 && !isOverdue : false;
     
+    let borderClass = 'border-stone-700';
     if (isRedemption) {
         borderClass = 'border-slate-400 ring-2 ring-slate-400/50';
     } else if (isTodo) {
         borderClass = 'border-purple-500 ring-2 ring-purple-500/50';
     } else if (deadline) {
-      borderClass = isOverdue ? 'border-red-600' : 'border-green-600';
+        if (isOverdue) {
+            borderClass = 'border-red-600';
+        } else if (isDueSoon) {
+            borderClass = 'border-amber-500 animate-pulse';
+        } else {
+            borderClass = 'border-green-600';
+        }
     }
     
     if (isOverdue) {
@@ -68,6 +75,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         timeStatusColor = 'text-red-400';
     } else if (deadline && deadline > now) {
         timeStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
+        timeStatusColor = isDueSoon ? 'text-amber-400' : 'text-green-400';
     }
 
     const absoluteDueDateString = useMemo(() => {

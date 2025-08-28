@@ -53,6 +53,16 @@ This is your main {task} board. It shows all available {tasks} for your current 
 - **{task} Cards:** Each card gives you a summary of the {task}, including its rewards and deadlines.
 - **To-Do:** {singleTasks} can be marked as a "To-Do". These will appear on your {link_calendar} for today and are sorted with higher priority on the {link_quests} page.
 
+#### Visual Cues: {task} Borders
+To help you understand the status of your {tasks} at a glance, {task} cards have different colored borders and animations:
+- **Overdue ({tasks}):** A solid `red border` indicates a {task} is past its deadline and needs immediate attention.
+- **Due Soon ({tasks}):** A `pulsing amber/orange border` serves as a warning that a {task}'s deadline is within the next 24 hours.
+- **On Time ({tasks}):** A calm `green border` signifies a {task} with a future deadline that is safely on track.
+- **To-Do ({singleTasks}):** A `glowing purple border` highlights any {singleTask} you have personally marked as a priority. This helps distinguish your chosen tasks from scheduled ones.
+- **Redemption {tasks}:** A special `slate-colored border` with a glow effect is used for redemption {tasks}, which are assigned to resolve a setback or "Trial".
+- **Optional {tasks}:** A `dashed border style` clearly indicates that a {task} is optional and not required.
+- **Default:** {tasks} with no specific time-based state (like undated {singleTasks} that aren't on your To-Do list) will have a standard neutral border.
+
 ### {link_calendar}
 A calendar view of your scheduled life.
 - **Events View:** Shows {recurringTasks} on their scheduled days, {singleTasks} on their due dates, and special events created by the {admin}. You can also see user birthdays.

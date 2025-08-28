@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Quest, QuestType, User, QuestCompletionStatus } from '../../types';
+import { Quest, QuestType, User, QuestCompletionStatus, QuestKind } from '../../types';
 import { AppMode } from '../../types/app';
-import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
+import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, formatTimeRemaining } from '../../utils/quests';
 import Card from '../user-interface/Card';
 import Avatar from '../user-interface/Avatar';
 import Button from '../user-interface/Button';
@@ -13,19 +14,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
-
-const getDueDateString = (quest: Quest): string | null => {
-    if (quest.type === QuestType.Venture && quest.startDateTime) {
-        return `Due: ${new Date(quest.startDateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (quest.type === QuestType.Duty && quest.startTime) {
-        const [hours, minutes] = quest.startTime.split(':').map(Number);
-        const date = new Date();
-        date.setHours(hours, minutes);
-        return `Due at: ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    return null;
-};
+import { useEconomyState } from '../../context/EconomyContext';
 
 const SharedCalendarPage: React.FC = () => {
     const { settings, scheduledEvents } = useSystemState();
@@ -34,6 +23,7 @@ const SharedCalendarPage: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useQuestsDispatch();
     const { users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
+    const { rewardTypes } = useEconomyState();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
@@ -59,7 +49,7 @@ const SharedCalendarPage: React.FC = () => {
 
     const questsByUser = useMemo(() => {
         const dateKey = toYMD(currentDate);
-        const questsMap = new Map<string, { quest: Quest; user: User }[]>();
+        const questsMap = new Map<string, { duties: Quest[], ventures: Quest[] }>();
 
         sharedUsers.forEach(user => {
             if (!user) return;
@@ -78,8 +68,8 @@ const SharedCalendarPage: React.FC = () => {
                  }
                  if (!isAssigned) return;
                  
-                 const isDutyToday = quest.rrule && isQuestScheduledForDay(quest, currentDate);
-                 const isVentureDueToday = !quest.rrule && quest.startDateTime && toYMD(new Date(quest.startDateTime)) === dateKey;
+                 const isDutyToday = quest.type === QuestType.Duty && isQuestScheduledForDay(quest, currentDate);
+                 const isVentureDueToday = (quest.type === QuestType.Venture || quest.type === QuestType.Journey) && quest.startDateTime && toYMD(new Date(quest.startDateTime)) === dateKey;
                  const isTodoForUser = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
                  
                  const isRelevantToday = isDutyToday || isVentureDueToday || isTodoForUser;
@@ -92,7 +82,11 @@ const SharedCalendarPage: React.FC = () => {
             
             const uniqueQuests = Array.from(new Map(userQuests.map(q => [q.id, q])).values());
             const sortedQuests = uniqueQuests.sort(questSorter(user, userCompletions, scheduledEvents, currentDate));
-            questsMap.set(user.id, sortedQuests.map(quest => ({ quest, user })));
+            
+            questsMap.set(user.id, {
+                duties: sortedQuests.filter(q => q.type === QuestType.Duty),
+                ventures: sortedQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey)
+            });
         });
 
         return questsMap;
@@ -154,6 +148,60 @@ const SharedCalendarPage: React.FC = () => {
         }
     };
     
+    const getRewardInfo = (rewardTypeId: string) => {
+        return rewardTypes.find(rt => rt.id === rewardTypeId) || { name: 'Unknown', icon: '❓' };
+    };
+
+    const QuestCardComponent: React.FC<{ quest: Quest; user: User }> = ({ quest, user }) => {
+        const now = new Date();
+        const isRedemption = quest.kind === QuestKind.Redemption;
+        let deadline: Date | null = null;
+        if (quest.type === QuestType.Venture && quest.endDateTime) {
+            deadline = new Date(quest.endDateTime);
+        } else if (quest.type === QuestType.Duty && quest.endTime) {
+            const [hours, minutes] = quest.endTime.split(':').map(Number);
+            deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+        }
+        const isOverdue = deadline ? now > deadline : false;
+        const isDueSoon = deadline ? (deadline.getTime() - now.getTime()) < 24 * 60 * 60 * 1000 && !isOverdue : false;
+
+        let borderClass = 'border-stone-700';
+        if (isRedemption) {
+            borderClass = 'border-slate-400 ring-2 ring-slate-400/50';
+        } else if (deadline) {
+            if (isOverdue) {
+                borderClass = 'border-red-600';
+            } else if (isDueSoon) {
+                borderClass = 'border-amber-500 animate-pulse';
+            } else {
+                borderClass = 'border-green-600';
+            }
+        }
+        const optionalClass = quest.isOptional ? 'border-dashed' : '';
+        const finalBorderClass = `${borderClass} ${optionalClass}`;
+
+        return (
+             <button
+                key={quest.id}
+                onClick={() => handleDetailView(quest, user)}
+                className={`w-full text-left bg-stone-900/50 rounded-lg p-3 hover:bg-stone-700/50 transition-colors flex flex-col h-full border-2 ${finalBorderClass}`}
+            >
+                <div className="flex-grow">
+                    <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
+                </div>
+                {quest.rewards.length > 0 && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold mt-2 pt-2 border-t border-stone-700/60">
+                        {quest.rewards.map(r => {
+                            const { name, icon } = getRewardInfo(r.rewardTypeId);
+                            return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+ {r.amount} <span className="text-base">{icon}</span></span>
+                        })}
+                    </div>
+                )}
+             </button>
+        );
+    };
+
+
     return (
         <div className="h-full flex flex-col p-4 md:p-8">
             <div className="flex-grow overflow-x-auto scrollbar-hide">
@@ -165,19 +213,40 @@ const SharedCalendarPage: React.FC = () => {
                                 <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
                             </div>
                             <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
-                                {(questsByUser.get(user.id) || []).map(({ quest }) => (
-                                     <button
-                                        key={quest.id}
-                                        onClick={() => handleDetailView(quest, user)}
-                                        className="w-full text-left bg-stone-900/50 rounded-lg p-3 hover:bg-stone-700/50 transition-colors"
-                                    >
-                                        <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
-                                        <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
-                                     </button>
-                                ))}
-                                {(questsByUser.get(user.id) || []).length === 0 && (
-                                    <p className="text-center text-stone-500 pt-8">No quests for today.</p>
-                                )}
+                                {(() => {
+                                    const userQuests = questsByUser.get(user.id);
+                                    const hasDuties = userQuests && userQuests.duties.length > 0;
+                                    const hasVentures = userQuests && userQuests.ventures.length > 0;
+
+                                    if (!hasDuties && !hasVentures) {
+                                        return <p className="text-center text-stone-500 pt-8">No quests for today.</p>;
+                                    }
+
+                                    return (
+                                        <>
+                                            {hasDuties && (
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.recurringTasks}</h3>
+                                                    <div className="space-y-3">
+                                                        {userQuests.duties.map(quest => (
+                                                            <QuestCardComponent quest={quest} user={user} key={quest.id} />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {hasVentures && (
+                                                <div className={hasDuties ? 'pt-3 mt-3 border-t border-stone-700/60' : ''}>
+                                                    <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.singleTasks} &amp; {settings.terminology.journeys}</h3>
+                                                    <div className="space-y-3">
+                                                        {userQuests.ventures.map(quest => (
+                                                            <QuestCardComponent quest={quest} user={user} key={quest.id} />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
                     ))}

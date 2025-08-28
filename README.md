@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.71
+**Version:** 0.1.73
 
 ---
 
@@ -14,6 +14,14 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.73 (September 11, 2025)
+-   **Visual Task State System:** Quest cards on the main Quest Board and in Kiosk Mode now use a color-coded and animated border system to indicate their status at a glance (e.g., Overdue, Due Soon, To-Do, Optional).
+-   **Kiosk Mode Upgrades:** The Kiosk Mode calendar view has been enhanced. It now features the new visual border system for quests and re-introduces categorization, separating quests into "{recurringTasks}" and "{singleTasks} & {journeys}" for better clarity.
+-   **Functional Specification Documentation:** Re-established and updated the `HelpGuide.md` file to serve as the definitive source of truth for all application functionality, including the new visual quest state system.
+
+### What's New in Version 0.1.72 (September 10, 2025)
+-   **Kiosk Mode Reward Display:** The shared Kiosk Mode calendar view now displays the rewards for each available quest, giving users a better at-a-glance understanding of their potential earnings.
 
 ### What's New in Version 0.1.71 (September 9, 2025)
 -   **Robust File Pathing Fix:** Resolved a stubborn avatar display issue by replacing all hardcoded absolute paths in the backend with dynamically resolved paths. This ensures the server can reliably locate and serve uploaded files (avatars, assets) and the database, regardless of the deployment environment.

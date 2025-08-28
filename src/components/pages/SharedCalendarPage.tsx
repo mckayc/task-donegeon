@@ -58,7 +58,7 @@ const SharedCalendarPage: React.FC = () => {
     }, [users, settings.sharedMode.userIds]);
 
     const questsByUser = useMemo(() => {
-        const questsMap = new Map<string, { quest: Quest; user: User }[]>();
+        const questsMap = new Map<string, { duties: { quest: Quest; user: User }[], venturesAndJourneys: { quest: Quest; user: User }[] }>();
     
         sharedUsers.forEach(user => {
             if (!user) return;
@@ -70,15 +70,11 @@ const SharedCalendarPage: React.FC = () => {
             const userQuests: Quest[] = [];
     
             quests.forEach(quest => {
-                // Check if quest is visible to the user in any of their relevant scopes (personal or any of their guilds)
                 const isVisible = relevantModes.some(mode => isQuestVisibleToUserInMode(quest, user.id, mode));
                 if (!isVisible) return;
                 
-                // Check availability based on the quest's own scope
                 let questAppMode: AppMode;
                 if (quest.guildId) {
-                    // FIX: Use 'as const' to prevent TypeScript from widening the 'mode' literal to a generic 'string',
-                    // ensuring it matches the discriminated union 'AppMode'.
                     questAppMode = { mode: 'guild' as const, guildId: quest.guildId };
                 } else {
                     questAppMode = { mode: 'personal' as const };
@@ -88,12 +84,10 @@ const SharedCalendarPage: React.FC = () => {
                 let shouldInclude = false;
                 if (isAvailable) {
                     if (quest.type === QuestType.Duty) {
-                        // Duties only show up if they are scheduled for today
                         if (isQuestScheduledForDay(quest, currentDate)) {
                             shouldInclude = true;
                         }
                     } else {
-                        // Ventures and Journeys show up as long as they are available
                         shouldInclude = true;
                     }
                 }
@@ -104,9 +98,17 @@ const SharedCalendarPage: React.FC = () => {
             });
             
             const uniqueQuests = Array.from(new Map(userQuests.map(q => [q.id, q])).values());
-            // Sorting logic correctly prioritizes Duties first, then by urgency/todo status
             const sortedQuests = uniqueQuests.sort(questSorter(user, userCompletions, scheduledEvents, currentDate));
-            questsMap.set(user.id, sortedQuests.map(quest => ({ quest, user })));
+
+            const duties = sortedQuests
+                .filter(q => q.type === QuestType.Duty)
+                .map(quest => ({ quest, user }));
+
+            const venturesAndJourneys = sortedQuests
+                .filter(q => q.type !== QuestType.Duty)
+                .map(quest => ({ quest, user }));
+
+            questsMap.set(user.id, { duties, venturesAndJourneys });
         });
     
         return questsMap;
@@ -172,29 +174,60 @@ const SharedCalendarPage: React.FC = () => {
         <div className="h-full flex flex-col p-4 md:p-8">
             <div className="flex-grow overflow-x-auto scrollbar-hide">
                 <div className="flex space-x-6 min-w-max h-full">
-                    {sharedUsers.map(user => (
-                        <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
-                            <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-                                <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
-                                <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
+                    {sharedUsers.map(user => {
+                        const userQuests = questsByUser.get(user.id) || { duties: [], venturesAndJourneys: [] };
+                        return (
+                            <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
+                                <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+                                    <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
+                                    <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
+                                </div>
+                                <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-stone-300 mb-2 flex items-center gap-2">
+                                            🔄 Today's {settings.terminology.recurringTasks}
+                                        </h3>
+                                        {userQuests.duties.length > 0 ? (
+                                            userQuests.duties.map(({ quest }) => (
+                                                <button
+                                                    key={quest.id}
+                                                    onClick={() => handleDetailView(quest, user)}
+                                                    className="w-full text-left bg-sky-900/40 rounded-lg p-3 hover:bg-sky-800/60 transition-colors mb-2"
+                                                >
+                                                    <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
+                                                    <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-stone-500 italic px-2 py-4">No {settings.terminology.recurringTasks.toLowerCase()} scheduled for today. Well done!</p>
+                                        )}
+                                    </div>
+
+                                    <hr className="my-4 border-stone-600/50" />
+
+                                    <div>
+                                        <h3 className="font-bold text-lg text-stone-300 mb-2 flex items-center gap-2">
+                                            🗺️ Available {settings.terminology.singleTasks} & {settings.terminology.journeys}
+                                        </h3>
+                                        {userQuests.venturesAndJourneys.length > 0 ? (
+                                            userQuests.venturesAndJourneys.map(({ quest }) => (
+                                                <button
+                                                    key={quest.id}
+                                                    onClick={() => handleDetailView(quest, user)}
+                                                    className="w-full text-left bg-stone-900/50 rounded-lg p-3 hover:bg-stone-700/50 transition-colors mb-2"
+                                                >
+                                                    <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
+                                                    <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-stone-500 italic px-2 py-4">No available {settings.terminology.singleTasks.toLowerCase()} or {settings.terminology.journeys.toLowerCase()}.</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
-                                {(questsByUser.get(user.id) || []).map(({ quest }) => (
-                                     <button
-                                        key={quest.id}
-                                        onClick={() => handleDetailView(quest, user)}
-                                        className="w-full text-left bg-stone-900/50 rounded-lg p-3 hover:bg-stone-700/50 transition-colors"
-                                    >
-                                        <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
-                                        <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
-                                     </button>
-                                ))}
-                                {(questsByUser.get(user.id) || []).length === 0 && (
-                                    <p className="text-center text-stone-500 pt-8">No quests for today.</p>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
             {verifyingQuest && (

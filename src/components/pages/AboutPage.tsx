@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_59_DATE = new Date(2025, 8, 7);
 const V0_1_58_DATE = new Date(2025, 8, 6);
 const V0_1_57_DATE = new Date(2025, 8, 5);
 const V0_1_56_DATE = new Date(2025, 8, 4);
@@ -61,6 +62,14 @@ const WhatsNewContent: React.FC = () => {
     return (
         <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
             <p className="text-sm">Here are the latest updates to {settings.terminology.appName}.</p>
+            <div>
+                <h4 className="text-lg font-bold text-stone-100">
+                    Version 0.1.59 ({V0_1_59_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                </h4>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>Enhanced Kiosk Mode Clarity:</strong> The Kiosk/Shared View has been redesigned for better at-a-glance clarity. Each user's task list is now visually separated into two distinct sections: "🔄 Today's Duties" and "🗺️ Available Ventures & Journeys". This makes it immediately obvious which tasks are priorities for the day. The sections also include helpful empty-state messages when no tasks are present.</li>
+                </ul>
+            </div>
             <div>
                 <h4 className="text-lg font-bold text-stone-100">
                     Version 0.1.58 ({V0_1_58_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -380,7 +389,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.58</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.59</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">

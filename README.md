@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.58
+**Version:** 0.1.59
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.59 (September 7, 2025)
+-   **Enhanced Kiosk Mode Clarity:** The Kiosk/Shared View has been redesigned for better at-a-glance clarity. Each user's task list is now visually separated into two distinct sections: "🔄 Today's Duties" and "🗺️ Available Ventures & Journeys". This makes it immediately obvious which tasks are priorities for the day. The sections also include helpful empty-state messages when no tasks are present.
 
 ### What's New in Version 0.1.58 (September 6, 2025)
 -   **Expanded Kiosk Mode Quest Display:** The Kiosk (Shared) View calendar now displays all available Ventures and Journeys for each user, not just those due on the current day. This provides a more complete to-do list for users accessing the shared screen. Duties continue to appear only on their scheduled days and are prioritized at the top of the list.
@@ -118,4 +121,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ---
+-   **Reward R-- END OF FILE README.md --

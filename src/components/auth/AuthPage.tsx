@@ -121,7 +121,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         }
 
         const { confirmPassword, ...newUserPayload } = formData;
-        const newUser: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'> = {
+        const newUser: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'> = {
             ...newUserPayload,
             password: formData.password || undefined,
             role: Role.Explorer,

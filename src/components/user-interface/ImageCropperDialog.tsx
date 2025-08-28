@@ -30,12 +30,15 @@ const ImageCropperDialog: React.FC<ImageCropperDialogProps> = ({ imageSrc, onCom
     if (!image || !canvas || !completedCrop) {
       throw new Error('Crop canvas does not exist');
     }
+
+    const TARGET_WIDTH = 512;
+    const TARGET_HEIGHT = 512;
     
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
     
-    canvas.width = completedCrop.width * scaleX;
-    canvas.height = completedCrop.height * scaleY;
+    canvas.width = TARGET_WIDTH;
+    canvas.height = TARGET_HEIGHT;
     
     const ctx = canvas.getContext('2d');
     if (!ctx) {
@@ -50,8 +53,8 @@ const ImageCropperDialog: React.FC<ImageCropperDialogProps> = ({ imageSrc, onCom
       completedCrop.height * scaleY,
       0,
       0,
-      canvas.width,
-      canvas.height
+      TARGET_WIDTH,
+      TARGET_HEIGHT
     );
 
     canvas.toBlob((blob) => {
@@ -62,7 +65,7 @@ const ImageCropperDialog: React.FC<ImageCropperDialogProps> = ({ imageSrc, onCom
       }
       const croppedFile = new File([blob], 'profile.jpeg', { type: 'image/jpeg' });
       onComplete(croppedFile);
-    }, 'image/jpeg', 0.9);
+    }, 'image/jpeg', 0.85);
   }
 
   return (

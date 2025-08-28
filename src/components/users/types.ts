@@ -13,7 +13,6 @@ export interface User {
   gameName: string;
   birthday: string;
   role: Role;
-  avatar: { [slot: string]: string }; // Now uses GameAsset['id']
   profilePictureUrl?: string | null;
   ownedAssetIds: string[];
   pin: string;
@@ -35,7 +34,7 @@ export interface User {
   updatedAt?: string;
 }
 
-export type UserTemplate = Omit<User, 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
+export type UserTemplate = Omit<User, 'personalPurse' | 'personalExperience' | 'guildBalances' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
 
 export enum AdminAdjustmentType {
     Reward = 'Reward',

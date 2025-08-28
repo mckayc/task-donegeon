@@ -1,5 +1,4 @@
 
-
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -23,7 +22,7 @@ export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
 ];
 
 export const createMockUsers = (): User[] => {
-    const usersData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>[] = [
+    const usersData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>[] = [
         // Donegeon Masters
         { firstName: 'The', lastName: 'Admin', username: 'admin', email: 'admin@donegeon.com', gameName: 'admin', birthday: '2000-01-01', role: Role.DonegeonMaster, password: '123456', pin: '1234' },
         
@@ -37,7 +36,6 @@ export const createMockUsers = (): User[] => {
     const initialUsers: User[] = usersData.map((u, i) => ({
         ...u,
         id: `user-${i + 1}`,
-        avatar: {},
         ownedAssetIds: [],
         personalPurse: {},
         personalExperience: {},

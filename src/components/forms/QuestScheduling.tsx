@@ -3,6 +3,7 @@ import { QuestType, Terminology } from '../../../types';
 import Input from '../user-interface/Input';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useSystemState } from '../../context/SystemContext';
+import NumberInput from '../user-interface/NumberInput';
 
 interface QuestSchedulingProps {
     value: {
@@ -136,8 +137,7 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
         updateRrule(newRecurrence, weeklyDays, monthlyDays, interval);
     };
 
-    const handleIntervalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newInterval = parseInt(e.target.value) || 1;
+    const handleIntervalChange = (newInterval: number) => {
         setInterval(newInterval);
         updateRrule(recurrenceType, weeklyDays, monthlyDays, newInterval);
     };
@@ -179,8 +179,8 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                 <div className="space-y-4">
                     {value.type === QuestType.Venture && (
                        <div className="grid grid-cols-2 gap-4">
-                           <Input label="Daily Completions Limit (0 for unlimited)" type="number" min="0" value={value.dailyCompletionsLimit ?? 1} onChange={e => onChange({ dailyCompletionsLimit: parseInt(e.target.value) || 0 })} />
-                           <Input label="Total Completions Limit (0 for unlimited)" type="number" min="0" value={value.totalCompletionsLimit ?? 0} onChange={e => onChange({ totalCompletionsLimit: parseInt(e.target.value) || 0 })} />
+                           <NumberInput label="Daily Completions Limit (0 for unlimited)" min={0} value={value.dailyCompletionsLimit ?? 1} onChange={newVal => onChange({ dailyCompletionsLimit: newVal })} />
+                           <NumberInput label="Total Completions Limit (0 for unlimited)" min={0} value={value.totalCompletionsLimit ?? 0} onChange={newVal => onChange({ totalCompletionsLimit: newVal })} />
                        </div>
                     )}
                     <ToggleSwitch label="Specific Due Date" enabled={hasDueDate} setEnabled={val => {
@@ -215,7 +215,7 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                             <option value="MONTHLY">Monthly</option>
                         </Input>
                          <div className="flex items-center gap-2">
-                            <Input label="Every" type="number" min="1" value={interval} onChange={handleIntervalChange} className="w-16" />
+                            <NumberInput label="Every" min={1} value={interval} onChange={handleIntervalChange} className="w-20" />
                             <span className="text-sm text-stone-400 pt-7">{intervalUnit}</span>
                         </div>
                     </div>

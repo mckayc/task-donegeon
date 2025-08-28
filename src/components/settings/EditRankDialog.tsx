@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Rank } from '../../types';
 import Button from '../user-interface/Button';
@@ -7,6 +6,7 @@ import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { useProgressionState, useProgressionDispatch } from '../../context/ProgressionContext';
+import NumberInput from '../user-interface/NumberInput';
 
 interface EditRankDialogProps {
   rank: Rank | null;
@@ -66,13 +66,11 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))} 
             required 
           />
-           <Input 
+           <NumberInput 
             label="XP Threshold" 
-            type="number"
-            min="0"
+            min={0}
             value={formData.xpThreshold} 
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, xpThreshold: parseInt(e.target.value) || 0 }))} 
-            required 
+            onChange={(newValue) => setFormData(p => ({ ...p, xpThreshold: newValue }))}
           />
           <div>
             <label className="block text-sm font-medium text-stone-300 mb-1">Icon Type</label>

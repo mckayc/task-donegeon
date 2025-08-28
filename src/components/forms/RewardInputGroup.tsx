@@ -1,11 +1,10 @@
-
-
 import React from 'react';
 import { RewardCategory, RewardItem } from '../items/types';
 import Input from '../user-interface/Input';
 import Button from '../user-interface/Button';
 import { useRewardValue } from '../rewards/hooks/useRewardValue';
 import { useEconomyState } from '../../context/EconomyContext';
+import NumberInput from '../user-interface/NumberInput';
 
 interface RewardInputGroupProps {
   category: 'rewards' | 'setbacks' | 'cost' | 'payout' | 'lateSetbacks' | 'incompleteSetbacks';
@@ -30,12 +29,18 @@ const RewardItemRow: React.FC<{
             <select
                 value={item.rewardTypeId}
                 onChange={(e) => onChange(originalIndex, 'rewardTypeId', e.target.value)}
-                className="flex-grow px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+                className="flex-grow px-4 py-2 bg-stone-700 border border-stone-600 rounded-md h-10"
             >
                 <option value="" disabled>Select...</option>
                 {filteredRewardTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
             </select>
-            <Input type="number" min="0" step="1" value={item.amount} onChange={(e) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0 no-spinner" aria-label="Amount" />
+            <NumberInput
+                value={item.amount}
+                onChange={(newAmount) => onChange(originalIndex, 'amount', newAmount)}
+                min={0}
+                step={1}
+                className="w-24 flex-shrink-0"
+            />
             <div className="flex-1 text-left min-w-[150px]">
                 {anchorEquivalent && <span className="text-xs text-amber-300">(~{anchorEquivalent})</span>}
             </div>

@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { BackupSchedule } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
+import NumberInput from '../user-interface/NumberInput';
 
 interface EditBackupScheduleDialogProps {
     scheduleToEdit: BackupSchedule | null;
@@ -40,13 +40,11 @@ const EditBackupScheduleDialog: React.FC<EditBackupScheduleDialogProps> = ({ sch
                 <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="flex items-end gap-2">
-                        <Input
+                        <NumberInput
                             label="Frequency"
-                            type="number"
-                            min="1"
+                            min={1}
                             value={formData.frequency}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, frequency: parseInt(e.target.value) || 1 }))}
-                            required
+                            onChange={(newValue) => setFormData(p => ({ ...p, frequency: newValue }))}
                             className="flex-grow"
                         />
                          <Input
@@ -61,13 +59,12 @@ const EditBackupScheduleDialog: React.FC<EditBackupScheduleDialogProps> = ({ sch
                             <option value="weeks">Weeks</option>
                          </Input>
                     </div>
-                     <Input
+                     <NumberInput
                         label="Max Backups to Keep"
-                        type="number"
-                        min="1"
+                        min={1}
                         value={formData.maxBackups}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, maxBackups: parseInt(e.target.value) || 1 }))}
-                        required
+                        onChange={(newValue) => setFormData(p => ({ ...p, maxBackups: newValue }))}
+                        
                     />
                     <div className="flex justify-end space-x-4 pt-4">
                         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>

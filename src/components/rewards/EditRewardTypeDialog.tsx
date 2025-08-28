@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
@@ -8,6 +7,7 @@ import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { useSystemState } from '../../context/SystemContext';
+import NumberInput from '../user-interface/NumberInput';
 
 interface EditRewardTypeDialogProps {
   rewardType: RewardTypeDefinition | null;
@@ -26,7 +26,6 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
     imageUrl: '',
     baseValue: 1,
   });
-  const [baseValueString, setBaseValueString] = useState('1');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -41,7 +40,6 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
         imageUrl: rewardType.imageUrl || '',
         baseValue: rewardType.baseValue || 1,
       });
-      setBaseValueString(String(rewardType.baseValue || 1));
     }
   }, [rewardType]);
 
@@ -50,15 +48,6 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleBaseValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    // Allow numbers, an optional single decimal point, and up to 4 decimal places
-    if (/^\d*\.?\d{0,4}$/.test(val)) {
-        setBaseValueString(val);
-    }
-  };
-
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -66,15 +55,10 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
       return;
     }
 
-    const payload = {
-      ...formData,
-      baseValue: parseFloat(baseValueString) || 0,
-    };
-
     if (rewardType) {
-      updateRewardType({ ...rewardType, ...payload });
+      updateRewardType({ ...rewardType, ...formData });
     } else {
-      addRewardType(payload);
+      addRewardType(formData);
     }
     onClose();
   };
@@ -131,14 +115,12 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
             )}
             
             {settings.rewardValuation.enabled && (
-                <Input 
+                <NumberInput 
                     label={`Base Value (in ${settings.rewardValuation.realWorldCurrency})`} 
-                    name="baseValue" 
-                    type="number" 
-                    step="0.01"
-                    min="0"
-                    value={baseValueString} 
-                    onChange={handleBaseValueChange} 
+                    value={formData.baseValue}
+                    onChange={(newValue) => setFormData(p => ({ ...p, baseValue: newValue }))}
+                    min={0}
+                    step={0.01}
                 />
             )}
           </form>

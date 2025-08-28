@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { ModifierDefinition, ModifierEffect, ModifierEffectType, RewardCategory, RewardItem, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
@@ -8,6 +7,7 @@ import RewardInputGroup from '../forms/RewardInputGroup';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
+import NumberInput from '../user-interface/NumberInput';
 
 interface EditModifierDialogProps {
     setbackToEdit: ModifierDefinition | null;
@@ -89,7 +89,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
             const effect = newEffects[effectIndex];
             if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
                 const newRewards = effect.rewards;
-                newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
+                newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Number(value) : value };
                 effect.rewards = newRewards;
             }
             return { ...prev, effects: newEffects };
@@ -192,7 +192,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
                                                 {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                                             </select>
                                         </div>
-                                        <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
+                                        <NumberInput label="Duration (Hours)" min={1} value={effect.durationHours} onChange={newValue => handleEffectPropChange(index, 'durationHours', newValue)} />
                                     </div>
                                 )}
                                  {effect.type === ModifierEffectType.MarketDiscount && (
@@ -201,8 +201,8 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
                                             <option value="" disabled>Select...</option>
                                             {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                                         </Input>
-                                        <Input label="Discount (%)" type="number" min="1" max="100" value={effect.discountPercent} onChange={e => handleEffectPropChange(index, 'discountPercent', parseInt(e.target.value) || 1)} />
-                                        <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
+                                        <NumberInput label="Discount (%)" min={1} max={100} value={effect.discountPercent} onChange={newValue => handleEffectPropChange(index, 'discountPercent', newValue)} />
+                                        <NumberInput label="Duration (Hours)" min={1} value={effect.durationHours} onChange={newValue => handleEffectPropChange(index, 'durationHours', newValue)} />
                                     </div>
                                 )}
                             </div>

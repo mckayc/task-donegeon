@@ -9,6 +9,7 @@ import Input from '../user-interface/Input';
 import { ArrowRightIcon } from '../user-interface/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
+import NumberInput from '../user-interface/NumberInput';
 
 interface ExchangeViewProps {
     market: Market;
@@ -52,7 +53,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
 
     const [fromRewardId, setFromRewardId] = useState<string>('');
     const [toRewardId, setToRewardId] = useState<string>('');
-    const [toAmountString, setToAmountString] = useState<string>('');
+    const [toAmount, setToAmount] = useState<number>(0);
 
     const exchangeableRewardTypes = useMemo(() => {
         return rewardTypes.filter(rt => rt.baseValue > 0);
@@ -81,7 +82,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const toReward = useMemo(() => rewardTypes.find(rt => rt.id === toRewardId), [toRewardId, rewardTypes]);
 
     const calculation = useMemo(() => {
-        const toAmountNum = parseInt(toAmountString, 10) || 0;
+        const toAmountNum = toAmount || 0;
         const defaultCalc = { fromAmountBase: 0, fee: 0, roundingFee: 0, totalCost: 0, maxToAmount: 0 };
         if (!fromReward || !toReward || fromReward.baseValue <= 0 || toReward.baseValue <= 0) {
             return defaultCalc;
@@ -111,7 +112,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
 
         return { fromAmountBase, fee, roundingFee, totalCost, maxToAmount };
 
-    }, [toAmountString, fromReward, toReward, settings.rewardValuation, balances]);
+    }, [toAmount, fromReward, toReward, settings.rewardValuation, balances]);
     
     const recommendedAmounts = useMemo(() => {
         if (!fromReward || !toReward || calculation.maxToAmount <= 0) return [];
@@ -149,20 +150,11 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
 
     }, [fromReward, toReward, calculation.maxToAmount, settings.rewardValuation]);
 
-    const handleFromSelect = (id: string) => { setFromRewardId(id); setToAmountString(''); };
-    const handleToSelect = (id: string) => { setToRewardId(id); setToAmountString(''); };
-
-    const handleAmountChange = (value: string) => {
-        if (/^\d*$/.test(value)) { // integers only
-            const num = parseInt(value, 10) || 0;
-            const cappedValue = Math.min(num, calculation.maxToAmount);
-            setToAmountString(value === '' ? '' : String(cappedValue));
-        }
-    };
+    const handleFromSelect = (id: string) => { setFromRewardId(id); setToAmount(0); };
+    const handleToSelect = (id: string) => { setToRewardId(id); setToAmount(0); };
     
     const handleExchange = () => {
         if (!currentUser || !fromReward || !toReward) return;
-        const toAmount = parseInt(toAmountString, 10) || 0;
         if (toAmount <= 0) {
             addNotification({ type: 'error', message: 'Please enter a valid amount.' });
             return;
@@ -175,47 +167,8 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         executeExchange(currentUser.id, payItem, receiveItem, guildId);
-        setToAmountString('');
+        setToAmount(0);
     };
-    
-    // --- Stepper Logic ---
-    const intervalRef = useRef<number | null>(null);
-    const timeoutRef = useRef<number | null>(null);
-
-    const handleAmountStep = useCallback((step: number) => {
-        setToAmountString(currentValStr => {
-            const currentVal = parseInt(currentValStr, 10) || 0;
-            const newVal = Math.max(0, Math.min(calculation.maxToAmount, currentVal + step));
-            return String(newVal);
-        });
-    }, [calculation.maxToAmount]);
-    
-    const startStepping = useCallback((step: number) => {
-        handleAmountStep(step); // Fire once immediately on mousedown
-        // Then, after a delay, start the rapid stepping
-        timeoutRef.current = window.setTimeout(() => {
-            intervalRef.current = window.setInterval(() => {
-                handleAmountStep(step);
-            }, 80); // Speed of repetition
-        }, 400); // Initial delay before repetition starts
-    }, [handleAmountStep]);
-
-    const stopStepping = useCallback(() => {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        }
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-    }, []);
-
-    useEffect(() => {
-        // Cleanup on unmount
-        return () => stopStepping();
-    }, [stopStepping]);
-
 
     return (
         <div>
@@ -249,37 +202,18 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                     <div className="text-6xl">{toReward.icon}</div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-stone-400 mb-1">Receive Amount</label>
-                                    <div className="flex items-center justify-center">
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            className="w-10 h-11 rounded-r-none"
-                                            onMouseDown={() => startStepping(-1)}
-                                            onMouseUp={stopStepping} onMouseLeave={stopStepping}
-                                            aria-label="Decrease amount"
-                                        >-</Button>
-                                        <Input
-                                            value={toAmountString}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-                                            type="text"
-                                            inputMode="numeric"
-                                            pattern="\d*"
-                                            className="text-center text-lg h-11 w-28 rounded-none no-spinner"
-                                            aria-label="Receive amount"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            className="w-10 h-11 rounded-l-none"
-                                            onMouseDown={() => startStepping(1)}
-                                            onMouseUp={stopStepping} onMouseLeave={stopStepping}
-                                            aria-label="Increase amount"
-                                        >+</Button>
-                                    </div>
+                                    <NumberInput 
+                                        label="Receive Amount"
+                                        value={toAmount}
+                                        onChange={setToAmount}
+                                        min={0}
+                                        max={calculation.maxToAmount}
+                                        step={1}
+                                        className="max-w-xs mx-auto"
+                                    />
                                     <div className="flex justify-center gap-2 mt-2">
                                         {recommendedAmounts.map(amount => (
-                                            <Button key={amount} onClick={() => handleAmountChange(String(amount))} variant="secondary" className="text-xs !py-1">
+                                            <Button key={amount} onClick={() => setToAmount(amount)} variant="secondary" className="text-xs !py-1">
                                                 {amount}
                                             </Button>
                                         ))}
@@ -297,7 +231,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                         </div>
                                         <div className="text-left font-semibold">
                                             <p className="text-stone-200">{Math.floor(balances.get(fromRewardId) || 0)} &rarr; <span className="text-red-400">{Math.floor((balances.get(fromRewardId) || 0) - calculation.totalCost)}</span></p>
-                                            <p className="text-stone-200">{Math.floor(balances.get(toRewardId) || 0)} &rarr; <span className="text-green-400">{Math.floor((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0))}</span></p>
+                                            <p className="text-stone-200">{Math.floor(balances.get(toRewardId) || 0)} &rarr; <span className="text-green-400">{Math.floor((balances.get(toRewardId) || 0) + toAmount)}</span></p>
                                             <p className="text-stone-300">{calculation.fee.toFixed(2)} {fromReward.icon}</p>
                                             <p className="text-stone-300">{calculation.roundingFee.toFixed(2)} {fromReward.icon}</p>
                                             <p className="text-stone-100 font-bold border-t border-stone-600/50 mt-1 pt-1">{calculation.totalCost} {fromReward.icon}</p>

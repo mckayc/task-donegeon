@@ -7,6 +7,7 @@ import DynamicIcon from '../user-interface/DynamicIcon';
 import Input from '../user-interface/Input';
 import Avatar from '../user-interface/Avatar';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
+import NumberInput from '../user-interface/NumberInput';
 
 interface TradeDialogProps {
     tradeOffer: TradeOffer;
@@ -31,9 +32,8 @@ const TradeOfferPanel: React.FC<{
         onOfferChange({ assetIds: newAssetIds });
     };
 
-    const handleRewardChange = (rewardTypeId: string, value: string) => {
+    const handleRewardChange = (rewardTypeId: string, amount: number) => {
         if (!onOfferChange) return;
-        const amount = parseInt(value, 10) || 0;
         let newRewards = [...offer.rewards];
 
         if (amount > 0) {
@@ -104,7 +104,7 @@ const TradeOfferPanel: React.FC<{
                                     <span className="text-xl w-6 text-center">{rt.icon}</span>
                                     <span className="text-sm text-stone-300 flex-grow">{rt.name}</span>
                                     {isMyPanel && !isLocked ? (
-                                        <Input type="number" min="0" value={offeredAmount} onChange={e => handleRewardChange(rt.id, e.target.value)} className="w-20 h-8 text-sm" />
+                                        <NumberInput value={offeredAmount} onChange={newValue => handleRewardChange(rt.id, newValue)} min={0} className="w-24 h-8" />
                                     ) : (
                                         <span className="font-semibold text-amber-300">{offeredAmount}</span>
                                     )}

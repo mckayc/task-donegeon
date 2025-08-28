@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.57
+**Version:** 0.1.58
 
 ---
 
@@ -14,6 +14,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.58 (September 6, 2025)
+-   **Expanded Kiosk Mode Quest Display:** The Kiosk (Shared) View calendar now displays all available Ventures and Journeys for each user, not just those due on the current day. This provides a more complete to-do list for users accessing the shared screen. Duties continue to appear only on their scheduled days and are prioritized at the top of the list.
+-   **Kiosk Mode Scope Fix:** Corrected an issue to ensure the Kiosk view properly shows quests from all of a user's scopes (Personal and all Guilds), not just the last active scope, for a truly unified task list.
 
 ### What's New in Version 0.1.57 (September 5, 2025)
 -   **Granular Chronicle Logging:** The Chronicles system is now more detailed. Actions that require multiple steps (like a {task} completion followed by an admin approval) will now correctly generate separate, distinct log entries for each step, providing a clearer and more complete audit trail.

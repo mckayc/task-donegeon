@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_58_DATE = new Date(2025, 8, 6);
 const V0_1_57_DATE = new Date(2025, 8, 5);
 const V0_1_56_DATE = new Date(2025, 8, 4);
 const V0_1_55_DATE = new Date(2025, 8, 3);
@@ -62,6 +63,15 @@ const WhatsNewContent: React.FC = () => {
             <p className="text-sm">Here are the latest updates to {settings.terminology.appName}.</p>
             <div>
                 <h4 className="text-lg font-bold text-stone-100">
+                    Version 0.1.58 ({V0_1_58_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                </h4>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>Expanded Kiosk Mode Quest Display:</strong> The Kiosk (Shared) View calendar now displays all available Ventures and Journeys for each user, not just those due on the current day. This provides a more complete to-do list for users accessing the shared screen. Duties continue to appear only on their scheduled days and are prioritized at the top of the list.</li>
+                    <li><strong>Kiosk Mode Scope Fix:</strong> Corrected an issue to ensure the Kiosk view properly shows quests from all of a user's scopes (Personal and all Guilds), not just the last active scope, for a truly unified task list.</li>
+                </ul>
+            </div>
+            <div>
+                <h4 className="text-lg font-bold text-stone-100">
                     Version 0.1.57 ({V0_1_57_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
                 </h4>
                 <ul className="list-disc list-inside space-y-2 mt-2">
@@ -70,20 +80,20 @@ const WhatsNewContent: React.FC = () => {
                     <li><strong>Dashboard & Chronicles Sync:</strong> The "Recent Activity" widget on the Dashboard now correctly uses the same user-defined filters as the main Chronicles page, ensuring a consistent view of your activity across the app.</li>
                 </ul>
             </div>
-            <div>
-                <h4 className="text-lg font-bold text-stone-100">
-                    Version 0.1.56 ({V0_1_56_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-                </h4>
-                <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>Update Test Release:</strong> Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.</li>
-                </ul>
-            </div>
         </div>
     );
 }
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.56 ({V0_1_56_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Update Test Release:</strong> Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.1.55 ({V0_1_55_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -370,7 +380,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.57</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.58</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">

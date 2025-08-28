@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Quest, QuestType, User, QuestCompletionStatus } from '../../types';
-import { AppMode } from '../../types/app';
-import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
+import { Quest, QuestType, User, QuestCompletionStatus, AppMode } from '../../types';
+import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import Card from '../user-interface/Card';
 import Avatar from '../user-interface/Avatar';
 import Button from '../user-interface/Button';
@@ -58,43 +57,51 @@ const SharedCalendarPage: React.FC = () => {
     }, [users, settings.sharedMode.userIds]);
 
     const questsByUser = useMemo(() => {
-        const dateKey = toYMD(currentDate);
         const questsMap = new Map<string, { quest: Quest; user: User }[]>();
-
+    
         sharedUsers.forEach(user => {
             if (!user) return;
-            const userQuests: Quest[] = [];
-            const userCompletions = questCompletions.filter(c => c.userId === user.id);
             
+            const userCompletions = questCompletions.filter(c => c.userId === user.id);
+            const userGuilds = guilds.filter(g => g.memberIds.includes(user.id));
+            const relevantModes: AppMode[] = [{ mode: 'personal' }, ...userGuilds.map(g => ({ mode: 'guild', guildId: g.id }))];
+            
+            const userQuests: Quest[] = [];
+    
             quests.forEach(quest => {
-                 if (!quest.isActive) return;
-                 let isAssigned = false;
-                 if (quest.assignedUserIds.length > 0) {
-                     isAssigned = quest.assignedUserIds.includes(user.id);
-                 } else if (quest.guildId) {
-                     isAssigned = guilds.find(g => g.id === quest.guildId)?.memberIds.includes(user.id) || false;
-                 } else {
-                     isAssigned = true; 
-                 }
-                 if (!isAssigned) return;
-                 
-                 const isDutyToday = quest.rrule && isQuestScheduledForDay(quest, currentDate);
-                 const isVentureDueToday = !quest.rrule && quest.startDateTime && toYMD(new Date(quest.startDateTime)) === dateKey;
-                 const isTodoForUser = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
-                 
-                 const isRelevantToday = isDutyToday || isVentureDueToday || isTodoForUser;
-                 
-                 const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
-                 if (isRelevantToday && isQuestAvailableForUser(quest, userCompletions, currentDate, scheduledEvents, questAppMode)) {
-                     userQuests.push(quest);
-                 }
+                // Check if quest is visible to the user in any of their relevant scopes (personal or any of their guilds)
+                const isVisible = relevantModes.some(mode => isQuestVisibleToUserInMode(quest, user.id, mode));
+                if (!isVisible) return;
+                
+                // Check availability based on the quest's own scope
+                // Fix: Add 'as const' to ensure TypeScript infers 'guild' as a literal type, not a string.
+                const questAppMode: AppMode = quest.guildId ? { mode: 'guild' as const, guildId: quest.guildId } : { mode: 'personal' };
+                const isAvailable = isQuestAvailableForUser(quest, userCompletions, currentDate, scheduledEvents, questAppMode);
+    
+                let shouldInclude = false;
+                if (isAvailable) {
+                    if (quest.type === QuestType.Duty) {
+                        // Duties only show up if they are scheduled for today
+                        if (isQuestScheduledForDay(quest, currentDate)) {
+                            shouldInclude = true;
+                        }
+                    } else {
+                        // Ventures and Journeys show up as long as they are available
+                        shouldInclude = true;
+                    }
+                }
+                
+                if (shouldInclude) {
+                    userQuests.push(quest);
+                }
             });
             
             const uniqueQuests = Array.from(new Map(userQuests.map(q => [q.id, q])).values());
+            // Sorting logic correctly prioritizes Duties first, then by urgency/todo status
             const sortedQuests = uniqueQuests.sort(questSorter(user, userCompletions, scheduledEvents, currentDate));
             questsMap.set(user.id, sortedQuests.map(quest => ({ quest, user })));
         });
-
+    
         return questsMap;
     }, [sharedUsers, quests, currentDate, questCompletions, guilds, scheduledEvents]);
     

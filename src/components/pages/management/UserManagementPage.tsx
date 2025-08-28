@@ -14,15 +14,18 @@ import { useSystemState, useSystemDispatch } from '../../../context/SystemContex
 import { useUIState } from '../../../context/UIContext';
 import { EllipsisVerticalIcon } from '../../user-interface/Icons';
 import Avatar from '../../user-interface/Avatar';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const UserCard: React.FC<{
     user: User;
+    isSelected: boolean;
+    onToggle: (event: React.ChangeEvent<HTMLInputElement>) => void;
     roleName: (role: Role) => string;
     onEdit: (user: User) => void;
     onClone: (userId: string) => void;
     onAdjust: (user: User) => void;
     onDeleteRequest: (userId: string) => void;
-}> = ({ user, roleName, onEdit, onClone, onAdjust, onDeleteRequest }) => {
+}> = ({ user, isSelected, onToggle, roleName, onEdit, onClone, onAdjust, onDeleteRequest }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +41,12 @@ const UserCard: React.FC<{
 
     return (
         <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4">
+             <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={onToggle}
+                className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500 flex-shrink-0"
+            />
             <Avatar user={user} className="w-12 h-12 rounded-full flex-shrink-0" />
             <div className="flex-grow overflow-hidden">
                 <p className="font-bold text-stone-100 truncate">{user.gameName}</p>
@@ -107,6 +116,9 @@ const UserManagementPage: React.FC = () => {
             }
         });
     }, [users, debouncedSearchTerm, sortBy]);
+    
+    const userIds = useMemo(() => pageUsers.map(u => u.id), [pageUsers]);
+    const handleCheckboxClick = useShiftSelect(userIds, selectedUsers, setSelectedUsers);
 
     useEffect(() => {
         setSelectedUsers([]);
@@ -126,6 +138,10 @@ const UserManagementPage: React.FC = () => {
             case Role.Explorer: return settings.terminology.user;
             default: return role;
         }
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedUsers(e.target.checked ? userIds : []);
     };
     
     return (
@@ -148,15 +164,15 @@ const UserManagementPage: React.FC = () => {
                         <option value="role-asc">Role (A-Z)</option>
                         <option value="role-desc">Role (Z-A)</option>
                     </Input>
-                    {selectedUsers.length > 0 && (
-                        <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
-                            <span className="text-sm font-semibold text-stone-300 px-2">{selectedUsers.length} selected</span>
-                            <Button size="sm" variant="secondary" onClick={() => setEditingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Edit</Button>
-                            <Button size="sm" variant="secondary" onClick={() => setAdjustingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Adjust</Button>
-                            <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedUsers)}>Delete</Button>
-                        </div>
-                    )}
                 </div>
+                {selectedUsers.length > 0 && (
+                    <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
+                        <span className="text-sm font-semibold text-stone-300 px-2">{selectedUsers.length} selected</span>
+                        <Button size="sm" variant="secondary" onClick={() => setEditingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Edit</Button>
+                        <Button size="sm" variant="secondary" onClick={() => setAdjustingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Adjust</Button>
+                        <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedUsers)}>Delete</Button>
+                    </div>
+                )}
 
                 {isMobileView ? (
                     <div className="space-y-3">
@@ -164,6 +180,8 @@ const UserManagementPage: React.FC = () => {
                             <UserCard 
                                 key={user.id}
                                 user={user}
+                                isSelected={selectedUsers.includes(user.id)}
+                                onToggle={(e) => handleCheckboxClick(e, user.id)}
                                 roleName={roleName}
                                 onEdit={setEditingUser}
                                 onClone={cloneUser}
@@ -176,7 +194,8 @@ const UserManagementPage: React.FC = () => {
                     <UserTable
                         users={pageUsers}
                         selectedUsers={selectedUsers}
-                        setSelectedUsers={setSelectedUsers}
+                        onSelectAll={handleSelectAll}
+                        onSelectOne={handleCheckboxClick}
                         roleName={roleName}
                         onEdit={setEditingUser}
                         onClone={cloneUser}

@@ -1,14 +1,13 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, ChangeEvent } from 'react';
 import { User, Role } from '../../types';
 import Button from '../user-interface/Button';
 import { PencilIcon, CopyIcon, AdjustmentsIcon, TrashIcon } from '../user-interface/Icons';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface UserTableProps {
     users: User[];
     selectedUsers: string[];
-    setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+    onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSelectOne: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void;
     roleName: (role: Role) => string;
     onEdit: (user: User) => void;
     onClone: (userId: string) => void;
@@ -19,20 +18,15 @@ interface UserTableProps {
 const UserTable: React.FC<UserTableProps> = ({
     users,
     selectedUsers,
-    setSelectedUsers,
+    onSelectAll,
+    onSelectOne,
     roleName,
     onEdit,
     onClone,
     onAdjust,
     onDeleteRequest,
 }) => {
-    const userIds = useMemo(() => users.map(u => u.id), [users]);
-    const handleCheckboxClick = useShiftSelect(userIds, selectedUsers, setSelectedUsers);
-
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedUsers(e.target.checked ? userIds : []);
-    };
-
+    
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -41,7 +35,7 @@ const UserTable: React.FC<UserTableProps> = ({
                         <th className="p-4 w-12">
                             <input
                                 type="checkbox"
-                                onChange={handleSelectAll}
+                                onChange={onSelectAll}
                                 checked={users.length > 0 && selectedUsers.length === users.length}
                                 className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
                             />
@@ -59,7 +53,7 @@ const UserTable: React.FC<UserTableProps> = ({
                                 <input
                                     type="checkbox"
                                     checked={selectedUsers.includes(user.id)}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, user.id)}
+                                    onChange={(e) => onSelectOne(e, user.id)}
                                     className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
                                 />
                             </td>

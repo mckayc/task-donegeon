@@ -79,9 +79,10 @@ app.use('/api', activityLogMiddleware);
 
 
 // === Backup/Asset Directories & Scheduler ===
-const UPLOADS_DIR = '/app/data/assets';
-const BACKUP_DIR = '/app/data/backups';
-const ASSET_PACKS_DIR = '/app/data/asset_packs';
+const DATA_ROOT = path.resolve(__dirname, '..', 'data');
+const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
+const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
+const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
 
 const { runScheduledBackups, runScheduledRotations } = require('./controllers/management.controller');

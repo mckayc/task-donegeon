@@ -7,9 +7,10 @@ const { getFullAppData, updateTimestamps } = require('../utils/helpers');
 const { SettingEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 
-const BACKUP_DIR = '/app/data/backups';
-const DB_PATH = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
-const HELP_GUIDE_PATH = path.join(__dirname, '..', '..', 'src', 'content', 'HelpGuide.md');
+const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
+const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
+const DB_PATH = process.env.DATABASE_PATH || path.resolve(DATA_ROOT, 'database', 'database.sqlite');
+const HELP_GUIDE_PATH = path.resolve(__dirname, '..', '..', 'src', 'content', 'HelpGuide.md');
 
 
 const parseBackupFilename = (filename) => {

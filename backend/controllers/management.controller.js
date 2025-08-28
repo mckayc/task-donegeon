@@ -8,8 +8,12 @@ const backupService = require('../services/backup.service');
 const rotationService = require('../services/rotation.service');
 const { dataSource } = require('../data-source');
 
+// === Paths Configuration ===
+const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
+const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
+const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
+
 // === Multer Configuration ===
-const UPLOADS_DIR = '/app/data/assets';
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const category = req.body.category || 'Miscellaneous';
@@ -65,7 +69,6 @@ const createAssetPackSummary = (pack) => {
 };
 
 const discoverAssetPacks = async (req, res) => {
-    const ASSET_PACKS_DIR = '/app/data/asset_packs';
     const files = await fsp.readdir(ASSET_PACKS_DIR);
     const packInfos = [];
     for (const file of files) {
@@ -91,7 +94,6 @@ const discoverAssetPacks = async (req, res) => {
 
 const getAssetPack = async (req, res) => {
     const { filename } = req.params;
-    const ASSET_PACKS_DIR = '/app/data/asset_packs';
     const safeFilename = path.basename(filename);
     if (safeFilename !== filename) {
         return res.status(400).json({ error: 'Invalid filename.' });

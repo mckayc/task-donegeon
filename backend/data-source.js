@@ -3,7 +3,7 @@ const path = require('path');
 const { allEntities } = require('./entities');
 const fs = require('fs').promises;
 
-const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
+const dbPath = process.env.DATABASE_PATH || path.resolve(__dirname, '..', 'data', 'database', 'database.sqlite');
 const dbDir = path.dirname(dbPath);
 
 // Function to ensure directory exists

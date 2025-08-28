@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.69 - Avatar Simplification",
-  "version": "0.1.69",
+  "name": "Task Donegeon 2.0 - 0.1.70 - Avatar Display Fix",
+  "version": "0.1.70",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

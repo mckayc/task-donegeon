@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_54_DATE = new Date(2025, 8, 2);
 const V0_1_53_DATE = new Date(2025, 8, 1);
 const V0_1_40_DATE = new Date(2025, 7, 26);
 const V0_0_99Y_DATE = new Date(2025, 7, 19);
@@ -50,6 +51,24 @@ const V0_0_83_DATE = new Date(2025, 6, 19);
 const V0_0_82_DATE = new Date(2025, 6, 19);
 const V0_0_81_DATE = new Date(2025, 6, 19);
 const V0_0_80_DATE = new Date(2025, 6, 19);
+
+const WhatsNewContent: React.FC = () => {
+    const { settings } = useSystemState();
+    return (
+        <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+            <p className="text-sm">Here are the latest updates to {settings.terminology.appName}.</p>
+            <div>
+                <h4 className="text-lg font-bold text-stone-100">
+                    Version 0.1.54 ({V0_1_54_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                </h4>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>Test Release & UI Improvement:</strong> Incremented version to test the new robust app update functionality.</li>
+                    <li><strong>New "What's New" Section:</strong> Added this dedicated "What's New" section to provide users with a clear and concise summary of the latest features and fixes directly within the app.</li>
+                </ul>
+            </div>
+        </div>
+    );
+}
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
@@ -321,7 +340,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.53</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.54</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">
@@ -331,7 +350,11 @@ export const AboutPage: React.FC = () => {
                 </div>
             </Card>
 
-            <CollapsibleSection title="Version History" defaultOpen>
+            <CollapsibleSection title="What's New" defaultOpen>
+                <WhatsNewContent />
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Version History">
                 <VersionHistoryContent />
             </CollapsibleSection>
 

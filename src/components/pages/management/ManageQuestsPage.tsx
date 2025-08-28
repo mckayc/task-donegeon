@@ -43,7 +43,7 @@ const QuestCard: React.FC<{
         : 'bg-amber-500/20 text-amber-300';
 
     return (
-        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4">
+        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4 border border-stone-700">
              <input
                 type="checkbox"
                 checked={isSelected}
@@ -52,7 +52,7 @@ const QuestCard: React.FC<{
             />
             <div className="text-2xl flex-shrink-0">{quest.icon}</div>
             <div className="flex-grow overflow-hidden">
-                <p className="font-bold text-stone-100 truncate">{quest.title}</p>
+                <p className="font-bold text-stone-100 whitespace-normal break-words">{quest.title}</p>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${quest.isActive ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
                         {quest.isActive ? 'Active' : 'Inactive'}
@@ -60,11 +60,6 @@ const QuestCard: React.FC<{
                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${typeColorClass}`}>
                         {quest.type}
                     </span>
-                    {(quest.tags || []).slice(0, 2).map(tag => (
-                        <span key={tag} className="bg-blue-500/20 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">
-                            {tag}
-                        </span>
-                    ))}
                 </div>
             </div>
             <div className="relative flex-shrink-0" ref={dropdownRef}>

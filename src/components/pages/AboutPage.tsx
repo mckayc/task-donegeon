@@ -3,6 +3,7 @@ import Card from '../user-interface/Card';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 import { useSystemState } from '../../context/SystemContext';
+import { version } from '../../../package.json';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -312,7 +313,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.51</p>
+                <p className="mt-4 text-stone-400">Version: {version}</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">

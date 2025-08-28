@@ -11,12 +11,83 @@ import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { QuestTable } from '../../quests/QuestTable';
-import { ArrowLeftIcon, ArrowRightIcon } from '../../user-interface/Icons';
+import { ArrowLeftIcon, ArrowRightIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { useUIState } from '../../../context/UIContext';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
+
+const QuestCard: React.FC<{
+    quest: Quest;
+    isSelected: boolean;
+    onToggle: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onEdit: (quest: Quest) => void;
+    onClone: (questId: string) => void;
+    onDeleteRequest: (questId: string) => void;
+}> = ({ quest, isSelected, onToggle, onEdit, onClone, onDeleteRequest }) => {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+    
+    const typeColorClass = quest.type === QuestType.Duty
+        ? 'bg-sky-500/20 text-sky-300'
+        : quest.type === QuestType.Journey
+        ? 'bg-purple-500/20 text-purple-300'
+        : 'bg-amber-500/20 text-amber-300';
+
+    return (
+        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4">
+             <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={onToggle}
+                className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500 flex-shrink-0"
+            />
+            <div className="text-2xl flex-shrink-0">{quest.icon}</div>
+            <div className="flex-grow overflow-hidden">
+                <p className="font-bold text-stone-100 truncate">{quest.title}</p>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                     <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${quest.isActive ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
+                        {quest.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                     <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${typeColorClass}`}>
+                        {quest.type}
+                    </span>
+                    {(quest.tags || []).slice(0, 2).map(tag => (
+                        <span key={tag} className="bg-blue-500/20 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+            </div>
+            <div className="relative flex-shrink-0" ref={dropdownRef}>
+                <Button variant="ghost" size="icon" onClick={() => setDropdownOpen(p => !p)}>
+                    <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                </Button>
+                {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                        <button onClick={() => { onEdit(quest); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</button>
+                        <button onClick={() => { onClone(quest.id); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Clone</button>
+                        <button onClick={() => { onDeleteRequest(quest.id); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Delete</button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { quests, questGroups } = useQuestsState();
     const { deleteQuests, updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useQuestsDispatch();
+    const { isMobileView } = useUIState();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -115,6 +186,9 @@ const ManageQuestsPage: React.FC = () => {
         return filtered;
     }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups, typeFilter, statusFilter]);
     
+    const pageQuestIds = useMemo(() => pageQuests.map(q => q.id), [pageQuests]);
+    const handleCheckboxClick = useShiftSelect(pageQuestIds, selectedQuests, setSelectedQuests);
+
     useEffect(() => {
         setSelectedQuests([]);
     }, [activeTab, searchTerm, sortBy, typeFilter, statusFilter]);
@@ -172,6 +246,10 @@ const ManageQuestsPage: React.FC = () => {
             case 'deactivate': return `Are you sure you want to mark ${count} ${item} as inactive?`;
             default: return 'Are you sure?';
         }
+    };
+    
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedQuests(e.target.checked ? pageQuestIds : []);
     };
 
     const headerActions = (
@@ -263,19 +341,46 @@ const ManageQuestsPage: React.FC = () => {
                         </div>
                     )}
                 </div>
-
-                <QuestTable
-                    quests={pageQuests}
-                    selectedQuests={selectedQuests}
-                    setSelectedQuests={setSelectedQuests}
-                    onEdit={handleEdit}
-                    onClone={cloneQuest}
-                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
-                    terminology={settings.terminology}
-                    isLoading={!quests}
-                    searchTerm={debouncedSearchTerm}
-                    onCreate={handleCreate}
-                />
+                
+                {isMobileView ? (
+                    <div className="space-y-3">
+                         {pageQuests.length > 0 && (
+                            <div className="flex items-center p-2 border-b border-stone-700/60">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedQuests.length === pageQuestIds.length && pageQuestIds.length > 0}
+                                    onChange={handleSelectAll}
+                                    className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
+                                />
+                                <label className="ml-3 text-sm font-semibold text-stone-300">Select All</label>
+                            </div>
+                        )}
+                        {pageQuests.map(quest => (
+                            <QuestCard
+                                key={quest.id}
+                                quest={quest}
+                                isSelected={selectedQuests.includes(quest.id)}
+                                onToggle={(e) => handleCheckboxClick(e, quest.id)}
+                                onEdit={handleEdit}
+                                onClone={cloneQuest}
+                                onDeleteRequest={(id) => setConfirmation({ action: 'delete', ids: [id] })}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <QuestTable
+                        quests={pageQuests}
+                        selectedQuests={selectedQuests}
+                        setSelectedQuests={setSelectedQuests}
+                        onEdit={handleEdit}
+                        onClone={cloneQuest}
+                        onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                        terminology={settings.terminology}
+                        isLoading={!quests}
+                        searchTerm={debouncedSearchTerm}
+                        onCreate={handleCreate}
+                    />
+                )}
             </Card>
             
             {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}

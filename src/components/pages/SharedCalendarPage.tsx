@@ -65,7 +65,7 @@ const SharedCalendarPage: React.FC = () => {
             
             const userCompletions = questCompletions.filter(c => c.userId === user.id);
             const userGuilds = guilds.filter(g => g.memberIds.includes(user.id));
-            const relevantModes: AppMode[] = [{ mode: 'personal' }, ...userGuilds.map(g => ({ mode: 'guild', guildId: g.id }))];
+            const relevantModes: AppMode[] = [{ mode: 'personal' as const }, ...userGuilds.map(g => ({ mode: 'guild' as const, guildId: g.id }))];
             
             const userQuests: Quest[] = [];
     
@@ -75,8 +75,14 @@ const SharedCalendarPage: React.FC = () => {
                 if (!isVisible) return;
                 
                 // Check availability based on the quest's own scope
-                // Fix: Explicitly cast 'guild' to a literal type to match the AppMode discriminated union.
-                const questAppMode: AppMode = quest.guildId ? { mode: 'guild' as const, guildId: quest.guildId } : { mode: 'personal' };
+                let questAppMode: AppMode;
+                if (quest.guildId) {
+                    // FIX: Use 'as const' to prevent TypeScript from widening the 'mode' literal to a generic 'string',
+                    // ensuring it matches the discriminated union 'AppMode'.
+                    questAppMode = { mode: 'guild' as const, guildId: quest.guildId };
+                } else {
+                    questAppMode = { mode: 'personal' as const };
+                }
                 const isAvailable = isQuestAvailableForUser(quest, userCompletions, currentDate, scheduledEvents, questAppMode);
     
                 let shouldInclude = false;

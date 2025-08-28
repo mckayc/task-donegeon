@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.66
+**Version:** 0.1.67
 
 ---
 
@@ -14,6 +14,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.67 (September 5, 2025)
+-   **Avatar Upload Fix:** Resolved a race condition that could cause avatar uploads to intermittently fail after cropping. The upload process is now more reliable.
+-   **Admin Avatar Editing:** Administrators can now edit and manage user avatars directly from the "Edit User" dialog, including uploading new images, selecting from the gallery, and removing pictures.
 
 ### What's New in Version 0.1.66 (September 4, 2025)
 -   **Consistent Mobile Management Pages:** Applied the responsive card layout, previously on the "Manage Quests" page, to all other management pages (Users, Items, Markets, Trophies, etc.). This creates a unified, touch-friendly experience for administrators on mobile devices.
@@ -120,4 +124,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ---
+-   **Reward R-- END OF FILE README.md --

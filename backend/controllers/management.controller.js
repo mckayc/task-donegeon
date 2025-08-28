@@ -1,6 +1,8 @@
+
 const path = require('path');
 const multer = require('multer');
-const fs = require('fs').promises;
+const fs = require('fs'); // For sync operations
+const fsp = require('fs').promises; // For async operations
 const { asyncMiddleware, logAdminAction } = require('../utils/helpers');
 const backupService = require('../services/backup.service');
 const rotationService = require('../services/rotation.service');
@@ -9,12 +11,12 @@ const { dataSource } = require('../data-source');
 // === Multer Configuration ===
 const UPLOADS_DIR = '/app/data/assets';
 const storage = multer.diskStorage({
-    destination: async (req, file, cb) => {
+    destination: (req, file, cb) => {
         const category = req.body.category || 'Miscellaneous';
         const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
         const finalDir = path.join(UPLOADS_DIR, sanitizedCategory);
         try {
-            await fs.mkdir(finalDir, { recursive: true });
+            fs.mkdirSync(finalDir, { recursive: true });
             cb(null, finalDir);
         } catch (err) {
             cb(err);
@@ -64,13 +66,13 @@ const createAssetPackSummary = (pack) => {
 
 const discoverAssetPacks = async (req, res) => {
     const ASSET_PACKS_DIR = '/app/data/asset_packs';
-    const files = await fs.readdir(ASSET_PACKS_DIR);
+    const files = await fsp.readdir(ASSET_PACKS_DIR);
     const packInfos = [];
     for (const file of files) {
         if (path.extname(file) === '.json') {
             try {
                 const filePath = path.join(ASSET_PACKS_DIR, file);
-                const content = await fs.readFile(filePath, 'utf-8');
+                const content = await fsp.readFile(filePath, 'utf-8');
                 const pack = JSON.parse(content);
                 if (pack.manifest && pack.assets) {
                     packInfos.push({
@@ -96,7 +98,7 @@ const getAssetPack = async (req, res) => {
     }
     const filePath = path.join(ASSET_PACKS_DIR, safeFilename);
     try {
-        await fs.access(filePath);
+        await fsp.access(filePath);
         res.sendFile(filePath);
     } catch (err) {
         res.status(404).json({ error: 'Asset pack not found.' });
@@ -151,7 +153,7 @@ const getImagePackDetails = async (req, res) => {
             const localPath = path.join(UPLOADS_DIR, safePackName, file.name);
             let exists = false;
             try {
-                await fs.access(localPath);
+                await fsp.access(localPath);
                 exists = true;
             } catch { /* File doesn't exist locally */ }
             return {
@@ -170,13 +172,13 @@ const importImagePack = async (req, res) => {
     for (const file of files) {
         try {
             const categoryDir = path.join(UPLOADS_DIR, file.category);
-            await fs.mkdir(categoryDir, { recursive: true });
+            await fsp.mkdir(categoryDir, { recursive: true });
             const localPath = path.join(categoryDir, file.name);
             const response = await fetch(file.url);
             if (!response.ok) throw new Error(`Failed to download ${file.name}`);
             
             const buffer = Buffer.from(await response.arrayBuffer());
-            await fs.writeFile(localPath, buffer);
+            await fsp.writeFile(localPath, buffer);
         } catch (err) {
             console.error(`Failed to import ${file.name}:`, err);
         }
@@ -237,7 +239,7 @@ const getLocalGallery = async (req, res) => {
     const gallery = [];
     const readDirRecursive = async (dir, category) => {
         try {
-            const files = await fs.readdir(dir, { withFileTypes: true });
+            const files = await fsp.readdir(dir, { withFileTypes: true });
             for (const file of files) {
                 const fullPath = path.join(dir, file.name);
                 if (file.isDirectory()) {

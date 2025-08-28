@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Role, User } from '../../types';
@@ -7,7 +8,10 @@ import UserFormFields from './UserFormFields';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { SparklesIcon } from '../user-interface/Icons';
 import { GenerateContentResponse } from '@google/genai';
-import { useSystemState } from '../../context/SystemContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import Avatar from '../user-interface/Avatar';
+import ImageCropperDialog from '../user-interface/ImageCropperDialog';
+import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 
 interface EditUserDialogProps {
   user: User;
@@ -20,6 +24,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
   const { updateUser } = useAuthDispatch();
   const { addNotification } = useNotificationsDispatch();
   const { isAiConfigured } = useSystemState();
+  const { uploadFile } = useSystemDispatch();
+
   const [formData, setFormData] = useState({
     firstName: user.firstName,
     lastName: user.lastName,
@@ -34,11 +40,44 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
     password: '',
     confirmPassword: '',
   });
+
   const [isSaving, setIsSaving] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+  
+  const handleProfilePictureSelect = (url: string) => {
+      updateUser(user.id, { profilePictureUrl: url });
+      setIsGalleryOpen(false);
+  };
+  
+  const handleRemovePicture = () => {
+      updateUser(user.id, { profilePictureUrl: undefined });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          setImageToCrop(URL.createObjectURL(file));
+      }
+      e.target.value = '';
+  };
+  
+  const handleCropComplete = async (croppedFile: File | null) => {
+      setImageToCrop(null);
+      if (croppedFile) {
+          setIsUploading(true);
+          const result = await uploadFile(croppedFile, 'profile-pictures');
+          if (result?.url) {
+              handleProfilePictureSelect(result.url);
+          }
+          setIsUploading(false);
+      }
   };
 
   const handleSuggestGameName = async () => {
@@ -123,9 +162,29 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
   const canHavePassword = user.role === Role.DonegeonMaster || user.role === Role.Gatekeeper;
 
   return (
+    <>
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full max-h-[90vh] flex flex-col">
         <h2 className="text-3xl font-medieval text-emerald-400 mb-6">Edit {user.gameName}</h2>
+
+        <div className="flex flex-col items-center mb-6 gap-4">
+            <Avatar user={user} className="w-24 h-24 rounded-full border-4 border-stone-600" />
+            <div className="flex gap-2">
+                <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById('avatar-upload-input')?.click()} disabled={isUploading}>
+                    {isUploading ? "Uploading..." : "Upload New"}
+                </Button>
+                <Button type="button" variant="secondary" size="sm" onClick={() => setIsGalleryOpen(true)}>
+                    Select from Gallery
+                </Button>
+                {user.profilePictureUrl && (
+                    <Button type="button" variant="destructive" size="sm" onClick={handleRemovePicture}>
+                        Remove
+                    </Button>
+                )}
+                <input id="avatar-upload-input" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            </div>
+        </div>
+
         <form id="edit-user-form" onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-2">
           <UserFormFields formData={formData} handleChange={handleChange} isEditMode={true} />
           <Input as="textarea" label="Admin Notes (Private)" name="adminNotes" value={formData.adminNotes} onChange={handleChange} />
@@ -176,6 +235,20 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
         </div>
       </div>
     </div>
+
+    {isGalleryOpen && (
+        <ImageSelectionDialog
+            onSelect={handleProfilePictureSelect}
+            onClose={() => setIsGalleryOpen(false)}
+        />
+    )}
+    {imageToCrop && (
+        <ImageCropperDialog
+            imageSrc={imageToCrop}
+            onComplete={handleCropComplete}
+        />
+    )}
+    </>
   );
 };
 

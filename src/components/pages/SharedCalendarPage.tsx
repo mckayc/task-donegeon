@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, AppMode } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
@@ -74,7 +75,7 @@ const SharedCalendarPage: React.FC = () => {
                 if (!isVisible) return;
                 
                 // Check availability based on the quest's own scope
-                // Fix: Add 'as const' to ensure TypeScript infers 'guild' as a literal type, not a string.
+                // Fix: Explicitly cast 'guild' to a literal type to match the AppMode discriminated union.
                 const questAppMode: AppMode = quest.guildId ? { mode: 'guild' as const, guildId: quest.guildId } : { mode: 'personal' };
                 const isAvailable = isQuestAvailableForUser(quest, userCompletions, currentDate, scheduledEvents, questAppMode);
     

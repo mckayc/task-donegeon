@@ -1,4 +1,5 @@
 
+
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs'); // For sync operations
@@ -16,7 +17,7 @@ const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 // === Multer Configuration ===
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const category = req.body.category || 'Miscellaneous';
+        const category = req.params.category || req.body.category || 'Miscellaneous';
         const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
         const finalDir = path.join(UPLOADS_DIR, sanitizedCategory);
         try {
@@ -264,7 +265,7 @@ const getLocalGallery = async (req, res) => {
 
 const uploadMedia = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
-    const category = req.body.category || 'Miscellaneous';
+    const category = req.params.category || req.body.category || 'Miscellaneous';
     const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
     const url = `/uploads/${sanitizedCategory}/${req.file.filename}`;
     res.status(201).json({ url });

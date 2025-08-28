@@ -8,6 +8,6 @@ const {
 const router = express.Router();
 
 router.get('/local-gallery', getLocalGallery);
-router.post('/upload', upload, uploadMedia);
+router.post('/upload/:category?', upload, uploadMedia);
 
 module.exports = router;

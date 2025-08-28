@@ -14,10 +14,9 @@ const apiRequest = async (method: string, path: string, body?: any) => {
     return response.status === 204 ? null : await response.json();
 };
 
-const apiUpload = async (path: string, file: File, category?: string) => {
+const apiUpload = async (path: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    if (category) formData.append('category', category);
     
     const response = await fetch(path, { method: 'POST', body: formData });
     if (!response.ok) {
@@ -100,7 +99,10 @@ export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: 
     return apiRequest('POST', '/api/system/delete-assets', { assets, actorId });
 };
 export const applyManualAdjustmentAPI = (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => apiRequest('POST', '/api/users/adjust', adjustment);
-export const uploadFileAPI = (file: File, category?: string) => apiUpload('/api/media/upload', file, category);
+export const uploadFileAPI = (file: File, category?: string) => {
+    const uploadPath = category ? `/api/media/upload/${encodeURIComponent(category)}` : '/api/media/upload';
+    return apiUpload(uploadPath, file);
+};
 export const addThemeAPI = (data: Omit<ThemeDefinition, 'id'>) => apiRequest('POST', '/api/themes', data);
 export const updateThemeAPI = (data: ThemeDefinition) => apiRequest('PUT', `/api/themes/${data.id}`, data);
 export const deleteThemeAPI = (id: string) => apiRequest('DELETE', `/api/themes`, { ids: [id] });
@@ -124,6 +126,6 @@ export const importBugReportsAPI = (reports: BugReport[], mode: 'merge' | 'repla
 export const addModifierDefinitionAPI = (data: Omit<ModifierDefinition, 'id'>) => apiRequest('POST', '/api/setbacks', data);
 export const updateModifierDefinitionAPI = (data: ModifierDefinition) => apiRequest('PUT', `/api/setbacks/${data.id}`, data);
 export const applyModifierAPI = (userId: string, modifierId: string, reason: string, appliedById: string, overrides?: Partial<ModifierDefinition>) => apiRequest('POST', '/api/applied-modifiers/apply', { userId, modifierDefinitionId: modifierId, reason, appliedById, overrides });
-export const cloneUserAPI = (id: string) => apiRequest('POST', `/api/users/clone/${id}`);
+export const cloneUserAPI = (userId: string) => apiRequest('POST', `/api/users/clone/${userId}`);
 export const sendMessageAPI = (data: { senderId: string; recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => apiRequest('POST', '/api/chat/send', data);
 export const markMessagesAsReadAPI = (payload: { userId: string; partnerId?: string; guildId?: string }) => apiRequest('POST', '/api/chat/read', payload);

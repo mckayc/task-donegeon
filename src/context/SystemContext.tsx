@@ -140,41 +140,19 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
     }, []);
 
-    // --- Service Worker Logic ---
+    // --- Service Worker Update Listener ---
     useEffect(() => {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(registration => {
-                swLogger.log('SW_READY');
-                if (registration.waiting) {
-                    swLogger.log('UPDATE_WAITING_ON_READY', { state: registration.waiting.state });
-                    setUpdateAvailable(registration.waiting);
-                }
-                
-                registration.addEventListener('updatefound', () => {
-                    swLogger.log('UPDATE_FOUND');
-                    const newWorker = registration.installing;
-                    if (newWorker) {
-                        swLogger.log('NEW_WORKER_INSTALLING', { state: newWorker.state });
-                        newWorker.addEventListener('statechange', () => {
-                            swLogger.log('WORKER_STATE_CHANGE', { state: newWorker.state });
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                swLogger.log('UPDATE_INSTALLED_AND_WAITING');
-                                setUpdateAvailable(newWorker);
-                            }
-                        });
-                    }
-                });
-            });
+        const handleUpdateAvailable = (event: Event) => {
+            const customEvent = event as CustomEvent<ServiceWorker>;
+            swLogger.log('SW_UPDATE_AVAILABLE_EVENT_RECEIVED', { state: customEvent.detail?.state });
+            setUpdateAvailable(customEvent.detail);
+        };
 
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                swLogger.log('CONTROLLER_CHANGE_EVENT');
-                if (!refreshing) {
-                    window.location.reload();
-                    refreshing = true;
-                }
-            });
-        }
+        window.addEventListener('swUpdateAvailable', handleUpdateAvailable);
+
+        return () => {
+            window.removeEventListener('swUpdateAvailable', handleUpdateAvailable);
+        };
     }, [setUpdateAvailable]);
 
     const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
@@ -204,35 +182,22 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }, [apiAction]);
 
     const checkForUpdate = useCallback(async () => {
-        if (!('serviceWorker' in navigator)) {
-            swLogger.log('MANUAL_CHECK_FAILED', { reason: 'Service workers not supported.' });
-            addNotification({ type: 'error', message: 'Service workers are not supported in this browser.' });
-            return;
+        addNotification({ type: 'info', message: 'Checking for updates...' });
+        if (window.checkForUpdate) {
+            await window.checkForUpdate();
+            // The listener in index.tsx will fire an event if an update is found.
+            // Check for a waiting update after a short delay to provide feedback if no new update was found.
+            setTimeout(async () => {
+                 const registration = await navigator.serviceWorker.getRegistration();
+                 if (!registration?.waiting) {
+                    addNotification({ type: 'success', message: 'You are on the latest version.' });
+                 }
+            }, 1500);
+        } else {
+            addNotification({ type: 'error', message: 'Update checker is not available.' });
+            swLogger.log('MANUAL_CHECK_FAILED', { reason: 'window.checkForUpdate is not defined.' });
         }
-
-        try {
-            const registration = await navigator.serviceWorker.ready;
-            swLogger.log('MANUAL_UPDATE_CHECK_INITIATED');
-            addNotification({ type: 'info', message: 'Checking for updates...' });
-            
-            await registration.update();
-            swLogger.log('REGISTRATION_UPDATE_CALLED');
-            
-            // Check again after the update() call completes. This makes the manual check more responsive.
-            const updatedRegistration = await navigator.serviceWorker.getRegistration();
-            if (updatedRegistration?.waiting) {
-                swLogger.log('MANUAL_CHECK_SUCCESS', { reason: 'Update found and waiting.' });
-                setUpdateAvailable(updatedRegistration.waiting);
-            } else {
-                swLogger.log('MANUAL_CHECK_SUCCESS', { reason: 'No new update found.' });
-                addNotification({ type: 'success', message: 'You are on the latest version.' });
-            }
-        } catch (error) {
-            console.error('Error checking for service worker update:', error);
-            swLogger.log('MANUAL_CHECK_FAILED', { error: error instanceof Error ? error.message : 'Unknown error' });
-            addNotification({ type: 'error', message: 'Failed to check for updates.' });
-        }
-    }, [addNotification, setUpdateAvailable]);
+    }, [addNotification]);
 
     const installUpdate = useCallback(() => {
         if (state.isUpdateAvailable) {

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.61
+**Version:** 0.1.62
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.62 (August 31, 2025)
+-   **Service Worker Update Reliability:** Overhauled the service worker registration and update detection logic to eliminate a race condition. The application will now reliably show an "Update Available" notification when a new version is ready to be installed.
 
 ### What's New in Version 0.1.61 (August 30, 2025)
 -   **New Enhanced Number Input:** Replaced all standard number input fields throughout the application with a custom stepper component. This new component features increment/decrement buttons, supports rapid changes by holding the buttons, and allows for easier direct text entry, resolving a long-standing issue with deleting the first digit in a number.
@@ -105,4 +108,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ---
+-   **Reward R-- END OF FILE README.md ------

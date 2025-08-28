@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_53_DATE = new Date(2025, 8, 1);
 const V0_1_40_DATE = new Date(2025, 7, 26);
 const V0_0_99Y_DATE = new Date(2025, 7, 19);
 const V0_0_54_DATE = new Date(2025, 7, 17);
@@ -52,6 +53,14 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.53 ({V0_1_53_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Robust App Updates:</strong> Overhauled the service worker logic to ensure seamless in-app updates. The application now correctly fetches the latest version without requiring a manual hard refresh, preventing "Dragon Broke the Bridge" errors and blank screens after an update is installed.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.1.40 ({V0_1_40_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -312,7 +321,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.52</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.53</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">

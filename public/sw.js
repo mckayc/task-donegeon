@@ -1,9 +1,8 @@
-const CACHE_NAME = 'task-donegeon-cache-v0.1.59';
+const CACHE_NAME = 'task-donegeon-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/icon-192.png',
-  '/icon-512.png',
+  // Note: Add other core assets like CSS, JS bundles if they are not dynamically named
 ];
 
 // Install a service worker
@@ -12,7 +11,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache and caching app shell');
+        console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
   );
@@ -25,8 +24,10 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// Cache and return requests
 self.addEventListener('fetch', event => {
-  // Let the browser do its default thing for non-GET requests.
+  // Let the browser do its default thing
+  // for non-GET requests.
   if (event.request.method !== 'GET') {
     return;
   }
@@ -36,22 +37,38 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // For navigation requests, always serve the cached app shell (index.html).
-  // This is the crucial fix to prevent version mismatches between the HTML
-  // and its assets after an update.
-  if (event.request.mode === 'navigate') {
-    event.respondWith(caches.match('/index.html'));
-    return;
-  }
-
-  // For all other assets (JS, CSS, images, etc.), use a cache-first strategy.
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      return cachedResponse || fetch(event.request);
-    })
+    caches.match(event.request)
+      .then(response => {
+        // Cache hit - return response
+        if (response) {
+          return response;
+        }
+
+        return fetch(event.request).then(
+          response => {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // IMPORTANT: Clone the response. A response is a stream
+            // and because we want the browser to consume the response
+            // as well as the cache consuming the response, we need
+            // to clone it so we have two streams.
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          }
+        );
+      })
   );
 });
-
 
 // Update a service worker
 self.addEventListener('activate', event => {
@@ -61,12 +78,10 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
-    .then(() => self.clients.claim()) // Take control of all open clients immediately
   );
 });

@@ -25,13 +25,6 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
-const V0_1_59_DATE = new Date(2025, 8, 7);
-const V0_1_58_DATE = new Date(2025, 8, 6);
-const V0_1_57_DATE = new Date(2025, 8, 5);
-const V0_1_56_DATE = new Date(2025, 8, 4);
-const V0_1_55_DATE = new Date(2025, 8, 3);
-const V0_1_54_DATE = new Date(2025, 8, 2);
-const V0_1_53_DATE = new Date(2025, 8, 1);
 const V0_1_40_DATE = new Date(2025, 7, 26);
 const V0_0_99Y_DATE = new Date(2025, 7, 19);
 const V0_0_54_DATE = new Date(2025, 7, 17);
@@ -57,78 +50,8 @@ const V0_0_82_DATE = new Date(2025, 6, 19);
 const V0_0_81_DATE = new Date(2025, 6, 19);
 const V0_0_80_DATE = new Date(2025, 6, 19);
 
-const WhatsNewContent: React.FC = () => {
-    const { settings } = useSystemState();
-    return (
-        <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-            <p className="text-sm">Here are the latest updates to {settings.terminology.appName}.</p>
-            <div>
-                <h4 className="text-lg font-bold text-stone-100">
-                    Version 0.1.59 ({V0_1_59_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-                </h4>
-                <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>Enhanced Kiosk Mode Clarity:</strong> The Kiosk/Shared View has been redesigned for better at-a-glance clarity. Each user's task list is now visually separated into two distinct sections: "🔄 Today's Duties" and "🗺️ Available Ventures & Journeys". This makes it immediately obvious which tasks are priorities for the day. The sections also include helpful empty-state messages when no tasks are present.</li>
-                </ul>
-            </div>
-            <div>
-                <h4 className="text-lg font-bold text-stone-100">
-                    Version 0.1.58 ({V0_1_58_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-                </h4>
-                <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>Expanded Kiosk Mode Quest Display:</strong> The Kiosk (Shared) View calendar now displays all available Ventures and Journeys for each user, not just those due on the current day. This provides a more complete to-do list for users accessing the shared screen. Duties continue to appear only on their scheduled days and are prioritized at the top of the list.</li>
-                    <li><strong>Kiosk Mode Scope Fix:</strong> Corrected an issue to ensure the Kiosk view properly shows quests from all of a user's scopes (Personal and all Guilds), not just the last active scope, for a truly unified task list.</li>
-                </ul>
-            </div>
-            <div>
-                <h4 className="text-lg font-bold text-stone-100">
-                    Version 0.1.57 ({V0_1_57_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-                </h4>
-                <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>Granular Chronicle Logging:</strong> The Chronicles system is now more detailed. Actions that require multiple steps (like a task completion followed by an admin approval) will now correctly generate separate, distinct log entries for each step, providing a clearer and more complete audit trail.</li>
-                    <li><strong>Help Guide Enhancements:</strong> The in-app Help Guide is now easier to navigate, with clickable links for every major heading and subheading. The Table of Contents has also been streamlined into a single-column layout for better readability.</li>
-                    <li><strong>Dashboard & Chronicles Sync:</strong> The "Recent Activity" widget on the Dashboard now correctly uses the same user-defined filters as the main Chronicles page, ensuring a consistent view of your activity across the app.</li>
-                </ul>
-            </div>
-        </div>
-    );
-}
-
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.56 ({V0_1_56_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Update Test Release:</strong> Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.55 ({V0_1_55_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>PWA Update Reliability:</strong> Completely overhauled the service worker's caching strategy to resolve a critical bug that could cause the app to crash or show a blank screen after an update. The new "cache-first" approach for navigation ensures that the application and its assets are always in sync, providing a seamless and reliable update experience.</li>
-                <li><strong>Automatic Background Updates:</strong> The app now automatically checks for new versions every hour for all users, not just admins. When an update is found, a notification will appear, allowing any user to install the latest version.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.54 ({V0_1_54_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Test Release & UI Improvement:</strong> Incremented version to test the new robust app update functionality.</li>
-                <li><strong>New "What's New" Section:</strong> Added this dedicated "What's New" section to provide users with a clear and concise summary of the latest features and fixes directly within the app.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.53 ({V0_1_53_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Robust App Updates:</strong> Overhauled the service worker logic to ensure seamless in-app updates. The application now correctly fetches the latest version without requiring a manual hard refresh, preventing "Dragon Broke the Bridge" errors and blank screens after an update is installed.</li>
-            </ul>
-        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.1.40 ({V0_1_40_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -389,7 +312,7 @@ export const AboutPage: React.FC = () => {
             <Card className="text-center">
                 <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
                 <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
-                <p className="mt-4 text-stone-400">Version: 0.1.59</p>
+                <p className="mt-4 text-stone-400">Version: 0.1.51</p>
                  <div className="mt-6">
                     <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
                         <Button variant="secondary">
@@ -399,11 +322,7 @@ export const AboutPage: React.FC = () => {
                 </div>
             </Card>
 
-            <CollapsibleSection title="What's New" defaultOpen>
-                <WhatsNewContent />
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Version History">
+            <CollapsibleSection title="Version History" defaultOpen>
                 <VersionHistoryContent />
             </CollapsibleSection>
 

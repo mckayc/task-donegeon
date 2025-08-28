@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -34,7 +35,12 @@ export const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ 
 
   const handleRewardChange = (items: RewardItem[], setter: React.Dispatch<React.SetStateAction<RewardItem[]>>) => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(1, parseInt(String(value)) || 1) : value };
+    if (field === 'amount') {
+      const parsedAmount = parseInt(String(value), 10);
+      newItems[index] = { ...newItems[index], amount: isNaN(parsedAmount) ? 0 : parsedAmount };
+    } else {
+      newItems[index] = { ...newItems[index], [field]: value as string };
+    }
     setter(newItems);
   };
   

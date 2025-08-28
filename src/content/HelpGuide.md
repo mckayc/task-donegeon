@@ -46,7 +46,6 @@ Your main hub. This is the first page you see after logging in. It gives you a q
 - **Leaderboard:** A friendly competition showing the top XP earners for the current mode (Personal or {group}).
 - **Quick Actions:** A list of your most urgent and available {tasks} for easy access.
 - **Weekly Progress:** A chart showing how much XP you've earned over the last seven days.
-- **Recent Activity:** A preview of your most recent entries from the {history}. This widget respects the filters you've set on the main {history} page.
 
 ### {link_quests}
 This is your main {task} board. It shows all available {tasks} for your current mode (Personal or {group}).
@@ -211,8 +210,9 @@ The {history} are accessible in two main locations:
     -   **All Activity View:** Available to {admin}s and {moderator}s, this view shows a combined feed of all user activities within the current scope.
 
 **Functional Specification:**
-- The **"Recent Activity"** widget on the {link_dashboard} and the **"My Activity"** view on the {history} page should display the **exact same information and event types**. The only functional difference is that the dashboard widget is limited to displaying events from the last few days.
-- The {history} are designed to be a granular log. **Every step of a process is recorded separately.** For example, when a {task} that requires approval is completed, a "Submitted" entry is created. When an {admin} later approves it, a second, distinct "Approved" entry is created, providing a full audit trail.
+- The **"Recent Activity"** widget on the {link_dashboard} and the **"My Activity"** view on the {history} page should display the **exact same information and event types**.
+- The only functional difference is that the **"Recent Activity"** widget on the dashboard is limited to displaying events from the **last 7 days**.
+- The main **{history} Page** is paginated, allowing users to browse through their entire history. It also features a powerful filtering system, allowing users to show or hide different types of events.
 
 **Event Breakdown:**
 Each entry in the {history} represents a specific event:

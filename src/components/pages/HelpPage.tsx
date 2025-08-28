@@ -45,16 +45,13 @@ const parseMarkdown = (text: string) => {
   text.split('\n').forEach((line, index) => {
     if (line.startsWith('# ')) {
       flushList();
-      const title = line.substring(2);
-      elements.push(<h1 key={index} id={createSlug(title)} className="text-3xl font-bold text-accent mt-6 mb-4">{parseInline(title)}</h1>);
+      elements.push(<h1 key={index} className="text-3xl font-bold text-accent mt-6 mb-4">{parseInline(line.substring(2))}</h1>);
     } else if (line.startsWith('## ')) {
       flushList();
-      const title = line.substring(3);
-      elements.push(<h2 key={index} id={createSlug(title)} className="text-2xl font-bold text-stone-100 mt-5 mb-3 border-b-2 border-stone-700/60 pb-2">{parseInline(title)}</h2>);
+      elements.push(<h2 key={index} className="text-2xl font-bold text-stone-100 mt-5 mb-3 border-b-2 border-stone-700/60 pb-2">{parseInline(line.substring(3))}</h2>);
     } else if (line.startsWith('### ')) {
       flushList();
-      const title = line.substring(4);
-      elements.push(<h3 key={index} id={createSlug(title)} className="text-xl font-bold text-stone-200 mt-4 mb-2">{parseInline(title)}</h3>);
+      elements.push(<h3 key={index} className="text-xl font-bold text-stone-200 mt-4 mb-2">{parseInline(line.substring(4))}</h3>);
     } else if (line.trim() === '---') {
         flushList();
         elements.push(<hr key={index} className="border-stone-700/60 my-6" />);
@@ -126,7 +123,7 @@ const HelpPage: React.FC = () => {
 
     const TocComponent = (
         <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-            <ul className="list-none p-0 space-y-2">
+            <ul className="list-none p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                 {toc.map(item => (
                     <li key={item.slug}>
                         <a 

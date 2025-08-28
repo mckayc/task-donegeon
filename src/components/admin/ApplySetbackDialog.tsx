@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { User, ModifierDefinition, Role, ModifierEffect, ModifierEffectType, RewardItem, RewardCategory, QuestKind } from '../../../types';
@@ -81,7 +83,12 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
             const effect = newEffects[effectIndex];
             if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
                 const newRewards = effect.rewards;
-                newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
+                if (field === 'amount') {
+                    const parsedAmount = parseInt(String(value), 10);
+                    newRewards[itemIndex] = { ...newRewards[itemIndex], amount: isNaN(parsedAmount) ? 0 : parsedAmount };
+                } else {
+                    newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: value as string };
+                }
                 effect.rewards = newRewards;
             }
             return { ...prev, effects: newEffects };
@@ -193,7 +200,13 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                         <Button type="button" variant="destructive" size="sm" onClick={() => handleRemoveEffect(index)}>Remove</Button>
                                     </div>
                                     {(effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) && (
-                                        <RewardInputGroup category={effect.type === ModifierEffectType.DeductRewards ? 'setbacks' : 'rewards'} items={effect.rewards} onChange={handleRewardChange(index)} onAdd={handleAddRewardToEffect(index)} onRemove={handleRemoveRewardFromEffect(index)} />
+                                        <RewardInputGroup 
+                                            category={effect.type === ModifierEffectType.DeductRewards ? 'setbacks' : 'rewards'} 
+                                            items={effect.rewards} 
+                                            onChange={handleRewardChange(index)} 
+                                            onAdd={handleAddRewardToEffect(index)} 
+                                            onRemove={handleRemoveRewardFromEffect(index)}
+                                        />
                                     )}
 
                                     {(effect.type === ModifierEffectType.CloseMarket || effect.type === ModifierEffectType.OpenMarket) && (

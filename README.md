@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.59
+**Version:** 0.1.52
 
 ---
 
@@ -15,31 +15,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.1.59 (September 7, 2025)
--   **Enhanced Kiosk Mode Clarity:** The Kiosk/Shared View has been redesigned for better at-a-glance clarity. Each user's task list is now visually separated into two distinct sections: "🔄 Today's Duties" and "🗺️ Available Ventures & Journeys". This makes it immediately obvious which tasks are priorities for the day. The sections also include helpful empty-state messages when no tasks are present.
-
-### What's New in Version 0.1.58 (September 6, 2025)
--   **Expanded Kiosk Mode Quest Display:** The Kiosk (Shared) View calendar now displays all available Ventures and Journeys for each user, not just those due on the current day. This provides a more complete to-do list for users accessing the shared screen. Duties continue to appear only on their scheduled days and are prioritized at the top of the list.
--   **Kiosk Mode Scope Fix:** Corrected an issue to ensure the Kiosk view properly shows quests from all of a user's scopes (Personal and all Guilds), not just the last active scope, for a truly unified task list.
-
-### What's New in Version 0.1.57 (September 5, 2025)
--   **Granular Chronicle Logging:** The Chronicles system is now more detailed. Actions that require multiple steps (like a {task} completion followed by an admin approval) will now correctly generate separate, distinct log entries for each step, providing a clearer and more complete audit trail.
--   **Help Guide Enhancements:** The in-app Help Guide is now easier to navigate, with clickable links for every major heading and subheading. The Table of Contents has also been streamlined into a single-column layout for better readability.
--   **Dashboard & Chronicles Sync:** The "Recent Activity" widget on the Dashboard now correctly uses the same user-defined filters as the main Chronicles page, ensuring a consistent view of your activity across the app.
-
-### What's New in Version 0.1.56 (September 4, 2025)
--   **Update Test Release:** Incremented version number to validate the new PWA update flow. This release contains no major features but serves as a way to confirm that background updates and the "Update Now" functionality are working reliably for all users.
-
-### What's New in Version 0.1.55 (September 3, 2025)
--   **PWA Update Reliability:** Completely overhauled the service worker's caching strategy to resolve a critical bug that could cause the app to crash or show a blank screen after an update. The new cache-first approach for navigation ensures that the application and its assets are always in sync, providing a seamless and reliable update experience.
--   **Automatic Background Updates:** The app now automatically checks for new versions every hour for all users, not just admins. When an update is found, a notification will appear, allowing any user to install the latest version.
-
-### What's New in Version 0.1.54 (September 2, 2025)
--   **Test Release & UI Improvement:** Incremented version to test the new robust app update functionality.
--   **New "What's New" Section:** Added a dedicated "What's New" section to the About page to provide users with a clear and concise summary of the latest features and fixes directly within the app.
-
-### What's New in Version 0.1.53 (September 1, 2025)
--   **Robust App Updates:** Overhauled the service worker logic to ensure seamless in-app updates. The application now correctly fetches the latest version without requiring a manual hard refresh, preventing "Dragon Broke the Bridge" errors and blank screens after an update is installed.
+### What's New in Version 0.1.52 (August 28, 2025)
+-   **Mobile Sidebar Scrolling:** Fixed a bug where the mobile sidebar menu would not scroll properly when sections were expanded, making some links inaccessible.
+-   **Improved Number Inputs:** Corrected an issue where the first digit of a number could not be deleted in various reward and XP input fields across the application, improving the content editing experience.
 
 ### What's New in Version 0.1.50 (August 27, 2025)
 -   **UI Opacity Adjustments:** Made several UI overlays, such as the header and chat panel, fully opaque to improve readability and provide a more solid feel. The mobile sidebar overlay is also now darker to improve focus on the menu.
@@ -121,4 +99,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md --
+-   **Reward R-- END OF FILE README.md ---

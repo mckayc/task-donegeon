@@ -329,7 +329,7 @@ const Sidebar: React.FC = () => {
   const sidebarWidthClass = isSidebarCollapsed && !isMobileView ? 'w-20' : 'w-72';
 
   return (
-    <div className={`flex flex-col flex-shrink-0 transition-all duration-300 bg-stone-900 border-r border-stone-700 ${sidebarWidthClass}`}>
+    <div className={`flex flex-col flex-shrink-0 h-full transition-all duration-300 bg-stone-900 border-r border-stone-700 ${sidebarWidthClass}`}>
       <button 
         onClick={() => handleNavigate('Dashboard')} 
         data-log-id="sidebar-header-logo"

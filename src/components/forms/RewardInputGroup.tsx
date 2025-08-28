@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { RewardCategory, RewardItem } from '../items/types';
 import Input from '../user-interface/Input';
@@ -34,7 +35,7 @@ const RewardItemRow: React.FC<{
                 <option value="" disabled>Select...</option>
                 {filteredRewardTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
             </select>
-            <Input type="number" min="1" step="1" value={item.amount} onChange={(e) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0 no-spinner" aria-label="Amount" />
+            <Input type="number" min="0" step="1" value={item.amount} onChange={(e) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0 no-spinner" aria-label="Amount" />
             <div className="flex-1 text-left min-w-[150px]">
                 {anchorEquivalent && <span className="text-xs text-amber-300">(~{anchorEquivalent})</span>}
             </div>

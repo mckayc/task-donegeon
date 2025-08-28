@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.54 - Update Test Release",
-  "version": "0.1.54",
+  "name": "Task Donegeon 2.0 - 0.1.55 - PWA Update Fix",
+  "version": "0.1.55",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

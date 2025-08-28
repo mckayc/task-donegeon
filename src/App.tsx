@@ -1,5 +1,6 @@
 
 
+
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -19,6 +20,7 @@ import { useIsDataLoaded } from './context/DataProvider';
 import ErrorBoundary from './components/layout/ErrorBoundary';
 import { Role, Guild, ThemeDefinition } from './types';
 import UpdateAvailable from './components/user-interface/UpdateAvailable';
+import { swLogger } from './utils/swLogger';
 
 const App: React.FC = () => {
   const { settings, themes, isUpdateAvailable } = useSystemState();
@@ -148,6 +150,23 @@ const App: React.FC = () => {
   useEffect(() => {
       setShowUpdateToast(!!isUpdateAvailable);
   }, [isUpdateAvailable]);
+  
+  // --- Background Update Checker ---
+  useEffect(() => {
+    // Check for updates periodically in the background.
+    const interval = setInterval(() => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg && !reg.installing) {
+            reg.update();
+            swLogger.log('BACKGROUND_UPDATE_CHECK');
+          }
+        });
+      }
+    }, 1000 * 60 * 60); // Check every hour
+
+    return () => clearInterval(interval);
+  }, []);
 
 
   if (!isDataLoaded) {

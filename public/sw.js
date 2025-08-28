@@ -1,4 +1,4 @@
-const CACHE_NAME = 'task-donegeon-cache-v0.1.54';
+const CACHE_NAME = 'task-donegeon-cache-v0.1.55';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -36,20 +36,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // For HTML pages (navigation requests), try the network first.
+  // For navigation requests, always serve the cached app shell (index.html).
+  // This is the crucial fix to prevent version mismatches between the HTML
+  // and its assets after an update.
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .catch(() => {
-          // If network fails, serve the cached index.html
-          return caches.match('/index.html');
-        })
-    );
+    event.respondWith(caches.match('/index.html'));
     return;
   }
-  
+
   // For all other assets (JS, CSS, images, etc.), use a cache-first strategy.
-  // We do NOT add new assets to the cache here to prevent caching old, hashed files.
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
       return cachedResponse || fetch(event.request);

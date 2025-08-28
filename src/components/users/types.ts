@@ -14,7 +14,7 @@ export interface User {
   birthday: string;
   role: Role;
   avatar: { [slot: string]: string }; // Now uses GameAsset['id']
-  profilePictureUrl?: string;
+  profilePictureUrl?: string | null;
   ownedAssetIds: string[];
   pin: string;
   password?: string;

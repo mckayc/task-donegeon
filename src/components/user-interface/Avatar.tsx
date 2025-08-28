@@ -14,7 +14,7 @@ const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
         .map(([_, assetId]) => {
             return gameAssets.find(ga => ga.id === assetId);
         })
-        .filter((asset): asset is NonNullable<typeof asset> => !!asset);
+        .filter((asset): asset is NonNullable<typeof asset> => !!asset && !!asset.imageUrl);
 
     return (
         <div className={`relative flex items-center justify-center ${className}`}>

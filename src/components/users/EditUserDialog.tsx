@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Role, User } from '../../types';
@@ -57,7 +56,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
   };
   
   const handleRemovePicture = () => {
-      updateUser(user.id, { profilePictureUrl: undefined });
+      updateUser(user.id, { profilePictureUrl: null });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

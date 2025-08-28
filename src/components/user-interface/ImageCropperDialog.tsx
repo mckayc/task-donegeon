@@ -47,7 +47,6 @@ const ImageCropperDialog: React.FC<ImageCropperDialogProps> = ({ imageSrc, onCom
       completedCrop.x * scaleX,
       completedCrop.y * scaleY,
       completedCrop.width * scaleX,
-      // FIX: Corrected typo from `completed-crop` to `completedCrop`.
       completedCrop.height * scaleY,
       0,
       0,
@@ -61,9 +60,9 @@ const ImageCropperDialog: React.FC<ImageCropperDialogProps> = ({ imageSrc, onCom
         onComplete(null);
         return;
       }
-      const croppedFile = new File([blob], 'profile.png', { type: 'image/png' });
+      const croppedFile = new File([blob], 'profile.jpeg', { type: 'image/jpeg' });
       onComplete(croppedFile);
-    }, 'image/png');
+    }, 'image/jpeg', 0.9);
   }
 
   return (

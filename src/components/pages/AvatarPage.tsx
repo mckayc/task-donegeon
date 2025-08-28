@@ -104,7 +104,7 @@ const AvatarPage: React.FC = () => {
                             </Button>
                             <Button variant="secondary" onClick={() => setIsGalleryOpen(true)} className="w-full">Select from My Collection</Button>
                              {currentUser.profilePictureUrl && (
-                                <Button variant="secondary" onClick={() => updateUser(currentUser.id, { profilePictureUrl: undefined })} className="w-full !bg-red-900/50 hover:!bg-red-800/60 text-red-300">
+                                <Button variant="secondary" onClick={() => updateUser(currentUser.id, { profilePictureUrl: null })} className="w-full !bg-red-900/50 hover:!bg-red-800/60 text-red-300">
                                     Remove Picture
                                 </Button>
                             )}

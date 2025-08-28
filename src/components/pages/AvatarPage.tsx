@@ -7,6 +7,7 @@ import Button from '../user-interface/Button';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
+import ImageCropperDialog from '../user-interface/ImageCropperDialog';
 
 const AvatarPage: React.FC = () => {
     const { gameAssets } = useEconomyState();
@@ -15,6 +16,7 @@ const AvatarPage: React.FC = () => {
     const { updateUser } = useAuthDispatch();
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 
     const { ownedAvatarAssets, availableSlots } = useMemo(() => {
         const assets = new Map<string, GameAsset[]>();
@@ -63,11 +65,20 @@ const AvatarPage: React.FC = () => {
         setIsGalleryOpen(false);
     };
 
-    const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setImageToCrop(URL.createObjectURL(file));
+        }
+         // Reset input so the same file can be selected again
+        e.target.value = '';
+    };
+
+    const handleCropComplete = async (croppedFile: File | null) => {
+        setImageToCrop(null);
+        if (croppedFile) {
             setIsUploading(true);
-            const result = await uploadFile(file, 'profile-pictures');
+            const result = await uploadFile(croppedFile, 'profile-pictures');
             if (result?.url) {
                 handleProfilePictureSelect(result.url);
             }
@@ -86,7 +97,7 @@ const AvatarPage: React.FC = () => {
                     </div>
                     <Card className="mt-6 w-full max-w-sm">
                         <h4 className="font-bold text-lg text-stone-200 mb-3 text-center">Profile Picture</h4>
-                         <input id="profile-pic-upload" type="file" accept="image/*" onChange={handleProfilePictureUpload} className="hidden" />
+                         <input id="profile-pic-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                         <div className="space-y-2">
                             <Button onClick={() => document.getElementById('profile-pic-upload')?.click()} disabled={isUploading} className="w-full">
                                 {isUploading ? "Uploading..." : "Upload New Image"}
@@ -157,6 +168,12 @@ const AvatarPage: React.FC = () => {
                     onSelect={handleProfilePictureSelect}
                     onClose={() => setIsGalleryOpen(false)}
                     imagePool={ownedItemsForProfilePic}
+                />
+            )}
+            {imageToCrop && (
+                <ImageCropperDialog
+                    imageSrc={imageToCrop}
+                    onComplete={handleCropComplete}
                 />
             )}
         </div>

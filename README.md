@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.64
+**Version:** 0.1.66
 
 ---
 
@@ -14,6 +14,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.66 (September 4, 2025)
+-   **Consistent Mobile Management Pages:** Applied the responsive card layout, previously on the "Manage Quests" page, to all other management pages (Users, Items, Markets, Trophies, etc.). This creates a unified, touch-friendly experience for administrators on mobile devices.
+
+### What's New in Version 0.1.65 (September 3, 2025)
+-   **PWA Update Reliability:** Fixed a critical issue where the application would show an error page after an update. The service worker now correctly takes control of the page, ensuring a smooth and reliable update process without asset loading errors.
 
 ### What's New in Version 0.1.64 (September 2, 2025)
 -   **Version Bump:** Incremented application version number to trigger update notifications.
@@ -114,4 +120,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md --
+-   **Reward R-- END OF FILE README.md ---

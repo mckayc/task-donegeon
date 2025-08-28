@@ -1,4 +1,4 @@
-const CACHE_NAME = 'task-donegeon-cache-v2';
+const CACHE_NAME = 'task-donegeon-cache-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -82,6 +82,6 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Force new SW to take control of open clients
   );
 });

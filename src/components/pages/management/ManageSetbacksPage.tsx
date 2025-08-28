@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ModifierDefinition, User } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -10,11 +10,67 @@ import Avatar from '../../user-interface/Avatar';
 import { useAuthState } from '../../../context/AuthContext';
 import ModifierTable from '../../modifiers/ModifierTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { useUIState } from '../../../context/UIContext';
+import { EllipsisVerticalIcon } from '../../user-interface/Icons';
+
+const ModifierCard: React.FC<{
+    modifier: ModifierDefinition;
+    isSelected: boolean;
+    onToggle: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onApply: (modifier: ModifierDefinition) => void;
+    onEdit: (modifier: ModifierDefinition) => void;
+    onDeleteRequest: (modifierId: string) => void;
+}> = ({ modifier, isSelected, onToggle, onApply, onEdit, onDeleteRequest }) => {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const categoryColorClass = modifier.category === 'Triumph' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300';
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4 border border-stone-700">
+            <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={onToggle}
+                className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500 flex-shrink-0"
+            />
+            <div className="text-2xl flex-shrink-0">{modifier.icon}</div>
+            <div className="flex-grow overflow-hidden">
+                <p className="font-bold text-stone-100 whitespace-normal break-words">{modifier.name}</p>
+                 <span className={`mt-1 inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${categoryColorClass}`}>
+                    {modifier.category}
+                </span>
+            </div>
+            <div className="relative flex-shrink-0" ref={dropdownRef}>
+                <Button variant="ghost" size="icon" onClick={() => setDropdownOpen(p => !p)}>
+                    <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                </Button>
+                {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                        <button onClick={() => { onApply(modifier); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Apply</button>
+                        <button onClick={() => { onEdit(modifier); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</button>
+                        <button onClick={() => { onDeleteRequest(modifier.id); setDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Delete</button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const ManageSetbacksPage: React.FC = () => {
     const { settings, modifierDefinitions, appliedModifiers } = useSystemState();
     const { users } = useAuthState();
     const { deleteSelectedAssets } = useSystemDispatch();
+    const { isMobileView } = useUIState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
@@ -79,16 +135,32 @@ const ManageSetbacksPage: React.FC = () => {
                         <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedModifiers)}>Delete</Button>
                     </div>
                 )}
-                <ModifierTable
-                    modifiers={modifierDefinitions}
-                    selectedModifiers={selectedModifiers}
-                    onSelectAll={handleSelectAll}
-                    onSelectOne={handleCheckboxClick}
-                    onApply={handleApply}
-                    onEdit={handleEdit}
-                    onDeleteRequest={(ids) => setDeletingIds(ids)}
-                    onCreate={handleCreate}
-                />
+                {isMobileView ? (
+                    <div className="space-y-3">
+                        {modifierDefinitions.map(modifier => (
+                            <ModifierCard
+                                key={modifier.id}
+                                modifier={modifier}
+                                isSelected={selectedModifiers.includes(modifier.id)}
+                                onToggle={(e) => handleCheckboxClick(e, modifier.id)}
+                                onApply={handleApply}
+                                onEdit={handleEdit}
+                                onDeleteRequest={(id) => setDeletingIds([id])}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <ModifierTable
+                        modifiers={modifierDefinitions}
+                        selectedModifiers={selectedModifiers}
+                        onSelectAll={handleSelectAll}
+                        onSelectOne={handleCheckboxClick}
+                        onApply={handleApply}
+                        onEdit={handleEdit}
+                        onDeleteRequest={(ids) => setDeletingIds(ids)}
+                        onCreate={handleCreate}
+                    />
+                )}
             </Card>
             
             <Card title="Active Modifiers">

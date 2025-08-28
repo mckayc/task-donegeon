@@ -40,7 +40,7 @@ const UserCard: React.FC<{
     }, []);
 
     return (
-        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4">
+        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4 border border-stone-700">
              <input
                 type="checkbox"
                 checked={isSelected}
@@ -49,7 +49,7 @@ const UserCard: React.FC<{
             />
             <Avatar user={user} className="w-12 h-12 rounded-full flex-shrink-0" />
             <div className="flex-grow overflow-hidden">
-                <p className="font-bold text-stone-100 truncate">{user.gameName}</p>
+                <p className="font-bold text-stone-100 whitespace-normal break-words">{user.gameName}</p>
                 <p className="text-sm text-stone-400 truncate">{user.username}</p>
                  <span className={`mt-1 inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${
                     user.role === 'Donegeon Master' ? 'bg-yellow-500/20 text-yellow-300' : 

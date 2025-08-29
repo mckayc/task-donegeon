@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.88
+**Version:** 0.1.89
 
 ---
 
@@ -12,6 +12,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.89 (September 22, 2025)
+-   **Full Audit Trail for {history}:** The {history} system has been updated to provide a complete audit trail for multi-step actions. Instead of updating a single log entry, the system now creates a new, separate entry for each step, such as "Requested," "Approved," "Rejected," or "Cancelled," ensuring a full and transparent history of all transactions.
+-   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the new, more detailed logging behavior.
 
 ### What's New in Version 0.1.88 (September 21, 2025)
 -   **Enhanced Chronicle Logging:** Fixed an issue where creating new items ({link_manage_items}) and making purchases from a {store} were not being recorded. These events will now correctly appear in the {history} log.

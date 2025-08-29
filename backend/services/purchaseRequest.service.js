@@ -22,7 +22,7 @@ const create = async (assetId, userId, costGroupIndex, guildId) => {
             userId, assetId, guildId,
             requestedAt: new Date().toISOString(),
             status: asset.requiresApproval ? 'Pending' : 'Completed',
-            assetDetails: { name: asset.name, description: asset.description, cost }
+            assetDetails: { name: asset.name, description: asset.description, cost, icon: asset.icon, iconType: asset.iconType, imageUrl: asset.imageUrl }
         };
         const newRequest = requestRepo.create({ ...newPurchaseRequestData, id: `pr-${Date.now()}`});
         const savedRequest = await requestRepo.save(updateTimestamps(newRequest, true));
@@ -85,7 +85,6 @@ const approve = async (id, approverId) => {
         const userRepo = manager.getRepository(UserEntity);
         const assetRepo = manager.getRepository(GameAssetEntity);
         const settingRepo = manager.getRepository(SettingEntity);
-        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         
         const request = await requestRepo.findOneBy({ id });
         if (!request || request.status !== 'Pending') return null;
@@ -117,20 +116,33 @@ const approve = async (id, approverId) => {
             updatedUser = await userRepo.save(updateTimestamps({ ...user, ownedAssetIds: user.ownedAssetIds }));
         }
         
-        // --- Chronicle Update ---
+        // --- New Chronicle Event for Approval ---
         const approver = await userRepo.findOneBy({ id: approverId });
-        const chronicleEvent = await chronicleRepo.findOneBy({ originalId: id });
-        if (chronicleEvent) {
-            chronicleRepo.merge(chronicleEvent, {
-                date: actedAt,
-                title: `Purchased "${request.assetDetails.name}"`,
-                status: 'Completed',
-                color: '#4ade80',
-                actorId: approverId,
-                actorName: approver?.gameName || 'System',
-            });
-            await chronicleRepo.save(updateTimestamps(chronicleEvent));
-        }
+        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+        const rewardsText = request.assetDetails.cost.map(c => `-${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' ');
+
+        const eventData = {
+            id: `chron-approve-${request.id}`,
+            originalId: request.id,
+            date: actedAt,
+            type: 'Purchase',
+            title: `Purchased "${request.assetDetails.name}"`,
+            status: 'Completed',
+            iconType: request.assetDetails.iconType,
+            icon: request.assetDetails.icon,
+            imageUrl: request.assetDetails.imageUrl,
+            color: '#4ade80',
+            userId: request.userId,
+            userName: user.gameName,
+            actorId: approverId,
+            actorName: approver?.gameName || 'System',
+            guildId: request.guildId || undefined,
+            rewardsText,
+        };
+        const newEvent = chronicleRepo.create(eventData);
+        await manager.save(updateTimestamps(newEvent, true));
 
         updateEmitter.emit('update');
         return { updatedUser, updatedPurchaseRequest };
@@ -169,20 +181,32 @@ const rejectOrCancel = async (id, actorId, status) => {
             updatedUser = await userRepo.save(updateTimestamps({ ...user, ...userUpdatePayload }));
         }
         
-        // --- Chronicle Update ---
+        // --- New Chronicle Event for Rejection/Cancellation ---
         const actor = actorId ? await userRepo.findOneBy({ id: actorId }) : user;
-        const chronicleEvent = await chronicleRepo.findOneBy({ originalId: id });
-        if (chronicleEvent) {
-            chronicleRepo.merge(chronicleEvent, {
-                date: actedAt,
-                title: `${status} purchase of "${request.assetDetails.name}"`,
-                status,
-                color: status === 'Rejected' ? '#f87171' : '#a8a29e',
-                actorId: actor?.id,
-                actorName: actor?.gameName,
-            });
-            await chronicleRepo.save(updateTimestamps(chronicleEvent));
-        }
+        const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+        const rewardsText = request.assetDetails.cost.map(c => `+${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' '); // Refunding
+
+        const eventData = {
+            id: `chron-${status.toLowerCase()}-${request.id}`,
+            originalId: request.id,
+            date: actedAt,
+            type: 'Purchase',
+            title: `${status} purchase of "${request.assetDetails.name}"`,
+            status: status,
+            iconType: request.assetDetails.iconType,
+            icon: request.assetDetails.icon,
+            imageUrl: request.assetDetails.imageUrl,
+            color: status === 'Rejected' ? '#f87171' : '#a8a29e',
+            userId: request.userId,
+            userName: user.gameName,
+            actorId: actor?.id,
+            actorName: actor?.gameName,
+            guildId: request.guildId || undefined,
+            rewardsText,
+        };
+        const newEvent = chronicleRepo.create(eventData);
+        await manager.save(updateTimestamps(newEvent, true));
 
         updateEmitter.emit('update');
         return { updatedUser, updatedPurchaseRequest };

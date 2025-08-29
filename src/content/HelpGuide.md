@@ -258,6 +258,9 @@ The system logs every significant step in a process to provide a clear audit tra
 To prevent clutter, some admin actions are consolidated.
 -   **Consolidate:** If an {admin} creates or deletes multiple assets of the same type in a row (e.g., creating 5 {tasks}), it will be grouped into a single {history} entry, like `Created 5 {tasks}`. The action "chain" is broken if the {admin} performs a different type of action.
 -   **Do NOT Consolidate:** All other user-facing actions are logged individually. For example, if a user marks a {task} as a to-do, completes it, an admin rejects it, the user completes it again, and an admin approves it, you will see **5 distinct {history} entries** for that {task}.
+-   **Full Audit Trail:** Multi-step processes are now logged at each stage to provide a complete history. For example, when an item is purchased:
+    -   A `{history}` entry is created when the user first **requests** the item.
+    -   A *new, separate* `{history}` entry is created when an {admin} **approves** or **rejects** the request, or when the user **cancels** it.
 
 ### Quest Claiming
 **Purpose:** The "Claim" feature prevents multiple {users} from working on the same single-person {task}.

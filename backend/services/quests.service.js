@@ -4,7 +4,7 @@ const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity } = require('../entities');
 const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
-const { updateTimestamps, checkAndAwardTrophies, logAdminAction } = require('../utils/helpers');
+const { updateTimestamps, checkAndAwardTrophies, logGeneralAdminAction } = require('../utils/helpers');
 const { INITIAL_SETTINGS } = require('../initialData');
 
 const questRepo = dataSource.getRepository(QuestEntity);
@@ -32,7 +32,7 @@ const create = async (questDataWithUsers, actorId) => {
         }
         const saved = await questRepo.save(updateTimestamps(newQuest, true));
         
-        await logAdminAction(manager, { actorId, title: 'Created Quest', note: `Quest: "${saved.title}"`, icon: '📜', color: '#84cc16', guildId: saved.guildId });
+        await logGeneralAdminAction(manager, { actorId, title: 'Created Quest', note: `Quest: "${saved.title}"`, icon: '📜', color: '#84cc16', guildId: saved.guildId });
 
         if (actorId && assignedUserIds && assignedUserIds.length > 0) {
             const actor = await userRepo.findOneBy({ id: actorId });
@@ -134,7 +134,7 @@ const deleteMany = async (ids, actorId) => {
     await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
         await questRepo.delete(ids);
-        await logAdminAction(manager, { actorId, title: `Deleted ${ids.length} Quest(s)`, note: `IDs: ${ids.join(', ')}`, icon: '🗑️', color: '#ef4444' });
+        await logGeneralAdminAction(manager, { actorId, title: `Deleted ${ids.length} Quest(s)`, note: `IDs: ${ids.join(', ')}`, icon: '🗑️', color: '#ef4444' });
     });
     updateEmitter.emit('update');
 };
@@ -456,38 +456,44 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
 };
 
 const markAsTodo = async (questId, userId) => {
-    const quest = await questRepo.findOneBy({ id: questId });
-    if (!quest) return null;
-    
-    if (!quest.todoUserIds) quest.todoUserIds = [];
-    if (!quest.todoUserIds.includes(userId)) {
-        quest.todoUserIds.push(userId);
-        await questRepo.save(updateTimestamps(quest));
-        updateEmitter.emit('update');
-    }
-    
-    const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
-    if (!updatedQuestWithRelations) return null;
-    
-    const { assignedUsers, ...rest } = updatedQuestWithRelations;
-    return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
+    return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const quest = await questRepo.findOneBy({ id: questId });
+        if (!quest) return null;
+        
+        if (!quest.todoUserIds) quest.todoUserIds = [];
+        if (!quest.todoUserIds.includes(userId)) {
+            quest.todoUserIds.push(userId);
+            await questRepo.save(updateTimestamps(quest));
+            updateEmitter.emit('update');
+        }
+        
+        const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
+        if (!updatedQuestWithRelations) return null;
+        
+        const { assignedUsers, ...rest } = updatedQuestWithRelations;
+        return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
+    });
 };
 
 const unmarkAsTodo = async (questId, userId) => {
-    const quest = await questRepo.findOneBy({ id: questId });
-    if (!quest) return null;
+    return await dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const quest = await questRepo.findOneBy({ id: questId });
+        if (!quest) return null;
 
-    if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
-        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
-        await questRepo.save(updateTimestamps(quest));
-        updateEmitter.emit('update');
-    }
+        if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
+            quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
+            await questRepo.save(updateTimestamps(quest));
+            updateEmitter.emit('update');
+        }
 
-    const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
-    if (!updatedQuestWithRelations) return null;
+        const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
+        if (!updatedQuestWithRelations) return null;
 
-    const { assignedUsers, ...rest } = updatedQuestWithRelations;
-    return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
+        const { assignedUsers, ...rest } = updatedQuestWithRelations;
+        return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
+    });
 };
 
 const completeCheckpoint = async (questId, userId) => {

@@ -157,15 +157,17 @@ const SharedCalendarPage: React.FC = () => {
     const QuestCardComponent: React.FC<{ quest: Quest; user: User }> = ({ quest, user }) => {
         const now = new Date();
         
-        const { borderClass } = useMemo(() => {
+        const { borderClass, timeStatusText, timeStatusColor, absoluteDueDateString } = useMemo(() => {
             let deadline: Date | null = null;
             let incompleteDeadline: Date | null = null;
+            let absoluteString: string | null = null;
 
             if (quest.type === QuestType.Duty) {
                 if (quest.startTime) {
                     const [h, m] = quest.startTime.split(':').map(Number);
                     deadline = new Date(now);
                     deadline.setHours(h, m, 0, 0);
+                    absoluteString = `Due daily at ${new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
                 }
                 if (quest.endTime) {
                     const [h, m] = quest.endTime.split(':').map(Number);
@@ -175,24 +177,49 @@ const SharedCalendarPage: React.FC = () => {
             } else if (quest.type === QuestType.Venture || quest.type === QuestType.Journey) {
                 if (quest.endDateTime) {
                     deadline = new Date(quest.endDateTime);
+                    absoluteString = `Due: ${deadline.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
                 }
             }
 
             const isIncomplete = incompleteDeadline && now > incompleteDeadline;
             if (isIncomplete) {
-                return { borderClass: 'border-black' };
+                return { borderClass: 'border-black', timeStatusText: 'Incomplete', timeStatusColor: 'text-stone-400', absoluteDueDateString: null };
             }
 
             const isPastDue = deadline && now > deadline;
             const timeDiff = deadline ? deadline.getTime() - now.getTime() : Infinity;
 
-            if (isPastDue) return { borderClass: 'border-red-600 animate-pulse' };
-            if (timeDiff < 60 * 60 * 1000) return { borderClass: 'border-orange-500 animate-pulse' };
-            if (timeDiff < 2 * 60 * 60 * 1000) return { borderClass: 'border-yellow-500' };
-            if (deadline) return { borderClass: 'border-green-600' };
-            
-            return { borderClass: 'border-stone-700' };
+            let bClass = 'border-stone-700';
+            let tStatusText = 'No due date';
+            let tStatusColor = 'text-stone-400';
+            let finalAbsoluteString: string | null = absoluteString;
 
+            if (deadline) {
+                if (isPastDue) {
+                    bClass = 'border-red-600 animate-slow-pulse';
+                    tStatusColor = 'text-red-400';
+                    if (incompleteDeadline) {
+                        tStatusText = `Incomplete in: ${formatTimeRemaining(incompleteDeadline, now)}`;
+                        finalAbsoluteString = `Incomplete at ${new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
+                    } else {
+                        tStatusText = 'Past Due';
+                    }
+                } else { // Not past due
+                    tStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
+                    if (timeDiff < 60 * 60 * 1000) { // Under 1 hour
+                        bClass = 'border-orange-500 animate-slow-pulse';
+                        tStatusColor = 'text-orange-400';
+                    } else if (timeDiff < 2 * 60 * 60 * 1000) { // Under 2 hours
+                        bClass = 'border-yellow-500';
+                        tStatusColor = 'text-yellow-400';
+                    } else {
+                        bClass = 'border-green-600';
+                        tStatusColor = 'text-green-400';
+                    }
+                }
+            }
+            
+            return { borderClass: bClass, timeStatusText: tStatusText, timeStatusColor: tStatusColor, absoluteDueDateString: finalAbsoluteString };
         }, [quest, now]);
 
         let baseCardClass = 'bg-stone-800/60';
@@ -212,6 +239,10 @@ const SharedCalendarPage: React.FC = () => {
             >
                 <div className="flex-grow">
                     <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
+                    <div className="text-xs mt-1">
+                        <p className={timeStatusColor}>{timeStatusText}</p>
+                        {absoluteDueDateString && <p className="text-stone-400">{absoluteDueDateString}</p>}
+                    </div>
                 </div>
                 {quest.rewards.length > 0 && (
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold mt-2 pt-2 border-t border-stone-700/60">

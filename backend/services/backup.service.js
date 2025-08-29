@@ -139,6 +139,7 @@ const runScheduled = async () => {
     const settings = settingsRow?.settings;
     if (!settings?.automatedBackups?.enabled) return;
 
+    // --- Per-schedule backup and cleanup ---
     for (const schedule of settings.automatedBackups.schedules) {
         const now = Date.now();
         const frequencyMs = schedule.frequency * (
@@ -163,6 +164,26 @@ const runScheduled = async () => {
                 await removeMany(toDelete.map(b => b.filename));
             }
         }
+    }
+
+    // --- Global Orphaned Backup Cleanup ---
+    console.log('[Backup Service] Starting orphaned backup cleanup...');
+    const currentScheduleIds = new Set(settings.automatedBackups.schedules.map(s => s.id));
+    const allBackups = await list();
+    const allAutoBackups = allBackups.filter(b => b.parsed?.type && b.parsed.type.startsWith('auto-'));
+    
+    const orphansToDelete = allAutoBackups
+        .filter(backup => {
+            const scheduleId = backup.parsed.type.substring(5); // remove 'auto-'
+            return !currentScheduleIds.has(scheduleId);
+        })
+        .map(b => b.filename);
+
+    if (orphansToDelete.length > 0) {
+        console.log(`[Backup Service] Found ${orphansToDelete.length} orphaned backups to delete.`);
+        await removeMany(orphansToDelete);
+    } else {
+        console.log('[Backup Service] No orphaned backups found.');
     }
 };
 

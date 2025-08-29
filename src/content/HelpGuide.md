@@ -44,7 +44,7 @@ Your main hub. This is the first page you see after logging in. It gives you a q
 - **Inventory Card:** Displays your current balances for all types of {currency} and {xp}.
 - **Latest {award} Card:** Showcases the most recent {award} you've earned.
 - **Leaderboard:** A friendly competition showing the top XP earners for the current mode (Personal or {group}).
-- **Quick Actions:** A list of **all** your most urgent and available {tasks} for easy access. This list is scrollable if you have many active {tasks}.
+- **Quick Actions:** A list of **all** your most urgent and available {tasks} for easy access. The {task} cards here use the same visual system (colors, borders, animations) as the main {link_quests} page for consistency. This list is scrollable if you have many active {tasks}.
 - **Recent Activity:** A summary of recent events from the last **7 days**, showing up to **50 items** (or all of today's events, if there are more than 50).
 - **Weekly Progress:** A chart showing how much XP you've earned over the last seven days.
 
@@ -184,6 +184,12 @@ The border of a {task} card indicates its urgency and status.
 -   `Orange Border (Pulsing):` The {task} is due in **less than 1 hour**. This animation draws attention to its urgency.
 -   `Red Border (Pulsing):` The {task} is **past its due time** but can still be completed before it is marked incomplete.
 -   `Black Border:` The {task} is now **incomplete** for the day and cannot be completed (applies mainly to {recurringTasks} with an `endTime`).
+
+#### Time Display
+-   **Time Remaining:** For {tasks} with a deadline, the card will show the time remaining (e.g., "Due in: 2d 3h", "Due in: 45m").
+-   **Absolute Date:** The full due date and time is also shown for clarity (e.g., "Due: Sep 20, 2025, 5:00 PM").
+-   **Past Due:** If a {task} is past its due time but still completable, the text will turn red and show "Past Due" or, if applicable, the time remaining until it is marked "Incomplete" (e.g., "Incomplete in: 30m").
+-   **No Deadline:** {tasks} without a specific deadline will show "No due date".
 
 ### Shared / Kiosk Mode
 **Purpose:** This mode is for shared family devices. It provides a fast user-switching interface and can automatically log users out after a period of inactivity.

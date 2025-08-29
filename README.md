@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.83
+**Version:** 0.1.86
 
 ---
 
@@ -12,6 +12,19 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.86 (September 19, 2025)
+-   **Enhanced Time-Remaining Display:** All quest cards across the app ({link_quests} page, Dashboard, and Kiosk Mode) now show detailed time-remaining information. This includes days, hours, and minutes until a {task} is due.
+-   **Smarter Deadline Logic:** The quest card display now intelligently switches to show the time remaining until a {task} is marked "Incomplete" if it's past its initial due time.
+-   **Clearer Due Dates:** Alongside the time remaining, cards also display the absolute due date and time for better planning.
+-   **Updated Help Guide:** The in-app {link_help_guide} has been updated to fully document the new time-remaining display system.
+
+### What's New in Version 0.1.85 (September 18, 2025)
+-   **Self-Healing Backup System:** Fixed a critical issue where old automated backups would accumulate indefinitely if their parent schedule was edited or deleted. The system now automatically finds and deletes these "orphaned" backup files, ensuring that storage is managed correctly and preventing uncontrolled disk usage.
+
+### What's New in Version 0.1.84 (September 17, 2025)
+-   **Consistent Quest Card Styling:** The "Quick Actions" widget on the Dashboard now uses the same detailed styling as the main Quests page, including dynamic, color-coded borders to indicate due dates and status for a more consistent user experience.
+-   **Slower "Due Soon" Animation:** The pulsing animation for quest cards that are due soon has been slowed down to be less jarring.
 
 ### What's New in Version 0.1.83 (September 16, 2025)
 -   **Visible Quest Rewards:** The "Manage Quests" page now includes a "Rewards" column in the table view and displays rewards directly on the quest cards in mobile view, making it much easier for administrators to see the rewards for each quest at a glance.

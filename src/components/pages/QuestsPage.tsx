@@ -41,15 +41,17 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         return questCompletions.filter(c => c.questId === quest.id).length;
     }, [questCompletions, quest.id]);
     
-    const { borderClass, timeStatusText, timeStatusColor, isDimmed } = useMemo(() => {
+    const { borderClass, timeStatusText, timeStatusColor, isDimmed, absoluteDueDateString } = useMemo(() => {
         let deadline: Date | null = null;
         let incompleteDeadline: Date | null = null;
+        let absoluteString: string | null = null;
 
         if (quest.type === QuestType.Duty) {
             if (quest.startTime) {
                 const [h, m] = quest.startTime.split(':').map(Number);
                 deadline = new Date(now);
                 deadline.setHours(h, m, 0, 0);
+                absoluteString = `Due daily at ${new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
             }
             if (quest.endTime) {
                 const [h, m] = quest.endTime.split(':').map(Number);
@@ -59,38 +61,51 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         } else if (quest.type === QuestType.Venture || quest.type === QuestType.Journey) {
             if (quest.endDateTime) {
                 deadline = new Date(quest.endDateTime);
+                absoluteString = `Due: ${deadline.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
             }
         }
 
         const isIncomplete = incompleteDeadline && now > incompleteDeadline;
         if (isIncomplete) {
-            return { borderClass: 'border-black', timeStatusText: 'Incomplete', timeStatusColor: 'text-stone-400', isDimmed: true };
+            return {
+                borderClass: 'border-black',
+                timeStatusText: 'Incomplete',
+                timeStatusColor: 'text-stone-400',
+                isDimmed: true,
+                absoluteDueDateString: null
+            };
         }
 
         const isPastDue = deadline && now > deadline;
         const timeDiff = deadline ? deadline.getTime() - now.getTime() : Infinity;
 
         let bClass = 'border-stone-700';
-        let tStatusText = '';
-        let tStatusColor = 'text-green-400';
+        let tStatusText = 'No due date';
+        let tStatusColor = 'text-stone-400';
+        let finalAbsoluteString: string | null = absoluteString;
 
         if (deadline) {
             if (isPastDue) {
-                bClass = 'border-red-600 animate-pulse';
-                tStatusText = 'Past Due';
+                bClass = 'border-red-600 animate-slow-pulse';
                 tStatusColor = 'text-red-400';
-            } else if (timeDiff < 60 * 60 * 1000) { // Under 1 hour
-                bClass = 'border-orange-500 animate-pulse';
+                if (incompleteDeadline) {
+                    tStatusText = `Incomplete in: ${formatTimeRemaining(incompleteDeadline, now)}`;
+                    finalAbsoluteString = `Incomplete at ${new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
+                } else {
+                    tStatusText = 'Past Due';
+                }
+            } else { // Not past due
                 tStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
-                tStatusColor = 'text-orange-400';
-            } else if (timeDiff < 2 * 60 * 60 * 1000) { // Under 2 hours
-                bClass = 'border-yellow-500';
-                tStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
-                tStatusColor = 'text-yellow-400';
-            } else {
-                bClass = 'border-green-600';
-                tStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
-                tStatusColor = 'text-green-400';
+                if (timeDiff < 60 * 60 * 1000) { // Under 1 hour
+                    bClass = 'border-orange-500 animate-slow-pulse';
+                    tStatusColor = 'text-orange-400';
+                } else if (timeDiff < 2 * 60 * 60 * 1000) { // Under 2 hours
+                    bClass = 'border-yellow-500';
+                    tStatusColor = 'text-yellow-400';
+                } else {
+                    bClass = 'border-green-600';
+                    tStatusColor = 'text-green-400';
+                }
             }
         }
         
@@ -102,21 +117,17 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
         const isCompletedToday = completionsForUserToday.length > 0;
         const finalDimState = isCompletedToday || !isAvailable;
-
-        return { borderClass: bClass, timeStatusText: tStatusText, timeStatusColor: tStatusColor, isDimmed: finalDimState };
+        
+        return {
+            borderClass: bClass,
+            timeStatusText: tStatusText,
+            timeStatusColor: tStatusColor,
+            isDimmed: finalDimState,
+            absoluteDueDateString: finalAbsoluteString
+        };
 
     }, [quest, now, questCompletions, currentUser.id, isAvailable]);
     
-    const absoluteDueDateString = useMemo(() => {
-        if (quest.type === QuestType.Venture && quest.endDateTime) {
-            return `Due: ${new Date(quest.endDateTime).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
-        }
-        if (quest.type === QuestType.Duty && quest.startTime) {
-            return `Due daily at ${new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
-        }
-        return null;
-    }, [quest]);
-
     let baseCardClass = 'bg-stone-800/60';
     if (quest.type === QuestType.Duty) baseCardClass = 'bg-sky-900/30';
     if (quest.type === QuestType.Venture) baseCardClass = 'bg-amber-900/30';
@@ -209,9 +220,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                     <span className="font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full text-xs" title={`This quest exists in the ${scopeName} scope.`}>{scopeName}</span>
                 </div>
                 <div className="text-right">
-                    {timeStatusText && (
-                        <p className={`text-xs font-semibold ${timeStatusColor}`}>{timeStatusText}</p>
-                    )}
+                    <p className={`text-xs font-semibold ${timeStatusColor}`}>{timeStatusText}</p>
                     {absoluteDueDateString && (
                         <p className="text-xs text-stone-400">{absoluteDueDateString}</p>
                     )}

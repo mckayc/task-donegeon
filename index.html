@@ -158,6 +158,15 @@
         transition: margin-left 0.3s ease-in-out;
       }
 
+      @keyframes slow-pulse {
+        50% {
+          opacity: .6;
+        }
+      }
+      .animate-slow-pulse {
+        animation: slow-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
     </style>
   <script type="importmap">
 {

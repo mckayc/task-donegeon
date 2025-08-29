@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.89
+**Version:** 0.1.90
 
 ---
 
@@ -12,6 +12,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.90 (September 23, 2025)
+-   **"My Pending Items" Dashboard Widget:** A new card has been added to the {link_dashboard} that provides a consolidated, at-a-glance view of all your submitted {tasks} and purchases that are awaiting administrator approval.
+-   **Pending Items Header Notification:** A new bell icon (🔔) in the header now displays a badge with a count of your pending items. Clicking it opens a dropdown for a quick overview.
+-   **Clearer Transaction UI in {history}:** To prevent confusion, the {history} log now displays the cost of a purchase only on the initial "Pending" event. Subsequent "Completed" or "Approved" events no longer repeat the cost, and "Rejected" or "Cancelled" events explicitly show a refund.
+-   **Richer Purchase Logging:** Item purchases in the {history} log now display the specific item's image instead of a generic icon. If no item image is available, it defaults to the icon of the {store} where it was purchased.
 
 ### What's New in Version 0.1.89 (September 22, 2025)
 -   **Full Audit Trail for {history}:** The {history} system has been updated to provide a complete audit trail for multi-step actions. Instead of updating a single log entry, the system now creates a new, separate entry for each step, such as "Requested," "Approved," "Rejected," or "Cancelled," ensuring a full and transparent history of all transactions.

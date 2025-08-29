@@ -1,15 +1,22 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Page, AppMode } from '../../types';
+import { Page, AppMode, Quest } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
-import { ChevronDownIcon, MenuIcon, DeviceDesktopIcon, DevicePhoneMobileIcon } from '../user-interface/Icons';
+import { ChevronDownIcon, MenuIcon, DeviceDesktopIcon, DevicePhoneMobileIcon, BellIcon } from '../user-interface/Icons';
 import RewardDisplay from '../user-interface/RewardDisplay';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useSyncStatus } from '../../context/DataProvider';
 import Button from '../user-interface/Button';
+import QuestDetailDialog from '../quests/QuestDetailDialog';
+import { useQuestsState } from '../../context/QuestsContext';
+
+interface PendingApprovals {
+    quests: { id: string; title: string; submittedAt: string; questId: string; }[];
+    purchases: { id: string; title: string; submittedAt: string; }[];
+}
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -63,9 +70,42 @@ const Header: React.FC = () => {
   const { setAppMode, setActivePage, toggleSidebar } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAuthDispatch();
+  const { quests } = useQuestsState();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [guildDropdownOpen, setGuildDropdownOpen] = useState(false);
+  const [pendingDropdownOpen, setPendingDropdownOpen] = useState(false);
+  const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
+  
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchPendingApprovals = async () => {
+        try {
+            const response = await fetch(`/api/users/${currentUser.id}/pending-items`);
+            if (!response.ok) throw new Error('Failed to fetch pending items');
+            const data = await response.json();
+            setPendingApprovals(data);
+        } catch (error) {
+            console.error("Failed to fetch pending approvals:", error);
+            setPendingApprovals({ quests: [], purchases: [] });
+        }
+    };
+    fetchPendingApprovals();
+  }, [currentUser, quests]); // Refetch when quests change to ensure data is fresh after a completion
+
+  const totalPending = useMemo(() => {
+      return (pendingApprovals.quests?.length || 0) + (pendingApprovals.purchases?.length || 0);
+  }, [pendingApprovals]);
+
+  const handleViewQuest = (questId: string) => {
+    const quest = quests.find(q => q.id === questId);
+    if (quest) {
+        setViewingQuest(quest);
+        setPendingDropdownOpen(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('lastUserId');
@@ -89,8 +129,6 @@ const Header: React.FC = () => {
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
     setGuildDropdownOpen(false);
-    // Always navigate to the dashboard when switching modes for a consistent experience.
-    // The Guild page is accessible from the sidebar.
     setActivePage('Dashboard');
   };
 
@@ -109,6 +147,7 @@ const Header: React.FC = () => {
   if (!currentUser) return null;
 
   return (
+    <>
     <header className="h-20 bg-stone-900 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
       {/* Left Group */}
       <div className="flex items-center gap-2 md:gap-4">
@@ -162,6 +201,51 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-2 md:gap-4">
         <ViewModeToggle />
         <FullscreenToggle />
+        <div className="relative">
+            <button
+                onClick={() => setPendingDropdownOpen(p => !p)}
+                title="Pending Items"
+                className="p-2 rounded-full text-stone-300 hover:bg-stone-700/50 hover:text-white transition-colors relative"
+                aria-label="View pending items"
+            >
+                <BellIcon className="w-6 h-6" />
+                {totalPending > 0 && (
+                    <span className="absolute top-1 right-1 flex items-center justify-center h-4 w-4 text-xs font-bold text-white bg-red-600 rounded-full">
+                        {totalPending > 9 ? '9+' : totalPending}
+                    </span>
+                )}
+            </button>
+            {pendingDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
+                    <div className="px-4 py-3 border-b border-stone-700">
+                        <p className="font-semibold text-stone-100">My Pending Items ({totalPending})</p>
+                    </div>
+                    <div className="py-1 max-h-96 overflow-y-auto">
+                        {pendingApprovals.quests.length > 0 && (
+                            <>
+                                <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Quests</div>
+                                {pendingApprovals.quests.map(q => (
+                                    <a href="#" key={q.id} onClick={(e) => { e.preventDefault(); handleViewQuest(q.questId); }} className="block px-4 py-2 text-stone-300 hover:bg-stone-700 text-sm">
+                                        {q.title}
+                                    </a>
+                                ))}
+                            </>
+                        )}
+                        {pendingApprovals.purchases.length > 0 && (
+                            <>
+                                <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase border-t border-stone-700 mt-1">Purchases</div>
+                                {pendingApprovals.purchases.map(p => (
+                                    <span key={p.id} className="block px-4 py-2 text-stone-400 text-sm">{p.title}</span>
+                                ))}
+                             </>
+                        )}
+                        {totalPending === 0 && (
+                            <p className="px-4 py-3 text-sm text-stone-400">You have no items pending approval.</p>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
         {!isMobileView && <Clock />}
         {settings.sharedMode.enabled && (
             <Button
@@ -211,6 +295,14 @@ const Header: React.FC = () => {
         </div>
       </div>
     </header>
+    {viewingQuest && (
+        <QuestDetailDialog
+            quest={viewingQuest}
+            onClose={() => setViewingQuest(null)}
+            dialogTitle={`Details for "${viewingQuest.title}"`}
+        />
+    )}
+    </>
   );
 };
 export default Header;

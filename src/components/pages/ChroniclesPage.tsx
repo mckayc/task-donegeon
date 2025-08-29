@@ -173,6 +173,46 @@ const ChroniclesPage: React.FC = () => {
 
     const isAdminView = currentUser.role !== Role.Explorer && viewMode === 'all';
 
+    const renderStatusAndRewards = (activity: ChronicleEvent) => {
+        const isPurchase = activity.type === ChronicleEventType.Purchase;
+        const isQuestCompletion = activity.type === ChronicleEventType.QuestCompletion;
+
+        // For rejected or cancelled purchases, show a refund.
+        if (isPurchase && (activity.status === 'Rejected' || activity.status === 'Cancelled')) {
+            const refundText = activity.rewardsText?.replace('-', '+');
+            return (
+                <div className="font-semibold flex items-center justify-end gap-2">
+                    {refundText && <span className="text-green-400">{refundText}</span>}
+                    <span className={statusColor(activity.status)}>Refunded</span>
+                </div>
+            );
+        }
+
+        // For completed/approved multi-step actions, hide the rewards text to avoid confusion.
+        if ((isPurchase || isQuestCompletion) && (activity.status === 'Completed' || activity.status === 'Approved')) {
+             return (
+                <div className="font-semibold flex items-center justify-end gap-2">
+                    <span className={statusColor(activity.status)}>
+                        {isPurchase ? 'Purchase Complete' : 'Quest Approved'}
+                    </span>
+                </div>
+            );
+        }
+
+        // Default rendering for all other cases.
+        return (
+            <div className="font-semibold flex items-center justify-end gap-2">
+                {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
+                <span className={statusColor(activity.status)}>{activity.status}</span>
+                {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
+                    <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>
+                        Cancel
+                    </Button>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
@@ -243,15 +283,7 @@ const ChroniclesPage: React.FC = () => {
                                     
                                     {/* Column 3: Rewards, Status, Actor, & Date */}
                                     <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
-                                        <div className="font-semibold flex items-center justify-end gap-2">
-                                            {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
-                                            <span className={statusColor(activity.status)}>{activity.status}</span>
-                                            {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
-                                                <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>
-                                                    Cancel
-                                                </Button>
-                                            )}
-                                        </div>
+                                        {renderStatusAndRewards(activity)}
                                         <div className="text-xs text-stone-400 mt-1 space-y-0.5">
                                             {activity.actorName && (isAdminView || (activity.actorName !== currentUser.gameName && activity.actorName !== activity.userName)) && (
                                                 <p>by {activity.actorName}</p>

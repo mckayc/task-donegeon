@@ -1,8 +1,12 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { GameAsset } from '../../types';
+import { GameAsset } from '../../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
@@ -10,17 +14,16 @@ import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 import Input from '../user-interface/Input';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
-import { useDebounce } from '../../hooks/useDebounce';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useDebounce } from '../../../hooks/useDebounce';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import UploadWithCategoryDialog from '../admin/UploadWithCategoryDialog';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import ItemTable from '../items/ItemTable';
-import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
-import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
-    // Fix: Destructure rewardTypes as it is required by the ItemTable component.
     const { gameAssets: allGameAssets, rewardTypes } = useEconomyState();
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();
@@ -198,7 +201,8 @@ const ManageItemsPage: React.FC = () => {
             <Card title={`All Created ${settings.terminology.link_manage_items}`}>
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
-                        {categories.map(category => (
+                        {/* Fix: Explicitly type `category` as string to resolve TS errors. */}
+                        {categories.map((category: string) => (
                             <button key={category} onClick={() => setActiveTab(category)}
                                 data-log-id={`manage-items-tab-${category.toLowerCase()}`}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -243,7 +247,6 @@ const ManageItemsPage: React.FC = () => {
                     searchTerm={debouncedSearchTerm}
                     terminology={settings.terminology}
                     onCreate={handleCreate}
-                    // Fix: Pass the required rewardTypes prop
                     rewardTypes={rewardTypes}
                 />
             </Card>
@@ -253,7 +256,8 @@ const ManageItemsPage: React.FC = () => {
                     file={fileToCategorize}
                     onClose={() => setFileToCategorize(null)}
                     onUpload={handleUploadWithCategory}
-                    existingCategories={categories.filter(c => c !== 'All')}
+                    // Fix: Explicitly type `c` as string to resolve TS error.
+                    existingCategories={categories.filter((c: string) => c !== 'All')}
                 />
             )}
             

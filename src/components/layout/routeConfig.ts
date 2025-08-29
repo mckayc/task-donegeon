@@ -7,7 +7,8 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Avatar': lazy(() => import('../pages/AvatarPage')),
     'Collection': lazy(() => import('../pages/CollectionPage')),
     'Themes': lazy(() => import('../pages/ThemesPage')),
-    'Quests': lazy(() => import('../pages/QuestsPage')),
+    // Fix: Wrapped import in .then() for consistent module resolution, preventing errors from potentially malformed files.
+    'Quests': lazy(() => import('../pages/QuestsPage').then(module => ({ default: module.default }))),
     'Marketplace': lazy(() => import('../pages/MarketplacePage')),
     'Calendar': lazy(() => import('../pages/CalendarPage')),
     'Progress': lazy(() => import('../pages/ProgressPage').then(module => ({ default: module.default }))),

@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -20,7 +24,7 @@ import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyCon
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
-    // Fix: Destructure rewardTypes as it is required by the ItemTable component.
+    // Fix: Destructure `rewardTypes` as it is required by the ItemTable component.
     const { gameAssets: allGameAssets, rewardTypes } = useEconomyState();
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();
@@ -243,7 +247,6 @@ const ManageItemsPage: React.FC = () => {
                     searchTerm={debouncedSearchTerm}
                     terminology={settings.terminology}
                     onCreate={handleCreate}
-                    // Fix: Pass the required rewardTypes prop
                     rewardTypes={rewardTypes}
                 />
             </Card>

@@ -36,8 +36,8 @@ const bulkUpdateMarketsStatus = async (req, res) => {
 // --- Actions ---
 
 const purchaseMarketItem = async (req, res) => {
-    const { assetId, userId, costGroupIndex, guildId } = req.body;
-    const result = await purchaseRequestService.create(assetId, userId, costGroupIndex, guildId);
+    const { assetId, userId, costGroupIndex, guildId, marketId } = req.body;
+    const result = await purchaseRequestService.create(assetId, userId, costGroupIndex, guildId, marketId);
     if (!result) return res.status(400).json({ error: 'Purchase request failed.' });
     res.json(result);
 };

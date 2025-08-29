@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
 import helpContent from '../../content/HelpGuide.md?raw';
-import CollapsibleSection from '../user-interface/CollapsibleSection';
+import { version } from '../../../package.json';
+import Button from '../user-interface/Button';
 
 // A simple function to replace terminology placeholders like {appName}
 const applyTerminology = (text: string, terminology: any): string => {
@@ -10,9 +11,6 @@ const applyTerminology = (text: string, terminology: any): string => {
         return terminology[key] || placeholder;
     });
 };
-
-// A function to create a URL-friendly slug from a string.
-const createSlug = (text: string) => text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/[\s-]+/g, '-').replace(/^-+|-+$/g, '');
 
 // A simple inline markdown parser to convert markdown text to JSX
 const parseMarkdown = (text: string) => {
@@ -69,97 +67,33 @@ const parseMarkdown = (text: string) => {
   return elements;
 };
 
-interface Section {
-    title: string;
-    slug: string;
-    content: React.ReactNode[];
-}
-
-interface TocEntry {
-    title: string;
-    slug: string;
-}
-
 const HelpPage: React.FC = () => {
     const { settings } = useSystemState();
-    const [sections, setSections] = useState<Section[]>([]);
-    const [toc, setToc] = useState<TocEntry[]>([]);
-    const [intro, setIntro] = useState<React.ReactNode[]>([]);
 
-    useEffect(() => {
-        const processedContent = applyTerminology(helpContent, settings.terminology);
-        const rawSections = processedContent.split('\n## ');
-
-        const introContent = parseMarkdown(rawSections.shift() || '');
-        setIntro(introContent);
-
-        const newSections: Section[] = [];
-        const newToc: TocEntry[] = [];
-
-        rawSections.forEach((sectionText, index) => {
-            const lines = sectionText.split('\n');
-            const title = lines.shift()?.trim() || `Section ${index + 1}`;
-            const content = lines.join('\n');
-            const slug = createSlug(title);
-
-            if (title.toLowerCase() !== 'table of contents') {
-                newToc.push({ title, slug });
-            }
-
-            newSections.push({
-                title,
-                slug,
-                content: parseMarkdown(content),
-            });
-        });
-
-        setSections(newSections);
-        setToc(newToc);
-    }, [helpContent, settings.terminology]);
-
-    const handleTocClick = (slug: string) => {
-        document.getElementById(slug)?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    const TocComponent = (
-        <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-            <ul className="list-none p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                {toc.map(item => (
-                    <li key={item.slug}>
-                        <a 
-                            href={`#${item.slug}`} 
-                            onClick={(e) => { e.preventDefault(); handleTocClick(item.slug); }}
-                            className="text-accent hover:underline text-base"
-                        >
-                            {item.title}
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-
+    const processedContent = useMemo(() => {
+        const withTerminology = applyTerminology(helpContent, settings.terminology);
+        return parseMarkdown(withTerminology);
+    }, [settings.terminology]);
+    
     return (
-        <div className="max-w-4xl mx-auto">
-            <Card className="p-0 overflow-hidden">
-                <div className="px-6 py-4">
-                    <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-                        {intro}
-                    </div>
+        <div className="max-w-4xl mx-auto pb-12">
+            <Card className="text-center">
+                <h1 className="text-5xl font-medieval text-accent mb-2">{settings.terminology.appName}</h1>
+                <p className="text-stone-300 text-lg">A gamified task and chore tracker for families and groups.</p>
+                <p className="mt-4 text-stone-400">Version: {version}</p>
+                 <div className="mt-6">
+                    <a href="https://github.com/google/codewithme-task-donegeon" target="_blank" rel="noopener noreferrer">
+                        <Button variant="secondary">
+                            View Project on GitHub
+                        </Button>
+                    </a>
                 </div>
+            </Card>
 
-                {sections.map((section, index) => (
-                    <CollapsibleSection
-                        key={section.slug}
-                        id={section.slug}
-                        title={section.title}
-                        defaultOpen={index < 2} // Open "TOC" and "The Basics" by default
-                    >
-                        <div className="px-6 prose prose-invert max-w-none text-stone-300 space-y-4">
-                            {section.title.toLowerCase() === 'table of contents' ? TocComponent : section.content}
-                        </div>
-                    </CollapsibleSection>
-                ))}
+            <Card className="mt-8">
+                <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+                    {processedContent}
+                </div>
             </Card>
         </div>
     );

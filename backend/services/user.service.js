@@ -1,10 +1,12 @@
+
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
 const trophyRepository = require('../repositories/trophy.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
-const { logAdminAction, updateTimestamps } = require('../utils/helpers');
+const { logGeneralAdminAction, updateTimestamps } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
+const { QuestCompletionEntity, PurchaseRequestEntity } = require('../entities');
 
 const getAll = (options) => userRepository.findAll(options);
 
@@ -31,7 +33,7 @@ const create = async (userData, actorId) => {
         }
 
         if (actorId) {
-            await logAdminAction(manager, { actorId, title: 'Created User', note: `User: ${savedUser.gameName}`, icon: '👤', color: '#84cc16' });
+            await logGeneralAdminAction(manager, { actorId, title: 'Created User', note: `User: ${savedUser.gameName}`, icon: '👤', color: '#84cc16' });
         }
     });
 
@@ -91,7 +93,7 @@ const deleteMany = async (ids, actorId) => {
     if (ids.length > 0) {
         await dataSource.transaction(async manager => {
             await manager.getRepository('User').delete(ids);
-            await logAdminAction(manager, { actorId, title: `Deleted ${ids.length} User(s)`, note: `IDs: ${ids.join(', ')}`, icon: '🗑️', color: '#ef4444' });
+            await logGeneralAdminAction(manager, { actorId, title: `Deleted ${ids.length} User(s)`, note: `IDs: ${ids.join(', ')}`, icon: '🗑️', color: '#ef4444' });
         });
         updateEmitter.emit('update');
     }
@@ -125,6 +127,32 @@ const adjust = async (adjustmentData) => {
     return { updatedUser, newAdjustment: savedAdjustment, newUserTrophy };
 };
 
+const getPendingItems = async (userId) => {
+    const manager = dataSource.manager;
+    const pendingCompletions = await manager.find(QuestCompletionEntity, {
+        where: { user: { id: userId }, status: 'Pending' },
+        relations: ['quest'],
+        order: { completedAt: 'DESC' }
+    });
+    const pendingPurchases = await manager.find(PurchaseRequestEntity, {
+        where: { userId: userId, status: 'Pending' },
+        order: { requestedAt: 'DESC' }
+    });
+    return {
+        quests: pendingCompletions.map(c => ({
+            id: c.id,
+            title: c.quest.title,
+            submittedAt: c.completedAt,
+            questId: c.quest.id,
+        })),
+        purchases: pendingPurchases.map(p => ({
+            id: p.id,
+            title: p.assetDetails.name,
+            submittedAt: p.requestedAt,
+        })),
+    };
+};
+
 
 module.exports = {
     getAll,
@@ -133,4 +161,5 @@ module.exports = {
     update,
     deleteMany,
     adjust,
+    getPendingItems,
 };

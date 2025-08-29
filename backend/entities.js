@@ -291,6 +291,7 @@ const PurchaseRequestEntity = new EntitySchema({
         id: { primary: true, type: "varchar" },
         userId: { type: "varchar" },
         assetId: { type: "varchar" },
+        marketId: { type: "varchar", nullable: true },
         requestedAt: { type: "varchar" },
         actedAt: { type: "varchar", nullable: true },
         actedById: { type: "varchar", nullable: true },

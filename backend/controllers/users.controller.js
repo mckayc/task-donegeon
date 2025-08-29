@@ -1,3 +1,4 @@
+
 const userService = require('../services/user.service');
 
 const getAllUsers = async (req, res) => {
@@ -40,6 +41,12 @@ const applyManualAdjustment = async (req, res) => {
     res.status(201).json(result);
 };
 
+const getPendingItemsForUser = async (req, res) => {
+    const { userId } = req.params;
+    const items = await userService.getPendingItems(userId);
+    res.json(items);
+};
+
 module.exports = {
     getAllUsers,
     createUser,
@@ -47,4 +54,5 @@ module.exports = {
     updateUser,
     deleteUsers,
     applyManualAdjustment,
+    getPendingItemsForUser,
 };

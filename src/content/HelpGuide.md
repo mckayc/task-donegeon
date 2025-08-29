@@ -44,6 +44,7 @@ Your main hub. This is the first page you see after logging in. It gives you a q
 - **Inventory Card:** Displays your current balances for all types of {currency} and {xp}.
 - **Latest {award} Card:** Showcases the most recent {award} you've earned.
 - **Leaderboard:** A friendly competition showing the top XP earners for the current mode (Personal or {group}).
+- **My Pending Items:** When you have {tasks} or purchases awaiting approval from an {admin}, a new card will appear here showing a list of everything you're waiting on. You can also see a summary of pending items by clicking the new bell icon (🔔) in the header.
 - **Quick Actions:** A list of **all** your most urgent and available {tasks} for easy access. The {task} cards here use the same visual system (colors, borders, animations) as the main {link_quests} page for consistency. This list is scrollable if you have many active {tasks}.
 - **Recent Activity:** A summary of recent events from the last **7 days**, showing up to **50 items** (or all of today's events, if there are more than 50).
 - **Weekly Progress:** A chart showing how much XP you've earned over the last seven days.
@@ -261,6 +262,10 @@ To prevent clutter, some admin actions are consolidated.
 -   **Full Audit Trail:** Multi-step processes are now logged at each stage to provide a complete history. For example, when an item is purchased:
     -   A `{history}` entry is created when the user first **requests** the item.
     -   A *new, separate* `{history}` entry is created when an {admin} **approves** or **rejects** the request, or when the user **cancels** it.
+
+#### Richer {history} UI
+- **Clearer Purchase UI:** To prevent confusion, the cost of a purchase is only shown on the initial "Requested" event. Subsequent "Completed" events show a confirmation message, and "Rejected" or "Cancelled" events show an explicit refund.
+- **Visual Purchase Context:** Purchase events now show the specific item's image instead of a generic icon, falling back to the {store}'s icon if no image is available.
 
 ### Quest Claiming
 **Purpose:** The "Claim" feature prevents multiple {users} from working on the same single-person {task}.

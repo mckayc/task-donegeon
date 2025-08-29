@@ -129,6 +129,7 @@ export interface PurchaseRequest {
   id: string;
   userId: string;
   assetId: string;
+  marketId?: string;
   requestedAt: string;
   actedAt?: string;
   actedById?: string; // ID of the user who approved, rejected, or cancelled.
@@ -137,6 +138,9 @@ export interface PurchaseRequest {
       name: string;
       description: string;
       cost: RewardItem[];
+      icon?: string;
+      iconType?: 'emoji' | 'image';
+      imageUrl?: string;
   };
   guildId?: string;
   createdAt?: string;

@@ -1,25 +1,27 @@
 const { dataSource } = require('../data-source');
-const { PurchaseRequestEntity, UserEntity, GameAssetEntity, RewardTypeDefinitionEntity, SettingEntity, ChronicleEventEntity } = require('../entities');
+const { PurchaseRequestEntity, UserEntity, GameAssetEntity, RewardTypeDefinitionEntity, SettingEntity, ChronicleEventEntity, MarketEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 
-const create = async (assetId, userId, costGroupIndex, guildId) => {
+const create = async (assetId, userId, costGroupIndex, guildId, marketId) => {
     return await dataSource.transaction(async manager => {
         const userRepo = manager.getRepository(UserEntity);
         const assetRepo = manager.getRepository(GameAssetEntity);
         const requestRepo = manager.getRepository(PurchaseRequestEntity);
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
+        const marketRepo = manager.getRepository(MarketEntity);
 
         const user = await userRepo.findOneBy({ id: userId });
         const asset = await assetRepo.findOneBy({ id: assetId });
-        if (!user || !asset) return null;
+        const market = await marketRepo.findOneBy({ id: marketId });
+        if (!user || !asset || !market) return null;
 
         const cost = asset.costGroups[costGroupIndex];
         if (!cost) return null;
 
         const newPurchaseRequestData = {
-            userId, assetId, guildId,
+            userId, assetId, guildId, marketId,
             requestedAt: new Date().toISOString(),
             status: asset.requiresApproval ? 'Pending' : 'Completed',
             assetDetails: { name: asset.name, description: asset.description, cost, icon: asset.icon, iconType: asset.iconType, imageUrl: asset.imageUrl }
@@ -60,9 +62,6 @@ const create = async (assetId, userId, costGroupIndex, guildId) => {
             type: 'Purchase',
             title: isPending ? `Requested "${asset.name}"` : `Purchased "${asset.name}"`,
             status: savedRequest.status,
-            iconType: asset.iconType,
-            icon: asset.icon,
-            imageUrl: asset.imageUrl,
             color: isPending ? '#facc15' : '#4ade80',
             userId: user.id,
             userName: user.gameName,
@@ -71,6 +70,17 @@ const create = async (assetId, userId, costGroupIndex, guildId) => {
             guildId: savedRequest.guildId || undefined,
             rewardsText: rewardsText
         };
+        
+        if (asset.imageUrl && asset.iconType === 'image') {
+            eventData.iconType = 'image';
+            eventData.imageUrl = asset.imageUrl;
+            eventData.icon = '🖼️'; // Fallback emoji
+        } else {
+            eventData.iconType = 'emoji';
+            eventData.imageUrl = null;
+            eventData.icon = market.icon;
+        }
+
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
 
@@ -85,6 +95,7 @@ const approve = async (id, approverId) => {
         const userRepo = manager.getRepository(UserEntity);
         const assetRepo = manager.getRepository(GameAssetEntity);
         const settingRepo = manager.getRepository(SettingEntity);
+        const marketRepo = manager.getRepository(MarketEntity);
         
         const request = await requestRepo.findOneBy({ id });
         if (!request || request.status !== 'Pending') return null;
@@ -120,6 +131,7 @@ const approve = async (id, approverId) => {
         const approver = await userRepo.findOneBy({ id: approverId });
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+        const market = request.marketId ? await marketRepo.findOneBy({ id: request.marketId }) : null;
         const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
         const rewardsText = request.assetDetails.cost.map(c => `-${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' ');
 
@@ -130,9 +142,6 @@ const approve = async (id, approverId) => {
             type: 'Purchase',
             title: `Purchased "${request.assetDetails.name}"`,
             status: 'Completed',
-            iconType: request.assetDetails.iconType,
-            icon: request.assetDetails.icon,
-            imageUrl: request.assetDetails.imageUrl,
             color: '#4ade80',
             userId: request.userId,
             userName: user.gameName,
@@ -141,6 +150,17 @@ const approve = async (id, approverId) => {
             guildId: request.guildId || undefined,
             rewardsText,
         };
+
+        if (request.assetDetails.imageUrl && request.assetDetails.iconType === 'image') {
+            eventData.iconType = 'image';
+            eventData.imageUrl = request.assetDetails.imageUrl;
+            eventData.icon = '🖼️'; // Fallback emoji
+        } else {
+            eventData.iconType = 'emoji';
+            eventData.imageUrl = null;
+            eventData.icon = market ? market.icon : '🛒';
+        }
+
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
 
@@ -155,6 +175,7 @@ const rejectOrCancel = async (id, actorId, status) => {
         const userRepo = manager.getRepository(UserEntity);
         const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const marketRepo = manager.getRepository(MarketEntity);
 
         const request = await requestRepo.findOneBy({ id });
         if (!request || request.status !== 'Pending') return null;
@@ -184,6 +205,7 @@ const rejectOrCancel = async (id, actorId, status) => {
         // --- New Chronicle Event for Rejection/Cancellation ---
         const actor = actorId ? await userRepo.findOneBy({ id: actorId }) : user;
         const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+        const market = request.marketId ? await marketRepo.findOneBy({ id: request.marketId }) : null;
         const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
         const rewardsText = request.assetDetails.cost.map(c => `+${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' '); // Refunding
 
@@ -194,9 +216,6 @@ const rejectOrCancel = async (id, actorId, status) => {
             type: 'Purchase',
             title: `${status} purchase of "${request.assetDetails.name}"`,
             status: status,
-            iconType: request.assetDetails.iconType,
-            icon: request.assetDetails.icon,
-            imageUrl: request.assetDetails.imageUrl,
             color: status === 'Rejected' ? '#f87171' : '#a8a29e',
             userId: request.userId,
             userName: user.gameName,
@@ -205,6 +224,17 @@ const rejectOrCancel = async (id, actorId, status) => {
             guildId: request.guildId || undefined,
             rewardsText,
         };
+
+        if (request.assetDetails.imageUrl && request.assetDetails.iconType === 'image') {
+            eventData.iconType = 'image';
+            eventData.imageUrl = request.assetDetails.imageUrl;
+            eventData.icon = '🖼️'; // Fallback emoji
+        } else {
+            eventData.iconType = 'emoji';
+            eventData.imageUrl = null;
+            eventData.icon = market ? market.icon : '🛒';
+        }
+        
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
 

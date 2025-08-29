@@ -1,3 +1,4 @@
+
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -8,6 +9,11 @@ import { useQuestsState } from '../../../context/QuestsContext';
 import { useProgressionState } from '../../../context/ProgressionContext';
 import { useEconomyState } from '../../../context/EconomyContext';
 import { useCommunityState } from '../../../context/CommunityContext';
+
+interface PendingApprovals {
+    quests: { id: string; title: string; submittedAt: string; questId: string; }[];
+    purchases: { id: string; title: string; submittedAt: string; }[];
+}
 
 export const useDashboardData = () => {
     const { 
@@ -21,6 +27,8 @@ export const useDashboardData = () => {
     const { currentUser, users } = useAuthState();
     
     const [recentActivities, setRecentActivities] = useState<ChronicleEvent[]>([]);
+    const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
+
 
     useEffect(() => {
         if (!currentUser) return;
@@ -29,24 +37,22 @@ export const useDashboardData = () => {
             try {
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
                 
-                // Get filters from localStorage to match Chronicles page
                 const savedFilters = localStorage.getItem('chronicleFilters');
                 const filterTypes = savedFilters ? JSON.parse(savedFilters).join(',') : '';
                 
-                // Calculate date range for the last 7 days
                 const endDate = new Date();
                 const startDate = new Date();
                 startDate.setDate(endDate.getDate() - 6);
 
                 const params = new URLSearchParams({
                     page: '1',
-                    limit: '50', // Increased limit
+                    limit: '50',
                     userId: currentUser.id,
                     guildId,
                     viewMode: 'personal',
                     startDate: toYMD(startDate),
                     endDate: toYMD(endDate),
-                    dashboardFetch: 'true', // New parameter for special logic
+                    dashboardFetch: 'true',
                 });
                 if (filterTypes) {
                     params.append('filterTypes', filterTypes);
@@ -61,18 +67,31 @@ export const useDashboardData = () => {
                 setRecentActivities([]);
             }
         };
+        
+        const fetchPendingApprovals = async () => {
+             try {
+                const response = await fetch(`/api/users/${currentUser.id}/pending-items`);
+                if (!response.ok) throw new Error('Failed to fetch pending items');
+                const data = await response.json();
+                setPendingApprovals(data);
+            } catch (error) {
+                console.error("Failed to fetch pending approvals:", error);
+                setPendingApprovals({ quests: [], purchases: [] });
+            }
+        };
 
         fetchActivities();
-    }, [currentUser, appMode, questCompletions]); // Re-fetch when completions change
+        fetchPendingApprovals();
+    }, [currentUser, appMode, questCompletions]);
 
     if (!currentUser) {
-        // Return a default or empty state if there's no user.
         return {
             currentUser: null,
             rankData: { totalXp: 0, currentRank: null, nextRank: null, progressPercentage: 0, currentLevel: 0, xpIntoCurrentRank: 0, xpForNextRank: 0 },
             userCurrencies: [],
             userExperience: [],
             recentActivities: [],
+            pendingApprovals: { quests: [], purchases: [] },
             leaderboard: [],
             mostRecentTrophy: null,
             quickActionQuests: [],
@@ -159,15 +178,12 @@ export const useDashboardData = () => {
         const completableQuests = quests.filter(quest => {
             if (!isQuestVisibleToUserInMode(quest, currentUser.id, appMode)) return false;
             
-            // If it requires a claim, it's always an "action" to open the dialog
             if (quest.requiresClaim) {
                 const totalApproved = quest.approvedClaims?.length || 0;
                 const claimLimit = quest.claimLimit || 1;
-                // Show if it's not full, or if I have an approved claim
                 return totalApproved < claimLimit || quest.approvedClaims?.some(c => c.userId === currentUser.id);
             }
 
-            // Otherwise, check if it's completable in the traditional way
             return isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode)
         });
         const uniqueQuests = Array.from(new Map(completableQuests.map(q => [q.id, q])).values());
@@ -210,6 +226,7 @@ export const useDashboardData = () => {
         userCurrencies,
         userExperience,
         recentActivities,
+        pendingApprovals,
         leaderboard,
         mostRecentTrophy,
         quickActionQuests,

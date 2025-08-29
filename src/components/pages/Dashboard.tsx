@@ -19,6 +19,7 @@ import { useUIState } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
+import PendingApprovalsCard from '../dashboard/PendingApprovalsCard';
 
 const Dashboard: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
@@ -39,6 +40,7 @@ const Dashboard: React.FC = () => {
         leaderboard,
         quickActionQuests,
         recentActivities,
+        pendingApprovals,
         weeklyProgressData,
         terminology,
     } = useDashboardData();
@@ -89,7 +91,6 @@ const Dashboard: React.FC = () => {
     const handleStartAction = (questToAction: Quest) => {
         setSelectedQuest(null);
         if (questToAction.requiresClaim) {
-            // Re-select the quest to open the detail dialog, which handles the claim flow
             setSelectedQuest(questToAction);
             return;
         }
@@ -113,6 +114,8 @@ const Dashboard: React.FC = () => {
     
     const finalMostRecentTrophy = mostRecentTrophy ? trophies.find(t => t.id === mostRecentTrophy.id) || null : null;
 
+    const hasPending = pendingApprovals.quests.length > 0 || pendingApprovals.purchases.length > 0;
+
     return (
         <div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -124,6 +127,7 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="lg:col-span-2 space-y-6">
+                    {hasPending && <PendingApprovalsCard pendingData={pendingApprovals} onQuestSelect={handleQuestSelect} />}
                     <QuickActionsCard quests={quickActionQuests} onQuestSelect={handleQuestSelect} />
                     <RecentActivityCard activities={recentActivities} terminology={terminology} />
                     <Card title="Weekly Progress">

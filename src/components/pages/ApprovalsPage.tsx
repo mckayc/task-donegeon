@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
-import { Quest, QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer, QuestCompletion, PurchaseRequest, RewardTypeDefinition } from '../../types';
+// Fix: Imported `RewardItem` type to resolve TypeScript error.
+import { Quest, QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer, QuestCompletion, PurchaseRequest, RewardTypeDefinition, RewardItem } from '../../types';
 import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
 import TradeDialog from '../trading/TradeDialog';
@@ -284,95 +285,133 @@ const DesktopApprovalsView: React.FC<any> = ({
     );
 };
 
-const MobileApprovalsView: React.FC<any> = ({
-    pendingCompletions, pendingPurchases, pendingTrades, notes,
-    handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
-    approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
-    getQuest, getUserName, getGuildName, rewardTypes, currentUser
-}) => (
-    <div className="space-y-8">
-        <Card title="Quests Awaiting Verification">
-            {pendingCompletions.length > 0 ? (
-                <ul className="space-y-4">
-                    {pendingCompletions.map((completion: QuestCompletion) => (
-                        <li key={completion.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col justify-between">
-                            <div className="flex flex-col sm:flex-row justify-between sm:items-center">
-                                <div className="mb-4 sm:mb-0">
-                                    <p className="font-bold text-stone-100 flex items-center gap-2 flex-wrap">
-                                        <span className="text-emerald-300">{getUserName(completion.userId)}</span>
-                                        <span className="text-stone-300 font-normal"> completed </span>
-                                        "{getQuest(completion.questId)?.title || 'Unknown Quest'}"
-                                        <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(completion.guildId)}</span>
-                                    </p>
-                                    <p className="text-stone-400 text-sm mt-1">{completion.note ? `Note: "${completion.note}"` : 'No note provided.'}</p>
-                                </div>
-                            </div>
-                             <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-stone-700/60">
-                                <Input 
-                                    placeholder="Add a note (optional)..."
-                                    value={notes[completion.id] || ''}
-                                    onChange={(e) => handleNoteChange(completion.id, e.target.value)}
-                                    className="flex-grow"
-                                />
-                                 <div className="flex gap-2 justify-end">
-                                    <Button size="sm" variant="destructive" onClick={() => rejectQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Reject</Button>
-                                    <Button size="sm" onClick={() => approveQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Approve</Button>
-                                </div>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            ) : <p className="text-stone-400">No quests are currently pending approval.</p>}
-        </Card>
+// --- Mobile View Components ---
 
-        {currentUser.role === Role.DonegeonMaster && (
-            <>
-            <Card title="Item Purchases Requiring Approval">
-                {pendingPurchases.length > 0 ? (
+const MobileQuestApprovalCard: React.FC<any> = ({ completion, notes, handleNoteChange, approveQuestCompletion, rejectQuestCompletion, getQuest, getUserName, getGuildName, setViewingQuest, currentUser }) => {
+    const quest = getQuest(completion.questId);
+    if (!quest) return null;
+    return (
+        <li className="bg-stone-800/60 p-4 rounded-lg flex flex-col justify-between">
+            <button onClick={() => setViewingQuest(quest)} className="w-full text-left space-y-2">
+                <p className="font-bold text-stone-100 flex items-center gap-2 flex-wrap">
+                    <span className="text-emerald-300">{getUserName(completion.userId)}</span>
+                    <span className="text-stone-300 font-normal"> completed </span>
+                    "{quest.title}"
+                    <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(completion.guildId)}</span>
+                </p>
+                <p className="text-stone-400 text-sm">{completion.note ? `Note: "${completion.note}"` : 'No note provided.'}</p>
+            </button>
+            <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-stone-700/60">
+                <Input placeholder="Add a note (optional)..." value={notes[completion.id] || ''} onChange={(e) => handleNoteChange(completion.id, e.target.value)} className="flex-grow" />
+                <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="destructive" onClick={() => rejectQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Reject</Button>
+                    <Button size="sm" onClick={() => approveQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Approve</Button>
+                </div>
+            </div>
+        </li>
+    );
+};
+
+const MobileClaimApprovalCard: React.FC<any> = ({ claim, approveClaim, rejectClaim, getUserName, getGuildName, setViewingQuest, currentUser }) => (
+    <li className="bg-stone-800/60 p-4 rounded-lg flex flex-col justify-between">
+        <button onClick={() => setViewingQuest(claim.quest)} className="w-full text-left space-y-2">
+            <p className="font-bold text-stone-100 flex items-center gap-2 flex-wrap">
+                <span className="text-emerald-300">{getUserName(claim.userId)}</span>
+                <span className="text-stone-300 font-normal"> claimed </span>
+                "{claim.quest.title}"
+                <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(claim.quest.guildId)}</span>
+            </p>
+            <p className="text-stone-400 text-sm">Claimed at: {new Date(claim.claimedAt).toLocaleString()}</p>
+        </button>
+        <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-stone-700/60">
+            <Button size="sm" variant="destructive" onClick={() => rejectClaim(claim.quest.id, claim.userId, currentUser.id)}>Reject</Button>
+            <Button size="sm" onClick={() => approveClaim(claim.quest.id, claim.userId, currentUser.id)}>Approve</Button>
+        </div>
+    </li>
+);
+
+const MobilePurchaseApprovalCard: React.FC<any> = ({ purchase, approvePurchaseRequest, rejectPurchaseRequest, getUserName, getGuildName, rewardTypes, currentUser }) => (
+    <li className="bg-stone-800/60 p-4 rounded-lg flex flex-col justify-between">
+        <div className="space-y-2">
+             <p className="font-bold text-stone-100">
+                <span className="text-emerald-300">{getUserName(purchase.userId)}</span> wants to purchase <span className="text-amber-300">"{purchase.assetDetails.name}"</span>
+                <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(purchase.guildId)}</span>
+            </p>
+            <p className="text-stone-400 text-sm mt-1">Cost: {purchase.assetDetails.cost.map((c: RewardItem) => `${c.amount} ${rewardTypes.find((rt: RewardTypeDefinition) => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</p>
+        </div>
+        <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-stone-700/60">
+            <Button size="sm" variant="destructive" onClick={() => rejectPurchaseRequest(purchase.id, currentUser.id)}>Reject</Button>
+            <Button size="sm" onClick={() => approvePurchaseRequest(purchase.id, currentUser.id)}>Approve</Button>
+        </div>
+    </li>
+);
+
+const MobileTradeApprovalCard: React.FC<any> = ({ trade, setTradeToView, getUserName, getGuildName }) => (
+    <li className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center">
+        <div className="space-y-2">
+            <p className="font-bold text-stone-100">
+                <span className="text-emerald-300">{getUserName(trade.initiatorId)}</span> sent you a trade offer.
+                    <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(trade.guildId)}</span>
+            </p>
+            <p className="text-stone-400 text-sm mt-1">{trade.status === TradeStatus.OfferUpdated ? 'The offer has been updated.' : 'A new offer has been proposed.'}</p>
+        </div>
+        <div className="flex gap-2 mt-4 sm:mt-0 justify-end">
+            <Button size="sm" onClick={() => setTradeToView(trade)}>View Offer</Button>
+        </div>
+    </li>
+);
+
+
+const MobileApprovalsView: React.FC<any> = (props) => {
+    const { pendingCompletions, pendingClaims, pendingPurchases, pendingTrades, currentUser } = props;
+    const isAdmin = currentUser.role === Role.DonegeonMaster;
+
+    return (
+        <div className="space-y-8">
+            <Card title={`Quests Awaiting Verification (${pendingCompletions.length})`}>
+                {pendingCompletions.length > 0 ? (
                     <ul className="space-y-4">
-                        {pendingPurchases.map((purchase: PurchaseRequest) => (
-                            <li key={purchase.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center">
-                                <div className="mb-4 sm:mb-0">
-                                    <p className="font-bold text-stone-100">
-                                        <span className="text-emerald-300">{getUserName(purchase.userId)}</span> wants to purchase <span className="text-amber-300">"{purchase.assetDetails.name}"</span>
-                                        <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(purchase.guildId)}</span>
-                                    </p>
-                                    <p className="text-stone-400 text-sm mt-1">Cost: {purchase.assetDetails.cost.map(c => `${c.amount} ${rewardTypes.find((rt: RewardTypeDefinition) => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="destructive" onClick={() => rejectPurchaseRequest(purchase.id, currentUser.id)}>Reject</Button>
-                                    <Button size="sm" onClick={() => approvePurchaseRequest(purchase.id, currentUser.id)}>Approve</Button>
-                                </div>
-                            </li>
+                        {pendingCompletions.map((completion: QuestCompletion) => (
+                           <MobileQuestApprovalCard key={completion.id} completion={completion} {...props} />
                         ))}
                     </ul>
-                ) : <p className="text-stone-400">No item purchases are currently pending approval.</p>}
+                ) : <p className="text-stone-400">No quests are currently pending approval.</p>}
             </Card>
 
-            <Card title="Pending Trade Offers">
+            <Card title={`Pending Claims (${pendingClaims.length})`}>
+                {pendingClaims.length > 0 ? (
+                    <ul className="space-y-4">
+                        {pendingClaims.map((claim: any) => (
+                            <MobileClaimApprovalCard key={`${claim.quest.id}-${claim.userId}`} claim={claim} {...props} />
+                        ))}
+                    </ul>
+                ) : <p className="text-stone-400">No quests are currently pending claims.</p>}
+            </Card>
+
+            {isAdmin && (
+                <Card title={`Item Purchases (${pendingPurchases.length})`}>
+                    {pendingPurchases.length > 0 ? (
+                        <ul className="space-y-4">
+                            {pendingPurchases.map((purchase: PurchaseRequest) => (
+                                <MobilePurchaseApprovalCard key={purchase.id} purchase={purchase} {...props} />
+                            ))}
+                        </ul>
+                    ) : <p className="text-stone-400">No item purchases are currently pending approval.</p>}
+                </Card>
+            )}
+
+            <Card title={`Pending Trade Offers (${pendingTrades.length})`}>
                  {pendingTrades.length > 0 ? (
                     <ul className="space-y-4">
                         {pendingTrades.map((trade: TradeOffer) => (
-                            <li key={trade.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center">
-                                <div>
-                                    <p className="font-bold text-stone-100">
-                                        <span className="text-emerald-300">{getUserName(trade.initiatorId)}</span> sent you a trade offer.
-                                         <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(trade.guildId)}</span>
-                                    </p>
-                                    <p className="text-stone-400 text-sm mt-1">{trade.status === TradeStatus.OfferUpdated ? 'The offer has been updated.' : 'A new offer has been proposed.'}</p>
-                                </div>
-                                <div className="flex gap-2 mt-4 sm:mt-0">
-                                    <Button size="sm" onClick={() => setTradeToView(trade)}>View Offer</Button>
-                                </div>
-                            </li>
+                            <MobileTradeApprovalCard key={trade.id} trade={trade} {...props} />
                         ))}
                     </ul>
                 ) : <p className="text-stone-400">You have no pending trade offers.</p>}
             </Card>
-            </>
-        )}
-    </div>
-);
+        </div>
+    );
+};
 
 
 const ApprovalsPage: React.FC = () => {

@@ -162,6 +162,11 @@ This is the central queue for all actions that require an admin's attention.
 
 This section serves as the definitive source of truth for the application's intended functionality.
 
+### {link_approvals} Page Responsiveness
+The {link_approvals} page is fully responsive to provide an optimal experience on any device.
+-   **Desktop View:** On larger screens, the page displays a comprehensive table for each approval type (Quests, Claims, Purchases, Trades). This view is optimized for reviewing many items at once and performing quick actions.
+-   **Mobile View:** On mobile devices, the page automatically switches to a touch-friendly card layout. Each pending item is displayed on its own card within a categorized section. For Quests and Claims, you can tap the main body of the card to view the full details of the {task} before making a decision. Quick actions to approve or reject are available directly on each card.
+
 ### {task} Card Visual System
 To provide at-a-glance information, all {task} cards (on the {link_quests} page, Dashboard, Kiosk Mode, etc.) share a consistent visual system.
 
@@ -302,6 +307,10 @@ To prevent clutter, some admin actions are consolidated.
 ---
 
 ## Appendix: Version History
+
+### What's New in Version 0.1.93 (September 26, 2025)
+-   **Mobile-Friendly Approvals:** The Approvals page is now fully responsive. On mobile devices, it displays a touch-friendly card view for each pending item (Quests, Claims, Purchases, and Trades), making it easier for administrators to manage approvals on the go.
+-   **Interactive Approval Cards:** Quest and Claim approval cards on mobile are now clickable, opening a full detail dialog so admins can review the requirements before approving.
 
 ### What's New in Version 0.1.92 (September 25, 2025)
 -   **Kiosk Mode Pending Notifications:** The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items (quests or purchases) awaiting approval, providing an immediate visual cue without requiring login.

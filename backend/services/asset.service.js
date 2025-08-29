@@ -2,20 +2,25 @@ const assetRepository = require('../repositories/asset.repository');
 const userRepository = require('../repositories/user.repository');
 const rewardTypeRepository = require('../repositories/rewardType.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
-const { updateTimestamps } = require('../utils/helpers');
+const { updateTimestamps, logAdminAssetAction } = require('../utils/helpers');
+const { dataSource } = require('../data-source');
+
 
 const getAll = () => assetRepository.findAll();
 
 const create = async (assetData) => {
-    const newAsset = {
-        ...assetData,
-        id: `gameasset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        creatorId: assetData.creatorId || 'system',
-        purchaseCount: 0,
-    };
-    const saved = await assetRepository.create(newAsset);
-    updateEmitter.emit('update');
-    return saved;
+    return await dataSource.transaction(async manager => {
+        const newAsset = {
+            ...assetData,
+            id: `gameasset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            creatorId: assetData.actorId || 'system',
+            purchaseCount: 0,
+        };
+        const saved = await manager.getRepository('GameAsset').save(updateTimestamps(newAsset, true));
+        await logAdminAssetAction(manager, { actorId: assetData.actorId, actionType: 'create', assetType: 'Game Asset', assetCount: 1, assetName: saved.name, guildId: saved.guildId });
+        updateEmitter.emit('update');
+        return saved;
+    });
 };
 
 const update = async (id, assetData) => {
@@ -41,9 +46,12 @@ const clone = async (id) => {
     return saved;
 };
 
-const deleteMany = async (ids) => {
-    await assetRepository.deleteMany(ids);
-    updateEmitter.emit('update');
+const deleteMany = async (ids, actorId) => {
+    return await dataSource.transaction(async manager => {
+        await manager.getRepository('GameAsset').delete(ids);
+        await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Game Asset', assetCount: ids.length });
+        updateEmitter.emit('update');
+    });
 };
 
 const use = async (assetId, userId) => {

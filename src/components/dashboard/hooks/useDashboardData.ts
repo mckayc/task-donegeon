@@ -33,19 +33,20 @@ export const useDashboardData = () => {
                 const savedFilters = localStorage.getItem('chronicleFilters');
                 const filterTypes = savedFilters ? JSON.parse(savedFilters).join(',') : '';
                 
-                // Calculate date range for the last 4 days
+                // Calculate date range for the last 7 days
                 const endDate = new Date();
                 const startDate = new Date();
-                startDate.setDate(endDate.getDate() - 3); // -3 to get today + 3 previous days = 4 days total
+                startDate.setDate(endDate.getDate() - 6);
 
                 const params = new URLSearchParams({
                     page: '1',
-                    limit: '10',
+                    limit: '50', // Increased limit
                     userId: currentUser.id,
                     guildId,
                     viewMode: 'personal',
                     startDate: toYMD(startDate),
                     endDate: toYMD(endDate),
+                    dashboardFetch: 'true', // New parameter for special logic
                 });
                 if (filterTypes) {
                     params.append('filterTypes', filterTypes);

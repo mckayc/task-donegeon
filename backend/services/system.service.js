@@ -1,9 +1,8 @@
 
 
-
 const { dataSource, ensureDatabaseDirectoryExists } = require('../data-source');
 const fs = require('fs').promises;
-const { In, MoreThan, IsNull, Not, Brackets } = require("typeorm");
+const { In, MoreThan, IsNull, Not, Brackets, Like } = require("typeorm");
 const { 
     UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity, PurchaseRequestEntity, 
     UserTrophyEntity, AdminAdjustmentEntity, SystemNotificationEntity, RewardTypeDefinitionEntity, 
@@ -12,7 +11,7 @@ const {
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity,
     ChronicleEventEntity
 } = require('../entities');
-const { getFullAppData, updateTimestamps, logAdminAction } = require('../utils/helpers');
+const { getFullAppData, updateTimestamps, logAdminAssetAction } = require('../utils/helpers');
 const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
 const settingService = require('../services/setting.service');
 const userService = require('../services/user.service');
@@ -254,8 +253,9 @@ const factoryReset = async () => {
 
 const getChronicles = async (queryParams) => {
     const manager = dataSource.manager;
-    const { userId, guildId, viewMode, page = 1, limit = 50, filterTypes, startDate, endDate } = queryParams;
+    const { userId, guildId, viewMode, page = 1, limit = 50, filterTypes, startDate, endDate, dashboardFetch } = queryParams;
     const user = await manager.findOneBy(UserEntity, { id: userId });
+    let finalLimit = parseInt(limit, 10);
 
     if ((!filterTypes && !startDate) || !user) {
         return { events: [], total: 0 };
@@ -296,11 +296,18 @@ const getChronicles = async (queryParams) => {
           .andWhere('event.date <= :endDate', { endDate: `${endDate}T23:59:59.999Z` });
     }
 
+    if (dashboardFetch === 'true') {
+        const today = new Date().toISOString().split('T')[0];
+        const todayCountQb = qb.clone().andWhere("event.date LIKE :today", { today: `${today}%` });
+        const todayCount = await todayCountQb.getCount();
+        finalLimit = Math.max(finalLimit, todayCount);
+    }
+    
     const total = await qb.getCount();
     
     qb.orderBy('event.date', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+      .skip((page - 1) * finalLimit)
+      .take(finalLimit);
 
     const events = await qb.getMany();
     return { events, total };
@@ -313,7 +320,7 @@ const resetSettings = async () => {
 
 const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId) => {
     return await dataSource.transaction(async manager => {
-        await logAdminAction(manager, { actorId, title: 'Imported Asset Pack', note: `Pack: "${assetPack.manifest.name}"`, icon: '📦', color: '#a855f7' });
+        await logAdminAssetAction(manager, { actorId, actionType: 'create', assetType: 'Asset Pack', assetCount: 1, assetName: assetPack.manifest.name });
         const idMap = new Map();
 
         const processAssets = async (assetType, repoName, assets) => {
@@ -435,45 +442,55 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId)
 
 const deleteSelectedAssets = async (assets, actorId) => {
     return await dataSource.transaction(async manager => {
-        if (assets.users) {
+        if (assets.users?.length) {
             await manager.getRepository(UserEntity).delete(assets.users);
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'User', assetCount: assets.users.length });
         }
-        if (assets.quests) {
+        if (assets.quests?.length) {
             await manager.getRepository(QuestEntity).delete(assets.quests);
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Quest', assetCount: assets.quests.length });
         }
-        if (assets.questGroups) {
+        if (assets.questGroups?.length) {
             await manager.update(QuestEntity, { groupId: In(assets.questGroups) }, { groupId: null });
             await manager.getRepository(QuestGroupEntity).delete(assets.questGroups);
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Quest Group', assetCount: assets.questGroups.length });
         }
-        if (assets.markets) {
+        if (assets.markets?.length) {
             const safeIds = assets.markets.filter(id => id !== 'market-bank');
             if (safeIds.length > 0) {
                  await manager.getRepository(MarketEntity).delete(safeIds);
+                 await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Market', assetCount: safeIds.length });
             }
         }
-        if (assets.rewardTypes) {
+        if (assets.rewardTypes?.length) {
             const safeIds = (await manager.findBy(RewardTypeDefinitionEntity, { id: In(assets.rewardTypes), isCore: false })).map(r => r.id);
             if (safeIds.length > 0) {
                  await manager.getRepository(RewardTypeDefinitionEntity).delete(safeIds);
+                 await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Reward Type', assetCount: safeIds.length });
             }
         }
-        if (assets.ranks) {
+        if (assets.ranks?.length) {
             const safeIds = (await manager.findBy(RankEntity, { id: In(assets.ranks) })).filter(r => r.xpThreshold !== 0).map(r => r.id);
             if (safeIds.length > 0) {
                 await manager.getRepository(RankEntity).delete(safeIds);
+                await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Rank', assetCount: safeIds.length });
             }
         }
-        if (assets.trophies) {
+        if (assets.trophies?.length) {
             await manager.getRepository(TrophyEntity).delete(assets.trophies);
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Trophy', assetCount: assets.trophies.length });
         }
-        if (assets.gameAssets) {
+        if (assets.gameAssets?.length) {
             await manager.getRepository(GameAssetEntity).delete(assets.gameAssets);
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Game Asset', assetCount: assets.gameAssets.length });
         }
-        if (assets.rotations) {
+        if (assets.rotations?.length) {
             await manager.getRepository(RotationEntity).delete(assets.rotations);
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Rotation', assetCount: assets.rotations.length });
         }
-        if (assets.modifierDefinitions) {
+        if (assets.modifierDefinitions?.length) {
             await manager.getRepository(ModifierDefinitionEntity).delete(assets.modifierDefinitions);
+             await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Triumph/Trial', assetCount: assets.modifierDefinitions.length });
         }
     });
 };

@@ -4,7 +4,7 @@ const { dataSource } = require('../data-source');
 const { RotationEntity, QuestEntity, UserEntity, SystemNotificationEntity } = require('../entities');
 const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
-const { updateTimestamps } = require('../utils/helpers');
+const { updateTimestamps, logAdminAssetAction } = require('../utils/helpers');
 
 const getAll = async () => {
     const repo = dataSource.getRepository(RotationEntity);
@@ -12,14 +12,17 @@ const getAll = async () => {
 };
 
 const create = async (data) => {
-    const repo = dataSource.getRepository(RotationEntity);
-    const newRotation = repo.create({
-        ...data,
-        id: `rotation-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    return await dataSource.transaction(async manager => {
+        const repo = manager.getRepository(RotationEntity);
+        const newRotation = repo.create({
+            ...data,
+            id: `rotation-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        });
+        const saved = await repo.save(updateTimestamps(newRotation, true));
+        await logAdminAssetAction(manager, { actorId: data.actorId, actionType: 'create', assetType: 'Rotation', assetCount: 1, assetName: saved.name });
+        updateEmitter.emit('update');
+        return saved;
     });
-    const saved = await repo.save(updateTimestamps(newRotation, true));
-    updateEmitter.emit('update');
-    return saved;
 };
 
 const update = async (id, data) => {
@@ -32,10 +35,13 @@ const update = async (id, data) => {
     return saved;
 };
 
-const deleteMany = async (ids) => {
-    const repo = dataSource.getRepository(RotationEntity);
-    await repo.delete(ids);
-    updateEmitter.emit('update');
+const deleteMany = async (ids, actorId) => {
+    return await dataSource.transaction(async manager => {
+        const repo = manager.getRepository(RotationEntity);
+        await repo.delete(ids);
+        await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Rotation', assetCount: ids.length });
+        updateEmitter.emit('update');
+    });
 };
 
 const clone = async (id) => {

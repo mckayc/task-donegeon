@@ -5,17 +5,23 @@ const userRepository = require('../repositories/user.repository');
 const completionRepository = require('../repositories/completion.repository');
 const rankRepository = require('../repositories/rank.repository');
 const notificationRepository = require('../repositories/notification.repository');
+const { dataSource } = require('../data-source');
+const { logAdminAssetAction } = require('../utils/helpers');
+
 
 const getAll = () => trophyRepository.findAll();
 
 const create = async (data) => {
-    const newTrophy = {
-        ...data,
-        id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    };
-    const saved = await trophyRepository.create(newTrophy);
-    updateEmitter.emit('update');
-    return saved;
+    return await dataSource.transaction(async manager => {
+        const newTrophy = {
+            ...data,
+            id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        };
+        const saved = await manager.getRepository('Trophy').save(newTrophy);
+        await logAdminAssetAction(manager, { actorId: data.actorId, actionType: 'create', assetType: 'Trophy', assetCount: 1, assetName: saved.name });
+        updateEmitter.emit('update');
+        return saved;
+    });
 };
 
 const update = async (id, data) => {
@@ -38,9 +44,12 @@ const clone = async (id) => {
     return saved;
 };
 
-const deleteMany = async (ids) => {
-    await trophyRepository.deleteMany(ids);
-    updateEmitter.emit('update');
+const deleteMany = async (ids, actorId) => {
+    return await dataSource.transaction(async manager => {
+        await manager.getRepository('Trophy').delete(ids);
+        await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Trophy', assetCount: ids.length });
+        updateEmitter.emit('update');
+    });
 };
 
 const checkAndAward = async (userId, guildId) => {

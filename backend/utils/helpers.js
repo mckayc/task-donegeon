@@ -1,7 +1,7 @@
 
 
 const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity, ChronicleEventEntity } = require('../entities');
-const { In, IsNull } = require("typeorm");
+const { In, IsNull, MoreThan } = require("typeorm");
 const { SystemNotificationEntity: SysNotifEntity } = require('../entities'); // alias for checkAndAwardTrophies
 const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
 
@@ -190,7 +190,7 @@ const getFullAppData = async (manager) => {
     return data;
 };
 
-const logAdminAction = async (manager, { actorId, title, note, icon, color, guildId }) => {
+const logGeneralAdminAction = async (manager, { actorId, title, note, icon, color, guildId }) => {
     const chronicleRepo = manager.getRepository(ChronicleEventEntity);
     const userRepo = manager.getRepository(UserEntity);
 
@@ -217,10 +217,56 @@ const logAdminAction = async (manager, { actorId, title, note, icon, color, guil
     await manager.save(updateTimestamps(chronicleEvent, true));
 };
 
+const logAdminAssetAction = async (manager, { actorId, actionType, assetType, assetCount, assetName, guildId }) => {
+    const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+    const userRepo = manager.getRepository(UserEntity);
+    const CONSOLIDATION_WINDOW_MS = 60 * 1000; // 1 minute
+
+    const lastEvent = await chronicleRepo.findOne({
+        where: { actorId: actorId, type: 'AdminAssetManagement' },
+        order: { date: 'DESC' }
+    });
+    
+    const now = new Date();
+    const actor = await userRepo.findOneBy({ id: actorId });
+
+    if (lastEvent && 
+        lastEvent.note === `${actionType}:${assetType}` &&
+        (now.getTime() - new Date(lastEvent.date).getTime()) < CONSOLIDATION_WINDOW_MS) {
+        
+        const currentCountMatch = lastEvent.title.match(/\d+/);
+        const currentCount = currentCountMatch ? parseInt(currentCountMatch[0]) : 1;
+        const newCount = currentCount + assetCount;
+        
+        lastEvent.title = `${actionType === 'create' ? 'Created' : 'Deleted'} ${newCount} ${assetType}(s)`;
+        lastEvent.date = now.toISOString();
+        await manager.save(updateTimestamps(lastEvent));
+        
+    } else {
+        const eventData = {
+            id: `chron-asset-${Date.now()}`,
+            originalId: `admin-asset-${Date.now()}`,
+            date: now.toISOString(),
+            type: 'AdminAssetManagement',
+            title: `${actionType === 'create' ? 'Created' : 'Deleted'} ${assetCount} ${assetType}(s)`,
+            note: `${actionType}:${assetType}`,
+            status: 'Executed',
+            icon: actionType === 'create' ? '➕' : '🗑️',
+            color: actionType === 'create' ? '#22c55e' : '#ef4444',
+            actorId: actorId,
+            actorName: actor?.gameName || 'Admin',
+            guildId: guildId || undefined,
+        };
+        const newEvent = chronicleRepo.create(eventData);
+        await manager.save(updateTimestamps(newEvent, true));
+    }
+};
+
 module.exports = {
     updateTimestamps,
     checkAndAwardTrophies,
     asyncMiddleware,
     getFullAppData,
-    logAdminAction,
+    logGeneralAdminAction,
+    logAdminAssetAction,
 };

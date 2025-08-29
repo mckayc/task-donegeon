@@ -1,16 +1,22 @@
 const rankRepository = require('../repositories/rank.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
+const { dataSource } = require('../data-source');
+const { logAdminAssetAction } = require('../utils/helpers');
+
 
 const getAll = () => rankRepository.findAllSorted();
 
 const create = async (data) => {
-    const newRank = {
-        ...data,
-        id: `rank-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    };
-    const saved = await rankRepository.create(newRank);
-    updateEmitter.emit('update');
-    return saved;
+    return await dataSource.transaction(async manager => {
+        const newRank = {
+            ...data,
+            id: `rank-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        };
+        const saved = await manager.getRepository('Rank').save(newRank);
+        await logAdminAssetAction(manager, { actorId: data.actorId, actionType: 'create', assetType: 'Rank', assetCount: 1, assetName: saved.name });
+        updateEmitter.emit('update');
+        return saved;
+    });
 };
 
 const update = async (id, data) => {
@@ -26,14 +32,17 @@ const update = async (id, data) => {
     return saved;
 };
 
-const deleteMany = async (ids) => {
-    const ranksToDelete = await rankRepository.findByIds(ids);
-    const nonDeletableRank = ranksToDelete.find(r => r.xpThreshold === 0);
-    if (nonDeletableRank) {
-        throw new Error('Cannot delete the base rank with 0 XP threshold.');
-    }
-    await rankRepository.deleteMany(ids);
-    updateEmitter.emit('update');
+const deleteMany = async (ids, actorId) => {
+    return await dataSource.transaction(async manager => {
+        const ranksToDelete = await manager.getRepository('Rank').findBy({ id: In(ids) });
+        const nonDeletableRank = ranksToDelete.find(r => r.xpThreshold === 0);
+        if (nonDeletableRank) {
+            throw new Error('Cannot delete the base rank with 0 XP threshold.');
+        }
+        await manager.getRepository('Rank').delete(ids);
+        await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Rank', assetCount: ids.length });
+        updateEmitter.emit('update');
+    });
 };
 
 const replaceAll = async (ranks) => {

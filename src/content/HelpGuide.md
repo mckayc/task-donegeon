@@ -45,6 +45,7 @@ Your main hub. This is the first page you see after logging in. It gives you a q
 - **Latest {award} Card:** Showcases the most recent {award} you've earned.
 - **Leaderboard:** A friendly competition showing the top XP earners for the current mode (Personal or {group}).
 - **Quick Actions:** A list of **all** your most urgent and available {tasks} for easy access. This list is scrollable if you have many active {tasks}.
+- **Recent Activity:** A summary of recent events from the last **7 days**, showing up to **50 items** (or all of today's events, if there are more than 50).
 - **Weekly Progress:** A chart showing how much XP you've earned over the last seven days.
 
 ### {link_quests}
@@ -205,18 +206,32 @@ A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must
 - If **"Require PIN for quest completion"** is enabled, the user must enter their PIN to confirm. Otherwise, the {task} is completed immediately.
 
 ### {link_chronicles}
-**Purpose:** The {history} provides a comprehensive log of all significant actions within the application for motivational and auditing purposes. The dashboard widget shows the last 7 days of activity, while the main page is a full, filterable history.
+**Purpose:** The {history} provides a comprehensive log of all significant actions within the application for motivational and auditing purposes.
 
-**Event Breakdown:**
-- **Quest Completion:** Records when a {task} is completed, approved, or rejected.
-- **Purchase:** Logs when an item is purchased from a {store}.
-- **Trophy Awarded:** Appears when a user unlocks a new {award}.
-- **Admin Adjustment:** Shows when an {admin} manually gives or takes away {points}.
-- **Gift Received:** Records when a user receives a gift.
-- **Trade:** Logs the initiation, update, and completion of trades.
-- **Crafting:** Appears when a user crafts a new item.
-- **System:** Logs automated system actions, such as applying {negativePoints}.
-- **Quest Claiming:** Logs the full lifecycle of a {task} claim (claimed, approved, cancelled, etc.).
+#### Dashboard "Recent Activity" Widget
+-   **Time-Limited:** Shows activity from the last **7 days**.
+-   **Count-Limited:** Displays up to **50 events**, or **all events from today** if that number is greater than 50.
+
+#### What Creates a {history} Event?
+The system logs every significant step in a process to provide a clear audit trail.
+-   **Quest Completion:** Records when a {task} is completed, approved, or rejected.
+-   **Quest Claiming:** Logs when a {task} is claimed, unclaimed, or has its claim approved/rejected.
+-   **Quest To-Do:** Logs when a {task} is marked as a To-Do or removed from the To-Do list.
+-   **Purchase:** Logs when an item is purchased from a {store}.
+-   **Trophy Awarded:** Appears when a user unlocks a new {award}.
+-   **Admin Adjustment:** Shows when an {admin} manually gives or takes away {points}.
+-   **Gift Received:** Records when a user receives a gift.
+-   **Trade:** Logs the initiation, update, and completion of trades.
+-   **Exchange:** Logs when a user exchanges currencies at the Exchange Post.
+-   **Crafting:** Appears when a user crafts a new item.
+-   **Triumph/Trial:** Logs when an {admin} applies a Triumph or Trial to a user.
+-   **Admin Asset Management:** Logs when an {admin} creates or deletes assets (e.g., {tasks}, users, items).
+-   **System:** Logs automated system actions, such as applying {negativePoints}.
+
+#### {history} Consolidation Logic
+To prevent clutter, some admin actions are consolidated.
+-   **Consolidate:** If an {admin} creates or deletes multiple assets of the same type in a row (e.g., creating 5 {tasks}), it will be grouped into a single {history} entry, like `Created 5 {tasks}`. The action "chain" is broken if the {admin} performs a different type of action.
+-   **Do NOT Consolidate:** All other user-facing actions are logged individually. For example, if a user marks a {task} as a to-do, completes it, an admin rejects it, the user completes it again, and an admin approves it, you will see **5 distinct {history} entries** for that {task}.
 
 ### Quest Claiming
 **Purpose:** The "Claim" feature prevents multiple {users} from working on the same single-person {task}.

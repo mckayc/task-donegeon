@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.76
+**Version:** 0.1.77
 
 ---
 
@@ -14,6 +14,14 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.77 (September 15, 2025)
+-   **Enhanced Chronicles System:** The `{history}` system has been overhauled to be more comprehensive and intelligent.
+    -   **New Event Logging:** The system now logs a wider range of activities, including when a {task} is marked as a "To-Do," when an exchange is made, and when a Triumph or Trial is applied.
+    -   **Consolidated Admin Logs:** To keep the `{history}` clean, consecutive creations or deletions of the same asset type by an {admin} are now grouped into a single, consolidated log entry (e.g., "Created 5 {tasks}").
+    -   **More Robust Logging:** All user-facing actions are now logged individually to provide a complete audit trail.
+-   **Smarter Dashboard Widget:** The "Recent Activity" widget on the Dashboard now shows events from the last **7 days** and displays up to **50 items** or all of today's events, whichever is greater, giving a more comprehensive recent overview.
+-   **Updated Documentation:** The in-app `{link_help_guide}` has been thoroughly updated with these new specifications, ensuring it remains the definitive source of truth for the application's functionality.
 
 ### What's New in Version 0.1.76 (September 14, 2025)
 -   **No Cap on Quick Actions:** The "Quick Actions" widget on the Dashboard now displays all available quests for the user, rather than being capped at 10. The list is scrollable if many quests are available.
@@ -165,4 +173,24 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md --
+-   **Reward R-- END OF FILE README.md ----- START OF FILE vercel.json ---
+
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/server.js" }
+  ]
+}

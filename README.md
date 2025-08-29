@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.86
+**Version:** 0.1.88
 
 ---
 
@@ -12,6 +12,16 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.88 (September 21, 2025)
+-   **Enhanced Chronicle Logging:** Fixed an issue where creating new items ({link_manage_items}) and making purchases from a {store} were not being recorded. These events will now correctly appear in the {history} log.
+-   **UI Fix:** Added "Admin Asset Management" to the default filters on the {history} page so that events related to creating and deleting assets are visible by default.
+-   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the new logging events.
+
+### What's New in Version 0.1.87 (September 20, 2025)
+-   **Enhanced Number Input:** Fixed a bug in the number input component where holding down the increment/decrement buttons would not accelerate the value change. The component now correctly handles click-and-hold for rapid adjustments.
+-   **UI Fix:** Increased the default width of the number input to prevent numbers with four or more digits from being cut off.
+-   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the number input's functionality.
 
 ### What's New in Version 0.1.86 (September 19, 2025)
 -   **Enhanced Time-Remaining Display:** All quest cards across the app ({link_quests} page, Dashboard, and Kiosk Mode) now show detailed time-remaining information. This includes days, hours, and minutes until a {task} is due.

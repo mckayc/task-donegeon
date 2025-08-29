@@ -1,13 +1,10 @@
-
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { User } from '../../../types';
 import Avatar from '../user-interface/Avatar';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
-import { useSystemState } from '../../context/SystemContext';
-import { SwitchUserIcon, ChartBarIcon, CalendarDaysIcon } from '../user-interface/Icons';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { SwitchUserIcon, ChartBarIcon, CalendarDaysIcon, ArrowDownTrayIcon } from '../user-interface/Icons';
 import { SharedView } from './SharedLayout';
 
 const Clock: React.FC = () => {
@@ -29,7 +26,8 @@ interface SharedHeaderProps {
 }
 
 const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }) => {
-  const { settings } = useSystemState();
+  const { settings, isUpdateAvailable } = useSystemState();
+  const { installUpdate } = useSystemDispatch();
   const { users } = useAuthState();
   const { setTargetedUserForLogin, setIsSwitchingUser } = useAuthDispatch();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -62,6 +60,18 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }
         <Clock />
         <FullscreenToggle />
         
+        {isUpdateAvailable && (
+            <button
+                onClick={installUpdate}
+                title="An update is available. Click to install."
+                className="relative p-2 rounded-full text-white bg-emerald-600 hover:bg-emerald-500 transition-colors"
+                aria-label="Install update"
+            >
+                <ArrowDownTrayIcon className="w-6 h-6" />
+                <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-stone-900" />
+            </button>
+        )}
+
         <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60 ml-2">
             <button 
                 onClick={() => setActiveView('calendar')} 

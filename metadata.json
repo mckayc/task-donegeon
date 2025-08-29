@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.86 - Enhanced Time Display",
-  "version": "0.1.86",
+  "name": "Task Donegeon 2.0 - 0.1.88 - Chronicle Logging for Purchases & Assets",
+  "version": "0.1.88",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

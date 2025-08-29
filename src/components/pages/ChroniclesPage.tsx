@@ -20,6 +20,7 @@ const CHRONICLE_EVENT_TYPES = [
     ChronicleEventType.Purchase,
     ChronicleEventType.TrophyAwarded,
     ChronicleEventType.AdminAdjustment,
+    ChronicleEventType.AdminAssetManagement,
     ChronicleEventType.GiftReceived,
     ChronicleEventType.Trade,
     ChronicleEventType.Crafting,

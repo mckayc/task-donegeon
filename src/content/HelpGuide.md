@@ -199,6 +199,7 @@ The border of a {task} card indicates its urgency and status.
 - The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊).
 - The calendar view is categorized into "{recurringTasks}" and "{singleTasks} & {journeys}" for each user to improve clarity.
 - {task} cards in Kiosk Mode use the same visual border system as the main {link_quests} page, providing at-a-glance status information.
+- **Updating:** When an application update is available, a toast notification will appear at the bottom-left of the screen. Additionally, a persistent "Update" icon (an arrow pointing down into a tray) will appear in the header. Clicking either of these will install the update.
 
 #### {task} Visibility in Kiosk Mode
 A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must meet one of the following criteria:
@@ -242,15 +243,15 @@ The system logs every significant step in a process to provide a clear audit tra
 -   **Quest Completion:** Records when a {task} is completed, approved, or rejected.
 -   **Quest Claiming:** Logs when a {task} is claimed, unclaimed, or has its claim approved/rejected.
 -   **Quest To-Do:** Logs when a {task} is marked as a To-Do or removed from the To-Do list.
--   **Purchase:** Logs when an item is purchased from a {store}.
+-   **Purchase:** Logs when an item purchase is requested, approved, rejected, or cancelled from a {store}.
 -   **Trophy Awarded:** Appears when a user unlocks a new {award}.
 -   **Admin Adjustment:** Shows when an {admin} manually gives or takes away {points}.
+-   **Admin Asset Management:** Logs when an {admin} creates or deletes assets (e.g., {tasks}, users, items).
 -   **Gift Received:** Records when a user receives a gift.
 -   **Trade:** Logs the initiation, update, and completion of trades.
 -   **Exchange:** Logs when a user exchanges currencies at the Exchange Post.
 -   **Crafting:** Appears when a user crafts a new item.
 -   **Triumph/Trial:** Logs when an {admin} applies a Triumph or Trial to a user.
--   **Admin Asset Management:** Logs when an {admin} creates or deletes assets (e.g., {tasks}, users, items).
 -   **System:** Logs automated system actions, such as applying {negativePoints}.
 
 #### {history} Consolidation Logic
@@ -282,6 +283,12 @@ To prevent clutter, some admin actions are consolidated.
 - {admin}s can add manual notes, use a special "picker" to identify specific UI elements, and even enable temporary server-side logging for deep debugging.
 - All reports are managed on the **{link_bug_tracker}** page, where they can be tagged, commented on, and have their status updated.
 - A bug report can be converted into a new {task} with a single click, automatically populating the {task} description with the bug's details.
+
+### UI Components and Controls
+- **Number Inputs:** The number input fields throughout the app (used for setting rewards, costs, etc.) have been enhanced.
+    - The input field is now wide enough to display at least 4 digits clearly.
+    - You can click the `+` and `-` buttons to increment or decrement the value.
+    - You can **click and hold** the `+` or `-` buttons to rapidly change the value after a short delay, making it faster to adjust numbers significantly.
 
 ---
 

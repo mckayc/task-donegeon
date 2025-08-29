@@ -27,10 +27,10 @@ const NumberInput: React.FC<NumberInputProps> = ({
   disabled,
 }) => {
   const [inputValue, setInputValue] = useState(String(value));
+  const valueRef = useRef(value);
 
   useEffect(() => {
-    // Sync from parent if value changes, but avoid doing so when the user is typing
-    // a valid partial number (like "1.").
+    valueRef.current = value;
     const numInputValue = parseFloat(inputValue);
     if (numInputValue !== value && !(inputValue.endsWith('.') && numInputValue === value)) {
        setInputValue(String(value));
@@ -40,15 +40,35 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const intervalRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
-  const handleValueChange = useCallback((newValue: number) => {
-    const precision = String(step).split('.')[1]?.length || 0;
-    const roundedValue = parseFloat(newValue.toFixed(precision));
-    const clampedValue = Math.max(min, Math.min(max, roundedValue));
-    if (clampedValue !== value) {
-      onChange(clampedValue);
-    }
-  }, [min, max, onChange, step, value]);
+  const stopStepping = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    timeoutRef.current = null;
+    intervalRef.current = null;
+  }, []);
 
+  const handleStep = useCallback((direction: 'up' | 'down') => {
+    const currentValue = valueRef.current;
+    const precision = String(step).split('.')[1]?.length || 0;
+    const newValue = parseFloat((currentValue + (direction === 'up' ? step : -step)).toFixed(precision));
+    const clampedValue = Math.max(min, Math.min(max, newValue));
+    onChange(clampedValue);
+  }, [min, max, onChange, step]);
+
+  const startStepping = useCallback((direction: 'up' | 'down') => {
+    stopStepping();
+    handleStep(direction);
+    timeoutRef.current = window.setTimeout(() => {
+        intervalRef.current = window.setInterval(() => {
+            handleStep(direction);
+        }, 50);
+    }, 400);
+  }, [handleStep, stopStepping]);
+
+  useEffect(() => {
+    return () => stopStepping();
+  }, [stopStepping]);
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const stringValue = e.target.value;
     setInputValue(stringValue);
@@ -60,7 +80,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 
     const numValue = parseFloat(stringValue);
     if (!isNaN(numValue)) {
-      onChange(numValue); // Allow parent to see intermediate value
+      onChange(numValue);
     }
   };
 
@@ -70,41 +90,12 @@ const NumberInput: React.FC<NumberInputProps> = ({
       numValue = min > 0 ? min : 0;
     }
     const clamped = Math.max(min, Math.min(max, numValue));
-    if (clamped !== value) {
-      onChange(clamped);
-    }
+    onChange(clamped);
     setInputValue(String(clamped));
   };
-
-  const handleStep = useCallback((direction: 'up' | 'down') => {
-    const currentValue = typeof value === 'number' && !isNaN(value) ? value : 0;
-    const precision = String(step).split('.')[1]?.length || 0;
-    const newValue = parseFloat((currentValue + (direction === 'up' ? step : -step)).toFixed(precision));
-    handleValueChange(newValue);
-  }, [value, handleValueChange, step]);
-
-  const stopStepping = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    timeoutRef.current = null;
-    intervalRef.current = null;
-  }, []);
-
-  const startStepping = useCallback((direction: 'up' | 'down') => {
-    handleStep(direction);
-    timeoutRef.current = window.setTimeout(() => {
-        intervalRef.current = window.setInterval(() => {
-            handleStep(direction);
-        }, 80);
-    }, 400);
-  }, [handleStep]);
-
-  useEffect(() => {
-    return () => stopStepping();
-  }, [stopStepping]);
   
   const inputComponent = (
-    <div className={cn("relative w-full", className)}>
+    <div className={cn("relative w-28", className)}>
       <Input
         id={id}
         type="text"

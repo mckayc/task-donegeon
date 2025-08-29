@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.79 - Expanded Modifiers",
-  "version": "0.1.79",
+  "name": "Task Donegeon 2.0 - 0.1.83 - Rewards Column on Manage Quests",
+  "version": "0.1.83",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

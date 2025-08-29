@@ -14,6 +14,7 @@ import { QuestTable } from '../../quests/QuestTable';
 import { ArrowLeftIcon, ArrowRightIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import { useUIState } from '../../../context/UIContext';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { useEconomyState } from '../../../context/EconomyContext';
 
 const QuestCard: React.FC<{
     quest: Quest;
@@ -25,6 +26,7 @@ const QuestCard: React.FC<{
 }> = ({ quest, isSelected, onToggle, onEdit, onClone, onDeleteRequest }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { rewardTypes } = useEconomyState();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -41,16 +43,18 @@ const QuestCard: React.FC<{
         : quest.type === QuestType.Journey
         ? 'bg-purple-500/20 text-purple-300'
         : 'bg-amber-500/20 text-amber-300';
+        
+    const getRewardInfo = (id: string) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
 
     return (
-        <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4 border border-stone-700">
+        <div className="bg-stone-800/60 p-4 rounded-lg flex items-start gap-4 border border-stone-700">
              <input
                 type="checkbox"
                 checked={isSelected}
                 onChange={onToggle}
-                className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500 flex-shrink-0"
+                className="mt-1 h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500 flex-shrink-0"
             />
-            <div className="text-2xl flex-shrink-0">{quest.icon}</div>
+            <div className="text-2xl flex-shrink-0 mt-1">{quest.icon}</div>
             <div className="flex-grow overflow-hidden">
                 <p className="font-bold text-stone-100 whitespace-normal break-words">{quest.title}</p>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -61,6 +65,14 @@ const QuestCard: React.FC<{
                         {quest.type}
                     </span>
                 </div>
+                 {quest.rewards.length > 0 && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold mt-2 pt-2 border-t border-stone-700/60">
+                        {quest.rewards.map(r => {
+                            const { name, icon } = getRewardInfo(r.rewardTypeId);
+                            return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+{r.amount} <span className="text-base">{icon}</span></span>
+                        })}
+                    </div>
+                )}
             </div>
             <div className="relative flex-shrink-0" ref={dropdownRef}>
                 <Button variant="ghost" size="icon" onClick={() => setDropdownOpen(p => !p)}>
@@ -81,6 +93,7 @@ const QuestCard: React.FC<{
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { quests, questGroups } = useQuestsState();
+    const { rewardTypes } = useEconomyState();
     const { deleteQuests, updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useQuestsDispatch();
     const { isMobileView } = useUIState();
     
@@ -374,6 +387,7 @@ const ManageQuestsPage: React.FC = () => {
                         isLoading={!quests}
                         searchTerm={debouncedSearchTerm}
                         onCreate={handleCreate}
+                        rewardTypes={rewardTypes}
                     />
                 )}
             </Card>

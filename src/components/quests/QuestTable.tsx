@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { Quest } from './types';
-import { Terminology } from '../../types';
+import { Quest, Terminology, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { QuestsIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';
@@ -18,6 +17,7 @@ interface QuestTableProps {
     isLoading: boolean;
     searchTerm: string;
     onCreate: () => void;
+    rewardTypes: RewardTypeDefinition[];
 }
 
 export const QuestTable: React.FC<QuestTableProps> = ({
@@ -31,6 +31,7 @@ export const QuestTable: React.FC<QuestTableProps> = ({
     isLoading,
     searchTerm,
     onCreate,
+    rewardTypes,
 }) => {
     const questIds = React.useMemo(() => quests.map(q => q.id), [quests]);
     const handleCheckboxClick = useShiftSelect(questIds, selectedQuests, setSelectedQuests);
@@ -38,6 +39,8 @@ export const QuestTable: React.FC<QuestTableProps> = ({
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedQuests(e.target.checked ? questIds : []);
     };
+    
+    const getRewardInfo = (id: string) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
 
     if (isLoading) {
         return (
@@ -67,6 +70,7 @@ export const QuestTable: React.FC<QuestTableProps> = ({
                             <input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === quests.length && quests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                         </th>
                         <th className="p-4 font-semibold">Title</th>
+                        <th className="p-4 font-semibold">Rewards</th>
                         <th className="p-4 font-semibold">Type</th>
                         <th className="p-4 font-semibold">Status</th>
                         <th className="p-4 font-semibold">Tags</th>
@@ -83,6 +87,18 @@ export const QuestTable: React.FC<QuestTableProps> = ({
                                 <button onClick={() => onEdit(quest)} data-log-id={`manage-quests-edit-title-${quest.id}`} className="hover:underline hover:text-accent transition-colors text-left">
                                     {quest.icon} {quest.title}
                                 </button>
+                            </td>
+                            <td className="p-4">
+                                {quest.rewards.length > 0 ? (
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold">
+                                        {quest.rewards.map(r => {
+                                            const { name, icon } = getRewardInfo(r.rewardTypeId);
+                                            return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+{r.amount} <span className="text-base">{icon}</span></span>
+                                        })}
+                                    </div>
+                                ) : (
+                                    <span className="text-stone-500 text-sm">None</span>
+                                )}
                             </td>
                             <td className="p-4 text-stone-400">{quest.type}</td>
                             <td className="p-4">

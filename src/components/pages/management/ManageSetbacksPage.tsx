@@ -12,6 +12,7 @@ import ModifierTable from '../../modifiers/ModifierTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { EllipsisVerticalIcon, TrashIcon } from '../../user-interface/Icons';
+import Input from '../../user-interface/Input';
 
 const ModifierCard: React.FC<{
     modifier: ModifierDefinition;
@@ -69,7 +70,6 @@ const ModifierCard: React.FC<{
 const ManageSetbacksPage: React.FC = () => {
     const { settings, modifierDefinitions, appliedModifiers } = useSystemState();
     const { users } = useAuthState();
-    // FIX: Destructure `deleteAppliedModifier` to make it available in the component.
     const { deleteSelectedAssets, deleteAppliedModifier } = useSystemDispatch();
     const { isMobileView } = useUIState();
     
@@ -80,6 +80,10 @@ const ManageSetbacksPage: React.FC = () => {
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [deletingAppliedModifierId, setDeletingAppliedModifierId] = useState<string | null>(null);
     const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
+
+    // --- Pagination State ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const modifierIds = useMemo(() => modifierDefinitions.map(s => s.id), [modifierDefinitions]);
     const handleCheckboxClick = useShiftSelect(modifierIds, selectedModifiers, setSelectedModifiers);
@@ -96,6 +100,29 @@ const ManageSetbacksPage: React.FC = () => {
             })
             .filter(s => s.user && s.definition && s.appliedBy) as (typeof appliedModifiers[0] & { user: User, definition: ModifierDefinition, appliedBy: User })[];
     }, [appliedModifiers, users, modifierDefinitions]);
+
+    const sortedHistory = useMemo(() => {
+        return [...appliedModifiers]
+            .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
+            .map(m => {
+                const user = users.find(u => u.id === m.userId);
+                const definition = modifierDefinitions.find(d => d.id === m.modifierDefinitionId);
+                const appliedBy = users.find(u => u.id === m.appliedById);
+                return { ...m, user, definition, appliedBy };
+            });
+    }, [appliedModifiers, users, modifierDefinitions]);
+    
+    const { paginatedHistory, totalPages } = useMemo(() => {
+        const total = sortedHistory.length;
+        const pages = Math.ceil(total / itemsPerPage);
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        return {
+            paginatedHistory: sortedHistory.slice(start, end),
+            totalPages: pages,
+        };
+    }, [sortedHistory, currentPage, itemsPerPage]);
+
 
     const handleCreate = () => {
         setEditingModifier(null);
@@ -209,6 +236,55 @@ const ManageSetbacksPage: React.FC = () => {
                     </div>
                 ) : (
                     <p className="text-stone-400 text-center py-4">No modifiers are currently active on any users.</p>
+                )}
+            </Card>
+
+            <Card title="Modifier Application History">
+                 <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="border-b border-stone-700/60">
+                            <tr>
+                                <th className="p-4 font-semibold">User</th>
+                                <th className="p-4 font-semibold">Modifier</th>
+                                <th className="p-4 font-semibold">Reason</th>
+                                <th className="p-4 font-semibold">Applied By</th>
+                                <th className="p-4 font-semibold">Applied At</th>
+                                <th className="p-4 font-semibold">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedHistory.map(modifier => (
+                                <tr key={modifier.id} className="border-b border-stone-700/40 last:border-b-0">
+                                    <td className="p-4 font-semibold text-stone-200 flex items-center gap-2">
+                                        {modifier.user ? <Avatar user={modifier.user} className="w-8 h-8 rounded-full" /> : <div className="w-8 h-8 rounded-full bg-stone-700" />}
+                                        {modifier.user?.gameName || 'Unknown User'}
+                                    </td>
+                                    <td className="p-4 text-stone-300">{modifier.definition?.name || 'Unknown Modifier'}</td>
+                                    <td className="p-4 text-stone-400 italic">"{modifier.reason}"</td>
+                                    <td className="p-4 text-stone-300">{modifier.appliedBy?.gameName || 'Unknown'}</td>
+                                    <td className="p-4 text-stone-400">{new Date(modifier.appliedAt).toLocaleString()}</td>
+                                    <td className="p-4 text-stone-300">{modifier.status}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                 </div>
+                  {totalPages > 1 && (
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-stone-700/60">
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="items-per-page" className="text-sm font-medium text-stone-400">Show:</label>
+                            <select id="items-per-page" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm">
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button variant="secondary" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
+                            <span className="text-stone-400 text-sm">Page {currentPage} of {totalPages}</span>
+                            <Button variant="secondary" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                        </div>
+                    </div>
                 )}
             </Card>
 

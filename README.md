@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.77
+**Version:** 0.1.83
 
 ---
 
@@ -13,7 +13,8 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
 
-## ✨ Features
+### What's New in Version 0.1.83 (September 16, 2025)
+-   **Visible Quest Rewards:** The "Manage Quests" page now includes a "Rewards" column in the table view and displays rewards directly on the quest cards in mobile view, making it much easier for administrators to see the rewards for each quest at a glance.
 
 ### What's New in Version 0.1.77 (September 15, 2025)
 -   **Enhanced Chronicles System:** The `{history}` system has been overhauled to be more comprehensive and intelligent.
@@ -173,24 +174,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ----- START OF FILE vercel.json ---
-
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/server.js" }
-  ]
-}
+-   **Reward R-- END OF FILE README.md ---

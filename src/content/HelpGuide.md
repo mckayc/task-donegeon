@@ -130,10 +130,10 @@ This is the central queue for all actions that require an admin's attention.
 ### User Management
 - **{link_manage_users}:** Add, edit, or delete members. The "Adjust" button allows for manual adjustments to a user's currency, XP, or manually awarded {awards}.
 - **{link_manage_guilds}:** Create, edit, or delete {groups}.
-- **{link_triumphs_trials}:** Define "Triumphs" (positive effects) and "Trials" (negative effects) that can be manually applied to users.
+- **{link_triumphs_trials}:** Define "Triumphs" (positive effects) and "Trials" (negative effects) that can be manually applied to users. Also includes a full history of all applied modifiers.
 
 ### Content Management
-- **{link_manage_quests}:** The master list of all {tasks}. You can create, edit, delete, and clone {tasks}. This page includes search, sorting, and filtering tools.
+- **{link_manage_quests}:** The master list of all {tasks}. You can create, edit, delete, and clone {tasks}. This page includes search, sorting, and filtering tools. For convenience, the rewards for each {task} are displayed directly in the main list, giving you a quick overview of your game's economy.
 - **{link_manage_quest_groups}:** Organize your {tasks} into logical groups for easier management and bulk assignment.
 - **{link_manage_rotations}:** Create automated schedules that rotate a specific set of {tasks} among a specific group of users.
 - **{link_manage_items}:** Manage all "Game Assets," which are the items that can be bought in {stores}.
@@ -209,21 +209,20 @@ A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must
 **Purpose:** This system allows {admin}s to apply immediate or temporary effects to users, either as a reward ({triumph}) or a consequence ({trial}). This is ideal for handling situations that fall outside the normal {task} system, like rewarding exceptional behavior or enforcing house rules.
 
 **How it Works:**
-The system is built on two key concepts: **Definitions** and **Applied Effects**.
-
-1.  **Definitions:** On the `Manage Triumphs & Trials` page, {admin}s create reusable templates. A definition includes a name, icon, and one or more **effects**.
-2.  **Applied Effects:** When an {admin} applies a definition to a user, the system determines how to handle it based on the type of effects it contains.
+The `Manage Triumphs & Trials` page is split into three sections:
+1.  **Definitions:** Here, {admin}s create reusable templates for Triumphs and Trials. A definition includes a name, icon, and one or more **effects**.
+2.  **Active Modifiers:** This section lists any **duration-based** effects that are currently active on a user (e.g., a 24-hour market closure).
+3.  **Modifier Application History:** This is a comprehensive, paginated log of **every** Triumph and Trial that has ever been applied to any user. It provides a complete audit trail of all manual adjustments. You can control how many items are shown per page and navigate through the history.
 
 **Types of Effects:**
 There are two main types of effects, and they behave very differently:
-
 -   **Instantaneous Effects:** These are one-time actions that happen immediately and are finished.
     -   **Examples:** `Grant Rewards`, `Deduct Rewards`.
-    -   **Behavior:** When a Triumph/Trial with only these effects is applied, it does **not** create a permanent "Active Modifier". Instead, the user's balances are adjusted instantly, and a single entry is created in the `{history}` log to record what happened. This provides a clear, auditable event for the user.
+    -   **Behavior:** When a Triumph/Trial with only these effects is applied, it does **not** create a persistent "Active Modifier". Instead, the user's balances are adjusted instantly, and a single entry is created in the `{history}` log to record what happened.
 
 -   **Duration-Based Effects:** These are ongoing effects that last for a specific period.
     -   **Examples:** `Close Market`, `Open Market`, `Market Discount`.
-    -   **Behavior:** When a Triumph/Trial containing any of these effects is applied, it **does** create an "Active Modifier". This modifier is visible on the `Manage Triumphs & Trials` page under the "Active Modifiers" list and will remain there until it expires. The `{history}` is still updated to inform the user that the effect has started.
+    -   **Behavior:** When a Triumph/Trial containing any of these effects is applied, it **does** create an "Active Modifier" that is tracked in the "Active Modifiers" list until it expires. The `{history}` is still updated to inform the user that the effect has started.
 
 ### {link_chronicles}
 **Purpose:** The {history} provides a comprehensive log of all significant actions within the application for motivational and auditing purposes.

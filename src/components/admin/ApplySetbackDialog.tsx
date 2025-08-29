@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { User, ModifierDefinition, Role, ModifierEffect, ModifierEffectType, RewardItem, RewardCategory, QuestKind } from '../../../types';
@@ -158,7 +156,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                 <form id="apply-setback-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-2">
                     <Input as="select" label="User to Apply To" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} required>
                         <option value="" disabled>Select a user...</option>
-                        {users.filter(u => u.role !== Role.DonegeonMaster).map(user => (
+                        {users.map(user => (
                             <option key={user.id} value={user.id}>{user.gameName}</option>
                         ))}
                     </Input>

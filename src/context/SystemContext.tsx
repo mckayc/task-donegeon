@@ -5,7 +5,7 @@ import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI } from '../api';
+import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI } from '../api';
 import { swLogger } from '../utils/swLogger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
@@ -60,6 +60,7 @@ export interface SystemDispatch {
   addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
   updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
   applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
+  deleteAppliedModifier: (modifierId: string) => Promise<void>;
   cloneUser: (userId: string) => Promise<User | null>;
   sendMessage: (messageData: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => Promise<ChatMessage | null>;
   markMessagesAsRead: (payload: { partnerId?: string; guildId?: string }) => Promise<void>;
@@ -290,6 +291,13 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 return true;
             }
             return false;
+        },
+        deleteAppliedModifier: async (modifierId: string) => {
+            const result = await apiAction(() => deleteAppliedModifiersAPI([modifierId]));
+            if (result === null) { // Expect 204 No Content on success
+                dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { appliedModifiers: [modifierId] } });
+                addNotification({ type: 'info', message: 'Active modifier removed.' });
+            }
         },
         cloneUser: async (userId) => {
             const result = await apiAction(() => cloneUserAPI(userId));

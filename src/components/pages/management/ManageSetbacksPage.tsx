@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ModifierDefinition, User } from '../../../types';
+import { ModifierDefinition, User, AppliedModifier } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditSetbackDialog from '../../admin/EditSetbackDialog';
@@ -11,7 +11,7 @@ import { useAuthState } from '../../../context/AuthContext';
 import ModifierTable from '../../modifiers/ModifierTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
-import { EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { EllipsisVerticalIcon, TrashIcon } from '../../user-interface/Icons';
 
 const ModifierCard: React.FC<{
     modifier: ModifierDefinition;
@@ -69,7 +69,8 @@ const ModifierCard: React.FC<{
 const ManageSetbacksPage: React.FC = () => {
     const { settings, modifierDefinitions, appliedModifiers } = useSystemState();
     const { users } = useAuthState();
-    const { deleteSelectedAssets } = useSystemDispatch();
+    // FIX: Destructure `deleteAppliedModifier` to make it available in the component.
+    const { deleteSelectedAssets, deleteAppliedModifier } = useSystemDispatch();
     const { isMobileView } = useUIState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -77,6 +78,7 @@ const ManageSetbacksPage: React.FC = () => {
     const [editingModifier, setEditingModifier] = useState<ModifierDefinition | null>(null);
     const [applyingModifier, setApplyingModifier] = useState<ModifierDefinition | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
+    const [deletingAppliedModifierId, setDeletingAppliedModifierId] = useState<string | null>(null);
     const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
 
     const modifierIds = useMemo(() => modifierDefinitions.map(s => s.id), [modifierDefinitions]);
@@ -110,12 +112,19 @@ const ManageSetbacksPage: React.FC = () => {
         setIsApplyDialogOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDeleteDefinitions = () => {
         if (deletingIds.length > 0) {
             deleteSelectedAssets({ modifierDefinitions: deletingIds });
         }
         setDeletingIds([]);
         setSelectedModifiers(prev => prev.filter(id => !deletingIds.includes(id)));
+    };
+
+    const handleConfirmDeleteActiveModifier = () => {
+        if (deletingAppliedModifierId) {
+            deleteAppliedModifier(deletingAppliedModifierId);
+        }
+        setDeletingAppliedModifierId(null);
     };
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +183,7 @@ const ManageSetbacksPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Reason</th>
                                     <th className="p-4 font-semibold">Applied By</th>
                                     <th className="p-4 font-semibold">Expires</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -187,6 +197,11 @@ const ManageSetbacksPage: React.FC = () => {
                                         <td className="p-4 text-stone-400 italic">"{modifier.reason}"</td>
                                         <td className="p-4 text-stone-300">{modifier.appliedBy.gameName}</td>
                                         <td className="p-4 text-amber-300">{modifier.expiresAt ? new Date(modifier.expiresAt).toLocaleString() : 'Never'}</td>
+                                        <td className="p-4">
+                                            <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingAppliedModifierId(modifier.id)} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -203,9 +218,16 @@ const ManageSetbacksPage: React.FC = () => {
             <ConfirmDialog
                 isOpen={deletingIds.length > 0}
                 onClose={() => setDeletingIds([])}
-                onConfirm={handleConfirmDelete}
+                onConfirm={handleConfirmDeleteDefinitions}
                 title={`Delete ${deletingIds.length > 1 ? 'Definitions' : 'Definition'}`}
                 message={`Are you sure you want to delete ${deletingIds.length > 1 ? `${deletingIds.length} definitions` : `the definition for "${modifierDefinitions.find(s=>s.id === deletingIds[0])?.name}"`}? This cannot be undone.`}
+            />
+            <ConfirmDialog
+                isOpen={!!deletingAppliedModifierId}
+                onClose={() => setDeletingAppliedModifierId(null)}
+                onConfirm={handleConfirmDeleteActiveModifier}
+                title="Delete Active Modifier"
+                message="Are you sure you want to remove this modifier? This action is immediate and cannot be undone."
             />
         </div>
     );

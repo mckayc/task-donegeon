@@ -205,6 +205,26 @@ A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must
 - If enabled, users can click a {task} to open its detail view and complete it.
 - If **"Require PIN for quest completion"** is enabled, the user must enter their PIN to confirm. Otherwise, the {task} is completed immediately.
 
+### {link_triumphs_trials}
+**Purpose:** This system allows {admin}s to apply immediate or temporary effects to users, either as a reward ({triumph}) or a consequence ({trial}). This is ideal for handling situations that fall outside the normal {task} system, like rewarding exceptional behavior or enforcing house rules.
+
+**How it Works:**
+The system is built on two key concepts: **Definitions** and **Applied Effects**.
+
+1.  **Definitions:** On the `Manage Triumphs & Trials` page, {admin}s create reusable templates. A definition includes a name, icon, and one or more **effects**.
+2.  **Applied Effects:** When an {admin} applies a definition to a user, the system determines how to handle it based on the type of effects it contains.
+
+**Types of Effects:**
+There are two main types of effects, and they behave very differently:
+
+-   **Instantaneous Effects:** These are one-time actions that happen immediately and are finished.
+    -   **Examples:** `Grant Rewards`, `Deduct Rewards`.
+    -   **Behavior:** When a Triumph/Trial with only these effects is applied, it does **not** create a permanent "Active Modifier". Instead, the user's balances are adjusted instantly, and a single entry is created in the `{history}` log to record what happened. This provides a clear, auditable event for the user.
+
+-   **Duration-Based Effects:** These are ongoing effects that last for a specific period.
+    -   **Examples:** `Close Market`, `Open Market`, `Market Discount`.
+    -   **Behavior:** When a Triumph/Trial containing any of these effects is applied, it **does** create an "Active Modifier". This modifier is visible on the `Manage Triumphs & Trials` page under the "Active Modifiers" list and will remain there until it expires. The `{history}` is still updated to inform the user that the effect has started.
+
 ### {link_chronicles}
 **Purpose:** The {history} provides a comprehensive log of all significant actions within the application for motivational and auditing purposes.
 

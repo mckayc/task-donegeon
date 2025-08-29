@@ -201,6 +201,7 @@ The border of a {task} card indicates its urgency and status.
 - The calendar view is categorized into "{recurringTasks}" and "{singleTasks} & {journeys}" for each user to improve clarity.
 - {task} cards in Kiosk Mode use the same visual border system as the main {link_quests} page, providing at-a-glance status information.
 - **Updating:** When an application update is available, a toast notification will appear at the bottom-left of the screen. Additionally, a persistent "Update" icon (an arrow pointing down into a tray) will appear in the header. Clicking either of these will install the update.
+- **Pending Notifications:** If a user has items awaiting approval, a red notification badge will appear on their avatar in the header.
 
 #### {task} Visibility in Kiosk Mode
 A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must meet one of the following criteria:
@@ -301,6 +302,10 @@ To prevent clutter, some admin actions are consolidated.
 ---
 
 ## Appendix: Version History
+
+### What's New in Version 0.1.92 (September 25, 2025)
+-   **Kiosk Mode Pending Notifications:** The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items (quests or purchases) awaiting approval, providing an immediate visual cue without requiring login.
+-   **Backend Optimizations:** Added a new, more efficient backend endpoint to fetch pending item counts for multiple users at once, improving performance for the Kiosk Mode view.
 
 ### What's New in Version 0.1.91 (September 24, 2025)
 -   **Maintenance Release:** Incremented application version number and updated the service worker to ensure all users receive the latest application updates correctly. This release also includes several internal bug fixes to improve build stability and correct data access patterns on the Quests and Management pages.

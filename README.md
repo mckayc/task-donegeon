@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.91
+**Version:** 0.1.92
 
 ---
 
@@ -12,6 +12,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.92 (September 25, 2025)
+-   **Kiosk Mode Pending Notifications:** The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items (quests or purchases) awaiting approval, providing an immediate visual cue without requiring login.
+-   **Backend Optimizations:** Added a new, more efficient backend endpoint to fetch pending item counts for multiple users at once, improving performance for the Kiosk Mode view.
 
 ### What's New in Version 0.1.91 (September 24, 2025)
 -   **Maintenance Release:** Incremented application version number and updated the service worker to ensure all users receive the latest application updates correctly. This release also includes several internal bug fixes to improve build stability and correct data access patterns on the Quests and Management pages.
@@ -210,4 +214,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ---
+-   **Reward R-- END OF FILE README.md --

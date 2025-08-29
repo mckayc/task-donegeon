@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { GameAsset } from '../../../types';
+import { GameAsset } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
@@ -7,13 +7,13 @@ import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 import Input from '../user-interface/Input';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
-import { useDebounce } from '../../../hooks/useDebounce';
-import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import UploadWithCategoryDialog from '../admin/UploadWithCategoryDialog';
-import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
 import ItemTable from '../items/ItemTable';
-import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
-import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -43,14 +43,14 @@ const ManageItemsPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
     
-    const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map(a => a.category)))], [allGameAssets]);
+    const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map((a: GameAsset) => a.category)))], [allGameAssets]);
 
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
     const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);
 
     const fetchAssets = useCallback(async () => {
         setIsLoading(true);
-        const filtered = allGameAssets.filter(asset => {
+        const filtered = allGameAssets.filter((asset: GameAsset) => {
             const categoryMatch = activeTab === 'All' || asset.category === activeTab;
             const searchMatch = !debouncedSearchTerm || 
                 asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -58,7 +58,7 @@ const ManageItemsPage: React.FC = () => {
             return categoryMatch && searchMatch;
         });
 
-        filtered.sort((a, b) => {
+        filtered.sort((a: GameAsset, b: GameAsset) => {
             switch (sortBy) {
                 case 'name-asc': return a.name.localeCompare(b.name);
                 case 'name-desc': return b.name.localeCompare(a.name);

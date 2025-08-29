@@ -44,7 +44,7 @@ Your main hub. This is the first page you see after logging in. It gives you a q
 - **Inventory Card:** Displays your current balances for all types of {currency} and {xp}.
 - **Latest {award} Card:** Showcases the most recent {award} you've earned.
 - **Leaderboard:** A friendly competition showing the top XP earners for the current mode (Personal or {group}).
-- **Quick Actions:** A list of your most urgent and available {tasks} for easy access.
+- **Quick Actions:** A list of **all** your most urgent and available {tasks} for easy access. This list is scrollable if you have many active {tasks}.
 - **Weekly Progress:** A chart showing how much XP you've earned over the last seven days.
 
 ### {link_quests}
@@ -192,6 +192,13 @@ The border of a {task} card indicates its urgency and status.
 - The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊).
 - The calendar view is categorized into "{recurringTasks}" and "{singleTasks} & {journeys}" for each user to improve clarity.
 - {task} cards in Kiosk Mode use the same visual border system as the main {link_quests} page, providing at-a-glance status information.
+
+#### {task} Visibility in Kiosk Mode
+A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must meet one of the following criteria:
+-   A **{recurringTask}** scheduled to run today.
+-   A **{singleTask}** or **{journey}** whose start date is today.
+-   A **{singleTask}** that the user has manually marked as a "To-Do".
+-   An optional, dateless **{singleTask}** that is configured with a daily completion limit. These now appear automatically without needing to be a "To-Do".
 
 **Completing {tasks} in Kiosk Mode:**
 - If enabled, users can click a {task} to open its detail view and complete it.

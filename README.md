@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.75
+**Version:** 0.1.76
 
 ---
 
@@ -14,6 +14,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.76 (September 14, 2025)
+-   **No Cap on Quick Actions:** The "Quick Actions" widget on the Dashboard now displays all available quests for the user, rather than being capped at 10. The list is scrollable if many quests are available.
+-   **Kiosk Mode Logic Update:** Optional, dateless `{singleTasks}` (Ventures) that can be completed daily will now automatically appear for all assigned users in Kiosk Mode, without needing to be manually marked as a "To-Do".
+-   **Updated Documentation:** The in-app Help Guide has been updated to reflect these new functional specifications.
 
 ### What's New in Version 0.1.75 (September 13, 2025)
 -   **Functional Specification UI Overhaul:** Implemented the full set of UI and behavior requirements from Bug Report #bug-1756437.
@@ -88,8 +93,6 @@ Task Donegeon is a gamified task and chore management application designed for f
 ### What's New in Version 0.1.49 (August 26, 2025)
 -   **Mobile Responsiveness:** Implemented a fully responsive design. The application now adapts its layout for mobile devices, featuring an off-canvas sidebar, a condensed header, and touch-friendly card-based views on management pages to ensure a great user experience on any screen size.
 -   **View Mode Switcher:** Added a manual toggle in the header to switch between mobile and desktop views, facilitating testing and improving usability on tablets.
-
-### What's New in Version 0.1.40 (August 26, 2025)
 -   **Data Integrity & Reset Fixes:** Resolved critical issues where core game elements like the default Guild, Exchange Market, and Explorer Chronicles would disappear after a full data reset. The system now correctly re-initializes these essential components.
 -   **Revamped Asset Pack Importer:** Improved the asset pack import process. The import dialog now provides a clearer preview of all assets within the pack, including quests, markets, items, and trophies. It also includes a "select all" checkbox for easier bulk importing.
 -   **Enhanced Setback Rules:** Added more granular control over setbacks in the "Game Rules" settings. Admins can now globally disable setbacks or choose to only apply them if quests are incomplete at the end of the day ("Forgive Late Setbacks").

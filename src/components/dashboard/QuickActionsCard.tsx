@@ -13,8 +13,8 @@ const QuickActionsCard: React.FC<QuickActionsCardProps> = ({ quests, onQuestSele
     return (
         <Card title="Quick Actions">
             {quests.length > 0 ? (
-                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                    {quests.slice(0, 10).map(quest => (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                    {quests.map(quest => (
                         <QuestWidget key={quest.id} quest={quest} handleQuestSelect={onQuestSelect} />
                     ))}
                 </div>

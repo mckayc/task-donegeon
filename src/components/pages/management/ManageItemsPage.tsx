@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -24,7 +17,6 @@ import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyCon
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
-    // Fix: Destructure `rewardTypes` as it is required by the ItemTable component.
     const { gameAssets: allGameAssets, rewardTypes } = useEconomyState();
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();
@@ -256,7 +248,7 @@ const ManageItemsPage: React.FC = () => {
                     file={fileToCategorize}
                     onClose={() => setFileToCategorize(null)}
                     onUpload={handleUploadWithCategory}
-                    existingCategories={categories.filter(c => c !== 'All')}
+                    existingCategories={categories.filter((c: string) => c !== 'All')}
                 />
             )}
             

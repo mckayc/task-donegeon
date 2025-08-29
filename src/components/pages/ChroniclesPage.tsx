@@ -62,7 +62,8 @@ const ChroniclesPage: React.FC = () => {
                 const parsed = JSON.parse(savedFilters);
                 // If the saved value is an empty array, it's likely a bug or invalid state.
                 // Fall back to the default filters instead.
-                if (Array.isArray(parsed) && parsed.length > 0) {
+                // FIX: Validate that the parsed value is an array of strings to satisfy TypeScript's type checker.
+                if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(item => typeof item === 'string')) {
                     return parsed;
                 }
             }

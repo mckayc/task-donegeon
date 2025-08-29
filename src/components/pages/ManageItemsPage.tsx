@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../../types';
 import Button from '../user-interface/Button';
@@ -201,7 +194,6 @@ const ManageItemsPage: React.FC = () => {
             <Card title={`All Created ${settings.terminology.link_manage_items}`}>
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
-                        {/* Fix: Explicitly type `category` as string to resolve TS errors. */}
                         {categories.map((category: string) => (
                             <button key={category} onClick={() => setActiveTab(category)}
                                 data-log-id={`manage-items-tab-${category.toLowerCase()}`}
@@ -256,7 +248,6 @@ const ManageItemsPage: React.FC = () => {
                     file={fileToCategorize}
                     onClose={() => setFileToCategorize(null)}
                     onUpload={handleUploadWithCategory}
-                    // Fix: Explicitly type `c` as string to resolve TS error.
                     existingCategories={categories.filter((c: string) => c !== 'All')}
                 />
             )}

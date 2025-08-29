@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -220,7 +213,6 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
             <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs text-stone-400 overflow-hidden">
                     <span title={questGroup ? questGroup.name : 'Uncategorized'}>{questGroup ? questGroup.icon : '📂'}</span>
-                    {/* Fix: Replaced 'END' with the correct variable to display the quest group name. */}
                     <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
                 </div>
                 <div title={absoluteDueDateString || 'No due date'}>
@@ -232,7 +224,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 };
 
 const QuestsPage: React.FC = () => {
-    const { settings } = useSystemState();
+    const { settings, scheduledEvents } = useSystemState();
     const { appMode } = useUIState();
     const { quests, questCompletions } = useQuestsState();
     const { addQuest, updateQuest } = useQuestsDispatch();
@@ -252,8 +244,8 @@ const QuestsPage: React.FC = () => {
         if (!currentUser) return [];
         const questsForMode = quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode));
         const uniqueQuests = Array.from(new Map(questsForMode.map(q => [q.id, q])).values());
-        return uniqueQuests.sort(questSorter(currentUser, questCompletions, settings.scheduledEvents, now));
-    }, [quests, currentUser, appMode, questCompletions, settings.scheduledEvents, now]);
+        return uniqueQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, now));
+    }, [quests, currentUser, appMode, questCompletions, scheduledEvents, now]);
 
     const dutyQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Duty), [visibleQuests]);
     const ventureQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey), [visibleQuests]);

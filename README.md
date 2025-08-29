@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.73
+**Version:** 0.1.75
 
 ---
 
@@ -14,6 +14,21 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ## ✨ Features
+
+### What's New in Version 0.1.75 (September 13, 2025)
+-   **Functional Specification UI Overhaul:** Implemented the full set of UI and behavior requirements from Bug Report #bug-1756437.
+-   **Consistent Background Colors:** Quest cards now have consistent, distinct background colors based on their type ({recurringTask}, {singleTask}, {journey}) across all parts of the application.
+-   **Time-Sensitive Border System:** Quest card borders now dynamically change color and animate based on their deadline proximity:
+    -   `Green:` More than 2 hours until due.
+    -   `Yellow:` 1-2 hours until due.
+    -   `Orange (pulsing):` Less than 1 hour until due.
+    -   `Red (pulsing):` Past due.
+    -   `Black:` Marked as incomplete for the day (for {recurringTasks}).
+-   **Dimmed States:** Quests that are completed for the day or past their "incomplete" time are now visually dimmed to de-emphasize them.
+-   **Updated Documentation:** The in-app Help Guide has been updated to fully document this new, detailed visual system.
+
+### What's New in Version 0.1.74 (September 12, 2025)
+-   **Maintenance Release:** Incremented application version number and updated the service worker cache to ensure all users receive the latest application updates correctly.
 
 ### What's New in Version 0.1.73 (September 11, 2025)
 -   **Visual Task State System:** Quest cards on the main Quest Board and in Kiosk Mode now use a color-coded and animated border system to indicate their status at a glance (e.g., Overdue, Due Soon, To-Do, Optional).

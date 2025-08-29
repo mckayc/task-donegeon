@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.73 - Quest Border Animations & Kiosk UI",
-  "version": "0.1.73",
+  "name": "Task Donegeon 2.0 - 0.1.75 - Functional Spec Implementation",
+  "version": "0.1.75",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

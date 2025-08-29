@@ -53,16 +53,6 @@ This is your main {task} board. It shows all available {tasks} for your current 
 - **{task} Cards:** Each card gives you a summary of the {task}, including its rewards and deadlines.
 - **To-Do:** {singleTasks} can be marked as a "To-Do". These will appear on your {link_calendar} for today and are sorted with higher priority on the {link_quests} page.
 
-#### Visual Cues: {task} Borders
-To help you understand the status of your {tasks} at a glance, {task} cards have different colored borders and animations:
-- **Overdue ({tasks}):** A solid `red border` indicates a {task} is past its deadline and needs immediate attention.
-- **Due Soon ({tasks}):** A `pulsing amber/orange border` serves as a warning that a {task}'s deadline is within the next 24 hours.
-- **On Time ({tasks}):** A calm `green border` signifies a {task} with a future deadline that is safely on track.
-- **To-Do ({singleTasks}):** A `glowing purple border` highlights any {singleTask} you have personally marked as a priority. This helps distinguish your chosen tasks from scheduled ones.
-- **Redemption {tasks}:** A special `slate-colored border` with a glow effect is used for redemption {tasks}, which are assigned to resolve a setback or "Trial".
-- **Optional {tasks}:** A `dashed border style` clearly indicates that a {task} is optional and not required.
-- **Default:** {tasks} with no specific time-based state (like undated {singleTasks} that aren't on your To-Do list) will have a standard neutral border.
-
 ### {link_calendar}
 A calendar view of your scheduled life.
 - **Events View:** Shows {recurringTasks} on their scheduled days, {singleTasks} on their due dates, and special events created by the {admin}. You can also see user birthdays.
@@ -77,7 +67,6 @@ The central hub for all {stores}. Here you can browse different {stores} to spen
 Customize your character's appearance.
 - **Avatar Preview:** A large view of your current avatar.
 - **Profile Picture:** You can upload a custom image to serve as your profile picture. This image will be layered underneath any equipped avatar items.
-- **Equipment Slots:** Browse the avatar items you own, sorted by equipment slot (e.g., 'hat', 'shirt'). Clicking an item equips it.
 
 ### {link_collection}
 View all the non-avatar items you've purchased or earned.
@@ -92,7 +81,7 @@ View details about the {groups} you are a member of.
 
 ### {link_progress}
 A detailed breakdown of your performance.
-- **Stat Cards:** At-a-glance totals for your XP and the number of different {task} types you've completed.
+- **Stat Cards:** At-a-glance totals for your XP and the number of different {task} type you've completed.
 - **Charts:** See your XP gains over the past week and month to track your progress over time.
 
 ### {link_ranks}
@@ -126,209 +115,145 @@ Edit your personal and account details.
 This section details the powerful management tools available to administrators.
 
 ### Asset Management Actions: Edit, Clone, Delete
-
-Most management pages in the Admin's Toolkit (e.g., {link_manage_quests}, {link_manage_items}, {link_manage_markets}) share a common set of powerful actions for handling content.
-
--   **Editing:** To modify an existing asset, you can typically click on its name in the table or use an "Edit" button (often represented by a ✏️ icon). This will open a dialog pre-filled with the asset's current details, allowing you to make and save changes.
-
--   **Cloning:** To quickly create a new asset based on an existing one, use the "Clone" button (usually a 📄 icon). This creates an exact copy of the selected item (e.g., "My Awesome Quest" becomes "My Awesome Quest (Copy)"), which you can then edit. This is a great time-saver for creating series of similar {tasks} or items. Note that some unique, system-critical assets (like the default Exchange Post {store}) cannot be cloned.
-
--   **Deleting:** To permanently remove an asset, use the "Delete" button (a 🗑️ icon). Because this action cannot be undone, a confirmation dialog will always appear to prevent accidental deletions.
-
--   **Bulk Actions:** All management tables feature checkboxes. You can select multiple items to perform actions on them simultaneously. Once you've selected one or more items, a bulk action bar will appear at the top of the table, allowing you to perform actions like **Delete**, **Mark Active**, or **Mark Inactive** on your entire selection at once.
+-   **Editing:** To modify an existing asset, you can typically click on its name in the table or use an "Edit" button (often represented by a ✏️ icon).
+-   **Cloning:** To quickly create a new asset based on an existing one, use the "Clone" button (usually a 📄 icon). This is a great time-saver.
+-   **Deleting:** To permanently remove an asset, use the "Delete" button (a 🗑️ icon).
+-   **Bulk Actions:** All management tables feature checkboxes. You can select multiple items to perform actions on them simultaneously, such as **Delete**, **Mark Active**, or **Bulk Edit**.
 
 ### {link_approvals}
 This is the central queue for all actions that require an admin's attention.
-- **{task} Completions:** Approve or reject {tasks} that users have submitted for verification. You can add an optional note when approving or rejecting.
+- **{task} Completions:** Approve or reject {tasks} that users have submitted for verification.
 - **Purchase Requests:** Approve or reject requests for items that are configured to require approval.
 - **Trade Offers:** View, accept, or reject trade offers sent to you by other users.
 
 ### User Management
-- **{link_manage_users}:** Add new members, edit existing user details (including their role), or delete users. The "Adjust" button allows for manual adjustments to a user's currency, XP, or manually awarded {awards}.
-- **{link_manage_guilds}:** Create, edit, or delete {groups}. You can manage group membership and assign a unique theme to each {group}.
-- **{link_triumphs_trials}:** Define "Triumphs" (positive effects) and "Trials" (negative effects) that can be manually applied to users. These can grant/deduct rewards, open/close {stores}, or offer special discounts.
+- **{link_manage_users}:** Add, edit, or delete members. The "Adjust" button allows for manual adjustments to a user's currency, XP, or manually awarded {awards}.
+- **{link_manage_guilds}:** Create, edit, or delete {groups}.
+- **{link_triumphs_trials}:** Define "Triumphs" (positive effects) and "Trials" (negative effects) that can be manually applied to users.
 
 ### Content Management
-- **{link_manage_quests}:** The master list of all {tasks}. You can create, edit, delete, and clone {tasks}. This page also includes powerful search, sorting, and filtering tools.
-- **{link_manage_quest_groups}:** Organize your {tasks} into logical groups (e.g., "Household Chores," "Schoolwork"). This makes them easier to manage and assign in bulk.
-- **{link_manage_rotations}:** Create automated schedules that rotate a specific set of {tasks} among a specific group of users. Perfect for daily or weekly chore wheels.
-- **{link_manage_items}:** Manage all "Game Assets," which are the items that can be bought in {stores} or earned as special rewards.
-- **{link_manage_markets}:** Design and manage your {stores}. Each {store} can have a theme and be populated with specific items for sale.
-- **{link_manage_rewards}:** Define the types of {currency} and {xp} that exist in your game. Each one can have a name, icon, and a "real world" value for economic balancing.
-- **{link_manage_ranks}:** Create the progression ladder for your game by defining the different {levels} and the XP thresholds required to reach them.
-- **{link_manage_trophies}:** Design the {awards} that users can earn, either automatically by meeting certain criteria or by being manually awarded by an {admin}.
-- **{link_manage_events}:** Schedule special, time-limited events that appear on the calendar, such as "Bonus XP Weekends" or "{store} Sales."
+- **{link_manage_quests}:** The master list of all {tasks}. You can create, edit, delete, and clone {tasks}. This page includes search, sorting, and filtering tools.
+- **{link_manage_quest_groups}:** Organize your {tasks} into logical groups for easier management and bulk assignment.
+- **{link_manage_rotations}:** Create automated schedules that rotate a specific set of {tasks} among a specific group of users.
+- **{link_manage_items}:** Manage all "Game Assets," which are the items that can be bought in {stores}.
+- **{link_manage_markets}:** Design and manage your {stores}.
+- **{link_manage_rewards}:** Define the types of {currency} and {xp} that exist in your game.
+- **{link_manage_ranks}:** Create the progression ladder for your game by defining the different {levels}.
+- **{link_manage_trophies}:** Design the {awards} that users can earn.
+- **{link_manage_events}:** Schedule special, time-limited events that appear on the calendar.
 
 ### System Tools
-- **{link_suggestion_engine}:** (AI Studio) Use Google's Gemini AI to generate creative ideas for any game asset. If you need a new {task} about kitchen chores or a new {award} for reading, the AI can provide a list of suggestions to get you started.
-- **{link_asset_manager}:** Upload and manage all image files used in the game. It also includes an AI Image Prompt Helper to assist in creating art with external tools.
-- **{link_asset_library}:** Import pre-made content packs, such as collections of {tasks} or items, directly into your game.
-- **{link_backup_import}:** Your main data management hub.
-  - **Backup:** Create and download a full backup of your entire application state.
-  - **Restore:** Restore the application from a previously saved backup file.
-  - **Export Blueprint:** Create smaller, shareable "Blueprint" files that contain only specific assets (e.g., just your chore {tasks}) to share with other {appName} users.
-  - **Import Blueprint:** Import a Blueprint file shared by someone else.
-- **{link_appearance} & {link_themes}:** Access the powerful Theme Editor to create and customize new visual themes for the application. You can also manage which themes are available to users.
-- **{link_settings}:** The master control panel for the entire application. See the "System & Settings Reference" section for a full breakdown.
+- **{link_suggestion_engine}:** (AI Studio) Use Google's Gemini AI to generate creative ideas for any game asset.
+- **{link_asset_manager}:** Upload and manage all image files used in the game.
+- **{link_asset_library}:** Import pre-made content packs into your game.
+- **{link_backup_import}:** Your main data management hub for backups, restores, and sharing content "Blueprints".
+- **{link_appearance} & {link_themes}:** Access the Theme Editor to create and customize new visual themes.
+- **{link_settings}:** The master control panel for the entire application.
 
 ### Developer Tools
-- **{link_bug_tracker}:** A built-in tool for tracking bugs and feature requests. You can start a recording session that logs all your actions, making it easy to reproduce issues.
-- **{link_test_cases}:** A page for running automated tests to verify that core application features are working as expected after an update.
+- **{link_bug_tracker}:** A built-in tool for tracking bugs, feedback, and feature requests.
+- **{link_test_cases}:** A page for running automated tests to verify that core application features are working.
 
 ---
 
 ## Functional Specifications
 
-This section serves as the definitive source of truth for the application's intended functionality. All development and changes should adhere to the standards and behaviors documented here.
+This section serves as the definitive source of truth for the application's intended functionality.
+
+### {task} Card Visual System
+To provide at-a-glance information, all {task} cards (on the {link_quests} page, Dashboard, Kiosk Mode, etc.) share a consistent visual system.
+
+#### Background Colors
+Each {task} type has a unique background color to make it easily distinguishable. These colors are based on the current theme.
+-   `{recurringTask}:` Blueish background (`bg-sky-900/30`)
+-   `{singleTask}:` Amber/Orange background (`bg-amber-900/30`)
+-   `{journey}:` Purple background (`bg-purple-900/30`)
+
+#### Dimmed States
+{tasks} that are not currently actionable are dimmed to de-emphasize them.
+-   **Completed:** Any {task} that has been completed for the day will remain on screen but appear dimmed.
+-   **Incomplete:** Any `{recurringTask}` that is past its final "Incomplete Time" for the day will be dimmed.
+
+#### Border Colors & Animations
+The border of a {task} card indicates its urgency and status.
+-   `Solid Border:` Indicates the {task} is **required**.
+-   `Dashed Border:` Indicates the {task} is **optional**.
+-   `Green Border:` The {task} is due in **more than 2 hours**.
+-   `Yellow Border:` The {task} is due in **1-2 hours**.
+-   `Orange Border (Pulsing):` The {task} is due in **less than 1 hour**. This animation draws attention to its urgency.
+-   `Red Border (Pulsing):` The {task} is **past its due time** but can still be completed before it is marked incomplete.
+-   `Black Border:` The {task} is now **incomplete** for the day and cannot be completed (applies mainly to {recurringTasks} with an `endTime`).
 
 ### Shared / Kiosk Mode
-
-**Purpose:** This mode is designed for shared family devices (like a tablet in the living room). It provides a fast user-switching interface and can automatically log users out after a period of inactivity to protect their accounts.
-
-**Enabling Kiosk Mode:**
-1.  Navigate to the **{link_settings}** page.
-2.  Open the **"Shared / Kiosk Mode"** section.
-3.  Toggle **"Enable Shared Mode"** on.
-4.  Select which users should appear on the shared login screen.
-5.  Optionally, enable **"Allow quest completion from shared view"** to let users complete their tasks without a full login.
-6.  If completions are allowed, you can also toggle **"Require PIN for quest completion"** for added security.
+**Purpose:** This mode is for shared family devices. It provides a fast user-switching interface and can automatically log users out after a period of inactivity.
 
 **How it Works:**
-- When enabled, logging out or clicking the **"Exit"** button in the header will take you to a special Kiosk screen. This screen defaults to a calendar view of today's available {tasks} for each selected user.
-- The header displays the avatars and **usernames** of the users in Kiosk mode for quick identification. Tapping an avatar allows that user to log in.
-- The header also contains icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊). The Leaderboard shows a detailed progress card for each user.
-- A **"Switch"** icon is also present in the header, allowing any user (even one not configured for Kiosk mode) to access the full user-switching screen.
+- When enabled, logging out or clicking "Exit" in the header goes to a Kiosk screen. This screen defaults to a calendar view of today's available {tasks} for each selected user.
+- The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊).
+- The calendar view is categorized into "{recurringTasks}" and "{singleTasks} & {journeys}" for each user to improve clarity.
+- {task} cards in Kiosk Mode use the same visual border system as the main {link_quests} page, providing at-a-glance status information.
 
 **Completing {tasks} in Kiosk Mode:**
-- If enabled in settings, users can click on a {task} in the Kiosk calendar view.
-- This opens a detail dialog where they can mark the {task} as complete.
-- If **"Require PIN for quest completion"** is enabled in the Kiosk settings (and the user has a PIN set), the user will be prompted to enter their PIN to confirm the completion. Otherwise, if the setting is disabled, the {task} is completed immediately.
-
----
+- If enabled, users can click a {task} to open its detail view and complete it.
+- If **"Require PIN for quest completion"** is enabled, the user must enter their PIN to confirm. Otherwise, the {task} is completed immediately.
 
 ### {link_chronicles}
-
-**Purpose:** The primary goal of the {history} is to provide a comprehensive log of all significant actions within the application.
-- **For {users}:** It serves as a motivational tool, allowing them to see a clear history of their progress, achievements, and transactions.
-- **For {admin}s:** It provides an audit trail to see what other administrators are doing and to monitor the progress and activities of all users in their scope.
-
-**Locations & Views:**
-The {history} are accessible in two main locations:
-1.  **Dashboard ("Recent Activity"):** This widget on the main {link_dashboard} displays a user's most recent personal activity.
-2.  **{history} Page:** A dedicated page with more powerful viewing options.
-    -   **My Activity View:** This view shows all historical events for the currently logged-in user within their current scope (Personal or {group}).
-    -   **All Activity View:** Available to {admin}s and {moderator}s, this view shows a combined feed of all user activities within the current scope.
-
-**Functional Specification:**
-- The **"Recent Activity"** widget on the {link_dashboard} and the **"My Activity"** view on the {history} page should display the **exact same information and event types**.
-- The only functional difference is that the **"Recent Activity"** widget on the dashboard is limited to displaying events from the **last 7 days**.
-- The main **{history} Page** is paginated, allowing users to browse through their entire history. It also features a powerful filtering system, allowing users to show or hide different types of events.
+**Purpose:** The {history} provides a comprehensive log of all significant actions within the application for motivational and auditing purposes. The dashboard widget shows the last 7 days of activity, while the main page is a full, filterable history.
 
 **Event Breakdown:**
-Each entry in the {history} represents a specific event:
 - **Quest Completion:** Records when a {task} is completed, approved, or rejected.
 - **Purchase:** Logs when an item is purchased from a {store}.
 - **Trophy Awarded:** Appears when a user unlocks a new {award}.
-- **Admin Adjustment:** Shows when an {admin} manually gives or takes away {points} or {awards}.
-- **Gift Received:** Records when a user receives a gift from another player.
+- **Admin Adjustment:** Shows when an {admin} manually gives or takes away {points}.
+- **Gift Received:** Records when a user receives a gift.
 - **Trade:** Logs the initiation, update, and completion of trades.
-- **Crafting:** Appears when a user crafts a new item from a recipe.
-- **System:** Logs automated system actions, such as applying {negativePoints} for overdue {tasks}.
-- **Quest Claiming:** Logs when a user claims, cancels a claim, has a claim approved/rejected, or unclaims an approved {task}.
-
-**Visual Cues:**
-The status of each event is color-coded for quick reference:
-- `Green:` Indicates a positive or completed action (e.g., 'Approved', 'Completed', 'Awarded').
-- `Yellow:` Indicates a pending action (e.g., 'Pending', 'Requested').
-- `Red:` Indicates a negative action (e.g., 'Rejected', 'Setback').
-- `Gray:` Indicates a neutral or cancelled action (e.g., 'Cancelled').
+- **Crafting:** Appears when a user crafts a new item.
+- **System:** Logs automated system actions, such as applying {negativePoints}.
+- **Quest Claiming:** Logs the full lifecycle of a {task} claim (claimed, approved, cancelled, etc.).
 
 ### Quest Claiming
-
-**Purpose:** The "Claim" feature is designed for {singleTasks} and {journeys} to solve two main problems:
-1.  **Preventing Redundant Work:** It stops {users} from starting a {task} that may no longer be necessary (e.g., "Take out the trash" when it has already been taken out).
-2.  **Avoiding Overlap:** It prevents multiple {users} from working on the same single-person {task} simultaneously.
+**Purpose:** The "Claim" feature prevents multiple {users} from working on the same single-person {task}.
 
 **Admin Setup:**
-- In the "Create/Edit Quest" dialog, a new toggle switch labeled **"Requires Claim Before Starting"** will be available for {singleTasks} and {journeys}.
-- When this toggle is enabled, a new input field appears next to it: **"Claim Limit"**. This is a number that defaults to `1`.
-- A `Claim Limit` of `1` means the {task} is a solo job. A limit of `2` or more means it's a small group task that multiple people can claim.
+- In the "Create/Edit Quest" dialog, a **"Requires Claim Before Starting"** toggle is available for {singleTasks} and {journeys}.
+- A **"Claim Limit"** can be set (default is 1).
 
 **User Workflow:**
-1.  **Viewing an Unclaimed {task}:** An available {task} that requires a claim will display a **"Claim {task}"** button in its detail view.
-2.  **Claiming a {task}:**
-    - When a {user} clicks "Claim {task}", their request is submitted to the {admin}s.
-    - The button immediately changes to **"Claim Pending"** and becomes disabled. A **"Cancel Claim"** button will appear, allowing the user to withdraw their request.
-3.  **Viewing a Pending/Approved Claim:**
-    - For all other {users}, the {task} card will now clearly display a status like **"Claimed by [User's Name]"** (or "Claims: 1/3") to show that a slot is taken.
-    - The "Claim {task}" button will be disabled for all {users} once the claim limit is reached.
-4.  **Admin Approval:**
-    - A new **"Pending Claims"** tab will appear on the {link_approvals} page.
-    - {admin}s will see a notification badge in the sidebar when new claims are pending.
-    - {admin}s can **Approve** or **Reject** the claim.
-5.  **Claim Approved:**
-    - The claiming {user} receives a notification that their claim was approved.
-    - Their button in the {task} detail view changes to **"Complete {task}"**. They can now proceed with the {task}. Once the {task} is completed, their claim is automatically released.
-6.  **Claim Rejected:**
-    - The claiming {user} receives a notification that their claim was rejected.
-    - The claim is removed, and the slot becomes available again for others to claim.
-7.  **Unclaiming a {task}:** If a {user} has an **approved** claim but decides not to do the {task}, they will have an **"Unclaim"** option in the detail view. This will free up their slot, making the {task} available for others.
-8.  **Chronicles Logging:** Every step of this process—from the initial claim request, to its approval or rejection, cancellation by the user, and unclaiming of an approved quest—is recorded in the {history} for full visibility.
-9.  **Admin Oversight:**
-    - To prevent {tasks} from being locked indefinitely, an {admin} will have a **"Force Unclaim"** option on the "Manage Quests" page for any claimed {task}. This will remove all current claims (both pending and approved) and make the {task} available again.
+1.  A {user} clicks **"Claim {task}"** in the detail view. Their request is sent for approval.
+2.  The {task} now shows as "Claimed by [User]" for others. The "Claim" button is disabled if the limit is reached.
+3.  {admin}s see the request in the **"Pending Claims"** tab on the {link_approvals} page.
+4.  If approved, the claiming {user} is notified and can now complete the {task}. Completing it releases their claim.
+5.  If rejected, the claim is removed and the slot becomes available.
+6.  An {admin} can **"Force Unclaim"** a {task} from the "Manage Quests" page to clear all pending/approved claims.
 
 ### Bug Tracker
+**Purpose:** A tool for `{admin}`s to systematically track bugs, feedback, and feature requests.
 
-**Purpose:** A tool for `{admin}`s to systematically track bugs, feedback, and feature requests. It records user actions to help reproduce issues.
-
-**Enabling the Tracker:** The Bug Tracker is a developer tool. It must first be enabled in `Settings > General > Enable Developer Mode`. Once enabled, a 🐞 icon will appear in the sidebar, providing access to the main tracking page.
-
-**The Reporter UI:** When developer mode is on, a bug reporting bar appears at the bottom of the screen.
-- **Creating a Report:** From the initial view, select a report type (Bug, Feature, etc.), give it a descriptive title, and click "Start Recording."
-- **Continuing a Report:** You can also choose to continue recording for a previously created report that is still "In Progress."
-
-**During a Recording Session:**
-- **Automatic Logging:** The app automatically logs key events like page navigation and major state changes.
-- **Click Tracking:** This can be toggled on or off. When on, it logs all user clicks. The "Log Details" sub-option can be enabled to capture more specific information about the HTML element that was clicked.
-- **Adding Notes:** Manually add text notes to the log to provide context, describe what you're seeing, or explain your actions.
-- **Picking Elements:** This special mode turns your cursor into a crosshair, allowing you to click on any specific UI element. The details of that element (like its type, ID, and classes) are then added to the log. This is extremely useful for identifying problematic buttons or components.
-- **Server-Side Logging:** For advanced debugging, an admin can enable temporary logging of their own backend API calls for a set duration (e.g., 30 seconds). This helps diagnose issues that may originate from the server.
-- **Cancelling:** A "Cancel" button allows you to discard the current recording session at any time without saving a report.
-- **Stopping:** When you're finished, click "Stop Recording" to save the report with all the captured logs.
-
-**The {link_bug_tracker} Page:** This is the central hub where all reports are managed.
-- **Viewing Reports:** Click on any report to open a detailed view.
-- **Managing Status:** Change a report's status to keep track of its lifecycle: `Open`, `In Progress`, `Resolved`, or `Closed`.
-- **Tagging:** Add or remove tags to categorize and filter reports.
-- **Commenting:** {admin}s can add comments to a report, creating a discussion thread to collaborate on a fix.
-- **Copying Logs:** Easily copy selected log entries or the entire log to your clipboard for sharing or external documentation.
-- **Converting to Quest:** With one click, you can turn a bug report into a completable `{task}`. This automatically creates a new {singleTask}, populates its description with the bug's title and logs, and marks the original bug report as 'Resolved'.
+**How it Works:**
+- A reporting bar at the bottom of the screen allows you to start recording a session.
+- During a session, it logs navigation, state changes, and optionally, user clicks and element details.
+- {admin}s can add manual notes, use a special "picker" to identify specific UI elements, and even enable temporary server-side logging for deep debugging.
+- All reports are managed on the **{link_bug_tracker}** page, where they can be tagged, commented on, and have their status updated.
+- A bug report can be converted into a new {task} with a single click, automatically populating the {task} description with the bug's details.
 
 ---
 
 ## Appendix: Default Content
 
-{appName} comes with a set of default content to get you started. You can edit or delete any of this content as you see fit.
+{appName} comes with a set of default content to get you started.
 
 ### Default Reward Types
 - **Gold Coins (Currency):** Standard currency for item purchases.
-- **Gems (Currency):** Premium currency, often used for special rewards or experiences.
-- **Crystals (Currency):** A common currency, often used for smaller rewards like screen time.
+- **Gems (Currency):** Premium currency for special rewards.
+- **Crystals (Currency):** Common currency, often for smaller rewards.
 - **Strength (XP):** Earned from physical tasks.
-- **Diligence (XP):** Earned from careful, persistent work like cleaning.
-- **Wisdom (XP):** Earned from learning and educational activities.
-- **Skill (XP):** Earned from practicing hobbies or sports.
-- **Creativity (XP):** Earned from artistic and creative endeavors.
+- **Diligence (XP):** Earned from careful work like cleaning.
+- **Wisdom (XP):** Earned from learning activities.
+- **Skill (XP):** Earned from practicing hobbies.
+- **Creativity (XP):** Earned from artistic endeavors.
 
 ### Default Ranks
-The app includes 50 default {levels}, starting from "Novice" and progressing through thematic tiers like Knight, Lord, Mystic, and finally to "The Absolute." Each requires an increasing amount of total XP to achieve.
+The app includes 50 default {levels}, from "Novice" to "The Absolute," each requiring an increasing amount of total XP to achieve.
 
 ### Default Quest Groups
-- **Household Chores:** For tasks related to keeping the house tidy.
-- **School & Learning:** For homework, studying, and educational goals.
-- **Personal Goals:** For self-improvement and personal projects.
-- **Health & Wellness:** For exercise, hygiene, and mental well-being.
-- **Family & Social:** For tasks involving family members and friends.
-- **Creative & Hobbies:** For artistic pursuits.
-- **Outdoor & Adventure:** For yard work and exploring nature.
-- **Kindness & Service:** For helping others and showing appreciation.
+- Household Chores, School & Learning, Personal Goals, Health & Wellness, Family & Social, Creative & Hobbies, Outdoor & Adventure, and Kindness & Service.

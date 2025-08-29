@@ -154,29 +154,51 @@ const SharedCalendarPage: React.FC = () => {
 
     const QuestCardComponent: React.FC<{ quest: Quest; user: User }> = ({ quest, user }) => {
         const now = new Date();
-        const isRedemption = quest.kind === QuestKind.Redemption;
-        let deadline: Date | null = null;
-        if (quest.type === QuestType.Venture && quest.endDateTime) {
-            deadline = new Date(quest.endDateTime);
-        } else if (quest.type === QuestType.Duty && quest.endTime) {
-            const [hours, minutes] = quest.endTime.split(':').map(Number);
-            deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-        }
-        const isOverdue = deadline ? now > deadline : false;
-        const isDueSoon = deadline ? (deadline.getTime() - now.getTime()) < 24 * 60 * 60 * 1000 && !isOverdue : false;
+        
+        const { borderClass } = useMemo(() => {
+            let deadline: Date | null = null;
+            let incompleteDeadline: Date | null = null;
 
-        let borderClass = 'border-stone-700';
-        if (isRedemption) {
-            borderClass = 'border-slate-400 ring-2 ring-slate-400/50';
-        } else if (deadline) {
-            if (isOverdue) {
-                borderClass = 'border-red-600';
-            } else if (isDueSoon) {
-                borderClass = 'border-amber-500 animate-pulse';
-            } else {
-                borderClass = 'border-green-600';
+            if (quest.type === QuestType.Duty) {
+                if (quest.startTime) {
+                    const [h, m] = quest.startTime.split(':').map(Number);
+                    deadline = new Date(now);
+                    deadline.setHours(h, m, 0, 0);
+                }
+                if (quest.endTime) {
+                    const [h, m] = quest.endTime.split(':').map(Number);
+                    incompleteDeadline = new Date(now);
+                    incompleteDeadline.setHours(h, m, 0, 0);
+                }
+            } else if (quest.type === QuestType.Venture || quest.type === QuestType.Journey) {
+                if (quest.endDateTime) {
+                    deadline = new Date(quest.endDateTime);
+                }
             }
-        }
+
+            const isIncomplete = incompleteDeadline && now > incompleteDeadline;
+            if (isIncomplete) {
+                return { borderClass: 'border-black' };
+            }
+
+            const isPastDue = deadline && now > deadline;
+            const timeDiff = deadline ? deadline.getTime() - now.getTime() : Infinity;
+
+            if (isPastDue) return { borderClass: 'border-red-600 animate-pulse' };
+            if (timeDiff < 60 * 60 * 1000) return { borderClass: 'border-orange-500 animate-pulse' };
+            if (timeDiff < 2 * 60 * 60 * 1000) return { borderClass: 'border-yellow-500' };
+            if (deadline) return { borderClass: 'border-green-600' };
+            
+            return { borderClass: 'border-stone-700' };
+
+        }, [quest, now]);
+
+        let baseCardClass = 'bg-stone-800/60';
+        if (quest.type === QuestType.Duty) baseCardClass = 'bg-sky-900/30';
+        if (quest.type === QuestType.Venture) baseCardClass = 'bg-amber-900/30';
+        if (quest.type === QuestType.Journey) baseCardClass = 'bg-purple-900/30';
+        if (quest.kind === QuestKind.Redemption) baseCardClass = 'bg-slate-800/50';
+
         const optionalClass = quest.isOptional ? 'border-dashed' : '';
         const finalBorderClass = `${borderClass} ${optionalClass}`;
 
@@ -184,7 +206,7 @@ const SharedCalendarPage: React.FC = () => {
              <button
                 key={quest.id}
                 onClick={() => handleDetailView(quest, user)}
-                className={`w-full text-left bg-stone-900/50 rounded-lg p-3 hover:bg-stone-700/50 transition-colors flex flex-col h-full border-2 ${finalBorderClass}`}
+                className={`w-full text-left rounded-lg p-3 hover:bg-stone-700/50 transition-colors flex flex-col h-full border-2 ${baseCardClass} ${finalBorderClass}`}
             >
                 <div className="flex-grow">
                     <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>

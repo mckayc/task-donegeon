@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -7,7 +8,8 @@ import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus } from '../../types';
-import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining } from '../../utils/quests';
+// FIX: Imported the missing 'toYMD' utility function.
+import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining, toYMD } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -27,8 +29,6 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     if (!currentUser) return null;
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
-    const isTodo = quest.type === QuestType.Venture && (quest.todoUserIds || []).includes(currentUser.id);
-    const isRedemption = quest.kind === QuestKind.Redemption;
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
     const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
 
@@ -41,43 +41,72 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         return questCompletions.filter(c => c.questId === quest.id).length;
     }, [questCompletions, quest.id]);
     
-    let deadline: Date | null = null;
-    let timeStatusText = '';
-    let timeStatusColor = 'text-green-400';
+    const { borderClass, timeStatusText, timeStatusColor, isDimmed } = useMemo(() => {
+        let deadline: Date | null = null;
+        let incompleteDeadline: Date | null = null;
 
-    if (quest.type === QuestType.Venture && quest.endDateTime) {
-        deadline = new Date(quest.endDateTime);
-    } else if (quest.type === QuestType.Duty && quest.endTime) {
-        const [hours, minutes] = quest.endTime.split(':').map(Number);
-        deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-    }
-
-    const isOverdue = deadline ? now > deadline : false;
-    const isDueSoon = deadline ? (deadline.getTime() - now.getTime()) < 24 * 60 * 60 * 1000 && !isOverdue : false;
-    
-    let borderClass = 'border-stone-700';
-    if (isRedemption) {
-        borderClass = 'border-slate-400 ring-2 ring-slate-400/50';
-    } else if (isTodo) {
-        borderClass = 'border-purple-500 ring-2 ring-purple-500/50';
-    } else if (deadline) {
-        if (isOverdue) {
-            borderClass = 'border-red-600';
-        } else if (isDueSoon) {
-            borderClass = 'border-amber-500 animate-pulse';
-        } else {
-            borderClass = 'border-green-600';
+        if (quest.type === QuestType.Duty) {
+            if (quest.startTime) {
+                const [h, m] = quest.startTime.split(':').map(Number);
+                deadline = new Date(now);
+                deadline.setHours(h, m, 0, 0);
+            }
+            if (quest.endTime) {
+                const [h, m] = quest.endTime.split(':').map(Number);
+                incompleteDeadline = new Date(now);
+                incompleteDeadline.setHours(h, m, 0, 0);
+            }
+        } else if (quest.type === QuestType.Venture || quest.type === QuestType.Journey) {
+            if (quest.endDateTime) {
+                deadline = new Date(quest.endDateTime);
+            }
         }
-    }
-    
-    if (isOverdue) {
-        timeStatusText = 'Overdue';
-        timeStatusColor = 'text-red-400';
-    } else if (deadline && deadline > now) {
-        timeStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
-        timeStatusColor = isDueSoon ? 'text-amber-400' : 'text-green-400';
-    }
 
+        const isIncomplete = incompleteDeadline && now > incompleteDeadline;
+        if (isIncomplete) {
+            return { borderClass: 'border-black', timeStatusText: 'Incomplete', timeStatusColor: 'text-stone-400', isDimmed: true };
+        }
+
+        const isPastDue = deadline && now > deadline;
+        const timeDiff = deadline ? deadline.getTime() - now.getTime() : Infinity;
+
+        let bClass = 'border-stone-700';
+        let tStatusText = '';
+        let tStatusColor = 'text-green-400';
+
+        if (deadline) {
+            if (isPastDue) {
+                bClass = 'border-red-600 animate-pulse';
+                tStatusText = 'Past Due';
+                tStatusColor = 'text-red-400';
+            } else if (timeDiff < 60 * 60 * 1000) { // Under 1 hour
+                bClass = 'border-orange-500 animate-pulse';
+                tStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
+                tStatusColor = 'text-orange-400';
+            } else if (timeDiff < 2 * 60 * 60 * 1000) { // Under 2 hours
+                bClass = 'border-yellow-500';
+                tStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
+                tStatusColor = 'text-yellow-400';
+            } else {
+                bClass = 'border-green-600';
+                tStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
+                tStatusColor = 'text-green-400';
+            }
+        }
+        
+        const completionsForUserToday = questCompletions.filter(c => 
+            c.questId === quest.id && 
+            c.userId === currentUser.id && 
+            toYMD(new Date(c.completedAt)) === toYMD(now)
+        );
+
+        const isCompletedToday = completionsForUserToday.length > 0;
+        const finalDimState = isCompletedToday || !isAvailable;
+
+        return { borderClass: bClass, timeStatusText: tStatusText, timeStatusColor: tStatusColor, isDimmed: finalDimState };
+
+    }, [quest, now, questCompletions, currentUser.id, isAvailable]);
+    
     const absoluteDueDateString = useMemo(() => {
         if (quest.type === QuestType.Venture && quest.endDateTime) {
             return `Due: ${new Date(quest.endDateTime).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
@@ -92,7 +121,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     if (quest.type === QuestType.Duty) baseCardClass = 'bg-sky-900/30';
     if (quest.type === QuestType.Venture) baseCardClass = 'bg-amber-900/30';
     if (quest.type === QuestType.Journey) baseCardClass = 'bg-purple-900/30';
-    if (isRedemption) baseCardClass = 'bg-slate-800/50';
+    if (quest.kind === QuestKind.Redemption) baseCardClass = 'bg-slate-800/50';
 
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
     
@@ -117,7 +146,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     }, [quest, currentUser.id, questCompletions]);
 
     const isClickable = quest.type === QuestType.Journey || isAvailable;
-    const cardIsDimmed = !isAvailable && !hasPendingCompletion;
+    const cardIsDimmed = isDimmed && !hasPendingCompletion;
 
 
     return (
@@ -140,7 +169,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                 </div>
                 <div className="flex-grow">
                     <h4 className="font-bold text-lg text-stone-100 flex items-center gap-2 flex-wrap">
-                        {isRedemption && <span title="Redemption Quest">⚖️</span>}
+                        {quest.kind === QuestKind.Redemption && <span title="Redemption Quest">⚖️</span>}
                         <span>{quest.title}</span>
                         {quest.isOptional && <span className="font-normal text-xs px-2 py-0.5 rounded-md bg-stone-700 text-stone-400 border border-stone-600">Optional</span>}
                     </h4>

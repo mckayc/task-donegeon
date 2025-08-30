@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Quest, User, QuizQuestion, QuizChoice } from '../../types';
 import Button from '../user-interface/Button';
@@ -122,7 +121,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
             let aiMessageText = aiReply;
             if (match) {
                 aiMessageText = aiReply.replace(choiceRegex, '').trim();
-                const choices = match[1].split('|').map(c => c.trim());
+                const choices = match[1].split('|').map((c: string) => c.trim());
                 setCurrentChoices(choices);
             } else {
                 setCurrentChoices([]);
@@ -175,7 +174,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
         if (!quiz) return;
         let score = 0;
         quiz.forEach((q, index) => {
-            const correctChoice = q.choices.find(c => c.isCorrect);
+            const correctChoice = q.choices.find((c: QuizChoice) => c.isCorrect);
             if (correctChoice && quizAnswers[index] === correctChoice.text) {
                 score++;
             }

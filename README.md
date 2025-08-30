@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.01
+**Version:** 0.4.02
 
 ---
 
@@ -12,6 +12,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.02 (October 10, 2025)
+-   **AI Teacher Button Fix:** Resolved an issue where the multiple-choice buttons in the AI Teacher chat were not responding to clicks. Users can now interact with the choices as intended.
 
 ### What's New in Version 0.4.01 (October 9, 2025)
 -   **Simplified Kiosk Mode Entry:** Removed the dedicated "Enter Kiosk Mode" button from the login page. A new "Enter Kiosk Mode" toggle is now available directly on the main App Lock screen for administrators.

@@ -292,6 +292,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                                     {currentChoices.map((choice, index) => (
                                         <Button
                                             key={index}
+                                            type="button"
                                             variant="secondary"
                                             onClick={() => handleSendMessage(choice)}
                                         >

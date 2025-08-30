@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -26,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_02_DATE = new Date(2025, 9, 10);
 const V0_4_01_DATE = new Date(2025, 9, 9);
 const V0_4_0_DATE = new Date(2025, 9, 8);
 const V0_3_02_DATE = new Date(2025, 9, 7);
@@ -98,6 +98,14 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.02 ({V0_4_02_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>AI Teacher Button Fix:</strong> Resolved an issue where the multiple-choice buttons in the AI Teacher chat were not responding to clicks. Users can now interact with the choices as intended.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.01 ({V0_4_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -324,7 +332,29 @@ const HelpPage: React.FC = () => {
                 </div>
             </Card>
 
-            <CollapsibleSection title="Version History" defaultOpen>
+            <CollapsibleSection title="Functional Specifications" defaultOpen>
+                <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+                    <h3>AI Teacher</h3>
+                    <p><strong>Purpose:</strong> An interactive, AI-powered tutor that provides lessons on the topic of a specific {settings.terminology.task}.</p>
+                    <p><strong>How it Works:</strong></p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li><strong>Activation:</strong> {settings.terminology.admin}s can set the "Interactive Media" type of a {settings.terminology.task} to "AI Teacher". This adds an "AI Teacher" button to the {settings.terminology.task} detail dialog for players.</li>
+                        <li><strong>Structured Introduction:</strong> When a session starts, the AI provides a four-part introduction: a general overview, an interesting fact, a question about focus areas, and a question to gauge prior knowledge.</li>
+                        <li><strong>Interactive Choices:</strong> The AI can present multiple-choice questions. These appear as clickable buttons for the user, allowing for quick interaction without typing. The text input remains available for open-ended responses.</li>
+                        <li><strong>Optional Timer:</strong> An {settings.terminology.admin} can set a minimum session time (in minutes). A timer will be displayed, and the {settings.terminology.user} must complete this time before they can request the final quiz.</li>
+                        <li><strong>Final Quiz:</strong>
+                            <ul className="list-disc list-inside pl-6">
+                                <li>Once the timer requirement is met (if any), the <strong>"I'm ready for the quiz"</strong> button becomes enabled.</li>
+                                <li>Clicking this prompts the AI to generate a short, 3-question quiz based on the conversation.</li>
+                                <li>The {settings.terminology.user} must answer at least 2 out of 3 questions correctly to pass.</li>
+                                <li>The main <strong>"Complete {settings.terminology.task}"</strong> button in the {settings.terminology.task} detail dialog remains disabled until the quiz is successfully passed.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Version History">
                 <VersionHistoryContent />
             </CollapsibleSection>
 

@@ -11,6 +11,7 @@ import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useSyncStatus } from '../../context/DataProvider';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState } from '../../context/QuestsContext';
+import Button from '../user-interface/Button';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];
@@ -77,6 +78,8 @@ const Header: React.FC = () => {
   const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
   
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
+
+  const isKioskPath = window.location.pathname.toLowerCase() === '/kiosk';
 
   useEffect(() => {
     if (!currentUser) return;
@@ -192,6 +195,11 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-2 md:gap-4">
         <ViewModeToggle />
         <FullscreenToggle />
+        {isKioskPath && (
+            <Button variant="secondary" onClick={() => logout()} size="sm" className="!text-xs !py-1 !px-3">
+                Kiosk
+            </Button>
+        )}
         <div className="relative">
             <button
                 onClick={() => setPendingDropdownOpen(p => !p)}

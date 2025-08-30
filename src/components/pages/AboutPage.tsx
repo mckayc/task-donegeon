@@ -26,6 +26,46 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_2_01_DATE = new Date(2025, 9, 4);
+const V0_2_0_DATE = new Date(2025, 9, 3);
+const V0_1_99_DATE = new Date(2025, 9, 2);
+const V0_1_98_DATE = new Date(2025, 9, 1);
+const V0_1_97_DATE = new Date(2025, 8, 30);
+const V0_1_96_DATE = new Date(2025, 8, 29);
+const V0_1_95_DATE = new Date(2025, 8, 28);
+const V0_1_94_DATE = new Date(2025, 8, 27);
+const V0_1_93_DATE = new Date(2025, 8, 26);
+const V0_1_92_DATE = new Date(2025, 8, 25);
+const V0_1_91_DATE = new Date(2025, 8, 24);
+const V0_1_90_DATE = new Date(2025, 8, 23);
+const V0_1_89_DATE = new Date(2025, 8, 22);
+const V0_1_88_DATE = new Date(2025, 8, 21);
+const V0_1_87_DATE = new Date(2025, 8, 20);
+const V0_1_86_DATE = new Date(2025, 8, 19);
+const V0_1_85_DATE = new Date(2025, 8, 18);
+const V0_1_84_DATE = new Date(2025, 8, 17);
+const V0_1_83_DATE = new Date(2025, 8, 16);
+const V0_1_77_DATE = new Date(2025, 8, 15);
+const V0_1_76_DATE = new Date(2025, 8, 14);
+const V0_1_75_DATE = new Date(2025, 8, 13);
+const V0_1_74_DATE = new Date(2025, 8, 12);
+const V0_1_73_DATE = new Date(2025, 8, 11);
+const V0_1_72_DATE = new Date(2025, 8, 10);
+const V0_1_71_DATE = new Date(2025, 8, 9);
+const V0_1_70_DATE = new Date(2025, 8, 8);
+const V0_1_69_DATE = new Date(2025, 8, 7);
+const V0_1_68_DATE = new Date(2025, 8, 6);
+const V0_1_67_DATE = new Date(2025, 8, 5);
+const V0_1_66_DATE = new Date(2025, 8, 4);
+const V0_1_65_DATE = new Date(2025, 8, 3);
+const V0_1_64_DATE = new Date(2025, 8, 2);
+const V0_1_63_DATE = new Date(2025, 8, 1);
+const V0_1_62_DATE = new Date(2025, 7, 31);
+const V0_1_61_DATE = new Date(2025, 7, 30);
+const V0_1_60_DATE = new Date(2025, 7, 29);
+const V0_1_52_DATE = new Date(2025, 7, 28);
+const V0_1_50_DATE = new Date(2025, 7, 27);
+const V0_1_49_DATE = new Date(2025, 7, 26);
 const V0_1_40_DATE = new Date(2025, 7, 26);
 const V0_0_99Y_DATE = new Date(2025, 7, 19);
 const V0_0_54_DATE = new Date(2025, 7, 17);
@@ -55,215 +95,124 @@ const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
             <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.40 ({V0_1_40_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+                Version 0.2.01 ({V0_2_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
             </h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Data Integrity &amp; Reset Fixes:</strong> Resolved critical issues where core game elements like the default Guild, Exchange Market, and Explorer Chronicles would disappear after a full data reset. The system now correctly re-initializes these essential components.</li>
-                <li><strong>Revamped Asset Pack Importer:</strong> Improved the asset pack import process. The import dialog now provides a clearer preview of all assets within the pack, including quests, markets, items, and trophies. It also includes a "select all" checkbox for easier bulk importing.</li>
-                <li><strong>Enhanced Setback Rules:</strong> Added more granular control over setbacks in the "Game Rules" settings. Admins can now globally disable setbacks or choose to only apply them if quests are incomplete at the end of the day ("Forgive Late Setbacks").</li>
-                <li><strong>UI Polish in Settings:</strong> Cleaned up the UI in the "Game Rules" section to prevent text from overlapping, improving readability.</li>
+                <li><strong>Simplified Kiosk Button:</strong> Moved the Kiosk button to the main header, next to the fullscreen icon, and simplified the label to "Kiosk" for easier access on `/kiosk` URLs.</li>
             </ul>
         </div>
-         <div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.2.0 ({V0_2_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Return to Kiosk Mode:</strong> Added a "Return to Kiosk" button to the user profile dropdown when using the app via the `/kiosk` URL. This provides a clear and intuitive way for users to end their session and return to the shared user selection screen.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.99 ({V0_1_99_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Critical Kiosk Security Fix:</strong> Patched a major security flaw where the Kiosk Mode page (`/kiosk`) could be accessed without authentication in a new session (e.g., an incognito window).</li>
+                <li><strong>Kiosk Login Flow Fixed:</strong> Resolved a critical bug where logging in from the Kiosk Mode screen would incorrectly redirect users to the main login page instead of their dashboard.</li>
+                <li><strong>Robust Kiosk State Management:</strong> The logout process is now path-aware, correctly returning users to the Kiosk screen when appropriate.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.98 ({V0_1_98_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New URL-Based Kiosk Mode:</strong> Kiosk Mode is now accessed via a dedicated URL (`/kiosk`), improving reliability.</li>
+                <li><strong>Simplified Admin UI:</strong> Removed Kiosk toggles from the admin profile dropdown for a cleaner interface.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.97 ({V0_1_97_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode State Management Fix:</strong> Resolved an issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.96 ({V0_1_96_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode Logic Fix:</strong> Corrected a logical flaw to ensure the correct "Disable Kiosk Mode" toggle appears for admins on Kiosk-enabled devices.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.95 ({V0_1_95_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Revamped Kiosk Mode Activation:</strong> Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu.</li>
+                <li><strong>Full-Width Kiosk Header Scrolling:</strong> The entire header in Kiosk Mode is now horizontally scrollable on mobile devices.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.94 ({V0_1_94_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Per-Device Kiosk Mode:</strong> Kiosk/Shared Mode is now a device-specific setting, enabled via a button on the login screen.</li>
+                <li><strong>Mobile Header Fix:</strong> The Kiosk Mode header is now horizontally scrollable on mobile.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.93 ({V0_1_93_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Mobile-Friendly Approvals:</strong> The Approvals page is now fully responsive with a touch-friendly card view on mobile devices.</li>
+                <li><strong>Interactive Approval Cards:</strong> Quest and Claim approval cards on mobile are now clickable, opening a full detail dialog.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.92 ({V0_1_92_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode Pending Notifications:</strong> The Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval.</li>
+                <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.91 ({V0_1_91_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Maintenance Release:</strong> Incremented version and updated the service worker to ensure all users receive the latest updates.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.90 ({V0_1_90_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>"My Pending Items" Dashboard Widget:</strong> Added a new card to the dashboard showing items awaiting approval.</li>
+                <li><strong>Pending Items Header Notification:</strong> A new bell icon in the header now displays a badge with a count of pending items.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.49 ({V0_1_49_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Mobile Responsiveness:</strong> Implemented a fully responsive design for mobile devices.</li>
+                <li><strong>Data Integrity & Reset Fixes:</strong> Resolved critical issues where core game elements would disappear after a full data reset.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.99y ({V0_0_99Y_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
             </h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>New "Journey" Quest Type:</strong> The simple "Unlocks Next Quest" feature has been completely replaced by a new, powerful <strong>Journey</strong> quest type. Journeys are multi-stage adventures composed of multiple <strong>checkpoints</strong>.</li>
                 <li><strong>Dedicated Checkpoint Editor:</strong> Admins can now create epic, multi-step quests using a new, intuitive dialog to add and manage checkpoints, each with its own description and unique rewards.</li>
-                <li><strong>Enhanced User Experience:</strong> Journey quests feature a distinct purple UI, progress tracking in the header (e.g., "Checkpoint 1/5"), and mystery rewards for future checkpoints to keep players engaged.</li>
-                <li><strong>Full System Integration:</strong> The new Journey type is fully supported by the AI Suggestion Engine for content creation and can be exported/imported via the Asset Pack system.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.54 ({V0_0_54_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>The calendar's day and week views now correctly display the full time range for timed quests, making deadlines much clearer.</li>
-            </ul>
-        </div>
-         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.53 ({V0_0_53_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Renamed an asset pack to "Student's Daily Quest" and added new tech-related marketplace rewards.</li>
-            </ul>
-        </div>
-         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.52 ({V0_0_52_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Added a new default asset pack for a student's daily routine with screen-time rewards.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.51 ({V0_0_51_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Sidebar Notification Badge Fix:</strong> Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.97 ({V0_0_97_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>New "Vacation" Event Type:</strong> Replaced the old global vacation mode setting with a more flexible "Vacation" event type.</li>
-                <li><strong>Calendar-Driven Vacations:</strong> Admins can now schedule vacation periods directly on the calendar for either personal use or for an entire guild.</li>
-                <li><strong>Automatic Penalty Pausing:</strong> While a "Vacation" event is active, the system automatically pauses all late/incomplete penalties for scheduled quests, allowing users to take a break without consequences.</li>
-                <li><strong>Streamlined Settings:</strong> Removed the old vacation mode toggle from the Settings page to create a single, intuitive workflow through the calendar.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.96 ({V0_0_96_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Default Quest Groups:</strong> The app now ships with a default set of Quest Groups (e.g., "Household Chores," "School & Learning") to provide an immediate organizational structure for new and existing games without any groups.</li>
-                <li><strong>AI-Powered Group Suggestions:</strong> The Quest Idea Generator in the AI Studio is now aware of all existing Quest Groups and will suggest the most appropriate group for each generated quest idea.</li>
-                <li><strong>Streamlined Quest Creation:</strong> When creating a quest from an AI-generated idea, the "Create Quest" form is now pre-filled with the suggested Quest Group, saving administrative time and improving workflow.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.95 ({V0_0_95_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Smarter AI Studio:</strong> The AI Studio is now more integrated with the game's mechanics. When generating quest ideas, it will now also suggest relevant categories (tags) and appropriate rewards, pre-filling the new quest form to save administrators time.</li>
-                <li><strong>Powerful Bulk Editing for Quests:</strong> A new bulk editing system has been introduced on the "Manage Quests" page. Administrators can now select multiple quests and simultaneously update their status, group assignments, tags, and assigned users from a single dialog.</li>
-                <li><strong>Enhanced Collapsed Sidebar:</strong> The user experience for the collapsed sidebar has been significantly upgraded with a new fly-out menu system. Hovering over any icon now instantly reveals a panel showing the full name of the link or its contents, making navigation faster and more intuitive.</li>
-                <li><strong>Default Quest Categories:</strong> To help administrators get started, the app now includes a default set of common quest categories (e.g., "Cleaning," "Learning," "Yardwork"). These appear automatically in tag selection fields.</li>
-                <li><strong>UI Bug Fixes:</strong> Corrected a recurring issue where a "0" badge would incorrectly appear on collapsed sidebar menus that had no notifications.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.94 ({V0_0_94_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Default Quest Categories:</strong> To help new administrators get started faster, the app now includes a default set of common quest categories (e.g., "Cleaning", "Learning", "Yardwork"). These appear automatically in the tag selection inputs alongside any custom tags you create.</li>
-                <li><strong>Improved Collapsed Sidebar Navigation:</strong> The collapsed sidebar is now more functional. Collapsible menu groups remain visible as icons with expand/collapse arrows, allowing you to access nested links without needing to expand the entire sidebar.</li>
-                <li><strong>UI Bug Fix:</strong> Fixed a minor UI bug where a badge with a "0" would incorrectly appear on collapsed sidebar menu groups that had no notifications.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.93 ({V0_0_93_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Purchase Escrow System:</strong> When an item requiring approval is purchased, the funds are now immediately deducted and held in escrow. This prevents users from spending those funds elsewhere. If the purchase is rejected or cancelled, the funds are automatically refunded.</li>
-                <li><strong>Chronicles Integration for Purchases:</strong> All purchase requests (pending, completed, rejected) now appear correctly in the Chronicles activity feed with a clear title and a note showing the cost.</li>
-                <li><strong>Improved Login Notifications:</strong> The notification popup that appears on login is now scrollable to accommodate a large number of updates, and it includes an "X" button for quick dismissal.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.92 ({V0_0_92_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>In-Dialog Quest Group Creation:</strong> To streamline workflow, administrators can now create new Quest Groups directly from within the "Create/Edit Quest" dialog without navigating to a separate management page.</li>
-                <li><strong>Quick Edit Access:</strong> On the "Manage Quests" and "Manage Goods" pages, an item's title is now clickable, immediately opening the edit dialog for faster content updates.</li>
-            </ul>
-        </div>
-         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.91 ({V0_0_91_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Redesigned Management Pages:</strong> The "Manage Goods" and "Manage Quests" pages have been completely overhauled with a modern, tabbed interface for better organization.</li>
-                <li><strong>Powerful Filtering & Sorting:</strong> Both management pages now include search bars and sorting options, making it easier than ever to find the content you need.</li>
-                <li><strong>Quest Groups:</strong> A new "Quest Group" system allows administrators to categorize quests. This includes a new management page to create and edit groups.</li>
-                <li><strong>Bulk Quest Assignment:</strong> The most powerful feature of Quest Groups is the ability to assign an entire group of quests to multiple users at once, dramatically speeding up workflow.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.90 ({V0_0_90_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Smarter Asset Pack Importer:</strong> The "Import from Library" feature in the Asset Manager has been completely overhauled. It now performs a smart comparison between your local gallery and the server's image packs, highlighting new files (in green, pre-selected) versus duplicates (in red, disabled). This gives you granular control over which new assets to import, preventing accidental re-downloads and making library management much more efficient.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.89 ({V0_0_89_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Enhanced Chronicles:</strong> The activity feed now displays the currency and amount spent for each item purchase, providing a clearer transaction history.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.88 ({V0_0_88_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Critical Docker Stability Fix:</strong> Resolved a race condition that caused chat messages to not save and the app to become unresponsive in Docker environments. The data saving mechanism is now more robust, preventing server syncs from overwriting unsaved local changes and eliminating the frequent "Failed to fetch" errors.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.87 ({V0_0_87_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Calendar Day View Enhancement:</strong> Added due date/time information for quests on the main 'Day' view of the calendar, improving at-a-glance scheduling clarity.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.86 ({V0_0_86_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Enhanced the reward valuation helper in the quest editor to show both anchor and real-world values.</li>
-                <li>Improved the layout of the reward input group for better usability.</li>
-                <li>Updated default economic values for currencies and experience points.</li>
-                <li>Added an explanatory note to the "Economy & Valuation" settings page.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.85 ({V0_0_85_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>A new feature has been added to the `Asset Manager` page, allowing administrators to dynamically import curated image packs directly from the project's GitHub repository. This keeps the main application lean while providing easy access to a library of high-quality images.</li>
-            </ul>
-        </div>
-         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.84 ({V0_0_84_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>The asset management workflow has been significantly improved. Admins can now specify a category when uploading an image from the `Asset Manager`, and the backend will automatically organize the file into a corresponding sub-folder.</li>
-            </ul>
-        </div>
-         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.83 ({V0_0_83_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>The entire backup system has been overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process. This provides a durable and persistent way to manage data, especially for self-hosted Docker environments.</li>
-            </ul>
-        </div>
-         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.82 ({V0_0_82_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.81 ({V0_0_81_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Revamped the "About" page with a cleaner, collapsible design.</li>
-                <li>Added a "Roadmap" section detailing future plans for the application.</li>
-                <li>Included a direct link to the project's GitHub repository.</li>
-                <li>Created this "Version History" section to track updates.</li>
             </ul>
         </div>
         <div>

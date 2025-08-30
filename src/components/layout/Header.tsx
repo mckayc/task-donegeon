@@ -89,6 +89,7 @@ const Header: React.FC = () => {
         setIsKioskEnabledOnDevice(status);
     };
     checkKioskStatus();
+    // Listen for changes from other tabs/windows
     window.addEventListener('storage', checkKioskStatus);
     return () => window.removeEventListener('storage', checkKioskStatus);
   }, []);
@@ -138,12 +139,12 @@ const Header: React.FC = () => {
   const handleToggleKioskMode = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isKioskEnabledOnDevice) {
-        // "Disable" action
-        setIsSharedViewActive(false); // This updates localStorage and context state
+        // "Disable" action: This just changes the device's future behavior.
+        // The admin remains logged in. Logging out will now go to the normal auth page.
+        setIsSharedViewActive(false); // This updates localStorage and context state.
         addNotification({ type: 'info', message: 'Kiosk mode disabled for this device.' });
-        setIsKioskEnabledOnDevice(false); // Force immediate UI update
     } else {
-        // "Enable" action
+        // "Enable" action: This logs the user out and activates the shared view.
         exitToSharedView();
     }
     setProfileDropdownOpen(false);

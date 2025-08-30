@@ -10,6 +10,7 @@ interface AuthState {
   currentUser: User | null;
   isAppUnlocked: boolean;
   isFirstRun: boolean;
+
   isSwitchingUser: boolean;
   isSharedViewActive: boolean;
   targetedUserForLogin: User | null;

@@ -23,15 +23,19 @@ const SharedLayout: React.FC = () => {
         const acquireWakeLock = async () => {
             if ('wakeLock' in navigator) {
                 try {
-                    wakeLock.current = await (navigator as any).wakeLock.request('screen');
+                    const newLock = await (navigator as any).wakeLock.request('screen');
                     console.log('Screen Wake Lock is active.');
                     
-                    wakeLock.current.addEventListener('release', () => {
+                    newLock.addEventListener('release', () => {
                         console.log('Screen Wake Lock was released by the system.');
-                        wakeLock.current = null;
+                         if (wakeLock.current === newLock) {
+                           wakeLock.current = null;
+                        }
                     });
+                    wakeLock.current = newLock;
                 } catch (err: any) {
                     console.error(`${err.name}, ${err.message}`);
+                    wakeLock.current = null;
                 }
             } else {
                 console.log('Screen Wake Lock API not supported on this browser.');
@@ -39,8 +43,7 @@ const SharedLayout: React.FC = () => {
         };
 
         const handleVisibilityChange = () => {
-            if (wakeLock.current !== null && document.visibilityState === 'visible') {
-                console.log('Page is visible again, re-acquiring wake lock.');
+            if (wakeLock.current === null && document.visibilityState === 'visible') {
                 acquireWakeLock();
             }
         };
@@ -53,6 +56,7 @@ const SharedLayout: React.FC = () => {
             if (wakeLock.current !== null) {
                 wakeLock.current.release();
                 console.log('Screen Wake Lock released.');
+                wakeLock.current = null;
             }
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };

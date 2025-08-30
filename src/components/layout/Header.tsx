@@ -81,11 +81,9 @@ const Header: React.FC = () => {
   
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
   
-  // State to read directly from localStorage for UI purposes, fixing the toggle button logic.
   const [isKioskEnabledOnDevice, setIsKioskEnabledOnDevice] = useState(false);
 
   useEffect(() => {
-    // Check localStorage when component mounts and on storage events
     const checkKioskStatus = () => {
         const status = localStorage.getItem('isKioskModeActive') === 'true';
         setIsKioskEnabledOnDevice(status);
@@ -109,7 +107,7 @@ const Header: React.FC = () => {
         }
     };
     fetchPendingApprovals();
-  }, [currentUser, quests]); // Refetch when quests change to ensure data is fresh after a completion
+  }, [currentUser, quests]);
 
   const totalPending = useMemo(() => {
       return (pendingApprovals.quests?.length || 0) + (pendingApprovals.purchases?.length || 0);
@@ -140,13 +138,13 @@ const Header: React.FC = () => {
   const handleToggleKioskMode = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isKioskEnabledOnDevice) {
-        setIsSharedViewActive(false);
+        // "Disable" action
+        setIsSharedViewActive(false); // This updates localStorage and context state
         addNotification({ type: 'info', message: 'Kiosk mode disabled for this device.' });
-        setIsKioskEnabledOnDevice(false);
+        setIsKioskEnabledOnDevice(false); // Force immediate UI update
     } else {
-        setIsSharedViewActive(true);
-        // Log out to transition to the shared view
-        setCurrentUser(null);
+        // "Enable" action
+        exitToSharedView();
     }
     setProfileDropdownOpen(false);
   };
@@ -277,7 +275,7 @@ const Header: React.FC = () => {
             )}
         </div>
         {!isMobileView && <Clock />}
-        {settings.sharedMode.enabled && (
+        {settings.sharedMode.enabled && !isKioskEnabledOnDevice && (
             <Button
                 onClick={exitToSharedView}
                 data-log-id="header-exit-shared-view"

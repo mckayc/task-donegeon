@@ -56,7 +56,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     // Base structure for a new asset
     const baseData: FormData = {
         name: '', description: '', imageUrl: '', category: 'Avatar', avatarSlot: '',
-        isForSale: false, requiresApproval: false, 
+        isForSale: false, requiresApproval: true, 
         costGroups: [],
         payouts: [],
         marketIds: [],

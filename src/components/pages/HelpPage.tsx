@@ -26,6 +26,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_01_DATE = new Date(2025, 9, 9);
 const V0_4_0_DATE = new Date(2025, 9, 8);
 const V0_3_02_DATE = new Date(2025, 9, 7);
 const V0_3_01_DATE = new Date(2025, 9, 6);
@@ -97,6 +98,15 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.01 ({V0_4_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Simplified Kiosk Mode Entry:</strong> Removed the dedicated "Enter Kiosk Mode" button from the login page. A new "Enter Kiosk Mode" toggle is now available directly on the main App Lock screen for administrators.</li>
+                <li><strong>Default Item Approval:</strong> All newly created goods/items now require administrator approval by default to ensure better control over the game economy.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.0 ({V0_4_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

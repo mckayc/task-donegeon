@@ -165,7 +165,6 @@ const AuthPage: React.FC = () => {
     const { settings } = useSystemState();
     const { setIsSwitchingUser } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
-    const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
     
     return (
         <>
@@ -194,17 +193,9 @@ const AuthPage: React.FC = () => {
                         <Button variant="secondary" onClick={() => setIsSwitchingUser(true)} className="w-full">
                             Switch Profile (PIN Login)
                         </Button>
-                        {settings.sharedMode.enabled && (
-                             <Button variant="secondary" onClick={() => setIsUnlockDialogOpen(true)} className="w-full">
-                                Enter Kiosk Mode
-                            </Button>
-                        )}
                     </div>
                 </div>
             </div>
-            {isUnlockDialogOpen && (
-                <KioskUnlockDialog onClose={() => setIsUnlockDialogOpen(false)} />
-            )}
         </>
     );
 };

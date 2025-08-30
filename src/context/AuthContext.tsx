@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -68,9 +69,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const logout = useCallback(() => {
     _setCurrentUser(null);
-    _setAppUnlocked(false);
     localStorage.removeItem('lastUserId');
-    localStorage.removeItem('isAppUnlocked');
+
+    // Only fully lock the app if we are NOT on a kiosk path.
+    // On a kiosk path, logging out should return to the user selection screen,
+    // not the app lock screen.
+    if (window.location.pathname.toLowerCase() !== '/kiosk') {
+      _setAppUnlocked(false);
+      localStorage.removeItem('isAppUnlocked');
+    }
   }, []);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {

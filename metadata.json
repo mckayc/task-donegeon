@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.98 - URL-based Kiosk Mode",
-  "version": "0.1.98",
+  "name": "Task Donegeon 2.0 - 0.1.99 - Kiosk Mode Security Fixes",
+  "version": "0.1.99",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

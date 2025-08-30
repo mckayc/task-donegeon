@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -151,18 +152,6 @@ const App: React.FC = () => {
       setShowUpdateToast(!!isUpdateAvailable);
   }, [isUpdateAvailable]);
 
-  // Render Kiosk Mode immediately if enabled, on the correct path, and no user is logged in.
-  // This bypasses all other logic (first run, login, etc.)
-  if (settings.sharedMode.enabled && isKioskPath && !currentUser) {
-    return (
-      <ErrorBoundary>
-        <NotificationContainer />
-        {showUpdateToast && <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setShowUpdateToast(false)} />}
-        {isSwitchingUser ? <SwitchUser /> : <SharedLayout />}
-      </ErrorBoundary>
-    );
-  }
-
   if (!isDataLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-900">
@@ -174,20 +163,49 @@ const App: React.FC = () => {
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
   const showBugReporter = settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster;
 
+  const renderAppContent = () => {
+    // 1. First Run: This is the absolute first gate. If the app has no users,
+    // it must run the setup wizard.
+    if (isFirstRun) {
+      return <FirstRunWizard />;
+    }
+
+    // 2. App Lock: This is the second gate. If the app isn't the first run but
+    // hasn't been unlocked for the session, show the lock screen. This is a
+    // crucial security step that must happen before any other logic.
+    if (!isAppUnlocked) {
+      return <AppLockScreen />;
+    }
+
+    // --- From this point on, the application is considered "unlocked" for the session. ---
+
+    // 3. User Switching: If the user is actively switching profiles, show that UI.
+    if (isSwitchingUser) {
+      return <SwitchUser />;
+    }
+    
+    // 4. No User Logged In: If no user is authenticated for this session.
+    if (!currentUser) {
+      // Check if Kiosk Mode should be displayed.
+      if (settings.sharedMode.enabled && isKioskPath) {
+        return <SharedLayout />;
+      }
+      // Otherwise, show the standard login/registration page.
+      return <AuthPage />;
+    }
+
+    // 5. User is Logged In: A user is authenticated, show the main application.
+    // This is also the correct destination after a successful PIN login from Kiosk Mode.
+    return <MainLayout />;
+  };
+
   return (
     <ErrorBoundary>
       <NotificationContainer />
       {showUpdateToast && <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setShowUpdateToast(false)} />}
       {showOnboarding && <OnboardingWizard />}
-
-      {(() => {
-        if (isFirstRun) { return <FirstRunWizard />; }
-        if (!isAppUnlocked && !isFirstRun) { return <AppLockScreen />; }
-        if (isSwitchingUser) { return <SwitchUser />; }
-        if (!currentUser) { return <AuthPage />; }
       
-        return <MainLayout />;
-      })()}
+      {renderAppContent()}
 
       {showBugReporter && <BugReporter />}
     </ErrorBoundary>

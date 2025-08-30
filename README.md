@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.98
+**Version:** 0.1.99
 
 ---
 
@@ -12,6 +12,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.99 (October 2, 2025)
+-   **Critical Kiosk Security Fix:** Patched a major security flaw where the Kiosk Mode page (`/kiosk`) could be accessed without authentication in a new session (e.g., an incognito window). The application now correctly enforces the master `AppLockScreen` as the primary gatekeeper before any other content is rendered.
+-   **Kiosk Login Flow Fixed:** Resolved a critical bug where logging in from the Kiosk Mode screen would incorrectly redirect users to the main login page instead of their dashboard. The user login flow from the shared view is now seamless and correct.
+-   **Robust Kiosk State Management:** The logout process is now path-aware. Logging out from a Kiosk device correctly returns the user to the Kiosk selection screen, while logging out from a normal session correctly locks the application, preventing state confusion and fixing hard-refresh bugs.
 
 ### What's New in Version 0.1.98 (October 1, 2025)
 -   **New URL-Based Kiosk Mode:** Kiosk Mode has been re-architected to be more robust and reliable. It is no longer a device-specific state but is now accessed via a dedicated URL (`/kiosk`). This eliminates all state management bugs related to toggling the mode on and off.
@@ -172,7 +177,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Version History
 -   **v0.0.99y (August 19, 2025):**
-    -   **New "Journey" Quest Type:** The simple "Unlocks Next Quest" feature has been completely replaced by a new, powerful **Journey** quest type. Journeys are multi-stage adventures composed of multiple **checkpoints**.
+    -   **New "Journey" Quest Type:** The simple "Unlocks Next Quest" feature has been completely replaced by a new, powerful **Journey** quest type.
     -   **Dedicated Checkpoint Editor:** Admins can now create epic, multi-step quests using a new, intuitive dialog to add and manage checkpoints, each with its own description and unique rewards.
     -   **Enhanced User Experience:** Journey quests feature a distinct purple UI, progress tracking in the header (e.g., "Checkpoint 1/5"), and mystery rewards for future checkpoints to keep players engaged.
     -   **Full System Integration:** The new Journey type is fully supported by the AI Suggestion Engine for content creation and can be exported/imported via the Asset Pack system.
@@ -237,26 +242,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ------ START OF FILE vercel.json ---
-
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/server.js" },
-    { "source": "/kiosk", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
+-   **Reward R-- END OF FILE README.md --

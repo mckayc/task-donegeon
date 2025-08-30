@@ -309,6 +309,11 @@ To prevent clutter, some admin actions are consolidated.
 
 ## Appendix: Version History
 
+### What's New in Version 0.1.99 (October 2, 2025)
+-   **Critical Kiosk Security Fix:** Patched a major security flaw where the Kiosk Mode page (`/kiosk`) could be accessed without authentication in a new session (e.g., an incognito window). The application now correctly enforces the master `AppLockScreen` as the primary gatekeeper before any other content is rendered.
+-   **Kiosk Login Flow Fixed:** Resolved a critical bug where logging in from the Kiosk Mode screen would incorrectly redirect users to the main login page instead of their dashboard. The user login flow from the shared view is now seamless and correct.
+-   **Robust Kiosk State Management:** The logout process is now path-aware. Logging out from a Kiosk device correctly returns the user to the Kiosk selection screen, while logging out from a normal session correctly locks the application, preventing state confusion and fixing hard-refresh bugs.
+
 ### What's New in Version 0.1.98 (October 1, 2025)
 -   **New URL-Based Kiosk Mode:** Kiosk Mode has been re-architected to be more robust and reliable. It is no longer a device-specific state but is now accessed via a dedicated URL (`/kiosk`). This eliminates all state management bugs related to toggling the mode on and off.
 -   **Simplified Admin UI:** The "Enable/Disable Kiosk Mode" toggle and "Exit" button have been removed from the admin profile dropdown to create a cleaner, more intuitive interface. Admins now simply navigate to the `/kiosk` URL on a device to set it up for shared use.

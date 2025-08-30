@@ -87,7 +87,9 @@ const MainLayout: React.FC = () => {
   }, [settings.sharedMode.autoExitMinutes, logout, addNotification]);
 
   useEffect(() => {
-      if (settings.sharedMode.enabled && settings.sharedMode.autoExit) {
+      const isKioskPath = window.location.pathname.toLowerCase() === '/kiosk';
+      
+      if (settings.sharedMode.enabled && settings.sharedMode.autoExit && isKioskPath) {
           const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
           
           events.forEach(event => {
@@ -104,6 +106,11 @@ const MainLayout: React.FC = () => {
                   window.removeEventListener(event, resetTimer);
               });
           };
+      } else {
+        // If not in kiosk mode or settings are off, make sure any existing timer is cleared.
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
       }
   }, [settings.sharedMode.enabled, settings.sharedMode.autoExit, resetTimer]);
 

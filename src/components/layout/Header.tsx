@@ -69,7 +69,7 @@ const Header: React.FC = () => {
   const { guilds } = useCommunityState();
   const { appMode, isMobileView } = useUIState();
   const { setAppMode, setActivePage, toggleSidebar } = useUIDispatch();
-  const { currentUser, isSharedViewActive } = useAuthState();
+  const { currentUser } = useAuthState();
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setIsSharedViewActive } = useAuthDispatch();
   const { addNotification } = useNotificationsDispatch();
   const { quests } = useQuestsState();
@@ -80,6 +80,20 @@ const Header: React.FC = () => {
   const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
   
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
+  
+  // State to read directly from localStorage for UI purposes, fixing the toggle button logic.
+  const [isKioskEnabledOnDevice, setIsKioskEnabledOnDevice] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage when component mounts and on storage events
+    const checkKioskStatus = () => {
+        const status = localStorage.getItem('isKioskModeActive') === 'true';
+        setIsKioskEnabledOnDevice(status);
+    };
+    checkKioskStatus();
+    window.addEventListener('storage', checkKioskStatus);
+    return () => window.removeEventListener('storage', checkKioskStatus);
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -125,14 +139,14 @@ const Header: React.FC = () => {
   
   const handleToggleKioskMode = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (isSharedViewActive) {
+    if (isKioskEnabledOnDevice) {
         setIsSharedViewActive(false);
         addNotification({ type: 'info', message: 'Kiosk mode disabled for this device.' });
+        setIsKioskEnabledOnDevice(false);
     } else {
         setIsSharedViewActive(true);
         // Log out to transition to the shared view
         setCurrentUser(null);
-        setAppUnlocked(false);
     }
     setProfileDropdownOpen(false);
   };
@@ -303,8 +317,8 @@ const Header: React.FC = () => {
                         <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
                         <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
                         {currentUser.role === Role.DonegeonMaster && settings.sharedMode.enabled && (
-                            <a href="#" onClick={handleToggleKioskMode} data-log-id="header-profile-link-kiosk-toggle" className={`block px-4 py-2 hover:bg-stone-700 ${isSharedViewActive ? 'text-red-400' : 'text-stone-300'}`}>
-                                <span className="block leading-tight">{isSharedViewActive ? 'Disable' : 'Enable'} Kiosk Mode</span>
+                            <a href="#" onClick={handleToggleKioskMode} data-log-id="header-profile-link-kiosk-toggle" className={`block px-4 py-2 hover:bg-stone-700 ${isKioskEnabledOnDevice ? 'text-red-400' : 'text-stone-300'}`}>
+                                <span className="block leading-tight">{isKioskEnabledOnDevice ? 'Disable' : 'Enable'} Kiosk Mode</span>
                                 <span className="block text-xs text-stone-500">on this device</span>
                             </a>
                         )}

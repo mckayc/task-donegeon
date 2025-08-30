@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Quest, User } from '../../types';
+import { Quest, User, QuizQuestion, QuizChoice } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { XCircleIcon, SparklesIcon } from '../user-interface/Icons';
@@ -9,6 +9,7 @@ interface AiTeacherPanelProps {
     quest: Quest;
     user: User;
     onClose: () => void;
+    onQuizPassed: () => void;
 }
 
 interface Message {
@@ -16,13 +17,33 @@ interface Message {
     text: string;
 }
 
-const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose }) => {
+const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, onQuizPassed }) => {
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    
+    // Quiz State
+    const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
+    const [quizAnswers, setQuizAnswers] = useState<(string | null)[]>([]);
+    const [quizResult, setQuizResult] = useState<{ score: number; total: number } | null>(null);
+    
+    // Timer State
+    const [timeLeft, setTimeLeft] = useState(quest.aiTutorSessionMinutes ? quest.aiTutorSessionMinutes * 60 : 0);
+    const timerRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (quest.aiTutorSessionMinutes && quest.aiTutorSessionMinutes > 0) {
+            timerRef.current = window.setInterval(() => {
+                setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+            }, 1000);
+        }
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [quest.aiTutorSessionMinutes]);
 
     useEffect(() => {
         const startChat = async () => {
@@ -40,7 +61,17 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose })
                 }
                 const data = await response.json();
                 setSessionId(data.sessionId);
-                setMessages([{ author: 'ai', text: `Hello ${user.gameName}! I'm your AI Teacher. Let's talk about "${quest.title}". What would you like to know?` }]);
+                
+                // Proactive start by AI
+                const startResponse = await fetch('/api/ai/chat/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: data.sessionId, message: `Hello! I'm ready to learn about "${quest.title}". Can you give me an introduction?` }),
+                });
+                if (!startResponse.ok) throw new Error('AI failed to provide an introduction.');
+                const startData = await startResponse.json();
+                setMessages([{ author: 'ai', text: startData.reply }]);
+
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An unknown error occurred.');
             } finally {
@@ -53,7 +84,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose })
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isLoading]);
+    }, [messages, isLoading, quiz]);
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim() || !sessionId || isLoading) return;
@@ -79,17 +110,65 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose })
             setMessages(prev => [...prev, aiMessage]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-            // Add the failed user message back to the input for resubmission
-            setInputMessage(userMessage.text);
             setMessages(prev => prev.slice(0, -1));
+            setInputMessage(userMessage.text);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleGenerateQuiz = async () => {
+        if (!sessionId) return;
+        setIsLoading(true);
+        setError(null);
+        setQuiz(null);
+        setQuizResult(null);
+
+        try {
+            const response = await fetch('/api/ai/chat/generate-quiz', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId }),
+            });
+            if (!response.ok) throw new Error('Could not generate the quiz.');
+            const data = await response.json();
+            if (data.quiz && data.quiz.questions) {
+                setQuiz(data.quiz.questions);
+                setQuizAnswers(new Array(data.quiz.questions.length).fill(null));
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred while generating the quiz.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const handleAnswerChange = (questionIndex: number, choiceText: string) => {
+        const newAnswers = [...quizAnswers];
+        newAnswers[questionIndex] = choiceText;
+        setQuizAnswers(newAnswers);
+    };
+    
+    const handleSubmitQuiz = () => {
+        if (!quiz) return;
+        let score = 0;
+        quiz.forEach((q, index) => {
+            const correctChoice = q.choices.find(c => c.isCorrect);
+            if (correctChoice && quizAnswers[index] === correctChoice.text) {
+                score++;
+            }
+        });
+        setQuizResult({ score, total: quiz.length });
+        if (score >= 2) { // Passing score
+            onQuizPassed();
+        }
+    };
+
+    const isQuizReady = timeLeft === 0;
+
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[80] p-4">
-            <div className="bg-stone-900 border border-emerald-500/50 rounded-xl shadow-2xl max-w-lg w-full h-[70vh] flex flex-col">
+            <div className="bg-stone-900 border border-emerald-500/50 rounded-xl shadow-2xl max-w-lg w-full h-[80vh] flex flex-col">
                 <div className="p-4 border-b border-stone-700/60 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <SparklesIcon className="w-6 h-6 text-emerald-400" />
@@ -100,7 +179,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose })
                     </Button>
                 </div>
 
-                <div className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-hide">
+                <div ref={messagesEndRef} className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-hide">
                     {messages.map((msg, index) => {
                         const isUser = msg.author === 'user';
                         return (
@@ -131,31 +210,53 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose })
                         </div>
                     )}
                     {error && <p className="text-red-400 text-center text-sm">{error}</p>}
+                    
+                    {quiz && !quizResult && (
+                        <div className="p-4 bg-stone-800 rounded-lg space-y-4">
+                            <h3 className="font-bold text-lg text-emerald-300">Quiz Time!</h3>
+                            {quiz.map((q, qIndex) => (
+                                <div key={qIndex}>
+                                    <p className="font-semibold text-stone-200">{qIndex + 1}. {q.question}</p>
+                                    <div className="mt-2 space-y-2">
+                                        {q.choices.map((choice, cIndex) => (
+                                            <label key={cIndex} className="flex items-center gap-2 p-2 rounded-md bg-stone-700/50 hover:bg-stone-700 cursor-pointer">
+                                                <input type="radio" name={`question-${qIndex}`} value={choice.text} checked={quizAnswers[qIndex] === choice.text} onChange={() => handleAnswerChange(qIndex, choice.text)} />
+                                                <span>{choice.text}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            <Button onClick={handleSubmitQuiz} disabled={quizAnswers.some(a => a === null)}>Submit Quiz</Button>
+                        </div>
+                    )}
+
+                    {quizResult && (
+                        <div className={`p-4 rounded-lg text-center ${quizResult.score >= 2 ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
+                            <h3 className="font-bold text-lg">{quizResult.score >= 2 ? 'Quiz Passed!' : 'Try Again!'}</h3>
+                            <p>You scored {quizResult.score} out of {quizResult.total}.</p>
+                            {quizResult.score < 2 && <Button onClick={handleGenerateQuiz} variant="secondary" size="sm" className="mt-2">Retake Quiz</Button>}
+                        </div>
+                    )}
                     <div ref={messagesEndRef} />
                 </div>
 
                 <div className="p-4 border-t border-stone-700/60 flex-shrink-0">
-                    <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
-                         <Input
-                            as="textarea"
-                            rows={2}
-                            value={inputMessage}
-                            onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSendMessage();
-                                }
-                            }}
-                            placeholder={sessionId ? "Ask a question..." : "Connecting to AI Teacher..."}
-                            className="flex-grow resize-none"
-                            disabled={!sessionId || isLoading}
-                            autoFocus
-                        />
-                        <Button type="submit" disabled={!sessionId || isLoading || !inputMessage.trim()} className="h-full">
-                            Send
-                        </Button>
-                    </form>
+                    {quiz ? (
+                        <div className="text-center text-stone-400">Please complete the quiz above.</div>
+                    ) : (
+                        <>
+                            <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
+                                <Input as="textarea" rows={2} value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={sessionId ? "Ask a question..." : "Connecting to AI Teacher..."} className="flex-grow resize-none" disabled={!sessionId || isLoading} autoFocus />
+                                <Button type="submit" disabled={!sessionId || isLoading || !inputMessage.trim()} className="h-full">Send</Button>
+                            </form>
+                            <div className="flex justify-between items-center mt-2">
+                                <Button onClick={handleGenerateQuiz} disabled={!isQuizReady || isLoading}>
+                                    {isQuizReady ? "I'm ready for the quiz!" : `Quiz unlocks in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

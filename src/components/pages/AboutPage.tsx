@@ -26,6 +26,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_0_DATE = new Date(2025, 9, 8);
 const V0_3_02_DATE = new Date(2025, 9, 7);
 const V0_3_01_DATE = new Date(2025, 9, 6);
 const V0_3_0_DATE = new Date(2025, 9, 5);
@@ -96,6 +97,20 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.0 ({V0_4_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Enhanced AI Teacher with Quizzes & Timers:</strong> The AI Teacher feature has been transformed into a full learning module.
+                    <ul className="list-disc list-inside pl-6">
+                        <li><strong>Proactive Start & In-Chat Quizzes:</strong> The AI is now more interactive, proactively starting conversations and asking questions mid-lesson to check for understanding.</li>
+                        <li><strong>Optional Learning Timer:</strong> Admins can now set a minimum learning time for "AI Teacher" quests. A timer appears in the chat, and users must complete it before they can take the final quiz.</li>
+                        <li><strong>Final Quiz for Completion:</strong> A new "I'm ready for the quiz" button appears (enabled after any required time is met), which prompts the AI to generate a 3-question quiz based on the conversation. Users must pass this quiz (2/3 correct) before the main "Complete Quest" button becomes enabled, ensuring a structured and effective learning experience.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.3.02 ({V0_3_02_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

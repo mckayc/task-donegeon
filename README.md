@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.3.02
+**Version:** 0.4.0
 
 ---
 
@@ -12,6 +12,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.0 (October 8, 2025)
+-   **Enhanced AI Teacher with Quizzes & Timers:** The AI Teacher feature has been transformed into a full learning module.
+    -   **Proactive Start & In-Chat Quizzes:** The AI is now more interactive, proactively starting conversations and asking questions mid-lesson to check for understanding.
+    -   **Optional Learning Timer:** Admins can now set a minimum learning time for "AI Teacher" quests. A timer appears in the chat, and users must complete it before they can take the final quiz.
+    -   **Final Quiz for Completion:** A new "I'm ready for the quiz" button appears (enabled after any required time is met), which prompts the AI to generate a 3-question quiz based on the conversation. Users must pass this quiz (2/3 correct) before the main "Complete Quest" button becomes enabled, ensuring a structured and effective learning experience.
 
 ### What's New in Version 0.3.02 (October 7, 2025)
 -   **AI Teacher Chat UI:** Implemented the full chat interface for the AI Teacher feature. The panel now supports a real-time, back-and-forth conversation with the Gemini-powered AI, complete with a message history, typing indicators, and user avatars, all connected to the new stateful backend API.

@@ -1,4 +1,4 @@
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenAI, Type } = require('@google/genai');
 const { asyncMiddleware } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity } = require('../entities');
@@ -85,7 +85,7 @@ const startChatSession = async (req, res) => {
     Your personality should be that of a friendly, encouraging, and knowledgeable guide.
     Keep the conversation focused on the quest's topic. If the user asks about something unrelated, gently steer them back to the topic.
     Adapt your language and the complexity of your explanations to be suitable for someone with a birthday of ${user.birthday}. Do not mention their birthday directly.
-    Your goal is to facilitate learning through interactive conversation.`;
+    Your goal is to facilitate learning through interactive conversation. Be proactive: start the conversation with an introduction, and occasionally ask questions to check for understanding.`;
 
     const chat = await ai.chats.create({
         model: 'gemini-2.5-flash',
@@ -129,10 +129,77 @@ const sendMessageInSession = async (req, res) => {
     }
 };
 
+const generateQuizForSession = async (req, res) => {
+    if (!ai) {
+        return res.status(400).json({ error: 'AI features are not configured on the server.' });
+    }
+    const { sessionId } = req.body;
+    if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId is required.' });
+    }
+
+    const chat = activeChats.get(sessionId);
+    if (!chat) {
+        return res.status(404).json({ error: 'Chat session not found or has expired.' });
+    }
+
+    try {
+        const history = await chat.getHistory();
+        const conversationText = history.map(h => `${h.role}: ${h.parts.map(p => p.text).join(' ')}`).join('\n');
+        
+        const prompt = `Based on the following conversation history, generate a 3-question multiple-choice quiz in a strict JSON format. The quiz should test understanding of the key concepts discussed. For each question, provide 4 choices, with only one being correct.
+        
+        Conversation History:
+        ${conversationText}`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        questions: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    question: { type: Type.STRING },
+                                    choices: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                text: { type: Type.STRING },
+                                                isCorrect: { type: Type.BOOLEAN }
+                                            },
+                                            required: ['text', 'isCorrect']
+                                        }
+                                    }
+                                },
+                                required: ['question', 'choices']
+                            }
+                        }
+                    },
+                    required: ['questions']
+                }
+            }
+        });
+
+        res.json({ quiz: JSON.parse(response.text) });
+
+    } catch (error) {
+        console.error("Gemini Quiz Generation Error:", error);
+        res.status(500).json({ error: 'Failed to generate a quiz from the conversation.' });
+    }
+};
+
 module.exports = {
     testApiKey: asyncMiddleware(testApiKey),
     generateContent: asyncMiddleware(generateContent),
     startChatSession: asyncMiddleware(startChatSession),
     sendMessageInSession: asyncMiddleware(sendMessageInSession),
+    generateQuizForSession: asyncMiddleware(generateQuizForSession),
     isAiConfigured: () => !!ai,
 };

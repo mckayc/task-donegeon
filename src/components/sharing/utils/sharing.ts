@@ -1,4 +1,4 @@
-import { AssetPack, ImportResolution, IAppData, Quest, GameAsset, RewardItem, ShareableAssetType, RewardTypeDefinition, Rank, Trophy, Market, QuestGroup, UserTemplate } from '../../../types';
+import { AssetPack, AssetPackAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset, QuestGroup, UserTemplate } from '../../../types';
 
 /**
  * Finds all unique dependency IDs (e.g., rewardType IDs) from a collection of assets.
@@ -52,6 +52,7 @@ export const generateAssetPack = (
             markets: [],
             gameAssets: [],
             users: [],
+            chronicles: [],
         }
     };
 
@@ -94,6 +95,13 @@ export const generateAssetPack = (
             personalPurse, personalExperience, guildBalances, profilePictureUrl, 
             ownedAssetIds, ownedThemes, hasBeenOnboarded, ...userTemplate 
         }) => userTemplate);
+        
+    // Add filtered chronicles based on selected user IDs
+    const chronicleUserFilter = selectedAssets.chronicles;
+    if (chronicleUserFilter && chronicleUserFilter.length > 0) {
+        const userFilterSet = new Set(chronicleUserFilter);
+        assetPack.assets.chronicles = allAssets.chronicleEvents.filter(c => c.userId && userFilterSet.has(c.userId));
+    }
 
     // Download the file
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(assetPack, null, 2));

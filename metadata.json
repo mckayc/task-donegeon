@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.3.02 - AI Teacher Chat UI",
-  "version": "0.3.02",
+  "name": "Task Donegeon 2.0 - 0.4.0 - AI Teacher Quiz & Timer",
+  "version": "0.4.0",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

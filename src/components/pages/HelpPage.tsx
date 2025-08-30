@@ -4,275 +4,299 @@ import { useSystemState } from '../../context/SystemContext';
 import { version } from '../../../package.json';
 import Button from '../user-interface/Button';
 
-const helpContent = `# Task Donegeon
-
-**Version:** 0.2.01
-
----
-
-Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and a **Suggestion Engine** powered by Google Gemini to help administrators generate new quests and items, making world-building a breeze.
-
-## Table of Contents
-- [✨ Features](#-features)
-- [🗺️ Roadmap](#️-roadmap)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [🚀 Getting Started](#-getting-started)
-- [⚙️ Installation and Running](#️-installation-and-running)
-
-### What's New in Version 0.2.01 (October 4, 2025)
--   **Simplified Kiosk Button:** Moved the Kiosk button to the main header, next to the fullscreen icon, and simplified the label to "Kiosk" for easier access on \`/kiosk\` URLs.
-
-### What's New in Version 0.2.0 (October 3, 2025)
--   **Return to Kiosk Mode:** Added a "Return to Kiosk" button to the user profile dropdown when using the app via the \`/kiosk\` URL. This provides a clear and intuitive way for users to end their session and return to the shared user selection screen.
-
-### What's New in Version 0.1.99 (October 2, 2025)
--   **Critical Kiosk Security Fix:** Patched a major security flaw where the Kiosk Mode page (\`/kiosk\`) could be accessed without authentication in a new session (e.g., an incognito window). The application now correctly enforces the master \`AppLockScreen\` as the primary gatekeeper before any other content is rendered.
--   **Kiosk Login Flow Fixed:** Resolved a critical bug where logging in from the Kiosk Mode screen would incorrectly redirect users to the main login page instead of their dashboard. The user login flow from the shared view is now seamless and correct.
--   **Robust Kiosk State Management:** The logout process is now path-aware. Logging out from a Kiosk device correctly returns the user to the Kiosk selection screen, while logging out from a normal session correctly locks the application, preventing state confusion and fixing hard-refresh bugs.
-
-### What's New in Version 0.1.98 (October 1, 2025)
--   **New URL-Based Kiosk Mode:** Kiosk Mode has been re-architected to be more robust and reliable. It is no longer a device-specific state but is now accessed via a dedicated URL (\`/kiosk\`). This eliminates all state management bugs related to toggling the mode on and off.
--   **Simplified Admin UI:** The "Enable/Disable Kiosk Mode" toggle and "Exit" button have been removed from the admin profile dropdown to create a cleaner, more intuitive interface. Admins now simply navigate to the \`/kiosk\` URL on a device to set it up for shared use.
--   **Updated Documentation:** The in-app Help Guide and project README have been updated to reflect the new, simpler Kiosk Mode functionality.
-
-### What's New in Version 0.1.97 (September 30, 2025)
--   **Kiosk Mode State Management Fix:** Resolved a core state management issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting. The application now correctly distinguishes between the session's view (personal vs. shared) and the device's persistent Kiosk Mode setting, ensuring the UI for administrators is always correct.
-
-### What's New in Version 0.1.96 (September 29, 2025)
--   **Kiosk Mode Logic Fix:** Corrected a logical flaw where an administrator logged into a Kiosk-enabled device would see an "Exit" button and an "Enable Kiosk Mode" option instead of the correct "Disable Kiosk Mode" toggle. The UI now correctly reflects the device's state.
-
-### What's New in Version 0.1.95 (September 28, 2025)
--   **Revamped Kiosk Mode Activation:** The "Enter Kiosk Mode" button has been removed from the public login page. Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu, providing a more secure and intuitive workflow.
--   **Full-Width Kiosk Header Scrolling:** The entire header in Kiosk Mode is now horizontally scrollable on mobile devices. This ensures all controls and user avatars are always accessible, even on very narrow screens.
-
-### What's New in Version 0.1.94 (September 27, 2025)
--   **Per-Device Kiosk Mode:** Kiosk/Shared Mode is now a device-specific setting. The global setting enables the feature, and a new "Enter Kiosk Mode" button on the login screen allows any permitted device to enter this view. A device will remain in Kiosk Mode until a user explicitly logs in.
--   **Mobile Header Fix:** The user selection area in the Kiosk Mode header is now horizontally scrollable on mobile devices, ensuring all user avatars and the "Switch User" button are always accessible.
-
-### What's New in Version 0.1.93 (September 26, 2025)
--   **Mobile-Friendly Approvals:** The Approvals page is now fully responsive. On mobile devices, it displays a touch-friendly card view for each pending item (Quests, Claims, Purchases, and Trades), making it easier for administrators to manage approvals on the go.
--   **Interactive Approval Cards:** Quest and Claim approval cards on mobile are now clickable, opening a full detail dialog so admins can review the requirements before approving.
-
-### What's New in Version 0.1.92 (September 25, 2025)
--   **Kiosk Mode Pending Notifications:** The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items (quests or purchases) awaiting approval, providing an immediate visual cue without requiring login.
--   **Backend Optimizations:** Added a new, more efficient backend endpoint to fetch pending item counts for multiple users at once, improving performance for the Kiosk Mode view.
-
-### What's New in Version 0.1.91 (September 24, 2025)
--   **Maintenance Release:** Incremented application version number and updated the service worker to ensure all users receive the latest application updates correctly. This release also includes several internal bug fixes to improve build stability and correct data access patterns on the Quests and Management pages.
-
-### What's New in Version 0.1.90 (September 23, 2025)
--   **"My Pending Items" Dashboard Widget:** A new card has been added to the {link_dashboard} that provides a consolidated, at-a-glance view of all your submitted {tasks} and purchases that are awaiting administrator approval.
--   **Pending Items Header Notification:** A new bell icon (🔔) in the header now displays a badge with a count of your pending items. Clicking it opens a dropdown for a quick overview.
--   **Clearer Transaction UI in {history}:** To prevent confusion, the {history} log now displays the cost of a purchase only on the initial "Pending" event. Subsequent "Completed" or "Approved" events no longer repeat the cost, and "Rejected" or "Cancelled" events explicitly show a refund.
--   **Richer Purchase Logging:** Item purchases in the {history} log now display the specific item's image instead of a generic icon. If no item image is available, it defaults to the icon of the {store} where it was purchased.
-
-### What's New in Version 0.1.89 (September 22, 2025)
--   **Full Audit Trail for {history}:** The {history} system has been updated to provide a complete audit trail for multi-step actions. Instead of updating a single log entry, the system now creates a new, separate entry for each step, such as "Requested," "Approved," "Rejected," or "Cancelled," ensuring a full and transparent history of all transactions.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the new, more detailed logging behavior.
-
-### What's New in Version 0.1.88 (September 21, 2025)
--   **Enhanced Chronicle Logging:** Fixed an issue where creating new items ({link_manage_items}) and making purchases from a {store} were not being recorded. These events will now correctly appear in the {history} log.
--   **UI Fix:** Added "Admin Asset Management" to the default filters on the {history} page so that events related to creating and deleting assets are visible by default.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the new logging events.
-
-### What's New in Version 0.1.87 (September 20, 2025)
--   **Enhanced Number Input:** Fixed a bug in the number input component where holding down the increment/decrement buttons would not accelerate the value change. The component now correctly handles click-and-hold for rapid adjustments.
--   **UI Fix:** Increased the default width of the number input to prevent numbers with four or more digits from being cut off.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the number input's functionality.
-
-### What's New in Version 0.1.86 (September 19, 2025)
--   **Enhanced Time-Remaining Display:** All quest cards across the app ({link_quests} page, Dashboard, and Kiosk Mode) now show detailed time-remaining information. This includes days, hours, and minutes until a {task} is due.
--   **Smarter Deadline Logic:** The quest card display now intelligently switches to show the time remaining until a {task} is marked "Incomplete" if it's past its initial due time.
--   **Clearer Due Dates:** Alongside the time remaining, cards also display the absolute due date and time for better planning.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to fully document the new time-remaining display system.
-
-### What's New in Version 0.1.85 (September 18, 2025)
--   **Self-Healing Backup System:** Fixed a critical issue where old automated backups would accumulate indefinitely if their parent schedule was edited or deleted. The system now automatically finds and deletes these "orphaned" backup files, ensuring that storage is managed correctly and preventing uncontrolled disk usage.
-
-### What's New in Version 0.1.84 (September 17, 2025)
--   **Consistent Quest Card Styling:** The "Quick Actions" widget on the Dashboard now uses the same detailed styling as the main Quests page, including dynamic, color-coded borders to indicate due dates and status for a more consistent user experience.
--   **Slower "Due Soon" Animation:** The pulsing animation for quest cards that are due soon has been slowed down to be less jarring.
-
-### What's New in Version 0.1.83 (September 16, 2025)
--   **Visible Quest Rewards:** The "Manage Quests" page now includes a "Rewards" column in the table view and displays rewards directly on the quest cards in mobile view, making it much easier for administrators to see the rewards for each quest at a glance.
-
-### What's New in Version 0.1.77 (September 15, 2025)
--   **Enhanced Chronicles System:** The \`{history}\` system has been overhauled to be more comprehensive and intelligent.
-    -   **New Event Logging:** The system now logs a wider range of activities, including when a {task} is marked as a "To-Do," when an exchange is made, and when a Triumph or Trial is applied.
-    -   **Consolidated Admin Logs:** To keep the \`{history}\` clean, consecutive creations or deletions of the same asset type by an {admin} are now grouped into a single, consolidated log entry (e.g., "Created 5 {tasks}").
-    -   **More Robust Logging:** All user-facing actions are now logged individually to provide a complete audit trail.
--   **Smarter Dashboard Widget:** The "Recent Activity" widget on the Dashboard now shows events from the last **7 days** and displays up to **50 items** or all of today's events, whichever is greater, giving a more comprehensive recent overview.
--   **Updated Documentation:** The in-app \`{link_help_guide}\` has been thoroughly updated with these new specifications, ensuring it remains the definitive source of truth for the application's functionality.
-
-### What's New in Version 0.1.76 (September 14, 2025)
--   **No Cap on Quick Actions:** The "Quick Actions" widget on the Dashboard now displays all available quests for the user, rather than being capped at 10. The list is scrollable if many quests are available.
--   **Kiosk Mode Logic Update:** Optional, dateless \`{singleTasks}\` (Ventures) that can be completed daily will now automatically appear for all assigned users in Kiosk Mode, without needing to be manually marked as a "To-Do".
--   **Updated Documentation:** The in-app Help Guide has been updated to reflect these new functional specifications.
-
-### What's New in Version 0.1.75 (September 13, 2025)
--   **Functional Specification UI Overhaul:** Implemented the full set of UI and behavior requirements from Bug Report #bug-1756437.
--   **Consistent Background Colors:** Quest cards now have consistent, distinct background colors based on their type ({recurringTask}, {singleTask}, {journey}) across all parts of the application.
--   **Time-Sensitive Border System:** Quest card borders now dynamically change color and animate based on their deadline proximity:
-    -   \`Green:\` More than 2 hours until due.
-    -   \`Yellow:\` 1-2 hours until due.
-    -   \`Orange (pulsing):\` Less than 1 hour until due.
-    -   \`Red (pulsing):\` Past due.
-    -   \`Black:\` Marked as incomplete for the day (for {recurringTasks}).
--   **Dimmed States:** Quests that are completed for the day or past their "incomplete" time are now visually dimmed to de-emphasize them.
--   **Updated Documentation:** The in-app Help Guide has been updated to fully document this new, detailed visual system.
-
-### What's New in Version 0.1.74 (September 12, 2025)
--   **Maintenance Release:** Incremented application version number and updated the service worker cache to ensure all users receive the latest application updates correctly.
-
-### What's New in Version 0.1.73 (September 11, 2025)
--   **Visual Task State System:** Quest cards on the main Quest Board and in Kiosk Mode now use a color-coded and animated border system to indicate their status at a glance (e.g., Overdue, Due Soon, To-Do, Optional).
--   **Kiosk Mode Upgrades:** The Kiosk Mode calendar view has been enhanced. It now features the new visual border system for quests and re-introduces categorization, separating quests into "{recurringTasks}" and "{singleTasks} & {journeys}" for better clarity.
--   **Functional Specification Documentation:** Re-established and updated the \`HelpGuide.md\` file to serve as the definitive source of truth for all application functionality, including the new visual quest state system.
-
-### What's New in Version 0.1.72 (September 10, 2025)
--   **Kiosk Mode Reward Display:** The shared Kiosk Mode calendar view now displays the rewards for each available quest, giving users a better at-a-glance understanding of their potential earnings.
-
-### What's New in Version 0.1.71 (September 9, 2025)
--   **Robust File Pathing Fix:** Resolved a stubborn avatar display issue by replacing all hardcoded absolute paths in the backend with dynamically resolved paths. This ensures the server can reliably locate and serve uploaded files (avatars, assets) and the database, regardless of the deployment environment.
-
-### What's New in Version 0.1.70 (September 8, 2025)
--   **Avatar Display Fix:** Resolved an issue where uploaded avatar images would appear broken in the development environment due to a missing server proxy configuration for media files.
-
-### What's New in Version 0.1.69 (September 7, 2025)
--   **Avatar System Simplification:** The avatar system has been streamlined. It no longer uses a layered system for equipped items and instead displays a single, user-uploaded profile picture. This resolves display issues and simplifies the user experience.
--   **Optimized Avatar Resizing:** The image cropper now resizes uploaded photos to a web-friendly 512x512 pixels, significantly reducing file sizes for faster performance and less storage usage.
-
-### What's New in Version 0.1.68 (September 6, 2025)
--   **Avatar Upload Optimization:** Cropped avatar uploads are now saved as JPEGs instead of PNGs, resulting in significantly smaller file sizes and faster uploads.
--   **Avatar Display Fix:** Resolved an issue where uploaded profile pictures would sometimes appear as broken images. The avatar component now correctly handles rendering custom profile pictures alongside equipped items.
--   **Reliable Picture Removal:** Fixed a bug where the "Remove Picture" button would not work reliably. It now correctly clears the user's profile picture on the first click.
-
-### What's New in Version 0.1.67 (September 5, 2025)
--   **Avatar Upload Fix:** Resolved a race condition that could cause avatar uploads to intermittently fail after cropping. The upload process is now more reliable.
--   **Admin Avatar Editing:** Administrators can now edit and manage user avatars directly from the "Edit User" dialog, including uploading new images, selecting from the gallery, and removing pictures.
-
-### What's New in Version 0.1.66 (September 4, 2025)
--   **Consistent Mobile Management Pages:** Applied the responsive card layout, previously on the "Manage Quests" page, to all other management pages (Users, Items, Markets, Trophies, etc.). This creates a unified, touch-friendly experience for administrators on mobile devices.
-
-### What's New in Version 0.1.65 (September 3, 2025)
--   **PWA Update Reliability:** Fixed a critical issue where the application would show an error page after an update. The service worker now correctly takes control of the page, ensuring a smooth and reliable update process without asset loading errors.
-
-### What's New in Version 0.1.64 (September 2, 2025)
--   **Version Bump:** Incremented application version number to trigger update notifications.
-
-### What's New in Version 0.1.63 (September 1, 2025)
--   **Responsive Manage Quests Page:** The "Manage Quests" page is now fully responsive. It will display a data table on desktop for efficient management and automatically switch to a touch-friendly card view on mobile devices for a better user experience. Bulk selection and actions are supported in both views.
-
-### What's New in Version 0.1.62 (August 31, 2025)
--   **Service Worker Update Reliability:** Overhauled the service worker registration and update detection logic to eliminate a race condition. The application will now reliably show an "Update Available" notification when a new version is ready to be installed.
-
-### What's New in Version 0.1.61 (August 30, 2025)
--   **New Enhanced Number Input:** Replaced all standard number input fields throughout the application with a custom stepper component. This new component features increment/decrement buttons, supports rapid changes by holding the buttons, and allows for easier direct text entry, resolving a long-standing issue with deleting the first digit in a number.
-
-### What's New in Version 0.1.60 (August 29, 2025)
--   **Version Update:** Incremented application version number to prepare for upcoming features.
-
-### What's New in Version 0.1.52 (August 28, 2025)
--   **Mobile Sidebar Scrolling:** Fixed a bug where the mobile sidebar menu would not scroll properly when sections were expanded, making some links inaccessible.
--   **Improved Number Inputs:** Corrected an issue where the first digit of a number could not be deleted in various reward and XP input fields across the application, improving the content editing experience.
-
-### What's New in Version 0.1.50 (August 27, 2025)
--   **UI Opacity Adjustments:** Made several UI overlays, such as the header and chat panel, fully opaque to improve readability and provide a more solid feel. The mobile sidebar overlay is also now darker to improve focus on the menu.
-
-### What's New in Version 0.1.49 (August 26, 2025)
--   **Mobile Responsiveness:** Implemented a fully responsive design. The application now adapts its layout for mobile devices, featuring an off-canvas sidebar, a condensed header, and touch-friendly card-based views on management pages to ensure a great user experience on any screen size.
--   **View Mode Switcher:** Added a manual toggle in the header to switch between mobile and desktop views, facilitating testing and improving usability on tablets.
--   **Data Integrity & Reset Fixes:** Resolved critical issues where core game elements like the default Guild, Exchange Market, and Explorer Chronicles would disappear after a full data reset. The system now correctly re-initializes these essential components.
--   **Revamped Asset Pack Importer:** Improved the asset pack import process. The import dialog now provides a clearer preview of all assets within the pack, including quests, markets, items, and trophies. It also includes a "select all" checkbox for easier bulk importing.
--   **Enhanced Setback Rules:** Added more granular control over setbacks in the "Game Rules" settings. Admins can now globally disable setbacks or choose to only apply them if quests are incomplete at the end of the day ("Forgive Late Setbacks").
--   **UI Polish in Settings:** Cleaned up the UI in the "Game Rules" section to prevent text from overlapping, improving readability.
-
-### Version History
--   **v0.0.99y (August 19, 2025):**
-    -   **New "Journey" Quest Type:** The simple "Unlocks Next Quest" feature has been completely replaced by a new, powerful **Journey** quest type.
-    -   **Dedicated Checkpoint Editor:** Admins can now create epic, multi-step quests using a new, intuitive dialog to add and manage checkpoints, each with its own description and unique rewards.
-    -   **Enhanced User Experience:** Journey quests feature a distinct purple UI, progress tracking in the header (e.g., "Checkpoint 1/5"), and mystery rewards for future checkpoints to keep players engaged.
-    -   **Full System Integration:** The new Journey type is fully supported by the AI Suggestion Engine for content creation and can be exported/imported via the Asset Pack system.
--   **v0.0.54 (August 17, 2025):** The calendar's day and week views now correctly display the full time range for timed quests, making deadlines much clearer.
--   **v0.0.53 (August 15, 2025):** Renamed an asset pack to "Student's Daily Quest" and added new tech-related marketplace rewards.
--   **v0.0.52 (August 15, 2025):** Added a new default asset pack for a student's daily routine with screen-time rewards.
--   **v0.0.51 (August 8, 2025):** Fixed a UI inconsistency with the notification badge for pending approvals in the sidebar.
--   **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
--   **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
--   **v0.0.95 (July 22, 2025):** Smarter Suggestion Engine, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.
--   **v0.0.94 (July 26, 2025):** Added default quest categories and improved the collapsed sidebar with expandable menus.
--   **v0.0.93 (July 25, 2025):** Implemented a purchase escrow system, integrated purchase requests into the Chronicles, and improved the login notification popup with a scrollbar and close button.
--   **v0.0.92 (July 24, 2025):** Added in-dialog Quest Group creation and made item titles on management pages clickable`;
-
-// A simple function to replace terminology placeholders like {appName}
-const applyTerminology = (text: string, terminology: any): string => {
-    return text.replace(/\{(\w+)\}/g, (placeholder, key) => {
-        return terminology[key] || placeholder;
-    });
+const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+        <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg mt-8" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', borderColor: 'hsl(var(--color-border))' }}>
+            <button
+                className="w-full flex justify-between items-center text-left px-6 py-4 hover:bg-stone-700/30 transition-colors"
+                onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+            >
+                <h3 className="text-2xl font-medieval text-accent">{title}</h3>
+                <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+            </button>
+            {isOpen && (
+                <div className="p-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
+                    {children}
+                </div>
+            )}
+        </div>
+    );
 };
 
-// A simple inline markdown parser to convert markdown text to JSX
-const parseMarkdown = (text: string) => {
-  const elements: React.ReactNode[] = [];
-  let currentListItems: React.ReactNode[] = [];
+const V0_4_0_DATE = new Date(2025, 9, 8);
+const V0_3_02_DATE = new Date(2025, 9, 7);
+const V0_3_01_DATE = new Date(2025, 9, 6);
+const V0_3_0_DATE = new Date(2025, 9, 5);
+const V0_2_01_DATE = new Date(2025, 9, 4);
+const V0_2_0_DATE = new Date(2025, 9, 3);
+const V0_1_99_DATE = new Date(2025, 9, 2);
+const V0_1_98_DATE = new Date(2025, 9, 1);
+const V0_1_97_DATE = new Date(2025, 8, 30);
+const V0_1_96_DATE = new Date(2025, 8, 29);
+const V0_1_95_DATE = new Date(2025, 8, 28);
+const V0_1_94_DATE = new Date(2025, 8, 27);
+const V0_1_93_DATE = new Date(2025, 8, 26);
+const V0_1_92_DATE = new Date(2025, 8, 25);
+const V0_1_91_DATE = new Date(2025, 8, 24);
+const V0_1_90_DATE = new Date(2025, 8, 23);
+const V0_1_89_DATE = new Date(2025, 8, 22);
+const V0_1_88_DATE = new Date(2025, 8, 21);
+const V0_1_87_DATE = new Date(2025, 8, 20);
+const V0_1_86_DATE = new Date(2025, 8, 19);
+const V0_1_85_DATE = new Date(2025, 8, 18);
+const V0_1_84_DATE = new Date(2025, 8, 17);
+const V0_1_83_DATE = new Date(2025, 8, 16);
+const V0_1_77_DATE = new Date(2025, 8, 15);
+const V0_1_76_DATE = new Date(2025, 8, 14);
+const V0_1_75_DATE = new Date(2025, 8, 13);
+const V0_1_74_DATE = new Date(2025, 8, 12);
+const V0_1_73_DATE = new Date(2025, 8, 11);
+const V0_1_72_DATE = new Date(2025, 8, 10);
+const V0_1_71_DATE = new Date(2025, 8, 9);
+const V0_1_70_DATE = new Date(2025, 8, 8);
+const V0_1_69_DATE = new Date(2025, 8, 7);
+const V0_1_68_DATE = new Date(2025, 8, 6);
+const V0_1_67_DATE = new Date(2025, 8, 5);
+const V0_1_66_DATE = new Date(2025, 8, 4);
+const V0_1_65_DATE = new Date(2025, 8, 3);
+const V0_1_64_DATE = new Date(2025, 8, 2);
+const V0_1_63_DATE = new Date(2025, 8, 1);
+const V0_1_62_DATE = new Date(2025, 7, 31);
+const V0_1_61_DATE = new Date(2025, 7, 30);
+const V0_1_60_DATE = new Date(2025, 7, 29);
+const V0_1_52_DATE = new Date(2025, 7, 28);
+const V0_1_50_DATE = new Date(2025, 7, 27);
+const V0_1_49_DATE = new Date(2025, 7, 26);
+const V0_1_40_DATE = new Date(2025, 7, 26);
+const V0_0_99Y_DATE = new Date(2025, 7, 19);
+const V0_0_54_DATE = new Date(2025, 7, 17);
+const V0_0_53_DATE = new Date(2025, 7, 15);
+const V0_0_52_DATE = new Date(2025, 7, 15);
+const V0_0_51_DATE = new Date(2025, 7, 8);
+const V0_0_97_DATE = new Date(2025, 6, 23);
+const V0_0_96_DATE = new Date(2025, 6, 22);
+const V0_0_95_DATE = new Date(2025, 6, 22);
+const V0_0_94_DATE = new Date(2025, 6, 26);
+const V0_0_93_DATE = new Date(2025, 6, 25);
+const V0_0_92_DATE = new Date(2025, 6, 24);
+const V0_0_91_DATE = new Date(2025, 6, 23);
+const V0_0_90_DATE = new Date(2025, 6, 22);
+const V0_0_89_DATE = new Date(2025, 6, 21);
+const V0_0_88_DATE = new Date(2025, 6, 20);
+const V0_0_87_DATE = new Date(2025, 6, 20);
+const V0_0_86_DATE = new Date(2025, 6, 19);
+const V0_0_85_DATE = new Date(2025, 6, 19);
+const V0_0_84_DATE = new Date(2025, 6, 19);
+const V0_0_83_DATE = new Date(2025, 6, 19);
+const V0_0_82_DATE = new Date(2025, 6, 19);
+const V0_0_81_DATE = new Date(2025, 6, 19);
+const V0_0_80_DATE = new Date(2025, 6, 19);
 
-  const flushList = () => {
-    if (currentListItems.length > 0) {
-      elements.push(<ul key={`ul-${elements.length}`} className="list-disc list-inside space-y-2 pl-4 my-4">{currentListItems}</ul>);
-      currentListItems = [];
-    }
-  };
+const VersionHistoryContent: React.FC = () => (
+    <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.0 ({V0_4_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Enhanced AI Teacher with Quizzes & Timers:</strong> The AI Teacher feature has been transformed into a full learning module.
+                    <ul className="list-disc list-inside pl-6">
+                        <li><strong>Proactive Start & In-Chat Quizzes:</strong> The AI is now more interactive, proactively starting conversations and asking questions mid-lesson to check for understanding.</li>
+                        <li><strong>Optional Learning Timer:</strong> Admins can now set a minimum learning time for "AI Teacher" quests. A timer appears in the chat, and users must complete it before they can take the final quiz.</li>
+                        <li><strong>Final Quiz for Completion:</strong> A new "I'm ready for the quiz" button appears (enabled after any required time is met), which prompts the AI to generate a 3-question quiz based on the conversation. Users must pass this quiz (2/3 correct) before the main "Complete Quest" button becomes enabled, ensuring a structured and effective learning experience.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.3.02 ({V0_3_02_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>AI Teacher Chat UI:</strong> Implemented the full chat interface for the AI Teacher feature. The panel now supports a real-time, back-and-forth conversation with the Gemini-powered AI, complete with a message history, typing indicators, and user avatars, all connected to the new stateful backend API.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.3.01 ({V0_3_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>AI Teacher UI Scaffolding:</strong> Implemented the frontend scaffolding for the AI Teacher feature. Admins can now designate a quest with an "AI Teacher" media type. This makes a new "AI Teacher" button appear in the quest details, which opens a placeholder panel for the future chat interface.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.3.0 ({V0_3_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>AI Teacher Foundation:</strong> Implemented the backend foundation for the new "AI Teacher" feature. This includes new, stateful API endpoints to manage interactive chat sessions with the Gemini API, laying the groundwork for personalized, quest-based learning conversations.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.2.01 ({V0_2_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Simplified Kiosk Button:</strong> Moved the Kiosk button to the main header, next to the fullscreen icon, and simplified the label to "Kiosk" for easier access on `/kiosk` URLs.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.2.0 ({V0_2_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Return to Kiosk Mode:</strong> Added a "Return to Kiosk" button to the user profile dropdown when using the app via the `/kiosk` URL. This provides a clear and intuitive way for users to end their session and return to the shared user selection screen.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.99 ({V0_1_99_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Critical Kiosk Security Fix:</strong> Patched a major security flaw where the Kiosk Mode page (`/kiosk`) could be accessed without authentication in a new session (e.g., an incognito window).</li>
+                <li><strong>Kiosk Login Flow Fixed:</strong> Resolved a critical bug where logging in from the Kiosk Mode screen would incorrectly redirect users to the main login page instead of their dashboard.</li>
+                <li><strong>Robust Kiosk State Management:</strong> The logout process is now path-aware, correctly returning users to the Kiosk screen when appropriate.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.98 ({V0_1_98_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New URL-Based Kiosk Mode:</strong> Kiosk Mode is now accessed via a dedicated URL (`/kiosk`), improving reliability.</li>
+                <li><strong>Simplified Admin UI:</strong> Removed Kiosk toggles from the admin profile dropdown for a cleaner interface.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.97 ({V0_1_97_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode State Management Fix:</strong> Resolved an issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.96 ({V0_1_96_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode Logic Fix:</strong> Corrected a logical flaw to ensure the correct "Disable Kiosk Mode" toggle appears for admins on Kiosk-enabled devices.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.95 ({V0_1_95_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Revamped Kiosk Mode Activation:</strong> Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu.</li>
+                <li><strong>Full-Width Kiosk Header Scrolling:</strong> The entire header in Kiosk Mode is now horizontally scrollable on mobile devices.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.94 ({V0_1_94_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Per-Device Kiosk Mode:</strong> Kiosk/Shared Mode is now a device-specific setting, enabled via a button on the login screen.</li>
+                <li><strong>Mobile Header Fix:</strong> The Kiosk Mode header is now horizontally scrollable on mobile.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.93 ({V0_1_93_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Mobile-Friendly Approvals:</strong> The Approvals page is now fully responsive with a touch-friendly card view on mobile devices.</li>
+                <li><strong>Interactive Approval Cards:</strong> Quest and Claim approval cards on mobile are now clickable, opening a full detail dialog.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.92 ({V0_1_92_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode Pending Notifications:</strong> The Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval.</li>
+                <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.91 ({V0_1_91_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Maintenance Release:</strong> Incremented version and updated the service worker to ensure all users receive the latest updates.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.90 ({V0_1_90_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>"My Pending Items" Dashboard Widget:</strong> Added a new card to the dashboard showing items awaiting approval.</li>
+                <li><strong>Pending Items Header Notification:</strong> A new bell icon in the header now displays a badge with a count of pending items.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.49 ({V0_1_49_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Mobile Responsiveness:</strong> Implemented a fully responsive design for mobile devices.</li>
+                <li><strong>Data Integrity & Reset Fixes:</strong> Resolved critical issues where core game elements would disappear after a full data reset.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.99y ({V0_0_99Y_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New "Journey" Quest Type:</strong> The simple "Unlocks Next Quest" feature has been completely replaced by a new, powerful <strong>Journey</strong> quest type. Journeys are multi-stage adventures composed of multiple <strong>checkpoints</strong>.</li>
+                <li><strong>Dedicated Checkpoint Editor:</strong> Admins can now create epic, multi-step quests using a new, intuitive dialog to add and manage checkpoints, each with its own description and unique rewards.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.80 ({V0_0_80_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>Initial public version.</li>
+            </ul>
+        </div>
+    </div>
+);
 
-  const parseInline = (line: string) => {
-    const parts = line.split(/(\*\*.*?\*\*|\_.*?\_|\*.*?\*|`.*?`)/g);
-    return parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={i}>{part.slice(2, -2)}</strong>;
-        }
-        if ((part.startsWith('_') && part.endsWith('_')) || (part.startsWith('*') && part.endsWith('*'))) {
-            return <em key={i}>{part.slice(1, -1)}</em>;
-        }
-        if (part.startsWith('`') && part.endsWith('`')) {
-            return <code key={i} className="bg-stone-700/50 text-amber-300 px-1.5 py-0.5 rounded-md font-mono text-sm">{part.slice(1, -1)}</code>;
-        }
-        return part;
-    });
-  };
+const RoadmapContent: React.FC = () => (
+    <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <p className="text-sm">Here is the planned development path for Task Donegeon, prioritized for the most impactful features first.</p>
+        
+        <div>
+            <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 1: Foundational Features &amp; Quality of Life</h4>
+            <p className="text-xs text-stone-400">This phase focuses on high-impact improvements for admins and players that enhance the core experience.</p>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Backend Authentication:</strong> Implement JWT-based authentication to secure all backend API endpoints.</li>
+                <li><strong>Enhanced Security:</strong> A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.</li>
+                <li><strong>Quest Bundles:</strong> Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.</li>
+                <li><strong>Showcase Page:</strong> A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.</li>
+                <li><strong>Advanced Object Manager:</strong> Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.</li>
+                <li><strong>Improved Progress Page:</strong> A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.</li>
+            </ul>
+        </div>
 
-  text.split('\n').forEach((line, index) => {
-    if (line.startsWith('# ')) {
-      flushList();
-      elements.push(<h1 key={index} className="text-3xl font-bold text-accent mt-6 mb-4">{parseInline(line.substring(2))}</h1>);
-    } else if (line.startsWith('## ')) {
-      flushList();
-      elements.push(<h2 key={index} className="text-2xl font-bold text-stone-100 mt-5 mb-3 border-b-2 border-stone-700/60 pb-2">{parseInline(line.substring(3))}</h2>);
-    } else if (line.startsWith('### ')) {
-      flushList();
-      elements.push(<h3 key={index} className="text-xl font-bold text-stone-200 mt-4 mb-2">{parseInline(line.substring(4))}</h3>);
-    } else if (line.trim() === '---') {
-        flushList();
-        elements.push(<hr key={index} className="border-stone-700/60 my-6" />);
-    } else if (line.startsWith('- ')) {
-      currentListItems.push(<li key={index}>{parseInline(line.substring(2))}</li>);
-    } else if (line.trim() === '') {
-      flushList();
-    } else {
-      flushList();
-      elements.push(<p key={index}>{parseInline(line)}</p>);
-    }
-  });
-
-  flushList(); // Add any remaining list items
-  return elements;
-};
+        <div>
+            <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 2: Core Gameplay &amp; Personalization</h4>
+            <p className="text-xs text-stone-400">This phase introduces major new creative outlets and systems for deeper engagement.</p>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>User-Created Content:</strong> A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.</li>
+                <li><strong>Reward Rework:</strong> Overhaul the reward system to allow for more complex and interesting rewards, such as items that grant temporary bonuses or unlock special abilities.</li>
+            </ul>
+        </div>
+    </div>
+);
 
 const HelpPage: React.FC = () => {
     const { settings } = useSystemState();
-
-    const processedContent = useMemo(() => {
-        const withTerminology = applyTerminology(helpContent, settings.terminology);
-        return parseMarkdown(withTerminology);
-    }, [settings.terminology]);
     
     return (
         <div className="max-w-4xl mx-auto pb-12">
@@ -289,11 +313,14 @@ const HelpPage: React.FC = () => {
                 </div>
             </Card>
 
-            <Card className="mt-8">
-                <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-                    {processedContent}
-                </div>
-            </Card>
+            <CollapsibleSection title="Version History" defaultOpen>
+                <VersionHistoryContent />
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Roadmap">
+                <RoadmapContent />
+            </CollapsibleSection>
+
         </div>
     );
 };

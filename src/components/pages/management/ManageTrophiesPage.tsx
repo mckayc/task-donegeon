@@ -67,7 +67,6 @@ const ManageTrophiesPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { isMobileView } = useUIState();
-
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);

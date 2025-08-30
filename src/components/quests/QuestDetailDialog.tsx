@@ -30,6 +30,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { addNotification } = useNotificationsDispatch();
     
     const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
+    const [isQuizPassed, setIsQuizPassed] = useState(false);
 
     // Prioritize the user passed in props (for shared view), fallback to logged-in user
     const currentUser = userForView || loggedInUser;
@@ -129,21 +130,21 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     };
 
     const renderActionButtons = () => {
-        // The main completion button is driven by the onComplete prop.
-        // It's used in contexts (like Shared View) that handle their own completion logic.
         if (onComplete) {
             const isJourney = quest.type === QuestType.Journey;
-            // Journey logic relies on a user context which is now available via `currentUser` proxy
-            const disabled = isJourney && hasPendingCompletion;
+            const isAiQuest = quest.mediaType === QuestMediaType.AITeacher;
+            const canCompleteAiQuest = isAiQuest && isQuizPassed;
 
-            return (
-                <Button onClick={handleComplete} disabled={disabled}>
-                    {isJourney
-                        ? (disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`)
-                        : 'Complete'
-                    }
-                </Button>
-            );
+            const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
+            
+            let buttonText = 'Complete';
+            if(isJourney) {
+                buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
+            } else if (isAiQuest) {
+                buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Pass Quiz to Complete';
+            }
+
+            return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
         }
 
         // All other actions (claiming, etc.) require a logged-in user context.
@@ -296,6 +297,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     quest={quest}
                     user={currentUser}
                     onClose={() => setIsAiTeacherOpen(false)}
+                    onQuizPassed={() => setIsQuizPassed(true)}
                 />
             )}
         </>

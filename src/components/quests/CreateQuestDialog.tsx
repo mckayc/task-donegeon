@@ -19,6 +19,7 @@ import EditJourneyDialog from './EditJourneyDialog';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import NumberInput from '../user-interface/NumberInput';
 
 type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
 
@@ -49,6 +50,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         type: QuestType.Duty,
         kind: QuestKind.Personal,
         mediaType: undefined,
+        aiTutorSessionMinutes: undefined,
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
@@ -246,6 +248,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         type: formData.type,
         kind: formData.kind,
         mediaType: formData.mediaType || undefined,
+        aiTutorSessionMinutes: formData.mediaType === QuestMediaType.AITeacher ? formData.aiTutorSessionMinutes : undefined,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -396,11 +399,19 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
               </select>
             </div>
           </div>
-           <div>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input as="select" label="Interactive Media" name="mediaType" value={formData.mediaType || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, mediaType: (e.target.value as QuestMediaType) || undefined}))}>
                   <option value="">None</option>
                   <option value={QuestMediaType.AITeacher}>AI Teacher</option>
               </Input>
+              {formData.mediaType === QuestMediaType.AITeacher && (
+                <NumberInput 
+                    label="AI Tutor Session (Minutes)"
+                    value={formData.aiTutorSessionMinutes || 0}
+                    onChange={newVal => setFormData(p => ({...p, aiTutorSessionMinutes: newVal > 0 ? newVal : undefined}))}
+                    min={0}
+                />
+              )}
             </div>
            <div>
                 <h3 className="font-semibold text-stone-200 mb-1">Quest Group</h3>

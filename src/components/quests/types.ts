@@ -33,6 +33,20 @@ export interface Checkpoint {
   trophyId?: string;
 }
 
+export interface QuizChoice {
+    text: string;
+    isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+    question: string;
+    choices: QuizChoice[];
+}
+
+export interface QuizState {
+    questions: QuizQuestion[];
+}
+
 export interface Quest {
   id: string;
   title: string;
@@ -40,6 +54,7 @@ export interface Quest {
   type: QuestType;
   kind: QuestKind; // New field to distinguish quest types
   mediaType?: QuestMediaType;
+  aiTutorSessionMinutes?: number;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;

@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -37,8 +36,20 @@ export const useDashboardData = () => {
             try {
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
                 
+                // Get filters from localStorage to match Chronicles page
                 const savedFilters = localStorage.getItem('chronicleFilters');
-                const filterTypes = savedFilters ? JSON.parse(savedFilters).join(',') : '';
+                // FIX: Safely parse localStorage data to prevent runtime errors and ensure it is a string array.
+                let filterTypes = '';
+                if (savedFilters) {
+                    try {
+                        const parsed = JSON.parse(savedFilters);
+                        if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
+                            filterTypes = parsed.join(',');
+                        }
+                    } catch (e) {
+                        console.error("Could not parse chronicleFilters from localStorage", e);
+                    }
+                }
                 
                 const endDate = new Date();
                 const startDate = new Date();

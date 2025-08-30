@@ -38,7 +38,8 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Asset Library': lazy(() => import('../pages/management/AssetLibraryPage')),
     'Profile': lazy(() => import('../pages/ProfilePage')),
     'About': lazy(() => import('../pages/AboutPage').then(module => ({ default: module.AboutPage }))),
-    'Help Guide': lazy(() => import('../pages/HelpPage')),
+    // Fix: Changed lazy import for HelpPage to correctly resolve its default export.
+    'Help Guide': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.default }))),
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
 };

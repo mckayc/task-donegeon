@@ -166,10 +166,12 @@ This section serves as the definitive source of truth for the application's inte
 **Purpose:** This mode is for shared family devices. It provides a fast user-switching interface and can automatically log users out after a period of inactivity.
 
 **How it Works:**
-- **Per-Device Activation:** An administrator ({admin}) must first enable the **Shared Mode** feature globally in the `{link_settings}`. Once enabled, any {admin} can activate Kiosk Mode on their current device by clicking their profile avatar in the header and selecting **"Enable Kiosk Mode on this Device"**. This will log them out and put the device into the shared view.
-- A device will remain in Kiosk Mode across page reloads until a user logs into their personal account. Logging out or clicking "Exit" from a personal account will return the device to Kiosk Mode if it was active previously.
-- **Header:** The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊). On mobile devices, the **entire header** is now **horizontally scrollable** to ensure all users and controls are accessible.
-- **Updating:** When an application update is available, a toast notification will appear at the bottom-left of the screen. Additionally, a persistent "Update" icon (an arrow pointing down into a tray) will appear in the header. Clicking either of these will install the update.
+- **URL-Based Activation:** An administrator ({admin}) must first enable the **Shared Mode** feature globally in the `{link_settings}`. Once enabled, the shared view is accessed by navigating to a specific URL.
+- In the `{link_settings}`, the dedicated **Kiosk Mode URL** will be displayed (e.g., `https://your-app-url.com/kiosk`).
+- To put a device into Kiosk Mode, simply open and bookmark this `/kiosk` URL on that device.
+- To exit Kiosk Mode on a device, simply navigate back to the main URL (`/`). There are no confusing toggles.
+- **Header:** The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊). On mobile devices, the header is horizontally scrollable to ensure all users and controls are accessible.
+- **Updating:** When an application update is available, a persistent "Update" icon (an arrow pointing down into a tray) will appear in the header. Clicking it will install the update.
 - **Pending Notifications:** If a user has items awaiting approval, a red notification badge will appear on their avatar in the header.
 
 #### {task} Visibility in Kiosk Mode
@@ -306,6 +308,17 @@ To prevent clutter, some admin actions are consolidated.
 ---
 
 ## Appendix: Version History
+
+### What's New in Version 0.1.98 (October 1, 2025)
+-   **New URL-Based Kiosk Mode:** Kiosk Mode has been re-architected to be more robust and reliable. It is no longer a device-specific state but is now accessed via a dedicated URL (`/kiosk`). This eliminates all state management bugs related to toggling the mode on and off.
+-   **Simplified Admin UI:** The "Enable/Disable Kiosk Mode" toggle and "Exit" button have been removed from the admin profile dropdown to create a cleaner, more intuitive interface. Admins now simply navigate to the `/kiosk` URL on a device to set it up for shared use.
+-   **Updated Documentation:** The in-app Help Guide and project README have been updated to reflect the new, simpler Kiosk Mode functionality.
+
+### What's New in Version 0.1.97 (September 30, 2025)
+-   **Kiosk Mode State Management Fix:** Resolved a core state management issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting. The application now correctly distinguishes between the session's view (personal vs. shared) and the device's persistent Kiosk Mode setting, ensuring the UI for administrators is always correct.
+
+### What's New in Version 0.1.96 (September 29, 2025)
+-   **Kiosk Mode Logic Fix:** Corrected a logical flaw where an administrator logged into a Kiosk-enabled device would see an "Exit" button and an "Enable Kiosk Mode" option instead of the correct "Disable Kiosk Mode" toggle. The UI now correctly reflects the device's state.
 
 ### What's New in Version 0.1.95 (September 28, 2025)
 -   **Revamped Kiosk Mode Activation:** The "Enter Kiosk Mode" button has been removed from the public login page. Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu, providing a more secure and intuitive workflow.

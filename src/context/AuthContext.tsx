@@ -10,9 +10,7 @@ interface AuthState {
   currentUser: User | null;
   isAppUnlocked: boolean;
   isFirstRun: boolean;
-
   isSwitchingUser: boolean;
-  isSharedViewActive: boolean;
   targetedUserForLogin: User | null;
   loginHistory: string[];
 }
@@ -25,12 +23,11 @@ interface AuthDispatch {
   updateUser: (userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => void;
   deleteUsers: (userIds: string[]) => void;
   setCurrentUser: (user: User | null) => void;
+  logout: () => void;
   markUserAsOnboarded: (userId: string) => void;
   setAppUnlocked: (isUnlocked: boolean) => void;
   setIsSwitchingUser: (isSwitching: boolean) => void;
   setTargetedUserForLogin: (user: User | null) => void;
-  exitToSharedView: () => void;
-  setIsSharedViewActive: (isActive: boolean) => void;
   completeFirstRun: (adminUserData: any) => void;
 }
 
@@ -43,20 +40,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
-  
-  // This state now represents the SESSION's view mode. It defaults to the device's setting.
-  const [isSharedViewActive, _setIsSharedViewActive] = useState<boolean>(() => localStorage.getItem('isKioskModeActive') === 'true');
-  
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [loginHistory, setLoginHistory] = useState<string[]>([]);
   
   const isFirstRun = users.length === 0;
-
-  // This function is for changing the DEVICE's Kiosk Mode setting permanently.
-  const setDeviceKioskSetting = useCallback((isActive: boolean) => {
-    localStorage.setItem('isKioskModeActive', String(isActive));
-    _setIsSharedViewActive(isActive); // Update session state to match immediately
-  }, []);
 
   const setCurrentUser = useCallback((user: User | null) => {
       _setCurrentUser(prevUser => {
@@ -69,19 +56,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
 
           if (user) {
-            // When a user logs in, the SESSION is no longer a shared view.
-            // Crucially, this does NOT change the localStorage setting for the device.
-            _setIsSharedViewActive(false); 
             localStorage.setItem('lastUserId', user.id);
             setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
           } else {
-            // When a user logs OUT, the session's view mode reverts to the device's setting.
-            const isKioskDevice = localStorage.getItem('isKioskModeActive') === 'true';
-            _setIsSharedViewActive(isKioskDevice);
             localStorage.removeItem('lastUserId');
           }
           return user;
       });
+  }, []);
+  
+  const logout = useCallback(() => {
+    _setCurrentUser(null);
+    _setAppUnlocked(false);
+    localStorage.removeItem('lastUserId');
+    localStorage.removeItem('isAppUnlocked');
+    // If logging out from Kiosk mode, redirect to the main page.
+    if (window.location.pathname.toLowerCase() === '/kiosk') {
+        window.location.href = '/';
+    }
   }, []);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {
@@ -123,13 +115,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('isAppUnlocked', String(isUnlocked));
       _setAppUnlocked(isUnlocked);
   }, []);
-
-  // This is for explicitly ENTERING Kiosk mode from a logged-out state or from an admin's profile.
-  const exitToSharedView = useCallback(() => {
-      _setCurrentUser(null);
-      setDeviceKioskSetting(true); // Set the device to be a Kiosk device.
-      localStorage.removeItem('lastUserId');
-  }, [setDeviceKioskSetting]);
 
   const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
       if (bugLogger.isRecording()) {
@@ -174,22 +159,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateUser,
       deleteUsers,
       setCurrentUser,
+      logout,
       markUserAsOnboarded,
       setAppUnlocked,
       setIsSwitchingUser,
       setTargetedUserForLogin,
-      exitToSharedView,
-      setIsSharedViewActive: setDeviceKioskSetting, // Public function sets the device setting
       completeFirstRun,
   }), [
-      setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, 
+      setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, logout,
       markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, 
-      exitToSharedView, setDeviceKioskSetting, completeFirstRun
+      completeFirstRun
   ]);
 
   const stateValue: AuthState = {
     users, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser,
-    isSharedViewActive, targetedUserForLogin, loginHistory
+    targetedUserForLogin, loginHistory
   };
 
   return (

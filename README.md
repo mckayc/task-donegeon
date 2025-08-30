@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.97
+**Version:** 0.1.98
 
 ---
 
@@ -12,6 +12,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.98 (October 1, 2025)
+-   **New URL-Based Kiosk Mode:** Kiosk Mode has been re-architected to be more robust and reliable. It is no longer a device-specific state but is now accessed via a dedicated URL (`/kiosk`). This eliminates all state management bugs related to toggling the mode on and off.
+-   **Simplified Admin UI:** The "Enable/Disable Kiosk Mode" toggle and "Exit" button have been removed from the admin profile dropdown to create a cleaner, more intuitive interface. Admins now simply navigate to the `/kiosk` URL on a device to set it up for shared use.
+-   **Updated Documentation:** The in-app Help Guide and project README have been updated to reflect the new, simpler Kiosk Mode functionality.
 
 ### What's New in Version 0.1.97 (September 30, 2025)
 -   **Kiosk Mode State Management Fix:** Resolved a core state management issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting. The application now correctly distinguishes between the session's view (personal vs. shared) and the device's persistent Kiosk Mode setting, ensuring the UI for administrators is always correct.
@@ -232,4 +237,26 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ---
+-   **Reward R-- END OF FILE README.md ------ START OF FILE vercel.json ---
+
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/server.js" },
+    { "source": "/kiosk", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -20,7 +18,7 @@ const MainLayout: React.FC = () => {
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
-  const { exitToSharedView } = useAuthDispatch();
+  const { logout } = useAuthDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
   const prevUserIdRef = useRef<string | undefined>(undefined);
@@ -84,9 +82,9 @@ const MainLayout: React.FC = () => {
     }
     timerRef.current = window.setTimeout(() => {
         addNotification({ type: 'info', message: 'Session timed out due to inactivity.' });
-        exitToSharedView();
+        logout();
     }, settings.sharedMode.autoExitMinutes * 60 * 1000);
-  }, [settings.sharedMode.autoExitMinutes, exitToSharedView, addNotification]);
+  }, [settings.sharedMode.autoExitMinutes, logout, addNotification]);
 
   useEffect(() => {
       if (settings.sharedMode.enabled && settings.sharedMode.autoExit) {

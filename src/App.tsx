@@ -1,8 +1,6 @@
-
-
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
-import { useAuthState, useAuthDispatch } from './context/AuthContext';
+import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
@@ -24,7 +22,7 @@ const App: React.FC = () => {
   const { settings, themes, isUpdateAvailable } = useSystemState();
   const { guilds } = useCommunityState();
   const { appMode, activePage } = useUIState();
-  const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
+  const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser } = useAuthState();
   const { isRecording, isPickingElement, trackClicks, trackElementDetails } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
   const { installUpdate } = useSystemDispatch();
@@ -32,6 +30,9 @@ const App: React.FC = () => {
   const isDataLoaded = useIsDataLoaded();
   
   const [showUpdateToast, setShowUpdateToast] = useState(false);
+
+  // Determine Kiosk Mode based on URL path
+  const isKioskPath = window.location.pathname.toLowerCase() === '/kiosk';
 
   useEffect(() => {
     const checkMobile = () => {
@@ -149,6 +150,17 @@ const App: React.FC = () => {
       setShowUpdateToast(!!isUpdateAvailable);
   }, [isUpdateAvailable]);
 
+  // Render Kiosk Mode immediately if enabled and on the correct path.
+  // This bypasses all other logic (first run, login, etc.)
+  if (settings.sharedMode.enabled && isKioskPath) {
+    return (
+      <ErrorBoundary>
+        <NotificationContainer />
+        {showUpdateToast && <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setShowUpdateToast(false)} />}
+        <SharedLayout />
+      </ErrorBoundary>
+    );
+  }
 
   if (!isDataLoaded) {
     return (
@@ -170,15 +182,7 @@ const App: React.FC = () => {
       {(() => {
         if (isFirstRun) { return <FirstRunWizard />; }
         if (!isAppUnlocked && !isFirstRun) { return <AppLockScreen />; }
-        
-        // The user switching flow must take precedence over the shared view.
         if (isSwitchingUser) { return <SwitchUser />; }
-        
-        // If not switching, and shared mode is active, show the shared layout.
-        if (settings.sharedMode.enabled && isSharedViewActive) {
-          return <SharedLayout />;
-        }
-
         if (!currentUser) { return <AuthPage />; }
       
         return <MainLayout />;

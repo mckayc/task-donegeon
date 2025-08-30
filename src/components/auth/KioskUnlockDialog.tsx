@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
+import { useAuthState } from '../../context/AuthContext';
 import { Role } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -12,7 +12,6 @@ interface KioskUnlockDialogProps {
 
 const KioskUnlockDialog: React.FC<KioskUnlockDialogProps> = ({ onClose }) => {
     const { users } = useAuthState();
-    const { setIsSharedViewActive } = useAuthDispatch();
     const { settings } = useSystemState();
     
     const adminUsers = useMemo(() => users.filter(u => u.role === Role.DonegeonMaster), [users]);
@@ -25,7 +24,8 @@ const KioskUnlockDialog: React.FC<KioskUnlockDialogProps> = ({ onClose }) => {
         setError('');
         const admin = adminUsers.find(u => u.id === selectedAdminId);
         if (admin && admin.password === password) {
-            setIsSharedViewActive(true);
+            // Fix: Navigate to kiosk mode URL directly as 'setIsSharedViewActive' does not exist.
+            window.location.href = '/kiosk';
             // The view will change automatically, so we don't need to call onClose
         } else {
             setError('Incorrect Master Password.');

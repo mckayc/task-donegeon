@@ -9,10 +9,8 @@ import RewardDisplay from '../user-interface/RewardDisplay';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useSyncStatus } from '../../context/DataProvider';
-import Button from '../user-interface/Button';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState } from '../../context/QuestsContext';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];
@@ -70,8 +68,7 @@ const Header: React.FC = () => {
   const { appMode, isMobileView } = useUIState();
   const { setAppMode, setActivePage, toggleSidebar } = useUIDispatch();
   const { currentUser } = useAuthState();
-  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setIsSharedViewActive } = useAuthDispatch();
-  const { addNotification } = useNotificationsDispatch();
+  const { logout, setIsSwitchingUser } = useAuthDispatch();
   const { quests } = useQuestsState();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -80,19 +77,6 @@ const Header: React.FC = () => {
   const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
   
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
-  
-  const [isKioskEnabledOnDevice, setIsKioskEnabledOnDevice] = useState(false);
-
-  useEffect(() => {
-    const checkKioskStatus = () => {
-        const status = localStorage.getItem('isKioskModeActive') === 'true';
-        setIsKioskEnabledOnDevice(status);
-    };
-    checkKioskStatus();
-    // Listen for changes from other tabs/windows
-    window.addEventListener('storage', checkKioskStatus);
-    return () => window.removeEventListener('storage', checkKioskStatus);
-  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -121,32 +105,10 @@ const Header: React.FC = () => {
         setPendingDropdownOpen(false);
     }
   };
-
-  const handleLogout = () => {
-    localStorage.removeItem('lastUserId');
-    localStorage.removeItem('isAppUnlocked');
-    setCurrentUser(null);
-    setAppUnlocked(false);
-    setProfileDropdownOpen(false);
-  };
   
   const handleSwitchUser = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsSwitchingUser(true);
-    setProfileDropdownOpen(false);
-  };
-  
-  const handleToggleKioskMode = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (isKioskEnabledOnDevice) {
-        // "Disable" action: This just changes the device's future behavior.
-        // The admin remains logged in. Logging out will now go to the normal auth page.
-        setIsSharedViewActive(false); // This updates localStorage and context state.
-        addNotification({ type: 'info', message: 'Kiosk mode disabled for this device.' });
-    } else {
-        // "Enable" action: This logs the user out and activates the shared view.
-        exitToSharedView();
-    }
     setProfileDropdownOpen(false);
   };
 
@@ -276,17 +238,6 @@ const Header: React.FC = () => {
             )}
         </div>
         {!isMobileView && <Clock />}
-        {settings.sharedMode.enabled && !isKioskEnabledOnDevice && (
-            <Button
-                onClick={exitToSharedView}
-                data-log-id="header-exit-shared-view"
-                variant="secondary"
-                className="font-bold text-lg hidden sm:inline-flex"
-                title="Exit to Shared View"
-            >
-                Exit
-            </Button>
-        )}
         <div className="relative">
             <button 
                 onClick={() => setProfileDropdownOpen(p => !p)} 
@@ -315,15 +266,9 @@ const Header: React.FC = () => {
                     <div className="py-1">
                         <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
                         <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
-                        {currentUser.role === Role.DonegeonMaster && settings.sharedMode.enabled && (
-                            <a href="#" onClick={handleToggleKioskMode} data-log-id="header-profile-link-kiosk-toggle" className={`block px-4 py-2 hover:bg-stone-700 ${isKioskEnabledOnDevice ? 'text-red-400' : 'text-stone-300'}`}>
-                                <span className="block leading-tight">{isKioskEnabledOnDevice ? 'Disable' : 'Enable'} Kiosk Mode</span>
-                                <span className="block text-xs text-stone-500">on this device</span>
-                            </a>
-                        )}
                     </div>
                     <div className="py-1 border-t border-stone-700">
-                        <a href="#" onClick={handleLogout} data-log-id="header-profile-link-logout" className="block px-4 py-2 text-red-400 hover:bg-stone-700">Log Out</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} data-log-id="header-profile-link-logout" className="block px-4 py-2 text-red-400 hover:bg-stone-700">Log Out</a>
                     </div>
                 </div>
             )}

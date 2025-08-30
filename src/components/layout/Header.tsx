@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Page, AppMode, Quest } from '../../types';
+import { Page, AppMode, Quest, Role } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -69,7 +69,7 @@ const Header: React.FC = () => {
   const { appMode, isMobileView } = useUIState();
   const { setAppMode, setActivePage, toggleSidebar } = useUIDispatch();
   const { currentUser } = useAuthState();
-  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAuthDispatch();
+  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setIsSharedViewActive } = useAuthDispatch();
   const { quests } = useQuestsState();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -118,6 +118,15 @@ const Header: React.FC = () => {
   const handleSwitchUser = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsSwitchingUser(true);
+    setProfileDropdownOpen(false);
+  };
+  
+  const handleEnableKioskMode = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsSharedViewActive(true);
+    // Log out to transition to the shared view
+    setCurrentUser(null);
+    setAppUnlocked(false);
     setProfileDropdownOpen(false);
   };
 
@@ -286,6 +295,12 @@ const Header: React.FC = () => {
                     <div className="py-1">
                         <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
                         <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
+                        {currentUser.role === Role.DonegeonMaster && settings.sharedMode.enabled && (
+                            <a href="#" onClick={handleEnableKioskMode} data-log-id="header-profile-link-kiosk" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">
+                                <span className="block leading-tight">Enable Kiosk Mode</span>
+                                <span className="block text-xs text-stone-500">on this device</span>
+                            </a>
+                        )}
                     </div>
                     <div className="py-1 border-t border-stone-700">
                         <a href="#" onClick={handleLogout} data-log-id="header-profile-link-logout" className="block px-4 py-2 text-red-400 hover:bg-stone-700">Log Out</a>

@@ -166,9 +166,9 @@ This section serves as the definitive source of truth for the application's inte
 **Purpose:** This mode is for shared family devices. It provides a fast user-switching interface and can automatically log users out after a period of inactivity.
 
 **How it Works:**
-- **Per-Device Activation:** Kiosk Mode is now a device-specific setting. The administrator enables the feature globally in the `{link_settings}`. Once enabled, any device can enter Kiosk Mode by clicking the **"Enter Kiosk Mode"** button on the main login screen.
+- **Per-Device Activation:** An administrator ({admin}) must first enable the **Shared Mode** feature globally in the `{link_settings}`. Once enabled, any {admin} can activate Kiosk Mode on their current device by clicking their profile avatar in the header and selecting **"Enable Kiosk Mode on this Device"**. This will log them out and put the device into the shared view.
 - A device will remain in Kiosk Mode across page reloads until a user logs into their personal account. Logging out or clicking "Exit" from a personal account will return the device to Kiosk Mode if it was active previously.
-- **Header:** The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊). On mobile devices, the list of user avatars is now **horizontally scrollable** to ensure all users are accessible.
+- **Header:** The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊). On mobile devices, the **entire header** is now **horizontally scrollable** to ensure all users and controls are accessible.
 - **Updating:** When an application update is available, a toast notification will appear at the bottom-left of the screen. Additionally, a persistent "Update" icon (an arrow pointing down into a tray) will appear in the header. Clicking either of these will install the update.
 - **Pending Notifications:** If a user has items awaiting approval, a red notification badge will appear on their avatar in the header.
 
@@ -306,6 +306,10 @@ To prevent clutter, some admin actions are consolidated.
 ---
 
 ## Appendix: Version History
+
+### What's New in Version 0.1.95 (September 28, 2025)
+-   **Revamped Kiosk Mode Activation:** The "Enter Kiosk Mode" button has been removed from the public login page. Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu, providing a more secure and intuitive workflow.
+-   **Full-Width Kiosk Header Scrolling:** The entire header in Kiosk Mode is now horizontally scrollable on mobile devices. This ensures all controls and user avatars are always accessible, even on very narrow screens.
 
 ### What's New in Version 0.1.94 (September 27, 2025)
 -   **Per-Device Kiosk Mode:** Kiosk/Shared Mode is now a device-specific setting. The global setting enables the feature, and a new "Enter Kiosk Mode" button on the login screen allows any permitted device to enter this view. A device will remain in Kiosk Mode until a user explicitly logs in.

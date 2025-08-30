@@ -49,7 +49,7 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) =>
                     id="identifier"
                     name="identifier"
                     value={identifier}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value)}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     required
                 />
                 <Input
@@ -58,7 +58,7 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) =>
                     name="password"
                     type="password"
                     value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                 />
                 {error && <p className="text-red-400 text-center">{error}</p>}
@@ -162,7 +162,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 
 const AuthPage: React.FC = () => {
     const { settings } = useSystemState();
-    const { setIsSwitchingUser, setIsSharedViewActive } = useAuthDispatch();
+    const { setIsSwitchingUser } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
     
     return (
@@ -191,11 +191,6 @@ const AuthPage: React.FC = () => {
                     <Button variant="secondary" onClick={() => setIsSwitchingUser(true)} className="w-full">
                         Switch Profile (PIN Login)
                     </Button>
-                    {settings.sharedMode.enabled && (
-                        <Button variant="secondary" onClick={() => setIsSharedViewActive(true)} className="w-full">
-                            Enter Kiosk Mode
-                        </Button>
-                    )}
                 </div>
             </div>
         </div>

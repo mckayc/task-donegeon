@@ -49,69 +49,73 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }
   };
 
   return (
-    <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
-      <div className="flex items-center gap-4 flex-shrink-0">
-        <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
-        <div className="hidden sm:block text-lg font-semibold text-stone-200">
-            {currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    <header className="h-20 bg-stone-900/30 flex items-center border-b border-stone-700/50 flex-shrink-0 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center justify-between px-4 md:px-8 h-full min-w-max w-full">
+        {/* Left Group */}
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
+          <div className="hidden sm:block text-lg font-semibold text-stone-200">
+              {currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-3 min-w-0">
-        <Clock />
-        <FullscreenToggle />
-        
-        {isUpdateAvailable && (
-            <button
-                onClick={installUpdate}
-                title="An update is available. Click to install."
-                className="relative p-2 rounded-full text-white bg-emerald-600 hover:bg-emerald-500 transition-colors"
-                aria-label="Install update"
-            >
-                <ArrowDownTrayIcon className="w-6 h-6" />
-                <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-stone-900" />
-            </button>
-        )}
-
-        <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60 ml-2">
-            <button 
-                onClick={() => setActiveView('calendar')} 
-                className={`p-2 rounded-full transition-colors ${activeView === 'calendar' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
-                title="Calendar View"
-            >
-                <CalendarDaysIcon className="w-5 h-5" />
-            </button>
-            <button 
-                onClick={() => setActiveView('leaderboard')} 
-                className={`p-2 rounded-full transition-colors ${activeView === 'leaderboard' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
-                title="Leaderboard View"
-            >
-                <ChartBarIcon className="w-5 h-5" />
-            </button>
-        </div>
-
-        <div className="h-full border-l border-stone-700/60 mx-2 hidden md:block"></div>
-        <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide py-2">
-            {sharedUsers.map(user => (
+        {/* Right Group */}
+        <div className="flex items-center gap-3">
+          <Clock />
+          <FullscreenToggle />
+          
+          {isUpdateAvailable && (
               <button
-                key={user.id}
-                onClick={() => handleUserSelect(user)}
-                title={`Login as ${user.gameName}`}
-                className="group flex flex-col items-center gap-1 flex-shrink-0"
+                  onClick={installUpdate}
+                  title="An update is available. Click to install."
+                  className="relative p-2 rounded-full text-white bg-emerald-600 hover:bg-emerald-500 transition-colors"
+                  aria-label="Install update"
               >
-                <Avatar user={user} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors overflow-hidden" />
-                <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">{user.username}</span>
+                  <ArrowDownTrayIcon className="w-6 h-6" />
+                  <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-stone-900" />
               </button>
-            ))}
-             <button
-                onClick={() => setIsSwitchingUser(true)}
-                title="Switch to another user"
-                className="group flex flex-col items-center gap-1 flex-shrink-0"
-            >
-                <div className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors flex items-center justify-center">
-                    <SwitchUserIcon className="w-6 h-6 text-stone-300 group-hover:text-white" />
-                </div>
-                <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">Switch</span>
-            </button>
+          )}
+
+          <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60 ml-2">
+              <button 
+                  onClick={() => setActiveView('calendar')} 
+                  className={`p-2 rounded-full transition-colors ${activeView === 'calendar' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
+                  title="Calendar View"
+              >
+                  <CalendarDaysIcon className="w-5 h-5" />
+              </button>
+              <button 
+                  onClick={() => setActiveView('leaderboard')} 
+                  className={`p-2 rounded-full transition-colors ${activeView === 'leaderboard' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
+                  title="Leaderboard View"
+              >
+                  <ChartBarIcon className="w-5 h-5" />
+              </button>
+          </div>
+
+          <div className="h-full border-l border-stone-700/60 mx-2 hidden md:block"></div>
+          <div className="flex items-center gap-3 py-2">
+              {sharedUsers.map(user => (
+                <button
+                  key={user.id}
+                  onClick={() => handleUserSelect(user)}
+                  title={`Login as ${user.gameName}`}
+                  className="group flex flex-col items-center gap-1 flex-shrink-0"
+                >
+                  <Avatar user={user} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors overflow-hidden" />
+                  <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">{user.username}</span>
+                </button>
+              ))}
+               <button
+                  onClick={() => setIsSwitchingUser(true)}
+                  title="Switch to another user"
+                  className="group flex flex-col items-center gap-1 flex-shrink-0"
+              >
+                  <div className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors flex items-center justify-center">
+                      <SwitchUserIcon className="w-6 h-6 text-stone-300 group-hover:text-white" />
+                  </div>
+                  <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">Switch</span>
+              </button>
+          </div>
         </div>
       </div>
     </header>

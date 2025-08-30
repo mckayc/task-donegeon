@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.94
+**Version:** 0.1.95
 
 ---
 
@@ -12,6 +12,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.95 (September 28, 2025)
+-   **Revamped Kiosk Mode Activation:** The "Enter Kiosk Mode" button has been removed from the public login page. Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu, providing a more secure and intuitive workflow.
+-   **Full-Width Kiosk Header Scrolling:** The entire header in Kiosk Mode is now horizontally scrollable on mobile devices. This ensures all controls and user avatars are always accessible, even on very narrow screens.
 
 ### What's New in Version 0.1.94 (September 27, 2025)
 -   **Per-Device Kiosk Mode:** Kiosk/Shared Mode is now a device-specific setting. The global setting enables the feature, and a new "Enter Kiosk Mode" button on the login screen allows any permitted device to enter this view. A device will remain in Kiosk Mode until a user explicitly logs in.
@@ -223,6 +227,26 @@ This phase introduces major new creative outlets and systems for deeper engageme
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
 -   **Reward R-- END OF FILE README.md ----- START OF FILE vercel.json ---
+
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/server.js" }
+  ]
+}--- START OF FILE vercel.json ---
 
 {
   "version": 2,

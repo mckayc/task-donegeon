@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.1.94 - Per-Device Kiosk Mode",
-  "version": "0.1.94",
+  "name": "Task Donegeon 2.0 - 0.1.95 - Admin Kiosk Activation",
+  "version": "0.1.95",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

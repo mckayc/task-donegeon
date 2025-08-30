@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -150,14 +151,14 @@ const App: React.FC = () => {
       setShowUpdateToast(!!isUpdateAvailable);
   }, [isUpdateAvailable]);
 
-  // Render Kiosk Mode immediately if enabled and on the correct path.
+  // Render Kiosk Mode immediately if enabled, on the correct path, and no user is logged in.
   // This bypasses all other logic (first run, login, etc.)
-  if (settings.sharedMode.enabled && isKioskPath) {
+  if (settings.sharedMode.enabled && isKioskPath && !currentUser) {
     return (
       <ErrorBoundary>
         <NotificationContainer />
         {showUpdateToast && <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setShowUpdateToast(false)} />}
-        <SharedLayout />
+        {isSwitchingUser ? <SwitchUser /> : <SharedLayout />}
       </ErrorBoundary>
     );
   }

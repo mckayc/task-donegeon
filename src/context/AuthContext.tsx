@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -70,10 +71,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     _setAppUnlocked(false);
     localStorage.removeItem('lastUserId');
     localStorage.removeItem('isAppUnlocked');
-    // If logging out from Kiosk mode, redirect to the main page.
-    if (window.location.pathname.toLowerCase() === '/kiosk') {
-        window.location.href = '/';
-    }
   }, []);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {

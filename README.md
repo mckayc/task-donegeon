@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.95
+**Version:** 0.1.97
 
 ---
 
@@ -12,6 +12,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.97 (September 30, 2025)
+-   **Kiosk Mode State Management Fix:** Resolved a core state management issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting. The application now correctly distinguishes between the session's view (personal vs. shared) and the device's persistent Kiosk Mode setting, ensuring the UI for administrators is always correct.
+
+### What's New in Version 0.1.96 (September 29, 2025)
+-   **Kiosk Mode Logic Fix:** Corrected a logical flaw where an administrator logged into a Kiosk-enabled device would see an "Exit" button and an "Enable Kiosk Mode" option instead of the correct "Disable Kiosk Mode" toggle. The UI now correctly reflects the device's state.
 
 ### What's New in Version 0.1.95 (September 28, 2025)
 -   **Revamped Kiosk Mode Activation:** The "Enter Kiosk Mode" button has been removed from the public login page. Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu, providing a more secure and intuitive workflow.
@@ -226,44 +232,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ----- START OF FILE vercel.json ---
-
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/server.js" }
-  ]
-}--- START OF FILE vercel.json ---
-
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/server.js" }
-  ]
-}
+-   **Reward R-- END OF FILE README.md ---

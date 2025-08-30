@@ -22,6 +22,10 @@ export enum QuestAvailability {
     Unlimited = 'Unlimited',
 }
 
+export enum QuestMediaType {
+  AITeacher = 'AI_TEACHER',
+}
+
 export interface Checkpoint {
   id: string;
   description: string;
@@ -35,6 +39,7 @@ export interface Quest {
   description: string;
   type: QuestType;
   kind: QuestKind; // New field to distinguish quest types
+  mediaType?: QuestMediaType;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;

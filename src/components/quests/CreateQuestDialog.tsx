@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-import { Quest, QuestType, QuestKind, Checkpoint } from '../quests/types';
+import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType } from '../quests/types';
 import { RewardItem, RewardCategory } from '../items/types';
 import { Role } from '../users/types';
 import { BugReport } from '../dev/types';
@@ -48,6 +48,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         title: '', description: '',
         type: QuestType.Duty,
         kind: QuestKind.Personal,
+        mediaType: undefined,
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
@@ -244,6 +245,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         description: formData.description,
         type: formData.type,
         kind: formData.kind,
+        mediaType: formData.mediaType || undefined,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -394,6 +396,12 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
               </select>
             </div>
           </div>
+           <div>
+              <Input as="select" label="Interactive Media" name="mediaType" value={formData.mediaType || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, mediaType: (e.target.value as QuestMediaType) || undefined}))}>
+                  <option value="">None</option>
+                  <option value={QuestMediaType.AITeacher}>AI Teacher</option>
+              </Input>
+            </div>
            <div>
                 <h3 className="font-semibold text-stone-200 mb-1">Quest Group</h3>
                  <select name="groupId" value={isCreatingNewGroup ? '--new--' : formData.groupId} onChange={handleGroupChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">

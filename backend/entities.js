@@ -130,6 +130,7 @@ const QuestEntity = new EntitySchema({
         description: { type: "text" },
         type: { type: "varchar" },
         kind: { type: "varchar", default: "Personal" },
+        mediaType: { type: "varchar", nullable: true },
         iconType: { type: "varchar" },
         icon: { type: "varchar" },
         imageUrl: { type: "varchar", nullable: true },

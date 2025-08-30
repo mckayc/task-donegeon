@@ -73,7 +73,10 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                 });
                 if (!startResponse.ok) throw new Error('AI failed to provide an introduction.');
                 const startData = await startResponse.json();
-                setMessages([{ author: 'ai', text: startData.reply }]);
+                
+                if (startData.reply) {
+                    setMessages([{ author: 'ai', text: startData.reply }]);
+                }
 
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -113,16 +116,15 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                 throw new Error('The AI Teacher could not respond. Please try again.');
             }
             const data = await response.json();
-            const aiReply = data.reply;
-
-            const choiceRegex = /\[([^\]]+)\]$/;
-            const match = aiReply.match(choiceRegex);
             
-            let aiMessageText = aiReply;
-            if (match) {
-                aiMessageText = aiReply.replace(choiceRegex, '').trim();
-                const choices = match[1].split('|').map((c: string) => c.trim());
+            let aiMessageText = data.reply;
+            if (data.functionCall && data.functionCall.name === 'show_multiple_choice') {
+                const choices = data.functionCall.args.choices || [];
                 setCurrentChoices(choices);
+                // If the AI *only* returned a tool call, use the question from the tool args as the message.
+                if (!aiMessageText && data.functionCall.args.question) {
+                    aiMessageText = data.functionCall.args.question;
+                }
             } else {
                 setCurrentChoices([]);
             }
@@ -174,7 +176,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
         if (!quiz) return;
         let score = 0;
         quiz.forEach((q, index) => {
-            const correctChoice = q.choices.find((c: QuizChoice) => c.isCorrect);
+            const correctChoice = q.choices.find(c => c.isCorrect);
             if (correctChoice && quizAnswers[index] === correctChoice.text) {
                 score++;
             }

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.02
+**Version:** 0.4.03
 
 ---
 
@@ -12,6 +12,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.03 (October 11, 2025)
+-   **Robust AI Teacher Choices:** Re-architected the AI Teacher's multiple-choice feature to use Gemini's "Tool Calling" functionality. This replaces the old, fragile string-parsing method with a reliable, structured data approach, ensuring interactive buttons now appear consistently.
 
 ### What's New in Version 0.4.02 (October 10, 2025)
 -   **AI Teacher Button Fix:** Resolved an issue where the multiple-choice buttons in the AI Teacher chat were not responding to clicks. Users can now interact with the choices as intended.

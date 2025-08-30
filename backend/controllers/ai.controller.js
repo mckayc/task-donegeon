@@ -13,6 +13,32 @@ if (process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall') {
 
 const activeChats = new Map(); // In-memory store for chat sessions
 
+const showMultipleChoiceTool = {
+  functionDeclarations: [
+    {
+      name: "show_multiple_choice",
+      description: "Presents a multiple-choice or simple choice question to the user and displays the options as buttons.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          question: {
+            type: Type.STRING,
+            description: "The question to ask the user. This will be displayed as the AI's text message."
+          },
+          choices: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING
+            },
+            description: "An array of 2 to 4 short choices to present as buttons."
+          }
+        },
+        required: ["question", "choices"]
+      }
+    }
+  ]
+};
+
 const testApiKey = async (req, res) => {
     if (!ai) {
         return res.status(400).json({ success: false, error: 'API_KEY is not configured on the server.' });
@@ -93,7 +119,7 @@ const startChatSession = async (req, res) => {
         -   Share one specific, interesting fact or tidbit related to the topic.
         -   Ask a question to understand what the user wants to focus on, offering a few specific areas.
         -   Ask a follow-up question to gauge the user's existing knowledge on the topic.
-    2.  **Interactive Choices:** When you ask a multiple-choice or simple-choice question, you MUST provide the choices in a special format at the end of your message: [Choice A|Choice B|Choice C]. The user will see these as buttons. Do NOT use this format for open-ended questions. For example: "Great! Do you want to learn about the engine or the wings first? [The Engine|The Wings]".
+    2.  **Interactive Choices:** You have access to a tool called "show_multiple_choice". When you ask a simple choice question (e.g., "Do you want to learn about A or B?"), you MUST call this tool. Provide the question text in the 'question' parameter and the choices in the 'choices' parameter. Do NOT use this tool for open-ended questions.
     3.  **Be Proactive:** Throughout the conversation, occasionally ask questions to check for understanding.`;
 
     const chat = await ai.chats.create({
@@ -101,6 +127,7 @@ const startChatSession = async (req, res) => {
         config: {
             systemInstruction,
         },
+        tools: [showMultipleChoiceTool]
     });
 
     const sessionId = `chat-session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -131,7 +158,14 @@ const sendMessageInSession = async (req, res) => {
 
     try {
         const response = await chat.sendMessage({ message });
-        res.json({ reply: response.text });
+        const parts = response.candidates[0].content.parts;
+        const textPart = parts.find(part => part.text);
+        const functionCallPart = parts.find(part => part.functionCall);
+
+        res.json({
+            reply: textPart ? textPart.text : '',
+            functionCall: functionCallPart ? functionCallPart.functionCall : null,
+        });
     } catch (error) {
         console.error("Gemini Chat Error:", error);
         res.status(500).json({ error: 'Failed to get a response from the AI.' });

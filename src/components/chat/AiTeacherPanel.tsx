@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Quest, User, QuizQuestion, QuizChoice } from '../../types';
 import Button from '../user-interface/Button';
@@ -33,6 +34,9 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
     // Timer State
     const [timeLeft, setTimeLeft] = useState(quest.aiTutorSessionMinutes ? quest.aiTutorSessionMinutes * 60 : 0);
     const timerRef = useRef<number | null>(null);
+
+    // Interactive Choice Buttons State
+    const [currentChoices, setCurrentChoices] = useState<string[]>([]);
 
     useEffect(() => {
         if (quest.aiTutorSessionMinutes && quest.aiTutorSessionMinutes > 0) {
@@ -80,16 +84,20 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
         };
 
         startChat();
-    }, [quest.id, quest.title, user.id, user.gameName]);
+    }, [quest.id, quest.title, user.id]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading, quiz]);
 
-    const handleSendMessage = async () => {
-        if (!inputMessage.trim() || !sessionId || isLoading) return;
+    const handleSendMessage = async (messageText?: string) => {
+        const textToSend = messageText || inputMessage.trim();
+        if (!textToSend || !sessionId || isLoading) return;
 
-        const userMessage: Message = { author: 'user', text: inputMessage.trim() };
+        const userMessage: Message = { author: 'user', text: textToSend };
+        const previousChoices = [...currentChoices];
+
+        setCurrentChoices([]); // Optimistically clear choices
         setMessages(prev => [...prev, userMessage]);
         setInputMessage('');
         setIsLoading(true);
@@ -106,12 +114,26 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                 throw new Error('The AI Teacher could not respond. Please try again.');
             }
             const data = await response.json();
-            const aiMessage: Message = { author: 'ai', text: data.reply };
+            const aiReply = data.reply;
+
+            const choiceRegex = /\[([^\]]+)\]$/;
+            const match = aiReply.match(choiceRegex);
+            
+            let aiMessageText = aiReply;
+            if (match) {
+                aiMessageText = aiReply.replace(choiceRegex, '').trim();
+                const choices = match[1].split('|').map(c => c.trim());
+                setCurrentChoices(choices);
+            } else {
+                setCurrentChoices([]);
+            }
+
+            const aiMessage: Message = { author: 'ai', text: aiMessageText };
             setMessages(prev => [...prev, aiMessage]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-            setMessages(prev => prev.slice(0, -1));
-            setInputMessage(userMessage.text);
+            setMessages(prev => prev.filter(m => m !== userMessage));
+            setCurrentChoices(previousChoices);
         } finally {
             setIsLoading(false);
         }
@@ -245,17 +267,46 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                     {quiz ? (
                         <div className="text-center text-stone-400">Please complete the quiz above.</div>
                     ) : (
-                        <>
+                        <div className="space-y-2">
                             <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
-                                <Input as="textarea" rows={2} value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={sessionId ? "Ask a question..." : "Connecting to AI Teacher..."} className="flex-grow resize-none" disabled={!sessionId || isLoading} autoFocus />
-                                <Button type="submit" disabled={!sessionId || isLoading || !inputMessage.trim()} className="h-full">Send</Button>
+                                <Input
+                                    as="textarea"
+                                    rows={2}
+                                    value={inputMessage}
+                                    onChange={(e) => setInputMessage(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                                    placeholder={sessionId ? "Ask a question..." : "Connecting to AI Teacher..."}
+                                    className="flex-grow resize-none"
+                                    disabled={!sessionId || isLoading}
+                                    autoFocus
+                                />
+                                <Button
+                                    type="submit"
+                                    disabled={!sessionId || isLoading || !inputMessage.trim()}
+                                    className="h-full"
+                                >
+                                    Send
+                                </Button>
                             </form>
+                            {currentChoices.length > 0 && !isLoading && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {currentChoices.map((choice, index) => (
+                                        <Button
+                                            key={index}
+                                            variant="secondary"
+                                            onClick={() => handleSendMessage(choice)}
+                                        >
+                                            {choice}
+                                        </Button>
+                                    ))}
+                                </div>
+                            )}
                             <div className="flex justify-between items-center mt-2">
                                 <Button onClick={handleGenerateQuiz} disabled={!isQuizReady || isLoading}>
                                     {isQuizReady ? "I'm ready for the quiz!" : `Quiz unlocks in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
                                 </Button>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>

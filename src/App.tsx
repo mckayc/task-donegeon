@@ -169,33 +169,34 @@ const App: React.FC = () => {
     if (isFirstRun) {
       return <FirstRunWizard />;
     }
-
-    // 2. App Lock: This is the second gate. If the app isn't the first run but
-    // hasn't been unlocked for the session, show the lock screen. This is a
-    // crucial security step that must happen before any other logic.
+  
+    // 2. Kiosk Mode: This is a special, high-priority view. If the URL is `/kiosk`
+    // and the feature is enabled, we show the shared layout immediately,
+    // bypassing the standard app lock and user login flow.
+    if (settings.sharedMode.enabled && isKioskPath) {
+      return <SharedLayout />;
+    }
+  
+    // 3. App Lock: If we are not in Kiosk mode, this is the second gate. If the app
+    // hasn't been unlocked for the session, show the lock screen.
     if (!isAppUnlocked) {
       return <AppLockScreen />;
     }
-
+  
     // --- From this point on, the application is considered "unlocked" for the session. ---
-
-    // 3. User Switching: If the user is actively switching profiles, show that UI.
+  
+    // 4. User Switching: If the user is actively switching profiles, show that UI.
     if (isSwitchingUser) {
       return <SwitchUser />;
     }
     
-    // 4. No User Logged In: If no user is authenticated for this session.
+    // 5. No User Logged In: If the app is unlocked but no user is selected
+    // (e.g., after logging out from a personal session), show the login page.
     if (!currentUser) {
-      // Check if Kiosk Mode should be displayed.
-      if (settings.sharedMode.enabled && isKioskPath) {
-        return <SharedLayout />;
-      }
-      // Otherwise, show the standard login/registration page.
       return <AuthPage />;
     }
-
-    // 5. User is Logged In: A user is authenticated, show the main application.
-    // This is also the correct destination after a successful PIN login from Kiosk Mode.
+  
+    // 6. User is Logged In: A user is authenticated, show the main application.
     return <MainLayout />;
   };
 

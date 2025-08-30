@@ -1,3 +1,4 @@
+
 const { GoogleGenAI, Type } = require('@google/genai');
 const { asyncMiddleware } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
@@ -85,7 +86,15 @@ const startChatSession = async (req, res) => {
     Your personality should be that of a friendly, encouraging, and knowledgeable guide.
     Keep the conversation focused on the quest's topic. If the user asks about something unrelated, gently steer them back to the topic.
     Adapt your language and the complexity of your explanations to be suitable for someone with a birthday of ${user.birthday}. Do not mention their birthday directly.
-    Your goal is to facilitate learning through interactive conversation. Be proactive: start the conversation with an introduction, and occasionally ask questions to check for understanding.`;
+
+    **Interaction Rules:**
+    1.  **Introduction Format:** Your VERY FIRST message must follow this structure EXACTLY:
+        -   Start with a general overview of the topic.
+        -   Share one specific, interesting fact or tidbit related to the topic.
+        -   Ask a question to understand what the user wants to focus on, offering a few specific areas.
+        -   Ask a follow-up question to gauge the user's existing knowledge on the topic.
+    2.  **Interactive Choices:** When you ask a multiple-choice or simple-choice question, you MUST provide the choices in a special format at the end of your message: [Choice A|Choice B|Choice C]. The user will see these as buttons. Do NOT use this format for open-ended questions. For example: "Great! Do you want to learn about the engine or the wings first? [The Engine|The Wings]".
+    3.  **Be Proactive:** Throughout the conversation, occasionally ask questions to check for understanding.`;
 
     const chat = await ai.chats.create({
         model: 'gemini-2.5-flash',

@@ -162,6 +162,27 @@ This is the central queue for all actions that require an admin's attention.
 
 This section serves as the definitive source of truth for the application's intended functionality.
 
+### Shared / Kiosk Mode
+**Purpose:** This mode is for shared family devices. It provides a fast user-switching interface and can automatically log users out after a period of inactivity.
+
+**How it Works:**
+- **Per-Device Activation:** Kiosk Mode is now a device-specific setting. The administrator enables the feature globally in the `{link_settings}`. Once enabled, any device can enter Kiosk Mode by clicking the **"Enter Kiosk Mode"** button on the main login screen.
+- A device will remain in Kiosk Mode across page reloads until a user logs into their personal account. Logging out or clicking "Exit" from a personal account will return the device to Kiosk Mode if it was active previously.
+- **Header:** The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊). On mobile devices, the list of user avatars is now **horizontally scrollable** to ensure all users are accessible.
+- **Updating:** When an application update is available, a toast notification will appear at the bottom-left of the screen. Additionally, a persistent "Update" icon (an arrow pointing down into a tray) will appear in the header. Clicking either of these will install the update.
+- **Pending Notifications:** If a user has items awaiting approval, a red notification badge will appear on their avatar in the header.
+
+#### {task} Visibility in Kiosk Mode
+A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must meet one of the following criteria:
+-   A **{recurringTask}** scheduled to run today.
+-   A **{singleTask}** or **{journey}** whose start date is today.
+-   A **{singleTask}** that the user has manually marked as a "To-Do".
+-   An optional, dateless **{singleTask}** that is configured with a daily completion limit. These now appear automatically without needing to be a "To-Do".
+
+**Completing {tasks} in Kiosk Mode:**
+- If enabled, users can click a {task} to open its detail view and complete it.
+- If **"Require PIN for quest completion"** is enabled, the user must enter their PIN to confirm. Otherwise, the {task} is completed immediately.
+
 ### {link_approvals} Page Responsiveness
 The {link_approvals} page is fully responsive to provide an optimal experience on any device.
 -   **Desktop View:** On larger screens, the page displays a comprehensive table for each approval type (Quests, Claims, Purchases, Trades). This view is optimized for reviewing many items at once and performing quick actions.
@@ -196,28 +217,6 @@ The border of a {task} card indicates its urgency and status.
 -   **Absolute Date:** The full due date and time is also shown for clarity (e.g., "Due: Sep 20, 2025, 5:00 PM").
 -   **Past Due:** If a {task} is past its due time but still completable, the text will turn red and show "Past Due" or, if applicable, the time remaining until it is marked "Incomplete" (e.g., "Incomplete in: 30m").
 -   **No Deadline:** {tasks} without a specific deadline will show "No due date".
-
-### Shared / Kiosk Mode
-**Purpose:** This mode is for shared family devices. It provides a fast user-switching interface and can automatically log users out after a period of inactivity.
-
-**How it Works:**
-- When enabled, logging out or clicking "Exit" in the header goes to a Kiosk screen. This screen defaults to a calendar view of today's available {tasks} for each selected user.
-- The header displays avatars and **usernames** for quick login. It also has icons to switch between the **Calendar View** (🗓️) and the **Leaderboard View** (📊).
-- The calendar view is categorized into "{recurringTasks}" and "{singleTasks} & {journeys}" for each user to improve clarity.
-- {task} cards in Kiosk Mode use the same visual border system as the main {link_quests} page, providing at-a-glance status information.
-- **Updating:** When an application update is available, a toast notification will appear at the bottom-left of the screen. Additionally, a persistent "Update" icon (an arrow pointing down into a tray) will appear in the header. Clicking either of these will install the update.
-- **Pending Notifications:** If a user has items awaiting approval, a red notification badge will appear on their avatar in the header.
-
-#### {task} Visibility in Kiosk Mode
-A {task} will only appear in Kiosk Mode if it is relevant for **today**. It must meet one of the following criteria:
--   A **{recurringTask}** scheduled to run today.
--   A **{singleTask}** or **{journey}** whose start date is today.
--   A **{singleTask}** that the user has manually marked as a "To-Do".
--   An optional, dateless **{singleTask}** that is configured with a daily completion limit. These now appear automatically without needing to be a "To-Do".
-
-**Completing {tasks} in Kiosk Mode:**
-- If enabled, users can click a {task} to open its detail view and complete it.
-- If **"Require PIN for quest completion"** is enabled, the user must enter their PIN to confirm. Otherwise, the {task} is completed immediately.
 
 ### {link_triumphs_trials}
 **Purpose:** This system allows {admin}s to apply immediate or temporary effects to users, either as a reward ({triumph}) or a consequence ({trial}). This is ideal for handling situations that fall outside the normal {task} system, like rewarding exceptional behavior or enforcing house rules.
@@ -307,6 +306,10 @@ To prevent clutter, some admin actions are consolidated.
 ---
 
 ## Appendix: Version History
+
+### What's New in Version 0.1.94 (September 27, 2025)
+-   **Per-Device Kiosk Mode:** Kiosk/Shared Mode is now a device-specific setting. The global setting enables the feature, and a new "Enter Kiosk Mode" button on the login screen allows any permitted device to enter this view. A device will remain in Kiosk Mode until a user explicitly logs in.
+-   **Mobile Header Fix:** The user selection area in the Kiosk Mode header is now horizontally scrollable on mobile devices, ensuring all user avatars and the "Switch User" button are always accessible.
 
 ### What's New in Version 0.1.93 (September 26, 2025)
 -   **Mobile-Friendly Approvals:** The Approvals page is now fully responsive. On mobile devices, it displays a touch-friendly card view for each pending item (Quests, Claims, Purchases, and Trades), making it easier for administrators to manage approvals on the go.

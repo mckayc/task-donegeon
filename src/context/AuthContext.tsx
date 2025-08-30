@@ -42,11 +42,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
-  const [isSharedViewActive, setIsSharedViewActive] = useState(false);
+  const [isSharedViewActive, _setIsSharedViewActive] = useState<boolean>(() => localStorage.getItem('isKioskModeActive') === 'true');
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [loginHistory, setLoginHistory] = useState<string[]>([]);
   
   const isFirstRun = users.length === 0;
+
+  const setIsSharedViewActive = useCallback((isActive: boolean) => {
+    localStorage.setItem('isKioskModeActive', String(isActive));
+    _setIsSharedViewActive(isActive);
+  }, []);
 
   const setCurrentUser = useCallback((user: User | null) => {
       _setCurrentUser(prevUser => {
@@ -57,16 +62,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (bugLogger.isRecording()) {
               bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
           }
-          setIsSharedViewActive(false);
           if (user) {
-              localStorage.setItem('lastUserId', user.id);
-              setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
+            setIsSharedViewActive(false);
+            localStorage.setItem('lastUserId', user.id);
+            setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
           } else {
-              localStorage.removeItem('lastUserId');
+            localStorage.removeItem('lastUserId');
           }
           return user;
       });
-  }, []);
+  }, [setIsSharedViewActive]);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {
     if (bugLogger.isRecording()) {
@@ -112,7 +117,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       _setCurrentUser(null);
       setIsSharedViewActive(true);
       localStorage.removeItem('lastUserId');
-  }, []);
+  }, [setIsSharedViewActive]);
 
   const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
       if (bugLogger.isRecording()) {

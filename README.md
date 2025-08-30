@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.93
+**Version:** 0.1.94
 
 ---
 
@@ -12,6 +12,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.1.94 (September 27, 2025)
+-   **Per-Device Kiosk Mode:** Kiosk/Shared Mode is now a device-specific setting. The global setting enables the feature, and a new "Enter Kiosk Mode" button on the login screen allows any permitted device to enter this view. A device will remain in Kiosk Mode until a user explicitly logs in.
+-   **Mobile Header Fix:** The user selection area in the Kiosk Mode header is now horizontally scrollable on mobile devices, ensuring all user avatars and the "Switch User" button are always accessible.
 
 ### What's New in Version 0.1.93 (September 26, 2025)
 -   **Mobile-Friendly Approvals:** The Approvals page is now fully responsive. On mobile devices, it displays a touch-friendly card view for each pending item (Quests, Claims, Purchases, and Trades), making it easier for administrators to manage approvals on the go.
@@ -218,4 +222,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R-- END OF FILE README.md ---
+-   **Reward R-- END OF FILE README.md --

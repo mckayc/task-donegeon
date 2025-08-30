@@ -50,13 +50,13 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }
 
   return (
     <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-shrink-0">
         <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
         <div className="hidden sm:block text-lg font-semibold text-stone-200">
             {currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         <Clock />
         <FullscreenToggle />
         
@@ -89,28 +89,30 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }
             </button>
         </div>
 
-        <div className="h-full border-l border-stone-700/60 mx-2"></div>
-        {sharedUsers.map(user => (
-          <button
-            key={user.id}
-            onClick={() => handleUserSelect(user)}
-            title={`Login as ${user.gameName}`}
-            className="group flex flex-col items-center gap-1"
-          >
-            <Avatar user={user} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors overflow-hidden" />
-            <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">{user.username}</span>
-          </button>
-        ))}
-         <button
-            onClick={() => setIsSwitchingUser(true)}
-            title="Switch to another user"
-            className="group flex flex-col items-center gap-1"
-        >
-            <div className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors flex items-center justify-center">
-                <SwitchUserIcon className="w-6 h-6 text-stone-300 group-hover:text-white" />
-            </div>
-            <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">Switch</span>
-        </button>
+        <div className="h-full border-l border-stone-700/60 mx-2 hidden md:block"></div>
+        <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide py-2">
+            {sharedUsers.map(user => (
+              <button
+                key={user.id}
+                onClick={() => handleUserSelect(user)}
+                title={`Login as ${user.gameName}`}
+                className="group flex flex-col items-center gap-1 flex-shrink-0"
+              >
+                <Avatar user={user} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors overflow-hidden" />
+                <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">{user.username}</span>
+              </button>
+            ))}
+             <button
+                onClick={() => setIsSwitchingUser(true)}
+                title="Switch to another user"
+                className="group flex flex-col items-center gap-1 flex-shrink-0"
+            >
+                <div className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors flex items-center justify-center">
+                    <SwitchUserIcon className="w-6 h-6 text-stone-300 group-hover:text-white" />
+                </div>
+                <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">Switch</span>
+            </button>
+        </div>
       </div>
     </header>
   );

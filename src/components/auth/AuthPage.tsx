@@ -162,7 +162,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 
 const AuthPage: React.FC = () => {
     const { settings } = useSystemState();
-    const { setIsSwitchingUser } = useAuthDispatch();
+    const { setIsSwitchingUser, setIsSharedViewActive } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
     
     return (
@@ -187,9 +187,16 @@ const AuthPage: React.FC = () => {
                     </div>
                 </div>
 
-                <Button variant="secondary" onClick={() => setIsSwitchingUser(true)} className="w-full">
-                    Switch Profile (PIN Login)
-                </Button>
+                <div className="space-y-2">
+                    <Button variant="secondary" onClick={() => setIsSwitchingUser(true)} className="w-full">
+                        Switch Profile (PIN Login)
+                    </Button>
+                    {settings.sharedMode.enabled && (
+                        <Button variant="secondary" onClick={() => setIsSharedViewActive(true)} className="w-full">
+                            Enter Kiosk Mode
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
     );

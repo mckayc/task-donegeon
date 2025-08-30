@@ -7,6 +7,7 @@ import UserFormFields from '../users/UserFormFields';
 import Avatar from '../user-interface/Avatar';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
+import KioskUnlockDialog from './KioskUnlockDialog';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) => {
     const { users } = useAuthState();
@@ -164,36 +165,47 @@ const AuthPage: React.FC = () => {
     const { settings } = useSystemState();
     const { setIsSwitchingUser } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
+    const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
     
     return (
-        <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
-            <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
-                <div className="text-center mb-8">
-                    <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
-                </div>
-
-                {isLoginMode ? (
-                    <LoginForm onSwitchMode={() => setIsLoginMode(false)} />
-                ) : (
-                    <RegisterForm onSwitchMode={() => setIsLoginMode(true)} />
-                )}
-
-                <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                        <div className="w-full border-t border-stone-600"></div>
+        <>
+            <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
+                <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
+                    <div className="text-center mb-8">
+                        <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-stone-800 text-stone-400">OR</span>
-                    </div>
-                </div>
 
-                <div className="space-y-2">
-                    <Button variant="secondary" onClick={() => setIsSwitchingUser(true)} className="w-full">
-                        Switch Profile (PIN Login)
-                    </Button>
+                    {isLoginMode ? (
+                        <LoginForm onSwitchMode={() => setIsLoginMode(false)} />
+                    ) : (
+                        <RegisterForm onSwitchMode={() => setIsLoginMode(true)} />
+                    )}
+
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-stone-600"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-stone-800 text-stone-400">OR</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Button variant="secondary" onClick={() => setIsSwitchingUser(true)} className="w-full">
+                            Switch Profile (PIN Login)
+                        </Button>
+                        {settings.sharedMode.enabled && (
+                             <Button variant="secondary" onClick={() => setIsUnlockDialogOpen(true)} className="w-full">
+                                Enter Kiosk Mode
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+            {isUnlockDialogOpen && (
+                <KioskUnlockDialog onClose={() => setIsUnlockDialogOpen(false)} />
+            )}
+        </>
     );
 };
 

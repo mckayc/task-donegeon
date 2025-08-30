@@ -12,6 +12,7 @@ import { useSyncStatus } from '../../context/DataProvider';
 import Button from '../user-interface/Button';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState } from '../../context/QuestsContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];
@@ -68,8 +69,9 @@ const Header: React.FC = () => {
   const { guilds } = useCommunityState();
   const { appMode, isMobileView } = useUIState();
   const { setAppMode, setActivePage, toggleSidebar } = useUIDispatch();
-  const { currentUser } = useAuthState();
+  const { currentUser, isSharedViewActive } = useAuthState();
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setIsSharedViewActive } = useAuthDispatch();
+  const { addNotification } = useNotificationsDispatch();
   const { quests } = useQuestsState();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -121,12 +123,17 @@ const Header: React.FC = () => {
     setProfileDropdownOpen(false);
   };
   
-  const handleEnableKioskMode = (e: React.MouseEvent) => {
+  const handleToggleKioskMode = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsSharedViewActive(true);
-    // Log out to transition to the shared view
-    setCurrentUser(null);
-    setAppUnlocked(false);
+    if (isSharedViewActive) {
+        setIsSharedViewActive(false);
+        addNotification({ type: 'info', message: 'Kiosk mode disabled for this device.' });
+    } else {
+        setIsSharedViewActive(true);
+        // Log out to transition to the shared view
+        setCurrentUser(null);
+        setAppUnlocked(false);
+    }
     setProfileDropdownOpen(false);
   };
 
@@ -296,8 +303,8 @@ const Header: React.FC = () => {
                         <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
                         <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
                         {currentUser.role === Role.DonegeonMaster && settings.sharedMode.enabled && (
-                            <a href="#" onClick={handleEnableKioskMode} data-log-id="header-profile-link-kiosk" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">
-                                <span className="block leading-tight">Enable Kiosk Mode</span>
+                            <a href="#" onClick={handleToggleKioskMode} data-log-id="header-profile-link-kiosk-toggle" className={`block px-4 py-2 hover:bg-stone-700 ${isSharedViewActive ? 'text-red-400' : 'text-stone-300'}`}>
+                                <span className="block leading-tight">{isSharedViewActive ? 'Disable' : 'Enable'} Kiosk Mode</span>
                                 <span className="block text-xs text-stone-500">on this device</span>
                             </a>
                         )}

@@ -115,7 +115,7 @@ const startChatSession = async (req, res) => {
     **Teaching Methodology: "Teach, Check, Feedback" Loop**
     You MUST follow this structured teaching loop for the entire conversation after your initial introduction:
     1.  **Teach:** Present a single, small, digestible piece of information about the quest's topic. Keep it concise (2-3 sentences).
-    2.  **Check:** Immediately after teaching, you MUST use the "show_multiple_choice" tool to ask a simple multiple-choice question that verifies the user understood the concept you just taught. This is not optional.
+    2.  **Check:** Immediately after teaching, you MUST use the "show_multiple_choice" tool to ask a simple multiple-choice question that verifies the user understood the concept you just taught. This is not optional. When you use this tool, the text in the 'question' parameter will be displayed to the user. DO NOT output the tool call itself as text in your response.
     3.  **Feedback:** After the user answers, provide brief, positive feedback if they are correct, or a gentle correction if they are wrong, and then smoothly transition to the next "Teach" step.
 
     **Initial Introduction:** Your VERY FIRST message must still follow the introduction format:
@@ -165,8 +165,16 @@ const sendMessageInSession = async (req, res) => {
         const textPart = parts.find(part => part.text);
         const functionCallPart = parts.find(part => part.functionCall);
 
+        let replyText = textPart ? textPart.text : '';
+
+        // Safeguard: If a function call exists, it's the primary content.
+        // Also, clean up any erroneous <tool_code> text from the reply.
+        if (functionCallPart) {
+            replyText = replyText.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '').trim();
+        }
+
         res.json({
-            reply: textPart ? textPart.text : '',
+            reply: replyText,
             functionCall: functionCallPart ? functionCallPart.functionCall : null,
         });
     } catch (error) {

@@ -132,8 +132,12 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                 setCurrentChoices([]);
             }
 
-            const aiMessage: Message = { author: 'ai', text: aiMessageText };
-            setMessages(prev => [...prev, aiMessage]);
+            // Frontend Safeguard: Clean up any tool code that might have slipped through and don't show empty messages.
+            const cleanedText = (aiMessageText || '').replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '').trim();
+            if (cleanedText) {
+                const aiMessage: Message = { author: 'ai', text: cleanedText };
+                setMessages(prev => [...prev, aiMessage]);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
             setMessages(prev => prev.filter(m => m !== userMessage));

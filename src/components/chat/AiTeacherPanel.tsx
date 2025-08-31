@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Quest, User, QuizQuestion, QuizChoice } from '../../types';
 import Button from '../user-interface/Button';
@@ -77,6 +78,9 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                 if (startData.reply) {
                     setMessages([{ author: 'ai', text: startData.reply }]);
                 }
+                if (startData.functionCall?.name === 'show_multiple_choice') {
+                    setCurrentChoices(startData.functionCall.args.choices || []);
+                }
 
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -121,7 +125,6 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
             if (data.functionCall && data.functionCall.name === 'show_multiple_choice') {
                 const choices = data.functionCall.args.choices || [];
                 setCurrentChoices(choices);
-                // If the AI *only* returned a tool call, use the question from the tool args as the message.
                 if (!aiMessageText && data.functionCall.args.question) {
                     aiMessageText = data.functionCall.args.question;
                 }
@@ -191,7 +194,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[80] p-4">
-            <div className="bg-stone-900 border border-emerald-500/50 rounded-xl shadow-2xl max-w-lg w-full h-[80vh] flex flex-col">
+            <div className="bg-stone-900 border border-emerald-500/50 rounded-xl shadow-2xl w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
                 <div className="p-4 border-b border-stone-700/60 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <SparklesIcon className="w-6 h-6 text-emerald-400" />
@@ -202,114 +205,134 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                     </Button>
                 </div>
 
-                <div ref={messagesEndRef} className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-hide">
-                    {messages.map((msg, index) => {
-                        const isUser = msg.author === 'user';
-                        return (
-                            <div key={index} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-                                {isUser ? (
-                                    <Avatar user={user} className="w-8 h-8 rounded-full flex-shrink-0" />
-                                ) : (
+                <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    {/* Left Column: Chat & Lesson */}
+                    <div className="flex-1 flex flex-col p-4 overflow-y-auto scrollbar-hide">
+                        <div className="text-center mb-6 flex-shrink-0">
+                            <div className="w-24 h-24 rounded-full bg-emerald-800/50 border-2 border-emerald-600/70 flex items-center justify-center mx-auto">
+                                <SparklesIcon className="w-12 h-12 text-emerald-300" />
+                            </div>
+                            <h3 className="mt-3 text-lg font-bold text-stone-200">AI Lesson: <span className="text-accent">{quest.title}</span></h3>
+                            <p className="text-sm text-stone-400">{quest.description}</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            {messages.map((msg, index) => {
+                                const isUser = msg.author === 'user';
+                                return (
+                                    <div key={index} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+                                        {isUser ? (
+                                            <Avatar user={user} className="w-8 h-8 rounded-full flex-shrink-0" />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-emerald-800 flex items-center justify-center flex-shrink-0">
+                                                <SparklesIcon className="w-5 h-5 text-emerald-300" />
+                                            </div>
+                                        )}
+                                        <div className={`max-w-md p-3 rounded-lg ${isUser ? 'bg-blue-800 text-white' : 'bg-stone-700 text-stone-200'}`}>
+                                            <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {isLoading && (
+                                <div className="flex items-start gap-3">
                                     <div className="w-8 h-8 rounded-full bg-emerald-800 flex items-center justify-center flex-shrink-0">
-                                        <SparklesIcon className="w-5 h-5 text-emerald-300" />
+                                        <SparklesIcon className="w-5 h-5 text-emerald-300 animate-pulse" />
                                     </div>
-                                )}
-                                <div className={`max-w-xs p-3 rounded-lg ${isUser ? 'bg-blue-800 text-white' : 'bg-stone-700 text-stone-200'}`}>
-                                    <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                                </div>
-                            </div>
-                        );
-                    })}
-                     {isLoading && (
-                        <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-full bg-emerald-800 flex items-center justify-center flex-shrink-0">
-                                <SparklesIcon className="w-5 h-5 text-emerald-300 animate-pulse" />
-                            </div>
-                            <div className="max-w-xs p-3 rounded-lg bg-stone-700 text-stone-200 flex items-center gap-1.5">
-                                <span className="h-2 w-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                <span className="h-2 w-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                <span className="h-2 w-2 bg-stone-400 rounded-full animate-bounce"></span>
-                            </div>
-                        </div>
-                    )}
-                    {error && <p className="text-red-400 text-center text-sm">{error}</p>}
-                    
-                    {quiz && !quizResult && (
-                        <div className="p-4 bg-stone-800 rounded-lg space-y-4">
-                            <h3 className="font-bold text-lg text-emerald-300">Quiz Time!</h3>
-                            {quiz.map((q, qIndex) => (
-                                <div key={qIndex}>
-                                    <p className="font-semibold text-stone-200">{qIndex + 1}. {q.question}</p>
-                                    <div className="mt-2 space-y-2">
-                                        {q.choices.map((choice, cIndex) => (
-                                            <label key={cIndex} className="flex items-center gap-2 p-2 rounded-md bg-stone-700/50 hover:bg-stone-700 cursor-pointer">
-                                                <input type="radio" name={`question-${qIndex}`} value={choice.text} checked={quizAnswers[qIndex] === choice.text} onChange={() => handleAnswerChange(qIndex, choice.text)} />
-                                                <span>{choice.text}</span>
-                                            </label>
-                                        ))}
+                                    <div className="max-w-xs p-3 rounded-lg bg-stone-700 text-stone-200 flex items-center gap-1.5">
+                                        <span className="h-2 w-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                        <span className="h-2 w-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                        <span className="h-2 w-2 bg-stone-400 rounded-full animate-bounce"></span>
                                     </div>
                                 </div>
-                            ))}
-                            <Button onClick={handleSubmitQuiz} disabled={quizAnswers.some(a => a === null)}>Submit Quiz</Button>
+                            )}
+                            <div ref={messagesEndRef} />
                         </div>
-                    )}
+                    </div>
 
-                    {quizResult && (
-                        <div className={`p-4 rounded-lg text-center ${quizResult.score >= 2 ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
-                            <h3 className="font-bold text-lg">{quizResult.score >= 2 ? 'Quiz Passed!' : 'Try Again!'}</h3>
-                            <p>You scored {quizResult.score} out of {quizResult.total}.</p>
-                            {quizResult.score < 2 && <Button onClick={handleGenerateQuiz} variant="secondary" size="sm" className="mt-2">Retake Quiz</Button>}
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-
-                <div className="p-4 border-t border-stone-700/60 flex-shrink-0">
-                    {quiz ? (
-                        <div className="text-center text-stone-400">Please complete the quiz above.</div>
-                    ) : (
-                        <div className="space-y-2">
-                            <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
-                                <Input
-                                    as="textarea"
-                                    rows={2}
-                                    value={inputMessage}
-                                    onChange={(e) => setInputMessage(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                                    placeholder={sessionId ? "Ask a question..." : "Connecting to AI Teacher..."}
-                                    className="flex-grow resize-none"
-                                    disabled={!sessionId || isLoading}
-                                    autoFocus
-                                />
-                                <Button
-                                    type="submit"
-                                    disabled={!sessionId || isLoading || !inputMessage.trim()}
-                                    className="h-full"
-                                >
-                                    Send
-                                </Button>
-                            </form>
-                            {currentChoices.length > 0 && !isLoading && (
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    {currentChoices.map((choice, index) => (
-                                        <Button
-                                            key={index}
-                                            type="button"
-                                            variant="secondary"
-                                            onClick={() => handleSendMessage(choice)}
-                                        >
-                                            {choice}
-                                        </Button>
+                    {/* Right Column: Interaction & Quiz */}
+                    <div className="w-full md:w-1/3 lg:w-2/5 border-t md:border-t-0 md:border-l border-stone-700/60 flex flex-col p-4 bg-stone-900/50">
+                        <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+                            {error && <p className="text-red-400 text-center text-sm">{error}</p>}
+                            
+                            {quiz && !quizResult && (
+                                <div className="space-y-4">
+                                    <h3 className="font-bold text-lg text-emerald-300">Quiz Time!</h3>
+                                    {quiz.map((q, qIndex) => (
+                                        <div key={qIndex}>
+                                            <p className="font-semibold text-stone-200">{qIndex + 1}. {q.question}</p>
+                                            <div className="mt-2 space-y-2">
+                                                {q.choices.map((choice, cIndex) => (
+                                                    <label key={cIndex} className="flex items-center gap-2 p-2 rounded-md bg-stone-700/50 hover:bg-stone-700 cursor-pointer">
+                                                        <input type="radio" name={`question-${qIndex}`} value={choice.text} checked={quizAnswers[qIndex] === choice.text} onChange={() => handleAnswerChange(qIndex, choice.text)} />
+                                                        <span>{choice.text}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             )}
-                            <div className="flex justify-between items-center mt-2">
-                                <Button onClick={handleGenerateQuiz} disabled={!isQuizReady || isLoading}>
-                                    {isQuizReady ? "I'm ready for the quiz!" : `Quiz unlocks in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
-                                </Button>
-                            </div>
+
+                            {quizResult && (
+                                <div className={`p-4 rounded-lg text-center ${quizResult.score >= 2 ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
+                                    <h3 className="font-bold text-lg">{quizResult.score >= 2 ? 'Quiz Passed!' : 'Try Again!'}</h3>
+                                    <p>You scored {quizResult.score} out of {quizResult.total}.</p>
+                                    {quizResult.score < 2 && <Button onClick={handleGenerateQuiz} variant="secondary" size="sm" className="mt-2">Retake Quiz</Button>}
+                                </div>
+                            )}
                         </div>
-                    )}
+                        
+                        {/* Interaction Form Area */}
+                        <div className="mt-auto pt-4 flex-shrink-0">
+                            {quiz ? (
+                                quizResult ? null : <Button onClick={handleSubmitQuiz} disabled={quizAnswers.some(a => a === null)}>Submit Quiz</Button>
+                            ) : (
+                                <div className="space-y-2">
+                                    {currentChoices.length > 0 && !isLoading && (
+                                        <div className="mb-4 flex flex-col gap-2">
+                                            {currentChoices.map((choice, index) => (
+                                                <Button
+                                                    key={index}
+                                                    type="button"
+                                                    variant="secondary"
+                                                    onClick={() => handleSendMessage(choice)}
+                                                    className="w-full justify-start"
+                                                >
+                                                    {choice}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
+                                        <Input
+                                            as="textarea"
+                                            rows={2}
+                                            value={inputMessage}
+                                            onChange={(e) => setInputMessage(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                                            placeholder={sessionId ? "Your response..." : "Connecting..."}
+                                            className="flex-grow resize-none"
+                                            disabled={!sessionId || isLoading}
+                                            autoFocus
+                                        />
+                                        <Button
+                                            type="submit"
+                                            disabled={!sessionId || isLoading || !inputMessage.trim()}
+                                            className="h-full"
+                                        >
+                                            Send
+                                        </Button>
+                                    </form>
+                                    <div className="flex justify-center items-center mt-2">
+                                        <Button onClick={handleGenerateQuiz} disabled={!isQuizReady || isLoading}>
+                                            {isQuizReady ? "I'm ready for the quiz!" : `Quiz unlocks in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -131,8 +131,11 @@ const startChatSession = async (req, res) => {
     Your personality is a friendly, encouraging, and knowledgeable guide.
     
     ${ageInstruction}
+<<<<<<< HEAD
     
     **CRITICAL RULE:** Under no circumstances should you ever write XML tags like <multiple_choice> or markdown lists in your response. You MUST use the 'ask_a_question_with_choices' tool to present choices. Your text response should be clean, conversational prose ONLY.
+=======
+>>>>>>> 95079d08bde4ff7513e272f8e0c32f2fb12ccdc8
 
     **Teaching Methodology: "Teach, Check, Feedback" Loop**
     You MUST follow this structured teaching loop for the entire conversation after your initial introduction:

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.05
+**Version:** 0.4.06
 
 ---
 
@@ -12,6 +12,13 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.06 (October 14, 2025)
+-   **Revamped Kiosk Mode:** Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting.
+    -   **Admin Activation:** An admin can now log into any device, open their profile dropdown, and use a "Kiosk Mode" toggle to turn that specific device into a permanent kiosk.
+    -   **Persistent State:** Once enabled, a device will always boot directly to the shared user selection screen, surviving reloads and new sessions.
+    -   **Clearer Logout:** On kiosk devices, a dedicated "Kiosk" button appears in the header, providing an intuitive way for users to log out and return the device to the shared screen.
+    -   **Cleanup:** All old URL-based (`/kiosk`) logic has been removed for a cleaner, more robust implementation.
 
 ### What's New in Version 0.4.05 (October 13, 2025)
 -   **Flexible Manual Adjustments:** The "Manual Adjustment" dialog for users has been completely overhauled. Instead of a restrictive dropdown, administrators can now grant rewards, apply setbacks, and award a trophy all in a single, streamlined action, making it much easier to handle special occasions like birthdays.

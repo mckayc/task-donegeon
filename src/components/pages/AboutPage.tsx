@@ -26,6 +26,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_06_DATE = new Date(2025, 9, 14);
 const V0_4_05_DATE = new Date(2025, 9, 13);
 const V0_4_04_DATE = new Date(2025, 9, 12);
 const V0_4_03_DATE = new Date(2025, 9, 11);
@@ -102,6 +103,21 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.06 ({V0_4_06_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Revamped Kiosk Mode:</strong> Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting.
+                    <ul className="list-disc list-inside pl-6">
+                        <li><strong>Admin Activation:</strong> An admin can now log into any device, open their profile dropdown, and use a "Kiosk Mode" toggle to turn that specific device into a permanent kiosk.</li>
+                        <li><strong>Persistent State:</strong> Once enabled, a device will always boot directly to the shared user selection screen, surviving reloads and new sessions.</li>
+                        <li><strong>Clearer Logout:</strong> On kiosk devices, a dedicated "Kiosk" button appears in the header, providing an intuitive way for users to log out and return the device to the shared screen.</li>
+                        <li><strong>Cleanup:</strong> All old URL-based (`/kiosk`) logic has been removed for a cleaner, more robust implementation.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.05 ({V0_4_05_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -266,7 +282,7 @@ const VersionHistoryContent: React.FC = () => (
                 Version 0.1.92 ({V0_1_92_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
             </h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Kiosk Mode Pending Notifications:</strong> The Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval.</li>
+                <li><strong>Kiosk Mode Pending Notifications:</strong> The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval.</li>
                 <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once.</li>
             </ul>
         </div>

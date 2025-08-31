@@ -1,5 +1,6 @@
 
 
+
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -23,7 +24,7 @@ import UpdateAvailable from './components/user-interface/UpdateAvailable';
 const App: React.FC = () => {
   const { settings, themes, isUpdateAvailable } = useSystemState();
   const { guilds } = useCommunityState();
-  const { appMode, activePage } = useUIState();
+  const { appMode, activePage, isKioskDevice } = useUIState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser } = useAuthState();
   const { isRecording, isPickingElement, trackClicks, trackElementDetails } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
@@ -32,9 +33,6 @@ const App: React.FC = () => {
   const isDataLoaded = useIsDataLoaded();
   
   const [showUpdateToast, setShowUpdateToast] = useState(false);
-
-  // Determine Kiosk Mode based on URL path
-  const isKioskPath = window.location.pathname.toLowerCase() === '/kiosk';
 
   useEffect(() => {
     const checkMobile = () => {
@@ -170,10 +168,9 @@ const App: React.FC = () => {
       return <FirstRunWizard />;
     }
   
-    // 2. Kiosk Mode: This is a special, high-priority view. If the URL is `/kiosk`
-    // and the feature is enabled, we show the shared layout immediately,
-    // bypassing the standard app lock and user login flow.
-    if (settings.sharedMode.enabled && isKioskPath) {
+    // 2. Kiosk Mode: This is a special, high-priority view. If the device has
+    // kiosk mode enabled locally, show the shared layout immediately.
+    if (settings.sharedMode.enabled && isKioskDevice) {
       return <SharedLayout />;
     }
   

@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_06_DATE = new Date(2025, 9, 14);
 const V0_4_05_DATE = new Date(2025, 9, 13);
 const V0_4_04_DATE = new Date(2025, 9, 12);
 const V0_4_03_DATE = new Date(2025, 9, 11);
@@ -101,6 +102,21 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.06 ({V0_4_06_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Revamped Kiosk Mode:</strong> Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting.
+                    <ul className="list-disc list-inside pl-6">
+                        <li><strong>Admin Activation:</strong> An admin can now log into any device, open their profile dropdown, and use a "Kiosk Mode" toggle to turn that specific device into a permanent kiosk.</li>
+                        <li><strong>Persistent State:</strong> Once enabled, a device will always boot directly to the shared user selection screen, surviving reloads and new sessions.</li>
+                        <li><strong>Clearer Logout:</strong> On kiosk devices, a dedicated "Kiosk" button appears in the header, providing an intuitive way for users to log out and return the device to the shared screen.</li>
+                        <li><strong>Cleanup:</strong> All old URL-based (`/kiosk`) logic has been removed for a cleaner, more robust implementation.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.05 ({V0_4_05_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -265,8 +281,8 @@ const VersionHistoryContent: React.FC = () => (
                 Version 0.1.92 ({V0_1_92_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
             </h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Kiosk Mode Pending Notifications:</strong> The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval, providing an immediate visual cue without requiring login.</li>
-                <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once, improving performance for the Kiosk Mode view.</li>
+                <li><strong>Kiosk Mode Pending Notifications:</strong> The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval.</li>
+                <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once.</li>
             </ul>
         </div>
         <div>
@@ -393,6 +409,31 @@ const HelpPage: React.FC = () => {
                     </ul>
                     <h4>New Birthday Trophies</h4>
                     <p>A set of 16 new, manually-awarded trophies have been added to celebrate user birthdays for ages 5 through 20. These can be awarded using the Manual Adjustment dialog.</p>
+                    <h3>Shared / Kiosk Mode (Device-Specific)</h3>
+                    <p><strong>Purpose:</strong> To create a persistent, shared access point for the application on a specific device, like a family tablet. This mode provides a fast user-switching interface and can automatically log users out after a period of inactivity.</p>
+                    <p><strong>How it Works:</strong></p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li><strong>Global Prerequisite:</strong> An {settings.terminology.admin} must first enable the main **"Shared Mode"** feature in `{settings.terminology.link_settings} > Shared / Kiosk Mode`. This makes the device-specific functionality available.</li>
+                        <li>
+                            <strong>Device Activation:</strong>
+                            <ol className="list-decimal list-inside pl-6">
+                                <li>An {settings.terminology.admin} logs into the application on the device they want to turn into a kiosk (e.g., the living room tablet).</li>
+                                <li>They click their profile avatar in the header to open the dropdown menu.</li>
+                                <li>A new toggle switch, **"Kiosk Mode (This Device)"**, will be visible.</li>
+                                <li>The {settings.terminology.admin} flips this switch to **ON**. The page will reload.</li>
+                            </ol>
+                        </li>
+                        <li><strong>Persistent Kiosk State:</strong> Once activated, that device is now a dedicated Kiosk. It will **always** start on the shared user selection screen, even if the browser is closed or the device is restarted. This setting is saved locally in the browser's storage.</li>
+                        <li>
+                            <strong>Using the Kiosk:</strong>
+                            <ul className="list-disc list-inside pl-6">
+                                <li>When a user logs in on the Kiosk device, a new **"Kiosk" button** appears in the header.</li>
+                                <li>Clicking this "Kiosk" button is the primary way to log out. It immediately returns the device to the shared user selection screen for the next person.</li>
+                                <li>The automatic inactivity timer (if configured in `{settings.terminology.link_settings}`) will also correctly log users out and return to this screen.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Deactivation:</strong> To turn Kiosk Mode off, an {settings.terminology.admin} must log in on that specific device, open their profile dropdown, and toggle the **"Kiosk Mode (This Device)"** switch to **OFF**.</li>
+                    </ul>
                 </div>
             </CollapsibleSection>
 

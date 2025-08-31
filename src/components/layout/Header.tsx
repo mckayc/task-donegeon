@@ -12,6 +12,7 @@ import { useSyncStatus } from '../../context/DataProvider';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState } from '../../context/QuestsContext';
 import Button from '../user-interface/Button';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];
@@ -66,7 +67,7 @@ const Header: React.FC = () => {
   const { settings, isUpdateAvailable } = useSystemState();
   const { installUpdate } = useSystemDispatch();
   const { guilds } = useCommunityState();
-  const { appMode, isMobileView } = useUIState();
+  const { appMode, isMobileView, isKioskDevice } = useUIState();
   const { setAppMode, setActivePage, toggleSidebar } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { logout, setIsSwitchingUser } = useAuthDispatch();
@@ -78,8 +79,6 @@ const Header: React.FC = () => {
   const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
   
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
-
-  const isKioskPath = window.location.pathname.toLowerCase() === '/kiosk';
 
   useEffect(() => {
     if (!currentUser) return;
@@ -124,6 +123,13 @@ const Header: React.FC = () => {
     setAppMode(mode);
     setGuildDropdownOpen(false);
     setActivePage('Dashboard');
+  };
+  
+  const handleKioskToggle = () => {
+      const newKioskState = !isKioskDevice;
+      localStorage.setItem('isKioskDevice', String(newKioskState));
+      // Reload the page to apply the new mode from the root component
+      window.location.href = '/';
   };
 
   const userGuilds = useMemo(() => {
@@ -195,7 +201,7 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-2 md:gap-4">
         <ViewModeToggle />
         <FullscreenToggle />
-        {isKioskPath && (
+        {isKioskDevice && (
             <Button variant="secondary" onClick={() => logout()} size="sm" className="!text-xs !py-1 !px-3">
                 Kiosk
             </Button>
@@ -275,6 +281,17 @@ const Header: React.FC = () => {
                         <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
                         <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
                     </div>
+                    {currentUser.role === Role.DonegeonMaster && settings.sharedMode.enabled && (
+                        <div className="py-2 border-t border-stone-700">
+                            <div className="px-4">
+                                 <ToggleSwitch
+                                    enabled={isKioskDevice}
+                                    setEnabled={handleKioskToggle}
+                                    label="Kiosk Mode (This Device)"
+                                />
+                            </div>
+                        </div>
+                    )}
                     <div className="py-1 border-t border-stone-700">
                         <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} data-log-id="header-profile-link-logout" className="block px-4 py-2 text-red-400 hover:bg-stone-700">Log Out</a>
                     </div>

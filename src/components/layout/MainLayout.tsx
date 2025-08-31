@@ -14,7 +14,7 @@ import { useSystemState } from '../../context/SystemContext';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
@@ -87,9 +87,7 @@ const MainLayout: React.FC = () => {
   }, [settings.sharedMode.autoExitMinutes, logout, addNotification]);
 
   useEffect(() => {
-      const isKioskPath = window.location.pathname.toLowerCase() === '/kiosk';
-      
-      if (settings.sharedMode.enabled && settings.sharedMode.autoExit && isKioskPath) {
+      if (settings.sharedMode.enabled && settings.sharedMode.autoExit && isKioskDevice) {
           const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
           
           events.forEach(event => {
@@ -112,7 +110,7 @@ const MainLayout: React.FC = () => {
             clearTimeout(timerRef.current);
         }
       }
-  }, [settings.sharedMode.enabled, settings.sharedMode.autoExit, resetTimer]);
+  }, [settings.sharedMode.enabled, settings.sharedMode.autoExit, resetTimer, isKioskDevice]);
 
 
   const renderPage = () => {

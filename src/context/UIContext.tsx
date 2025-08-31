@@ -9,6 +9,7 @@ export interface UIState {
   isMobileView: boolean;
   appMode: AppMode;
   activeMarketId: string | null;
+  isKioskDevice: boolean;
 }
 
 export interface UIDispatch {
@@ -36,6 +37,12 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isMobileView, setIsMobileView] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [appMode, _setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [activeMarketId, _setActiveMarketId] = useState<string | null>(null);
+  const [isKioskDevice, setIsKioskDevice] = useState<boolean>(() => {
+      if (typeof window !== 'undefined') {
+          return localStorage.getItem('isKioskDevice') === 'true';
+      }
+      return false;
+  });
 
   const setActivePage = (page: Page) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
@@ -86,8 +93,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     isChatOpen,
     isMobileView,
     appMode,
-    activeMarketId
-  }), [activePage, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId]);
+    activeMarketId,
+    isKioskDevice,
+  }), [activePage, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice]);
 
   const dispatch: UIDispatch = {
     setActivePage,

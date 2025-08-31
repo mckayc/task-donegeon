@@ -18,7 +18,6 @@ const AppLockScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
-  const [enterKiosk, setEnterKiosk] = useState(false);
   
   useEffect(() => {
     // If there's only one admin, ensure they are selected by default.
@@ -44,12 +43,8 @@ const AppLockScreen: React.FC = () => {
 
     setTimeout(() => { // Simulate network delay slightly
         if (isValidPassword) {
-            if (enterKiosk && settings.sharedMode.enabled) {
-                window.location.href = '/kiosk';
-            } else {
-                setAppUnlocked(true);
-                setCurrentUser(admin);
-            }
+            setAppUnlocked(true);
+            setCurrentUser(admin);
         } else {
             setError('Incorrect Master Password.');
             setPassword('');
@@ -103,11 +98,6 @@ const AppLockScreen: React.FC = () => {
             required
             autoFocus
           />
-          {settings.sharedMode.enabled && (
-            <div className="flex justify-center pt-2">
-                <ToggleSwitch enabled={enterKiosk} setEnabled={setEnterKiosk} label="Enter Kiosk Mode" />
-            </div>
-          )}
           {error && <p className="text-red-400 text-center">{error}</p>}
           <div className="pt-2">
             <Button type="submit" className="w-full" disabled={isChecking}>

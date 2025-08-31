@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Role, User } from '../../types';
 import Button from '../user-interface/Button';
@@ -7,7 +8,6 @@ import UserFormFields from '../users/UserFormFields';
 import Avatar from '../user-interface/Avatar';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
-import KioskUnlockDialog from './KioskUnlockDialog';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) => {
     const { users } = useAuthState();

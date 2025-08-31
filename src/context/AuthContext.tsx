@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -71,10 +72,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     _setCurrentUser(null);
     localStorage.removeItem('lastUserId');
 
-    // Only fully lock the app if we are NOT on a kiosk path.
-    // On a kiosk path, logging out should return to the user selection screen,
-    // not the app lock screen.
-    if (window.location.pathname.toLowerCase() !== '/kiosk') {
+    // On a kiosk device, logging out returns to the user selection screen (SharedLayout),
+    // which is still considered "unlocked". For normal devices, it goes to the AppLockScreen.
+    if (localStorage.getItem('isKioskDevice') !== 'true') {
       _setAppUnlocked(false);
       localStorage.removeItem('isAppUnlocked');
     }

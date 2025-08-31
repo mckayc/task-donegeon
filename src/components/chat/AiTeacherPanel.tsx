@@ -78,7 +78,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                 if (startData.reply) {
                     setMessages([{ author: 'ai', text: startData.reply }]);
                 }
-                if (startData.functionCall?.name === 'show_multiple_choice') {
+                if (startData.functionCall?.name === 'ask_a_question_with_choices') {
                     setCurrentChoices(startData.functionCall.args.choices || []);
                 }
 
@@ -122,7 +122,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
             const data = await response.json();
             
             let aiMessageText = data.reply;
-            if (data.functionCall && data.functionCall.name === 'show_multiple_choice') {
+            if (data.functionCall && data.functionCall.name === 'ask_a_question_with_choices') {
                 const choices = data.functionCall.args.choices || [];
                 setCurrentChoices(choices);
                 if (!aiMessageText && data.functionCall.args.question) {
@@ -133,7 +133,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
             }
 
             // Frontend Safeguard: Clean up any tool code that might have slipped through and don't show empty messages.
-            const cleanedText = (aiMessageText || '').replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '').trim();
+            const cleanedText = (aiMessageText || '').replace(/<tool_code>[\s\S]*?<\/tool_code>|<\/?multiple_choice>|<\/?question>|<\/?option>/g, '').trim();
             if (cleanedText) {
                 const aiMessage: Message = { author: 'ai', text: cleanedText };
                 setMessages(prev => [...prev, aiMessage]);

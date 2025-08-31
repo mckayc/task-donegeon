@@ -13,10 +13,10 @@ if (process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall') {
 
 const activeChats = new Map(); // In-memory store for chat sessions
 
-const showMultipleChoiceTool = {
+const askAQuestionWithChoicesTool = {
   functionDeclarations: [
     {
-      name: "show_multiple_choice",
+      name: "ask_a_question_with_choices",
       description: "Presents a multiple-choice or simple choice question to the user and displays the options as buttons.",
       parameters: {
         type: Type.OBJECT,
@@ -87,6 +87,19 @@ const generateContent = async (req, res) => {
     }
 };
 
+// Helper function to calculate age from a YYYY-MM-DD birthday string
+function calculateAge(birthdayString) {
+    if (!birthdayString) return null;
+    const birthDate = new Date(birthdayString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
 const startChatSession = async (req, res) => {
     if (!ai) {
         return res.status(400).json({ error: 'AI features are not configured on the server.' });
@@ -106,22 +119,31 @@ const startChatSession = async (req, res) => {
         return res.status(404).json({ error: 'Quest or User not found.' });
     }
 
+    const age = calculateAge(user.birthday);
+    const ageInstruction = age !== null
+        ? `The user is ${age} years old. **CRITICAL INSTRUCTION:** You MUST adapt your tone, vocabulary, and sentence complexity to be easily understood by a ${age}-year-old. Simplify concepts and use age-appropriate analogies.`
+        : "Adapt your language for a general audience, assuming it could include children.";
+
     const systemInstruction = `You are an AI Teacher helping a user learn about a specific topic.
-    The user's name is ${user.gameName}, and they are learning about the quest titled "${quest.title}".
+    The user's name is ${user.gameName}.
+    They are learning about the quest titled "${quest.title}".
     Use the quest's description for context: "${quest.description}".
     Your personality is a friendly, encouraging, and knowledgeable guide.
-    Adapt your language for someone with a birthday of ${user.birthday}.
+    
+    ${ageInstruction}
+    
+    **CRITICAL RULE:** Under no circumstances should you ever write XML tags like <multiple_choice> or markdown lists in your response. You MUST use the 'ask_a_question_with_choices' tool to present choices. Your text response should be clean, conversational prose ONLY.
 
     **Teaching Methodology: "Teach, Check, Feedback" Loop**
     You MUST follow this structured teaching loop for the entire conversation after your initial introduction:
     1.  **Teach:** Present a single, small, digestible piece of information about the quest's topic. Keep it concise (2-3 sentences).
-    2.  **Check:** Immediately after teaching, you MUST use the "show_multiple_choice" tool to ask a simple multiple-choice question that verifies the user understood the concept you just taught. This is not optional. When you use this tool, the text in the 'question' parameter will be displayed to the user. DO NOT output the tool call itself as text in your response.
+    2.  **Check:** Immediately after teaching, you MUST use the "ask_a_question_with_choices" tool to ask a simple multiple-choice question that verifies the user understood the concept you just taught. This is not optional. When you use this tool, the text in the 'question' parameter will be displayed to the user.
     3.  **Feedback:** After the user answers, provide brief, positive feedback if they are correct, or a gentle correction if they are wrong, and then smoothly transition to the next "Teach" step.
 
     **Initial Introduction:** Your VERY FIRST message must still follow the introduction format:
     1. A general overview of the topic.
     2. An interesting fact.
-    3. A question about what the user wants to focus on (using the "show_multiple_choice" tool).
+    3. A question about what the user wants to focus on (using the "ask_a_question_with_choices" tool).
     4. A question to gauge prior knowledge (can be open-ended or use the tool).
     After this introduction, you must begin the "Teach, Check, Feedback" loop.`;
 
@@ -130,7 +152,7 @@ const startChatSession = async (req, res) => {
         config: {
             systemInstruction,
         },
-        tools: [showMultipleChoiceTool]
+        tools: [askAQuestionWithChoicesTool]
     });
 
     const sessionId = `chat-session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -167,10 +189,10 @@ const sendMessageInSession = async (req, res) => {
 
         let replyText = textPart ? textPart.text : '';
 
-        // Safeguard: If a function call exists, it's the primary content.
-        // Also, clean up any erroneous <tool_code> text from the reply.
-        if (functionCallPart) {
+        // Safeguard: Clean up any erroneous text from the reply.
+        if (replyText) {
             replyText = replyText.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '').trim();
+            replyText = replyText.replace(/<\/?multiple_choice>|<\/?question>|<\/?option>/g, '').trim();
         }
 
         res.json({

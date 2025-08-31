@@ -1,4 +1,3 @@
-
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -266,27 +265,43 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
-  styles: styles,
+  styles: styles as ThemeStyle,
 }));
 
 // This function is for creating mock data, but is not used on initial load.
 // It remains here in case it's needed for testing or blueprints.
-const createInitialQuestCompletions = (users, quests) => {
+export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
     // This function can be used to populate some initial "completed" quests for demonstration
     return [];
 };
 
-const INITIAL_TROPHIES = [
-    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },
+export const INITIAL_TROPHIES: Trophy[] = [
+    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },
     { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] },
     { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] },
     { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] },
-    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: 'ACHIEVE_RANK', value: 'rank-2', count: 1}]},
+    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]},
+    { id: 'trophy-bday-5', name: 'Happy 5th Birthday!', description: 'Awarded for celebrating a 5th birthday.', iconType: 'emoji', icon: '5️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-6', name: 'Happy 6th Birthday!', description: 'Awarded for celebrating a 6th birthday.', iconType: 'emoji', icon: '6️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-7', name: 'Happy 7th Birthday!', description: 'Awarded for celebrating a 7th birthday.', iconType: 'emoji', icon: '7️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-8', name: 'Happy 8th Birthday!', description: 'Awarded for celebrating an 8th birthday.', iconType: 'emoji', icon: '8️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-9', name: 'Happy 9th Birthday!', description: 'Awarded for celebrating a 9th birthday.', iconType: 'emoji', icon: '9️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-10', name: 'Happy 10th Birthday!', description: 'Awarded for celebrating a 10th birthday.', iconType: 'emoji', icon: '🔟', isManual: true, requirements: [] },
+    { id: 'trophy-bday-11', name: 'Happy 11th Birthday!', description: 'Awarded for celebrating an 11th birthday.', iconType: 'emoji', icon: '1️⃣1️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-12', name: 'Happy 12th Birthday!', description: 'Awarded for celebrating a 12th birthday.', iconType: 'emoji', icon: '1️⃣2️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-13', name: 'Happy 13th Birthday!', description: 'Awarded for celebrating a 13th birthday.', iconType: 'emoji', icon: '1️⃣3️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-14', name: 'Happy 14th Birthday!', description: 'Awarded for celebrating a 14th birthday.', iconType: 'emoji', icon: '1️⃣4️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-15', name: 'Happy 15th Birthday!', description: 'Awarded for celebrating a 15th birthday.', iconType: 'emoji', icon: '1️⃣5️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-16', name: 'Happy 16th Birthday!', description: 'Awarded for celebrating a 16th birthday.', iconType: 'emoji', icon: '1️⃣6️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-17', name: 'Happy 17th Birthday!', description: 'Awarded for celebrating a 17th birthday.', iconType: 'emoji', icon: '1️⃣7️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-18', name: 'Happy 18th Birthday!', description: 'Awarded for celebrating an 18th birthday.', iconType: 'emoji', icon: '1️⃣8️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-19', name: 'Happy 19th Birthday!', description: 'Awarded for celebrating a 19th birthday.', iconType: 'emoji', icon: '1️⃣9️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-20', name: 'Happy 20th Birthday!', description: 'Awarded for celebrating a 20th birthday.', iconType: 'emoji', icon: '2️⃣0️⃣', isManual: true, requirements: [] },
     { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] },
     { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', iconType: 'emoji', icon: '💰', isManual: true, requirements: [] },
     { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] },
@@ -379,14 +394,3 @@ const INITIAL_TROPHIES = [
     { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] },
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
-
-module.exports = {
-    INITIAL_MAIN_SIDEBAR_CONFIG,
-    INITIAL_SETTINGS,
-    INITIAL_QUEST_GROUPS,
-    INITIAL_REWARD_TYPES,
-    INITIAL_RANKS,
-    INITIAL_THEMES,
-    createInitialQuestCompletions,
-    INITIAL_TROPHIES,
-};

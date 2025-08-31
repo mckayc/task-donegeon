@@ -1,4 +1,3 @@
-
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
@@ -6,7 +5,7 @@ const trophyRepository = require('../repositories/trophy.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { logGeneralAdminAction, updateTimestamps } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
-const { QuestCompletionEntity, PurchaseRequestEntity } = require('../entities');
+const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity } = require('../entities');
 
 const getAll = (options) => userRepository.findAll(options);
 
@@ -100,66 +99,25 @@ const deleteMany = async (ids, actorId) => {
 };
 
 const adjust = async (adjustmentData) => {
-    const user = await userRepository.findById(adjustmentData.userId);
-    if (!user) return null;
-    
-    const newAdjustment = {
-        ...adjustmentData,
-        adjustedAt: new Date().toISOString()
-    };
-    const savedAdjustment = await adminAdjustmentRepository.create(newAdjustment);
+    return await dataSource.transaction(async manager => {
+        const user = await manager.getRepository('User').findOneBy({ id: adjustmentData.userId });
+        if (!user) return null;
 
-    let newUserTrophy = null;
-    if (adjustmentData.type === 'Trophy' && adjustmentData.trophyId) {
-        const newTrophyData = {
-            userId: user.id,
-            trophyId: adjustmentData.trophyId,
-            awardedAt: new Date().toISOString(),
-            guildId: adjustmentData.guildId || null,
+        const newAdjustment = {
+            ...adjustmentData,
+            adjustedAt: new Date().toISOString()
         };
-        newUserTrophy = await trophyRepository.createUserTrophy(newTrophyData);
-    } else {
-        // Apply rewards/setbacks logic here...
-    }
+        const savedAdjustment = await manager.getRepository('AdminAdjustment').save(updateTimestamps(newAdjustment, true));
 
-    const updatedUser = await userRepository.findById(user.id);
-    updateEmitter.emit('update');
-    return { updatedUser, newAdjustment: savedAdjustment, newUserTrophy };
-};
-
-const getPendingItems = async (userId) => {
-    const manager = dataSource.manager;
-    const pendingCompletions = await manager.find(QuestCompletionEntity, {
-        where: { user: { id: userId }, status: 'Pending' },
-        relations: ['quest'],
-        order: { completedAt: 'DESC' }
-    });
-    const pendingPurchases = await manager.find(PurchaseRequestEntity, {
-        where: { userId: userId, status: 'Pending' },
-        order: { requestedAt: 'DESC' }
-    });
-    return {
-        quests: pendingCompletions.map(c => ({
-            id: c.id,
-            title: c.quest.title,
-            submittedAt: c.completedAt,
-            questId: c.quest.id,
-        })),
-        purchases: pendingPurchases.map(p => ({
-            id: p.id,
-            title: p.assetDetails.name,
-            submittedAt: p.requestedAt,
-        })),
-    };
-};
-
-
-module.exports = {
-    getAll,
-    create,
-    clone,
-    update,
-    deleteMany,
-    adjust,
-    getPendingItems,
-};
+        let newUserTrophy = null;
+        if (adjustmentData.trophyId) {
+            const newTrophyData = {
+                userId: user.id,
+                trophyId: adjustmentData.trophyId,
+                awardedAt: new Date().toISOString(),
+                guildId: adjustmentData.guildId || null,
+            };
+            newUserTrophy = await trophyRepository.createUserTrophy(newTrophyData);
+        }
+        
+        const rewardTypes = await

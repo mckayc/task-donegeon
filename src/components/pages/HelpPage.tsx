@@ -25,6 +25,8 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_05_DATE = new Date(2025, 9, 13);
+const V0_4_04_DATE = new Date(2025, 9, 12);
 const V0_4_03_DATE = new Date(2025, 9, 11);
 const V0_4_02_DATE = new Date(2025, 9, 10);
 const V0_4_01_DATE = new Date(2025, 9, 9);
@@ -99,6 +101,24 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.05 ({V0_4_05_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Flexible Manual Adjustments:</strong> The "Manual Adjustment" dialog for users has been completely overhauled. Instead of a restrictive dropdown, administrators can now grant rewards, apply setbacks, and award a trophy all in a single, streamlined action, making it much easier to handle special occasions like birthdays.</li>
+                <li><strong>New Birthday Trophies:</strong> Added 16 new manually-awarded trophies to celebrate user birthdays for every age from 5 to 20.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.04 ({V0_4_04_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New Full-Screen AI Teacher UI:</strong> Replaced the small AI Teacher side panel with a full-screen, two-column "Activity Panel." This provides a more immersive and standardized experience that can accommodate future media types like videos or documents. The left column contains the AI avatar and chat history, while the right serves as a dedicated user interaction workspace.</li>
+                <li><strong>Smarter AI Teaching Loop:</strong> Overhauled the AI's system instructions to follow a "Teach, Check, Feedback" loop. The AI is now required to ask a multiple-choice question after teaching a concept, which makes the learning process more effective and guarantees that the interactive choice buttons appear frequently and reliably.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.03 ({V0_4_03_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -245,8 +265,8 @@ const VersionHistoryContent: React.FC = () => (
                 Version 0.1.92 ({V0_1_92_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
             </h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Kiosk Mode Pending Notifications:</strong> The Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval.</li>
-                <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once.</li>
+                <li><strong>Kiosk Mode Pending Notifications:</strong> The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval, providing an immediate visual cue without requiring login.</li>
+                <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once, improving performance for the Kiosk Mode view.</li>
             </ul>
         </div>
         <div>
@@ -360,6 +380,19 @@ const HelpPage: React.FC = () => {
                             </ul>
                         </li>
                     </ul>
+                    <h3>Manual Adjustments</h3>
+                    <p><strong>Purpose:</strong> To give an {settings.terminology.admin} a flexible way to manually grant {settings.terminology.points} or award {settings.terminology.awards} for actions that happen outside the formal {settings.terminology.task} system.</p>
+                    <p><strong>How it Works:</strong></p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li>From the `{settings.terminology.link_manage_users}` page, an {settings.terminology.admin} can click the "Adjust" button for any {settings.terminology.user}.</li>
+                        <li>This opens a unified dialog where the {settings.terminology.admin} can perform multiple actions at once.</li>
+                        <li>**Grant Rewards:** Add any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li>**Apply Setbacks:** Deduct any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li>**Award Trophy:** Select and award any manually-awarded {settings.terminology.award}.</li>
+                        <li>All actions are logged in the `{settings.terminology.history}` as a single, consolidated "Manual Adjustment" event for clarity.</li>
+                    </ul>
+                    <h4>New Birthday Trophies</h4>
+                    <p>A set of 16 new, manually-awarded trophies have been added to celebrate user birthdays for ages 5 through 20. These can be awarded using the Manual Adjustment dialog.</p>
                 </div>
             </CollapsibleSection>
 

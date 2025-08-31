@@ -12,6 +12,7 @@ interface RewardInputGroupProps {
   onChange: (index: number, field: keyof RewardItem, value: string | number) => void;
   onAdd: (rewardCat: RewardCategory) => void;
   onRemove: (index: number) => void;
+  title?: string;
 }
 
 const RewardItemRow: React.FC<{
@@ -52,13 +53,13 @@ const RewardItemRow: React.FC<{
 };
 
 
-const RewardInputGroup: React.FC<RewardInputGroupProps> = ({ category, items, onChange, onAdd, onRemove }) => {
+const RewardInputGroup: React.FC<RewardInputGroupProps> = ({ category, items, onChange, onAdd, onRemove, title }) => {
   const { rewardTypes } = useEconomyState();
 
   const currencyTypes = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
   const xpTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
 
-  const categoryLabel = category.replace(/([A-Z])/g, ' $1').trim();
+  const categoryLabel = title || category.replace(/([A-Z])/g, ' $1').trim();
   const showAddButtons = category === 'rewards' || category === 'cost' || category === 'payout' || category === 'lateSetbacks' || category === 'incompleteSetbacks' || category === 'setbacks';
   const buttonVerb = category.toLowerCase().includes('setback') ? 'Subtract' : 'Add';
 

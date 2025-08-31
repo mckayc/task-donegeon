@@ -1,4 +1,3 @@
-
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -335,6 +334,22 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] },
     { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] },
     { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]},
+    { id: 'trophy-bday-5', name: 'Happy 5th Birthday!', description: 'Awarded for celebrating a 5th birthday.', iconType: 'emoji', icon: '5️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-6', name: 'Happy 6th Birthday!', description: 'Awarded for celebrating a 6th birthday.', iconType: 'emoji', icon: '6️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-7', name: 'Happy 7th Birthday!', description: 'Awarded for celebrating a 7th birthday.', iconType: 'emoji', icon: '7️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-8', name: 'Happy 8th Birthday!', description: 'Awarded for celebrating an 8th birthday.', iconType: 'emoji', icon: '8️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-9', name: 'Happy 9th Birthday!', description: 'Awarded for celebrating a 9th birthday.', iconType: 'emoji', icon: '9️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-10', name: 'Happy 10th Birthday!', description: 'Awarded for celebrating a 10th birthday.', iconType: 'emoji', icon: '🔟', isManual: true, requirements: [] },
+    { id: 'trophy-bday-11', name: 'Happy 11th Birthday!', description: 'Awarded for celebrating an 11th birthday.', iconType: 'emoji', icon: '1️⃣1️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-12', name: 'Happy 12th Birthday!', description: 'Awarded for celebrating a 12th birthday.', iconType: 'emoji', icon: '1️⃣2️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-13', name: 'Happy 13th Birthday!', description: 'Awarded for celebrating a 13th birthday.', iconType: 'emoji', icon: '1️⃣3️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-14', name: 'Happy 14th Birthday!', description: 'Awarded for celebrating a 14th birthday.', iconType: 'emoji', icon: '1️⃣4️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-15', name: 'Happy 15th Birthday!', description: 'Awarded for celebrating a 15th birthday.', iconType: 'emoji', icon: '1️⃣5️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-16', name: 'Happy 16th Birthday!', description: 'Awarded for celebrating a 16th birthday.', iconType: 'emoji', icon: '1️⃣6️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-17', name: 'Happy 17th Birthday!', description: 'Awarded for celebrating a 17th birthday.', iconType: 'emoji', icon: '1️⃣7️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-18', name: 'Happy 18th Birthday!', description: 'Awarded for celebrating an 18th birthday.', iconType: 'emoji', icon: '1️⃣8️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-19', name: 'Happy 19th Birthday!', description: 'Awarded for celebrating a 19th birthday.', iconType: 'emoji', icon: '1️⃣9️⃣', isManual: true, requirements: [] },
+    { id: 'trophy-bday-20', name: 'Happy 20th Birthday!', description: 'Awarded for celebrating a 20th birthday.', iconType: 'emoji', icon: '2️⃣0️⃣', isManual: true, requirements: [] },
     { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] },
     { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', iconType: 'emoji', icon: '💰', isManual: true, requirements: [] },
     { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] },

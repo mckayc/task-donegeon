@@ -26,6 +26,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_05_DATE = new Date(2025, 9, 13);
 const V0_4_04_DATE = new Date(2025, 9, 12);
 const V0_4_03_DATE = new Date(2025, 9, 11);
 const V0_4_02_DATE = new Date(2025, 9, 10);
@@ -101,6 +102,15 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.05 ({V0_4_05_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Flexible Manual Adjustments:</strong> The "Manual Adjustment" dialog for users has been completely overhauled. Instead of a restrictive dropdown, administrators can now grant rewards, apply setbacks, and award a trophy all in a single, streamlined action, making it much easier to handle special occasions like birthdays.</li>
+                <li><strong>New Birthday Trophies:</strong> Added 16 new manually-awarded trophies to celebrate user birthdays for every age from 5 to 20.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.04 ({V0_4_04_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.04
+**Version:** 0.4.05
 
 ---
 
@@ -12,6 +12,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.05 (October 13, 2025)
+-   **Flexible Manual Adjustments:** The "Manual Adjustment" dialog for users has been completely overhauled. Instead of a restrictive dropdown, administrators can now grant rewards, apply setbacks, and award a trophy all in a single, streamlined action, making it much easier to handle special occasions like birthdays.
+-   **New Birthday Trophies:** Added 16 new manually-awarded trophies to celebrate user birthdays for every age from 5 to 20.
 
 ### What's New in Version 0.4.04 (October 12, 2025)
 -   **New Full-Screen AI Teacher UI:** Replaced the small AI Teacher side panel with a full-screen, two-column "Activity Panel." This provides a more immersive and standardized experience that can accommodate future media types like videos or documents. The left column contains the AI avatar and chat history, while the right serves as a dedicated user interaction workspace.

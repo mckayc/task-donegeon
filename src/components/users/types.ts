@@ -40,6 +40,7 @@ export enum AdminAdjustmentType {
     Reward = 'Reward',
     Setback = 'Setback',
     Trophy = 'Trophy',
+    Compound = 'Compound',
 }
 
 export interface AdminAdjustment {

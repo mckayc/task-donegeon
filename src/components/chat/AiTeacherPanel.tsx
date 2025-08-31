@@ -210,8 +210,8 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                 </div>
 
                 <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                    {/* Left Column: Chat & Lesson */}
-                    <div className="flex-1 flex flex-col p-4 overflow-y-auto scrollbar-hide">
+                    {/* Left Column: Chat & Input */}
+                    <div className="flex-1 flex flex-col p-4 overflow-hidden">
                         <div className="text-center mb-6 flex-shrink-0">
                             <div className="w-24 h-24 rounded-full bg-emerald-800/50 border-2 border-emerald-600/70 flex items-center justify-center mx-auto">
                                 <SparklesIcon className="w-12 h-12 text-emerald-300" />
@@ -220,7 +220,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                             <p className="text-sm text-stone-400">{quest.description}</p>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="flex-1 space-y-4 overflow-y-auto scrollbar-hide pr-2">
                             {messages.map((msg, index) => {
                                 const isUser = msg.author === 'user';
                                 return (
@@ -238,7 +238,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                                     </div>
                                 );
                             })}
-                            {isLoading && (
+                            {isLoading && !quiz && (
                                 <div className="flex items-start gap-3">
                                     <div className="w-8 h-8 rounded-full bg-emerald-800 flex items-center justify-center flex-shrink-0">
                                         <SparklesIcon className="w-5 h-5 text-emerald-300 animate-pulse" />
@@ -252,6 +252,31 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                             )}
                             <div ref={messagesEndRef} />
                         </div>
+                        
+                        {!quiz && (
+                             <div className="mt-auto pt-4 flex-shrink-0">
+                                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
+                                    <Input
+                                        as="textarea"
+                                        rows={2}
+                                        value={inputMessage}
+                                        onChange={(e) => setInputMessage(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                                        placeholder={sessionId ? "Your response..." : "Connecting..."}
+                                        className="flex-grow resize-none"
+                                        disabled={!sessionId || isLoading}
+                                        autoFocus
+                                    />
+                                    <Button
+                                        type="submit"
+                                        disabled={!sessionId || isLoading || !inputMessage.trim()}
+                                        className="h-full"
+                                    >
+                                        Send
+                                    </Button>
+                                </form>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Column: Interaction & Quiz */}
@@ -259,6 +284,25 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                         <div className="flex-grow overflow-y-auto pr-2 space-y-4">
                             {error && <p className="text-red-400 text-center text-sm">{error}</p>}
                             
+                            {currentChoices.length > 0 && !isLoading && (
+                                <div>
+                                    <h4 className="font-bold text-stone-300 mb-2">Choose an option:</h4>
+                                    <div className="flex flex-col gap-2">
+                                        {currentChoices.map((choice, index) => (
+                                            <Button
+                                                key={index}
+                                                type="button"
+                                                variant="secondary"
+                                                onClick={() => handleSendMessage(choice)}
+                                                className="w-full justify-start text-left !h-auto !py-2 whitespace-normal"
+                                            >
+                                                {choice}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {quiz && !quizResult && (
                                 <div className="space-y-4">
                                     <h3 className="font-bold text-lg text-emerald-300">Quiz Time!</h3>
@@ -269,7 +313,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                                                 {q.choices.map((choice, cIndex) => (
                                                     <label key={cIndex} className="flex items-center gap-2 p-2 rounded-md bg-stone-700/50 hover:bg-stone-700 cursor-pointer">
                                                         <input type="radio" name={`question-${qIndex}`} value={choice.text} checked={quizAnswers[qIndex] === choice.text} onChange={() => handleAnswerChange(qIndex, choice.text)} />
-                                                        <span>{choice.text}</span>
+                                                        <span className="text-stone-300">{choice.text}</span>
                                                     </label>
                                                 ))}
                                             </div>
@@ -285,55 +329,22 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                                     {quizResult.score < 2 && <Button onClick={handleGenerateQuiz} variant="secondary" size="sm" className="mt-2">Retake Quiz</Button>}
                                 </div>
                             )}
+                            
+                             {isLoading && quiz && (
+                                 <div className="text-center py-10">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400 mx-auto"></div>
+                                    <p className="mt-3 text-stone-400 text-sm">Grading your quiz...</p>
+                                </div>
+                            )}
                         </div>
                         
-                        {/* Interaction Form Area */}
-                        <div className="mt-auto pt-4 flex-shrink-0">
+                        <div className="mt-auto pt-4 flex-shrink-0 text-center">
                             {quiz ? (
                                 quizResult ? null : <Button onClick={handleSubmitQuiz} disabled={quizAnswers.some(a => a === null)}>Submit Quiz</Button>
                             ) : (
-                                <div className="space-y-2">
-                                    {currentChoices.length > 0 && !isLoading && (
-                                        <div className="mb-4 flex flex-col gap-2">
-                                            {currentChoices.map((choice, index) => (
-                                                <Button
-                                                    key={index}
-                                                    type="button"
-                                                    variant="secondary"
-                                                    onClick={() => handleSendMessage(choice)}
-                                                    className="w-full justify-start"
-                                                >
-                                                    {choice}
-                                                </Button>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
-                                        <Input
-                                            as="textarea"
-                                            rows={2}
-                                            value={inputMessage}
-                                            onChange={(e) => setInputMessage(e.target.value)}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                                            placeholder={sessionId ? "Your response..." : "Connecting..."}
-                                            className="flex-grow resize-none"
-                                            disabled={!sessionId || isLoading}
-                                            autoFocus
-                                        />
-                                        <Button
-                                            type="submit"
-                                            disabled={!sessionId || isLoading || !inputMessage.trim()}
-                                            className="h-full"
-                                        >
-                                            Send
-                                        </Button>
-                                    </form>
-                                    <div className="flex justify-center items-center mt-2">
-                                        <Button onClick={handleGenerateQuiz} disabled={!isQuizReady || isLoading}>
-                                            {isQuizReady ? "I'm ready for the quiz!" : `Quiz unlocks in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
-                                        </Button>
-                                    </div>
-                                </div>
+                                <Button onClick={handleGenerateQuiz} disabled={!isQuizReady || isLoading}>
+                                    {isQuizReady ? "I'm ready for the quiz!" : `Quiz unlocks in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
+                                </Button>
                             )}
                         </div>
                     </div>

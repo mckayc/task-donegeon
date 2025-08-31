@@ -1,5 +1,5 @@
 
-const { GoogleGenAI, Type } = require('@google/ai');
+const { GoogleGenAI, Type } = require('@google/genai');
 const { asyncMiddleware } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity } = require('../entities');

@@ -26,6 +26,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_04_DATE = new Date(2025, 9, 12);
 const V0_4_03_DATE = new Date(2025, 9, 11);
 const V0_4_02_DATE = new Date(2025, 9, 10);
 const V0_4_01_DATE = new Date(2025, 9, 9);
@@ -100,6 +101,15 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.04 ({V0_4_04_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New Full-Screen AI Teacher UI:</strong> Replaced the small AI Teacher side panel with a full-screen, two-column "Activity Panel." This provides a more immersive and standardized experience that can accommodate future media types like videos or documents. The left column contains the AI avatar and chat history, while the right serves as a dedicated user interaction workspace.</li>
+                <li><strong>Smarter AI Teaching Loop:</strong> Overhauled the AI's system instructions to follow a "Teach, Check, Feedback" loop. The AI is now required to ask a multiple-choice question after teaching a concept, which makes the learning process more effective and guarantees that the interactive choice buttons appear frequently and reliably.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.03 ({V0_4_03_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

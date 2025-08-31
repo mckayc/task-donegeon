@@ -5,7 +5,7 @@ import { useAuthState } from '../../context/AuthContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import RewardInputGroup from '../forms/RewardInputGroup';
-import { useCommunityState } from '../../context/CommunityState';
+import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import Input from '../user-interface/Input';

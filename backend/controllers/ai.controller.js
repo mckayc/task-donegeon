@@ -87,6 +87,19 @@ const generateContent = async (req, res) => {
     }
 };
 
+// Helper function to calculate age from a YYYY-MM-DD birthday string
+function calculateAge(birthdayString) {
+    if (!birthdayString) return null;
+    const birthDate = new Date(birthdayString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
 const startChatSession = async (req, res) => {
     if (!ai) {
         return res.status(400).json({ error: 'AI features are not configured on the server.' });
@@ -106,11 +119,18 @@ const startChatSession = async (req, res) => {
         return res.status(404).json({ error: 'Quest or User not found.' });
     }
 
+    const age = calculateAge(user.birthday);
+    const ageInstruction = age !== null
+        ? `The user is ${age} years old. **CRITICAL INSTRUCTION:** You MUST adapt your tone, vocabulary, and sentence complexity to be easily understood by a ${age}-year-old. Simplify concepts and use age-appropriate analogies.`
+        : "Adapt your language for a general audience, assuming it could include children.";
+
     const systemInstruction = `You are an AI Teacher helping a user learn about a specific topic.
-    The user's name is ${user.gameName}, and they are learning about the quest titled "${quest.title}".
+    The user's name is ${user.gameName}.
+    They are learning about the quest titled "${quest.title}".
     Use the quest's description for context: "${quest.description}".
     Your personality is a friendly, encouraging, and knowledgeable guide.
-    Adapt your language for someone with a birthday of ${user.birthday}.
+    
+    ${ageInstruction}
 
     **Teaching Methodology: "Teach, Check, Feedback" Loop**
     You MUST follow this structured teaching loop for the entire conversation after your initial introduction:

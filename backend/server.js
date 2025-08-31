@@ -5,8 +5,10 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
-const { GuildEntity, UserEntity, MarketEntity } = require('./entities');
+const { GuildEntity, UserEntity, MarketEntity, TrophyEntity } = require('./entities');
 const { updateTimestamps } = require('./utils/helpers');
+const { In } = require('typeorm');
+const { INITIAL_TROPHIES } = require('./initialData');
 
 // --- Routers ---
 const questsRouter = require('./routes/quests.routes');
@@ -170,6 +172,22 @@ const initializeApp = async () => {
         await manager.save(updateTimestamps(defaultMarket, true));
         console.log('[Data Sync] Default market created.');
     }
+    
+    // MIGRATION/SYNC: Add birthday trophies if they don't exist
+    const trophyRepo = manager.getRepository(TrophyEntity);
+    const birthdayTrophyIds = INITIAL_TROPHIES.filter(t => t.id.startsWith('trophy-bday-')).map(t => t.id);
+    if (birthdayTrophyIds.length > 0) {
+        const existingBdayTrophies = await trophyRepo.findBy({ id: In(birthdayTrophyIds) });
+        const existingBdayTrophyIds = new Set(existingBdayTrophies.map(t => t.id));
+        const trophiesToAdd = INITIAL_TROPHIES.filter(t => t.id.startsWith('trophy-bday-') && !existingBdayTrophyIds.has(t.id));
+
+        if (trophiesToAdd.length > 0) {
+            console.log(`[Data Sync] Found ${trophiesToAdd.length} missing birthday trophies. Adding them now...`);
+            await trophyRepo.save(trophiesToAdd.map(t => updateTimestamps(t, true)));
+            console.log('[Data Sync] Birthday trophies added.');
+        }
+    }
+
 
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });

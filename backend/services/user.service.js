@@ -106,6 +106,7 @@ const adjust = async (adjustmentData) => {
 
         const newAdjustment = {
             ...adjustmentData,
+            id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             adjustedAt: new Date().toISOString()
         };
         const savedAdjustment = await manager.getRepository('AdminAdjustment').save(updateTimestamps(newAdjustment, true));
@@ -113,12 +114,13 @@ const adjust = async (adjustmentData) => {
         let newUserTrophy = null;
         if (adjustmentData.trophyId) {
             const newTrophyData = {
+                id: `usertrophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                 userId: user.id,
                 trophyId: adjustmentData.trophyId,
                 awardedAt: new Date().toISOString(),
                 guildId: adjustmentData.guildId || undefined,
             };
-            const newUserTrophyEntity = await manager.getRepository('UserTrophy').create(newTrophyData);
+            const newUserTrophyEntity = manager.getRepository('UserTrophy').create(newTrophyData);
             newUserTrophy = await manager.getRepository('UserTrophy').save(updateTimestamps(newUserTrophyEntity, true));
         }
         

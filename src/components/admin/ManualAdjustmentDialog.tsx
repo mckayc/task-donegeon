@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import RewardInputGroup from '../forms/RewardInputGroup';
-import { useCommunityState } from '../../context/CommunityContext';
+import { useCommunityState } from '../../context/CommunityState';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import Input from '../user-interface/Input';
@@ -109,9 +110,11 @@ export const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ 
                     ))}
                 </Input>
                  <Input
+                    as="textarea"
+                    rows={3}
                     label="Reason"
                     value={reason}
-                    onChange={e => setReason(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)}
                     placeholder="e.g., Birthday gift, excellent report card"
                     required
                 />

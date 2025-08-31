@@ -182,7 +182,7 @@ const sendMessageInSession = async (req, res) => {
     }
 
     try {
-        const response = await chat.sendMessage({ message });
+        const response = await chat.sendMessage({ message: message });
         const parts = response.candidates[0].content.parts;
         const textPart = parts.find(part => part.text);
         const functionCallPart = parts.find(part => part.functionCall);

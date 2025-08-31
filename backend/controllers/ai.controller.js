@@ -1,5 +1,5 @@
 
-const { GoogleGenAI, Type } = require('@google/genai');
+const { GoogleGenAI, Type } = require('@google/ai');
 const { asyncMiddleware } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity } = require('../entities');
@@ -184,20 +184,45 @@ const sendMessageInSession = async (req, res) => {
     try {
         const response = await chat.sendMessage({ message: message });
         const parts = response.candidates[0].content.parts;
-        const textPart = parts.find(part => part.text);
-        const functionCallPart = parts.find(part => part.functionCall);
+        let textPart = parts.find(part => part.text);
+        let functionCallPart = parts.find(part => part.functionCall);
 
         let replyText = textPart ? textPart.text : '';
 
-        // Safeguard: Clean up any erroneous text from the reply.
-        if (replyText) {
-            replyText = replyText.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '').trim();
-            replyText = replyText.replace(/<\/?multiple_choice>|<\/?question>|<\/?option>/g, '').trim();
+        // Fallback for models that embed tool calls as text
+        if (replyText && !functionCallPart && replyText.includes('call:ask_a_question_with_choices')) {
+            // This regex is very specific to the observed output format
+            const toolCallRegex = /<ctrl\d+>call:(\w+)\s*({.*})/; 
+            const match = replyText.match(toolCallRegex);
+
+            if (match && match[1] === 'ask_a_question_with_choices' && match[2]) {
+                try {
+                    const args = JSON.parse(match[2]);
+                    
+                    // Reconstruct the functionCallPart object that the frontend expects
+                    functionCallPart = {
+                        name: 'ask_a_question_with_choices',
+                        args: args
+                    };
+
+                    // Clean the tool call string from the main reply text
+                    replyText = replyText.replace(toolCallRegex, '').trim();
+
+                } catch (e) {
+                    console.error("AI Controller: Failed to parse embedded tool call JSON.", e);
+                    // If JSON is malformed, just strip the bad string and proceed without choices
+                    replyText = replyText.replace(/<ctrl\d+>call:(\w+)\s*({.*})/, '').trim();
+                }
+            }
         }
+        
+        // Another safeguard for other weird formats
+        replyText = replyText.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '').trim();
+        replyText = replyText.replace(/<\/?multiple_choice>|<\/?question>|<\/?option>/g, '').trim();
 
         res.json({
             reply: replyText,
-            functionCall: functionCallPart ? functionCallPart.functionCall : null,
+            functionCall: functionCallPart ? functionCallPart : null,
         });
     } catch (error) {
         console.error("Gemini Chat Error:", error);

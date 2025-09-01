@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -167,34 +164,31 @@ const App: React.FC = () => {
     if (isFirstRun) {
       return <FirstRunWizard />;
     }
-  
-    // 2. Kiosk Mode: This is a special, high-priority view. If the device has
-    // kiosk mode enabled locally, show the shared layout immediately.
-    if (settings.sharedMode.enabled && isKioskDevice) {
-      return <SharedLayout />;
-    }
-  
-    // 3. App Lock: If we are not in Kiosk mode, this is the second gate. If the app
-    // hasn't been unlocked for the session, show the lock screen.
-    if (!isAppUnlocked) {
-      return <AppLockScreen />;
-    }
-  
-    // --- From this point on, the application is considered "unlocked" for the session. ---
-  
-    // 4. User Switching: If the user is actively switching profiles, show that UI.
+    
+    // 2. User Switching takes precedence, even on a Kiosk device.
     if (isSwitchingUser) {
       return <SwitchUser />;
     }
     
-    // 5. No User Logged In: If the app is unlocked but no user is selected
-    // (e.g., after logging out from a personal session), show the login page.
-    if (!currentUser) {
-      return <AuthPage />;
+    // 3. A user IS logged in (on any device type)
+    if (currentUser) {
+        return <MainLayout />;
     }
-  
-    // 6. User is Logged In: A user is authenticated, show the main application.
-    return <MainLayout />;
+    
+    // --- From this point on, NO USER IS LOGGED IN ---
+
+    // 4. If it's a Kiosk device, show the shared user selector.
+    if (settings.sharedMode.enabled && isKioskDevice) {
+      return <SharedLayout />;
+    }
+    
+    // 5. For non-Kiosk devices, check if the app is locked for the session.
+    if (!isAppUnlocked) {
+        return <AppLockScreen />;
+    }
+    
+    // 6. If we reach here, it means non-Kiosk, unlocked, but no currentUser (e.g. after logout).
+    return <AuthPage />;
   };
 
   return (

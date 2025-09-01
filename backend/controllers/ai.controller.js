@@ -121,51 +121,83 @@ const startChatSession = async (req, res) => {
 
     const age = calculateAge(user.birthday);
     const ageInstruction = age !== null
-        ? `The user is ${age} years old. **CRITICAL INSTRUCTION:** You MUST adapt your tone, vocabulary, and sentence complexity to be easily understood by a ${age}-year-old. Simplify concepts and use age-appropriate analogies.`
+        ? `The user is ${age} years old. You MUST adapt your tone, vocabulary, and sentence complexity to be easily understood by a ${age}-year-old.`
         : "Adapt your language for a general audience, assuming it could include children.";
 
-    const systemInstruction = `You are an AI Teacher helping a user learn about a specific topic.
-    The user's name is ${user.gameName}.
-    They are learning about the quest titled "${quest.title}".
-    Use the quest's description for context: "${quest.description}".
-    Your personality is a friendly, encouraging, and knowledgeable guide.
-    
+    // --- 1. Generate the initial quiz ---
+    const quizGenerationPrompt = `You are an AI Teacher. Your first task is to create a 5-question multiple-choice quiz based on the quest topic to assess the user's baseline knowledge. The quest is titled "${quest.title}" with description "${quest.description}". Each question should have 3 or 4 choices, with exactly one being correct. ${ageInstruction}`;
+
+    const quizSchema = {
+        type: Type.OBJECT,
+        properties: {
+            questions: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        question: { type: Type.STRING },
+                        choices: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    text: { type: Type.STRING },
+                                    isCorrect: { type: Type.BOOLEAN }
+                                },
+                                required: ['text', 'isCorrect']
+                            }
+                        }
+                    },
+                    required: ['question', 'choices']
+                }
+            }
+        },
+        required: ['questions']
+    };
+
+    const quizResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: quizGenerationPrompt,
+        config: { responseMimeType: "application/json", responseSchema: quizSchema }
+    });
+
+    const quiz = JSON.parse(quizResponse.text);
+
+    // --- 2. Create the chat session for teaching ---
+    const teachingSystemInstruction = `You are an AI Teacher helping a user learn about the quest titled "${quest.title}".
     ${ageInstruction}
-    
-    **CRITICAL RULE:** Under no circumstances should you ever write XML tags like <multiple_choice> or markdown lists or code blocks in your response. You MUST use the 'ask_a_question_with_choices' tool to present choices. Your text response should be clean, conversational prose ONLY.
+    The user's name is ${user.gameName}.
 
-    **Teaching Methodology: "Teach, Check, Feedback" Loop**
-    You MUST follow this structured teaching loop for the entire conversation after your initial introduction:
-    1.  **Teach:** Present a single, small, digestible piece of information about the quest's topic. Keep it concise (2-3 sentences).
-    2.  **Check:** Immediately after teaching, you MUST use the "ask_a_question_with_choices" tool to ask a simple multiple-choice question that verifies the user understood the concept you just taught. This is not optional. When you use this tool, the text in the 'question' parameter will be displayed to the user.
-    3.  **Feedback:** After the user answers, provide brief, positive feedback if they are correct, or a gentle correction if they are wrong, and then smoothly transition to the next "Teach" step.
+    **Your Task:**
+    The very first message you receive from the user will be their answers to a baseline quiz.
+    1.  Analyze their answers to identify the topic they struggled with the most.
+    2.  Your first response MUST be a brief, encouraging message acknowledging their quiz attempt.
+    3.  Then, you MUST immediately begin teaching them about their weakest topic using the "Teach, Check, Feedback" loop.
 
-    **Initial Introduction:** Your VERY FIRST message must still follow the introduction format:
-    1. A general overview of the topic.
-    2. An interesting fact.
-    3. A question about what the user wants to focus on (using the "ask_a_question_with_choices" tool).
-    4. A question to gauge prior knowledge (can be open-ended or use the tool).
-    After this introduction, you must begin the "Teach, Check, Feedback" loop.`;
+    **"Teach, Check, Feedback" Loop:**
+    1.  **Teach:** Present a single, small, digestible piece of information. Keep it concise (2-3 sentences).
+    2.  **Check:** Immediately after teaching, you MUST use the "ask_a_question_with_choices" tool to ask a simple multiple-choice question to verify understanding. The text in the 'question' parameter will be your message.
+    3.  **Feedback:** After the user answers, provide brief, positive feedback if correct, or a gentle correction if wrong, then transition to the next "Teach" step.
+
+    **CRITICAL RULE:** Do NOT write XML tags like <multiple_choice> or markdown lists. You MUST use the 'ask_a_question_with_choices' tool for choices. Your text response must be clean, conversational prose.`;
 
     const chat = await ai.chats.create({
         model: 'gemini-2.5-flash',
-        config: {
-            systemInstruction,
-        },
+        config: { systemInstruction: teachingSystemInstruction },
         tools: [askAQuestionWithChoicesTool]
     });
 
     const sessionId = `chat-session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     activeChats.set(sessionId, chat);
 
-    // Set a timeout to clean up the chat session after a while (e.g., 1 hour)
     setTimeout(() => {
         activeChats.delete(sessionId);
         console.log(`Cleaned up expired chat session: ${sessionId}`);
     }, 60 * 60 * 1000);
 
-    res.status(201).json({ sessionId });
+    res.status(201).json({ sessionId, quiz });
 };
+
 
 const sendMessageInSession = async (req, res) => {
     if (!ai) {

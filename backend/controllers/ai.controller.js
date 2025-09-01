@@ -125,7 +125,7 @@ const startChatSession = async (req, res) => {
         : "Adapt your language for a general audience, assuming it could include children.";
 
     // --- 1. Generate the initial quiz ---
-    const quizGenerationPrompt = `You are an AI Teacher. Your first task is to create a 5-question multiple-choice quiz based on the quest topic to assess the user's baseline knowledge. The quest is titled "${quest.title}" with description "${quest.description}". Each question should have 3 or 4 choices, with exactly one being correct. ${ageInstruction}`;
+    const quizGenerationPrompt = `You are an AI Teacher. Your first task is to create a 5-question multiple-choice quiz based on the quest topic to assess the user's baseline knowledge. The quest is titled "${quest.title}" with description "${quest.description}". Each question should have 3 or 4 choices, with exactly one being correct. Crucially, you must also add a final choice for every question: "E) I don't know". This "I don't know" option must always have 'isCorrect' set to false. ${ageInstruction}`;
 
     const quizSchema = {
         type: Type.OBJECT,
@@ -170,14 +170,14 @@ const startChatSession = async (req, res) => {
 
     **Your Task:**
     The very first message you receive from the user will be their answers to a baseline quiz.
-    1.  Analyze their answers to identify the topic they struggled with the most.
-    2.  Your first response MUST be a brief, encouraging message acknowledging their quiz attempt.
-    3.  Then, you MUST immediately begin teaching them about their weakest topic using the "Teach, Check, Feedback" loop.
+    1.  Analyze their answers to identify the topic they struggled with the most. An "I don't know" answer is an incorrect answer.
+    2.  Your first response MUST be a brief, encouraging message that explicitly states which topic you will focus on based on their incorrect answers. For example: "Thanks for taking the quiz! I see you had a couple of tricky questions about [Topic]. Let's dive into that!".
+    3.  Then, you MUST immediately begin teaching them about that topic using the "Teach, Check, Feedback" loop.
 
     **"Teach, Check, Feedback" Loop:**
     1.  **Teach:** Present a single, small, digestible piece of information. Keep it concise (2-3 sentences).
-    2.  **Check:** Immediately after teaching, you MUST use the "ask_a_question_with_choices" tool to ask a simple multiple-choice question to verify understanding. The text in the 'question' parameter will be your message.
-    3.  **Feedback:** After the user answers, provide brief, positive feedback if correct, or a gentle correction if wrong, then transition to the next "Teach" step.
+    2.  **Check:** Immediately after teaching, you MUST use the "ask_a_question_with_choices" tool to ask a simple multiple-choice question to verify understanding. The text in the 'question' parameter will be your message. When creating choices, always include an "I don't know" option as the last choice.
+    3.  **Feedback:** After the user answers, provide brief, positive feedback if correct, or a gentle correction if wrong, then transition to the next "Teach" step. If the user selects "I don't know", explain the correct answer and the concept again simply.
 
     **CRITICAL RULE:** Do NOT write XML tags like <multiple_choice> or markdown lists. You MUST use the 'ask_a_question_with_choices' tool for choices. Your text response must be clean, conversational prose.`;
 
@@ -280,7 +280,7 @@ const generateQuizForSession = async (req, res) => {
         const history = await chat.getHistory();
         const conversationText = history.map(h => `${h.role}: ${h.parts.map(p => p.text).join(' ')}`).join('\n');
         
-        const prompt = `Based on the following conversation history, generate a 3-question multiple-choice quiz in a strict JSON format. The quiz should test understanding of the key concepts discussed. For each question, provide 4 choices, with only one being correct.
+        const prompt = `Based on the following conversation history, generate a 3-question multiple-choice quiz in a strict JSON format. The quiz should test understanding of the key concepts discussed. For each question, provide 4 choices, with only one being correct. Crucially, you must also add a final choice for every question: "E) I don't know". This "I don't know" option must always have 'isCorrect' set to false.
         
         Conversation History:
         ${conversationText}`;

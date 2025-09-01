@@ -382,20 +382,14 @@ const HelpPage: React.FC = () => {
                     <h3>AI Teacher</h3>
                     <p><strong>Purpose:</strong> An interactive, AI-powered tutor that provides lessons on the topic of a specific {settings.terminology.task}.</p>
                     <p><strong>How it Works:</strong></p>
-                    <ul className="list-disc list-inside space-y-2 mt-2">
-                        <li><strong>Activation:</strong> {settings.terminology.admin}s can set the "Interactive Media" type of a {settings.terminology.task} to "AI Teacher". This adds an "AI Teacher" button to the {settings.terminology.task} detail dialog for players.</li>
-                        <li><strong>Structured Introduction:</strong> When a session starts, the AI provides a four-part introduction: a general overview, an interesting fact, a question about focus areas, and a question to gauge prior knowledge.</li>
-                        <li><strong>Interactive Choices (Tool Calling):</strong> The AI has been given a "tool" called `show_multiple_choice`. When it asks a simple choice question, it uses this tool to send structured data to the app. The app then reliably renders these choices as clickable buttons. This robust method replaces the previous, less reliable text-based format, ensuring a consistent user experience. The text input remains available for open-ended responses.</li>
-                        <li><strong>Optional Timer:</strong> An {settings.terminology.admin} can set a minimum session time (in minutes). A timer will be displayed, and the {settings.terminology.user} must complete this time before they can request the final quiz.</li>
-                        <li><strong>Final Quiz:</strong>
-                            <ul className="list-disc list-inside pl-6">
-                                <li>Once the timer requirement is met (if any), the <strong>"I'm ready for the quiz"</strong> button becomes enabled.</li>
-                                <li>Clicking this prompts the AI to generate a short, 3-question quiz based on the conversation.</li>
-                                <li>The {settings.terminology.user} must answer at least 2 out of 3 questions correctly to pass.</li>
-                                <li>The main <strong>"Complete {settings.terminology.task}"</strong> button in the {settings.terminology.task} detail dialog remains disabled until the quiz is successfully passed.</li>
-                            </ul>
-                        </li>
-                    </ul>
+                    <ol className="list-decimal list-inside space-y-2">
+                        <li><strong>Activation:</strong> An {settings.terminology.admin} can set the "Interactive Media" type of a {settings.terminology.task} to "AI Teacher". This adds an "AI Teacher" button to the {settings.terminology.task} detail dialog for players.</li>
+                        <li><strong>Baseline Assessment:</strong> When a session begins, the AI generates a short, ~5 question multiple-choice quiz based on the {settings.terminology.task}'s topic. This quiz is designed to assess the user's existing knowledge before the lesson starts. All questions include an **"I don't know"** option to allow for more accurate feedback instead of guessing.</li>
+                        <li><strong>Instant Feedback:</strong> The user answers the questions one by one and receives immediate feedback on whether their choice was correct.</li>
+                        <li><strong>Personalized Learning Path:</strong> Once the quiz is complete, the user clicks "Begin Lesson," which sends their quiz results to the AI. The AI analyzes these results to identify the specific topic the user struggled with the most.</li>
+                        <li><strong>Focused Instruction:</strong> The AI Teacher's first message will explicitly state which topic it's going to focus on. It then begins a tailored lesson using an interactive "Teach, Check, Feedback" loop, presenting small chunks of information followed by simple multiple-choice questions (which appear as buttons) to ensure understanding. All in-lesson questions also include an "I don't know" option.</li>
+                        <li><strong>Final Quiz &amp; Completion:</strong> After the lesson (and any optional timer set by the {settings.terminology.admin}), the user can request a final 3-question quiz. They must pass this quiz to enable the main "Complete {settings.terminology.task}" button.</li>
+                    </ol>
                     <h3>Manual Adjustments</h3>
                     <p><strong>Purpose:</strong> To give an {settings.terminology.admin} a flexible way to manually grant {settings.terminology.points} or award {settings.terminology.awards} for actions that happen outside the formal {settings.terminology.task} system.</p>
                     <p><strong>How it Works:</strong></p>

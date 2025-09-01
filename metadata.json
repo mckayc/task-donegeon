@@ -1,0 +1,5 @@
+{
+  "name": "OpenCalcPad - v 0.4",
+  "description": "A sleek, modern web application that allows you to use multiple calculators at once. Each calculator is a movable, resizable window with a persistent history and note-taking area. You can create, manage, and organize multiple calculators, and back up or import your entire workspace.",
+  "requestFramePermissions": []
+}

@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.09 - AI Teacher 'I Don't Know' Option",
-  "version": "0.4.09",
+  "name": "Task Donegeon 2.0 - 0.4.10 - AI Teacher Enhancements",
+  "version": "0.4.10",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

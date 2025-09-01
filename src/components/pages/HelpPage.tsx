@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_10_DATE = new Date(2025, 9, 15);
 const V0_4_06_DATE = new Date(2025, 9, 14);
 const V0_4_05_DATE = new Date(2025, 9, 13);
 const V0_4_04_DATE = new Date(2025, 9, 12);
@@ -102,6 +103,20 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.10 ({V0_4_10_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Smarter, More Personal AI Teacher:</strong> The AI Teacher is now a more effective and engaging tutor.
+                    <ul className="list-disc list-inside pl-6">
+                        <li><strong>Personalized Content:</strong> The AI now uses the user's "About Me" and private "Admin Notes" to create relevant analogies and examples, making lessons more relatable.</li>
+                        <li><strong>Handles Questions:</strong> The AI can now gracefully handle interruptions. If a user asks a question, it will pause its lesson, provide a clear answer, and then seamlessly resume teaching.</li>
+                        <li><strong>Lesson Summaries:</strong> After a user successfully passes the final quiz, the AI provides a concise, bulleted summary of the key takeaways from the session to reinforce learning.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.06 ({V0_4_06_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -359,6 +374,7 @@ const RoadmapContent: React.FC = () => (
     </div>
 );
 
+// Fix: Renamed component from 'AboutPage' to 'HelpPage' to match the file name and expected default export.
 const HelpPage: React.FC = () => {
     const { settings } = useSystemState();
     
@@ -384,11 +400,17 @@ const HelpPage: React.FC = () => {
                     <p><strong>How it Works:</strong></p>
                     <ol className="list-decimal list-inside space-y-2">
                         <li><strong>Activation:</strong> An {settings.terminology.admin} can set the "Interactive Media" type of a {settings.terminology.task} to "AI Teacher". This adds an "AI Teacher" button to the {settings.terminology.task} detail dialog for players.</li>
-                        <li><strong>Baseline Assessment:</strong> When a session begins, the AI generates a short, ~5 question multiple-choice quiz based on the {settings.terminology.task}'s topic. This quiz is designed to assess the user's existing knowledge before the lesson starts. All questions include an **"I don't know"** option to allow for more accurate feedback instead of guessing.</li>
-                        <li><strong>Instant Feedback:</strong> The user answers the questions one by one and receives immediate feedback on whether their choice was correct.</li>
-                        <li><strong>Personalized Learning Path:</strong> Once the quiz is complete, the user clicks "Begin Lesson," which sends their quiz results to the AI. The AI analyzes these results to identify the specific topic the user struggled with the most.</li>
-                        <li><strong>Focused Instruction:</strong> The AI Teacher's first message will explicitly state which topic it's going to focus on. It then begins a tailored lesson using an interactive "Teach, Check, Feedback" loop, presenting small chunks of information followed by simple multiple-choice questions (which appear as buttons) to ensure understanding. All in-lesson questions also include an "I don't know" option.</li>
-                        <li><strong>Final Quiz &amp; Completion:</strong> After the lesson (and any optional timer set by the {settings.terminology.admin}), the user can request a final 3-question quiz. They must pass this quiz to enable the main "Complete {settings.terminology.task}" button.</li>
+                        <li><strong>Baseline Assessment:</strong> When a session begins, the AI generates a short, 3-5 question multiple-choice quiz based on the {settings.terminology.task}'s topic to assess the user's existing knowledge. All questions include an **"I don't know"** option so the user never feels forced to guess.</li>
+                        <li><strong>Instant Feedback:</strong> The user answers the questions one by one and receives immediate feedback.</li>
+                        <li><strong>Adaptive Learning Path:</strong> Once the quiz is complete, the results are sent to the AI. The AI analyzes these results to identify the user's weakest area and creates a personalized lesson plan that focuses on that specific topic.</li>
+                        <li>
+                            <strong>Personalized & Interactive Teaching:</strong> The AI begins a tailored lesson using a "Teach, Check, Feedback" loop.
+                            <ul className="list-disc list-inside pl-6 mt-2">
+                                <li><strong>Personalization:</strong> The AI now leverages the user's "About Me" profile and private "Admin Notes" to create relatable analogies and examples, making the content more engaging.</li>
+                                <li><strong>Socratic Method:</strong> Users can ask questions at any time. The AI will pause its lesson, answer the user's question, and then seamlessly resume teaching.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Final Quiz & Summary:</strong> After the lesson (and any optional timer set by the {settings.terminology.admin}), the user takes a final quiz. Upon passing, the "Complete {settings.terminology.task}" button is enabled, and the AI provides a concise, bulleted summary of the key takeaways to reinforce what was learned.</li>
                     </ol>
                     <h3>Manual Adjustments</h3>
                     <p><strong>Purpose:</strong> To give an {settings.terminology.admin} a flexible way to manually grant {settings.terminology.points} or award {settings.terminology.awards} for actions that happen outside the formal {settings.terminology.task} system.</p>

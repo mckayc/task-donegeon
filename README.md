@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.06
+**Version:** 0.4.10
 
 ---
 
@@ -12,6 +12,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.10 (October 15, 2025)
+-   **Smarter, More Personal AI Teacher:** The AI Teacher is now a more effective and engaging tutor.
+    -   **Personalized Content:** The AI now uses the user's "About Me" and private "Admin Notes" to create relevant analogies and examples, making lessons more relatable.
+    -   **Handles Questions:** The AI can now gracefully handle interruptions. If a user asks a question, it will pause its lesson, provide a clear answer, and then seamlessly resume teaching.
+    -   **Lesson Summaries:** After a user successfully passes the final quiz, the AI provides a concise, bulleted summary of the key takeaways from the session to reinforce learning.
 
 ### What's New in Version 0.4.06 (October 14, 2025)
 -   **Revamped Kiosk Mode:** Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting.
@@ -237,3 +243,4 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **v0.0.94 (July 26, 2025):** Added default quest categories and improved the collapsed sidebar with expandable menus.
 -   **v0.0.93 (July 25, 2025):** Implemented a purchase escrow system, integrated purchase requests into the Chronicles, and improved the login notification popup with a scrollbar and close button.
 -   **v0.0.92 (July 24, 2025):** Added in-dialog Quest Group creation and made item titles on management pages clickable
+-   **v0.0.80 (July 19, 2025):** Initial public version.

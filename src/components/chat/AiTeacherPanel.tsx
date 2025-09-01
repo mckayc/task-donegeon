@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Quest, User, QuizQuestion, QuizChoice } from '../../types';
 import Button from '../user-interface/Button';
@@ -212,6 +211,8 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
         setQuizResult({ score, total: quiz.length });
         if (score >= 2) { // Passing score
             onQuizPassed();
+            // Send a final message to get the summary
+            handleSendMessage("The user has passed the final quiz.");
         }
     };
 
@@ -314,7 +315,7 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                             <div ref={messagesEndRef} />
                         </div>
                         
-                        {!quiz && !initialQuiz && (
+                        {!quiz && !initialQuiz && !quizResult && (
                              <div className="mt-auto pt-4 flex-shrink-0">
                                 <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
                                     <Input
@@ -392,9 +393,9 @@ const AiTeacherPanel: React.FC<AiTeacherPanelProps> = ({ quest, user, onClose, o
                              {initialQuiz && currentInitialQuizQuestion >= initialQuiz.length && !isLoading && (
                                 <Button onClick={handleBeginLesson}>Begin Lesson</Button>
                             )}
-                            {!initialQuiz && (
+                            {!initialQuiz && !quizResult && (
                                 quiz ? (
-                                    quizResult ? null : <Button onClick={handleSubmitQuiz} disabled={quizAnswers.some(a => a === null)}>Submit Quiz</Button>
+                                    <Button onClick={handleSubmitQuiz} disabled={quizAnswers.some(a => a === null)}>Submit Quiz</Button>
                                 ) : (
                                     <Button onClick={handleGenerateQuiz} disabled={!isQuizReady || isLoading}>
                                         {isQuizReady ? "I'm ready for the quiz!" : `Quiz unlocks in ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}

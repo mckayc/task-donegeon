@@ -23,6 +23,7 @@ const SharedLayout: React.FC = () => {
         const acquireWakeLock = async () => {
             if ('wakeLock' in navigator) {
                 try {
+                    // The type for navigator.wakeLock is not standard yet.
                     const newLock = await (navigator as any).wakeLock.request('screen');
                     console.log('Screen Wake Lock is active.');
                     
@@ -64,13 +65,11 @@ const SharedLayout: React.FC = () => {
 
 
     return (
-        <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <SharedHeader activeView={activeView} setActiveView={setActiveView} />
-                <main className="flex-1 overflow-y-auto" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
-                    {activeView === 'calendar' ? <SharedCalendarPage /> : <SharedLeaderboardPage />}
-                </main>
-            </div>
+        <div className="relative h-screen w-screen overflow-hidden" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
+            <SharedHeader activeView={activeView} setActiveView={setActiveView} />
+            <main className="absolute top-20 left-0 right-0 bottom-0 overflow-y-auto" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
+                {activeView === 'calendar' ? <SharedCalendarPage /> : <SharedLeaderboardPage />}
+            </main>
         </div>
     );
 };

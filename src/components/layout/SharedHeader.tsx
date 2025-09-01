@@ -50,7 +50,7 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }
   };
 
   return (
-    <header className="relative z-10 h-20 bg-stone-900/30 flex items-center border-b border-stone-700/50 flex-shrink-0 overflow-x-auto scrollbar-hide">
+    <header className="absolute top-0 left-0 right-0 z-10 h-20 bg-stone-900/80 backdrop-blur-sm flex items-center border-b border-stone-700/50 overflow-x-auto scrollbar-hide">
       <div className="flex items-center justify-between px-4 md:px-8 h-full min-w-max w-full">
         {/* Left Group */}
         <div className="flex items-center gap-4 flex-shrink-0">

@@ -258,54 +258,52 @@ const SharedCalendarPage: React.FC = () => {
 
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="flex-grow overflow-x-auto scrollbar-hide p-4 md:p-8">
-                <div className="flex space-x-6 min-w-max h-full">
-                    {sharedUsers.map(user => (
-                        <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
-                            <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-                                <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
-                                <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
-                            </div>
-                            <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
-                                {(() => {
-                                    const userQuests = questsByUser.get(user.id);
-                                    const hasDuties = userQuests && userQuests.duties.length > 0;
-                                    const hasVentures = userQuests && userQuests.ventures.length > 0;
-
-                                    if (!hasDuties && !hasVentures) {
-                                        return <p className="text-center text-stone-500 pt-8">No quests for today.</p>;
-                                    }
-
-                                    return (
-                                        <>
-                                            {hasDuties && (
-                                                <div>
-                                                    <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.recurringTasks}</h3>
-                                                    <div className="space-y-3">
-                                                        {userQuests.duties.map(quest => (
-                                                            <QuestCardComponent quest={quest} user={user} key={quest.id} />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {hasVentures && (
-                                                <div className={hasDuties ? 'pt-3 mt-3 border-t border-stone-700/60' : ''}>
-                                                    <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.singleTasks} &amp; {settings.terminology.journeys}</h3>
-                                                    <div className="space-y-3">
-                                                        {userQuests.ventures.map(quest => (
-                                                            <QuestCardComponent quest={quest} user={user} key={quest.id} />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    );
-                                })()}
-                            </div>
+        <div className="overflow-x-auto scrollbar-hide p-4 md:p-8">
+            <div className="flex space-x-6 min-w-max h-full">
+                {sharedUsers.map(user => (
+                    <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
+                        <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+                            <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
+                            <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
                         </div>
-                    ))}
-                </div>
+                        <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
+                            {(() => {
+                                const userQuests = questsByUser.get(user.id);
+                                const hasDuties = userQuests && userQuests.duties.length > 0;
+                                const hasVentures = userQuests && userQuests.ventures.length > 0;
+
+                                if (!hasDuties && !hasVentures) {
+                                    return <p className="text-center text-stone-500 pt-8">No quests for today.</p>;
+                                }
+
+                                return (
+                                    <>
+                                        {hasDuties && (
+                                            <div>
+                                                <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.recurringTasks}</h3>
+                                                <div className="space-y-3">
+                                                    {userQuests.duties.map(quest => (
+                                                        <QuestCardComponent quest={quest} user={user} key={quest.id} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {hasVentures && (
+                                            <div className={hasDuties ? 'pt-3 mt-3 border-t border-stone-700/60' : ''}>
+                                                <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.singleTasks} &amp; {settings.terminology.journeys}</h3>
+                                                <div className="space-y-3">
+                                                    {userQuests.ventures.map(quest => (
+                                                        <QuestCardComponent quest={quest} user={user} key={quest.id} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                ))}
             </div>
             {verifyingQuest && (
                 <PinEntryDialog user={verifyingQuest.user} onClose={() => setVerifyingQuest(null)} onSuccess={onPinSuccess} />

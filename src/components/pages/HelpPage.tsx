@@ -413,7 +413,7 @@ const HelpPage: React.FC = () => {
                     <p><strong>Purpose:</strong> To create a persistent, shared access point for the application on a specific device, like a family tablet. This mode provides a fast user-switching interface and can automatically log users out after a period of inactivity.</p>
                     <p><strong>How it Works:</strong></p>
                     <ul className="list-disc list-inside space-y-2 mt-2">
-                        <li><strong>Global Prerequisite:</strong> An {settings.terminology.admin} must first enable the main **"Shared Mode"** feature in `{settings.terminology.link_settings} > Shared / Kiosk Mode`. This makes the device-specific functionality available.</li>
+                        <li><strong>Global Prerequisite:</strong> An {settings.terminology.admin} must first enable the main **"Shared Mode"** feature in `{settings.terminology.link_settings} &gt; Shared / Kiosk Mode`. This makes the device-specific functionality available.</li>
                         <li>
                             <strong>Device Activation:</strong>
                             <ol className="list-decimal list-inside pl-6">

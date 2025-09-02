@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -313,7 +312,12 @@ const MarketplacePage: React.FC = () => {
                                 disabled={isDisabled}
                                 className="text-left group"
                             >
-                                <div className={`bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200'}`}>
+                                <div className={`relative bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200'}`}>
+                                    {isDisabled && (
+                                        <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center z-10">
+                                            <span className="text-5xl" role="img" aria-label="Locked">🔒</span>
+                                        </div>
+                                    )}
                                     <div className="p-3">
                                         <div className="flex flex-col items-center text-center">
                                             <div className="size-32 mb-2 rounded-full overflow-hidden flex items-center justify-center">

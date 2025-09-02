@@ -162,6 +162,7 @@ const QuestEntity = new EntitySchema({
         claimLimit: { type: "integer", default: 1 },
         pendingClaims: { type: "simple-json", nullable: true },
         approvedClaims: { type: "simple-json", nullable: true },
+        conditionSetIds: { type: "simple-array", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     },
@@ -297,7 +298,7 @@ const PurchaseRequestEntity = new EntitySchema({
         marketId: { type: "varchar", nullable: true },
         requestedAt: { type: "varchar" },
         actedAt: { type: "varchar", nullable: true },
-        actedById: { type: "varchar", nullable: true },
+        actedById: { type: "varchar", nullable: true }, // ID of the user who approved, rejected, or cancelled.
         status: { type: "varchar" },
         assetDetails: { type: "simple-json" },
         guildId: { type: "varchar", nullable: true },

@@ -371,6 +371,9 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-stone-300 mb-1">Description</label>
             <textarea id="description" name="description" rows={initialDataFromBug ? 8 : 3} value={formData.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md font-mono text-xs"/>
+             {formData.mediaType === QuestMediaType.AIStory && (
+              <p className="text-xs text-stone-400 mt-1">The quest title and description will be used to generate the AI story.</p>
+            )}
           </div>
            <div>
             <label className="block text-sm font-medium text-stone-300 mb-1">Tags</label>
@@ -403,6 +406,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
               <Input as="select" label="Interactive Media" name="mediaType" value={formData.mediaType || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, mediaType: (e.target.value as QuestMediaType) || undefined}))}>
                   <option value="">None</option>
                   <option value={QuestMediaType.AITeacher}>AI Teacher</option>
+                  <option value={QuestMediaType.AIStory}>AI Story</option>
               </Input>
               {formData.mediaType === QuestMediaType.AITeacher && (
                 <NumberInput 

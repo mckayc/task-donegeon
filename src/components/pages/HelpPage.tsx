@@ -374,7 +374,6 @@ const RoadmapContent: React.FC = () => (
     </div>
 );
 
-// Fix: Renamed component from 'AboutPage' to 'HelpPage' to match the file name and expected default export.
 const HelpPage: React.FC = () => {
     const { settings } = useSystemState();
     
@@ -392,6 +391,31 @@ const HelpPage: React.FC = () => {
                     </a>
                 </div>
             </Card>
+
+            <CollapsibleSection title="The Basics: Core Concepts">
+                <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+                    <h3>Roles: Who's Who?</h3>
+                    <p>Every member of your {settings.terminology.group} has a role that defines what they can do:</p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li><strong>{settings.terminology.admin}:</strong> The game administrator. They can create and manage all users, {settings.terminology.tasks}, {settings.terminology.stores}, {settings.terminology.groups}, and settings. They have the ultimate authority.</li>
+                        <li><strong>{settings.terminology.moderator}:</strong> A helper role. They can approve or reject {settings.terminology.task} completions, assisting the {settings.terminology.admin} in managing the game's day-to-day activity.</li>
+                        <li><strong>{settings.terminology.user}:</strong> The standard player role. They complete {settings.terminology.tasks}, earn {settings.terminology.points}, and customize their character.</li>
+                    </ul>
+                    <h3>Personal vs. {settings.terminology.group} Mode</h3>
+                    <p>The app has two primary contexts, which you can switch between using the dropdown in the header:</p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li><strong>Personal Mode:</strong> This is your individual space. {settings.terminology.tasks} you complete here add to your personal balances of currency and XP. You can spend this personal currency in personal {settings.terminology.stores}.<br/><em>Example: A personal {settings.terminology.task} might be "Read a chapter of a book" or "Practice piano for 30 minutes".</em></li>
+                        <li><strong>{settings.terminology.group} Mode:</strong> When you switch to a {settings.terminology.group}, you'll see {settings.terminology.tasks} and {settings.terminology.stores} specific to that group. Rewards earned here go into your balance for that specific {settings.terminology.group}, creating a separate economy. This is perfect for family chores or group projects.<br/><em>Example: A {settings.terminology.group} {settings.terminology.task} might be "Help clean the kitchen after dinner" or "Rake the leaves in the yard".</em></li>
+                    </ul>
+                    <h3>The Three {settings.terminology.task} Types</h3>
+                    <p>All tasks fall into one of three categories:</p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li><strong>{settings.terminology.recurringTasks}:</strong> These are repeating tasks that happen on a schedule. They are great for building habits. For {settings.terminology.recurringTasks} with a specific time, you can set a <strong>Due Time</strong> (the deadline) and an optional <strong>Incomplete Time</strong> (the final cutoff). The time between these two appears on the calendar as a colored "late period" to show the grace period before penalties are applied.<br/><em>Example: "Take out the trash every Tuesday" or "Make your bed every morning".</em></li>
+                        <li><strong>{settings.terminology.singleTasks}:</strong> These are one-time tasks or projects. They can be completable once, or have a certain number of available "slots" for multiple people to complete.<br/><em>Example: "Organize the garage" (completable once) or "Help wash the car" (could have 2 slots).</em></li>
+                        <li><strong>{settings.terminology.journeys}:</strong> These are epic, multi-step adventures. Each {settings.terminology.journey} is made of several 'checkpoints' that must be completed in order.<br/><em>Example: A "Book Report" {settings.terminology.journey} might have checkpoints like "Read the Book", "Write the Draft", and "Finalize the Report".</em></li>
+                    </ul>
+                </div>
+            </CollapsibleSection>
 
             <CollapsibleSection title="Functional Specifications" defaultOpen>
                 <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
@@ -453,12 +477,12 @@ const HelpPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Version History">
-                <VersionHistoryContent />
-            </CollapsibleSection>
-
             <CollapsibleSection title="Roadmap">
                 <RoadmapContent />
+            </CollapsibleSection>
+            
+            <CollapsibleSection title="Appendix: Version History">
+                <VersionHistoryContent />
             </CollapsibleSection>
 
         </div>

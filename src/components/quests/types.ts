@@ -24,6 +24,7 @@ export enum QuestAvailability {
 
 export enum QuestMediaType {
   AITeacher = 'AI_TEACHER',
+  AIStory = 'AI_STORY',
 }
 
 export interface Checkpoint {

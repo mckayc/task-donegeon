@@ -258,7 +258,7 @@ const SharedCalendarPage: React.FC = () => {
 
 
     return (
-        <div className="overflow-x-auto scrollbar-hide p-4 md:p-8">
+        <div className="overflow-x-auto scrollbar-hide p-4 md:p-8 h-full">
             <div className="flex space-x-6 min-w-max h-full">
                 {sharedUsers.map(user => (
                     <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">

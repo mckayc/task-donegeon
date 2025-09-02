@@ -333,11 +333,59 @@ const generateQuizForSession = async (req, res) => {
     }
 };
 
+const generateStory = async (req, res) => {
+    if (!ai) {
+        return res.status(400).json({ error: 'AI features are not configured on the server.' });
+    }
+    const { quest, user } = req.body;
+    if (!quest || !user) {
+        return res.status(400).json({ error: 'Quest and user data are required.' });
+    }
+    
+    const age = calculateAge(user.birthday);
+    const ageInstruction = age ? `The story should be suitable for a ${age}-year-old.` : 'The story should be suitable for all ages.';
+    const personalization = user.aboutMe ? `The user's interests include: "${user.aboutMe}". Try to subtly incorporate these themes.` : '';
+
+    const prompt = `You are a master storyteller. Write a short, imaginative story for a user named ${user.gameName}.
+    ${ageInstruction}
+    The story must be inspired by the following quest:
+    - Title: "${quest.title}"
+    - Description: "${quest.description}"
+    ${personalization}
+    The story should be between 200 and 400 words.
+    Return the story as a single JSON object with two keys: "title" (a new, creative title for your story) and "story" (the full text of the story, with paragraph breaks using '\\n').`;
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        story: { type: Type.STRING }
+                    },
+                    required: ['title', 'story']
+                }
+            }
+        });
+        const storyData = JSON.parse(response.text);
+        res.json({ story: storyData });
+    } catch (error) {
+        console.error("Gemini Story Generation Error:", error);
+        res.status(500).json({ error: 'Failed to generate a story.' });
+    }
+};
+
+
 module.exports = {
     testApiKey: asyncMiddleware(testApiKey),
     generateContent: asyncMiddleware(generateContent),
     startChatSession: asyncMiddleware(startChatSession),
     sendMessageInSession: asyncMiddleware(sendMessageInSession),
     generateQuizForSession: asyncMiddleware(generateQuizForSession),
+    generateStory: asyncMiddleware(generateStory),
     isAiConfigured: () => !!ai,
 };

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User, QuestMediaType } from '../../types';
 import Button from '../user-interface/Button';
@@ -11,6 +10,7 @@ import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import AiTeacherPanel from '../chat/AiTeacherPanel';
+import AiStoryPanel from '../chat/AiStoryPanel';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -31,6 +31,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { addNotification } = useNotificationsDispatch();
     
     const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
+    const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
     const [isQuizPassed, setIsQuizPassed] = useState(false);
 
     // Prioritize the user passed in props (for shared view), fallback to logged-in user
@@ -281,6 +282,12 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                     AI Teacher
                                 </Button>
                             )}
+                            {quest.mediaType === QuestMediaType.AIStory && (
+                                <Button variant="secondary" onClick={() => setIsAiStoryOpen(true)}>
+                                    <SparklesIcon className="w-5 h-5 mr-2" />
+                                    Read AI Story
+                                </Button>
+                            )}
                             {onToggleTodo && quest.type === QuestType.Venture && (
                                 <ToggleSwitch
                                     enabled={!!isTodo}
@@ -299,6 +306,14 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     user={currentUser}
                     onClose={() => setIsAiTeacherOpen(false)}
                     onQuizPassed={() => setIsQuizPassed(true)}
+                />
+            )}
+            {isAiStoryOpen && currentUser && (
+                <AiStoryPanel
+                    quest={quest}
+                    user={currentUser}
+                    onClose={() => setIsAiStoryOpen(false)}
+                    onStoryFinished={handleComplete}
                 />
             )}
         </>

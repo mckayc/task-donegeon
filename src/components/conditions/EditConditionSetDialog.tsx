@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Condition, ConditionSet, ConditionSetLogic, ConditionType, Role } from '../../types';
 import Button from '../user-interface/Button';
@@ -7,6 +6,8 @@ import Input from '../user-interface/Input';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { PlusIcon, TrashIcon } from '../user-interface/Icons';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 interface EditConditionSetDialogProps {
   conditionSet: ConditionSet | null;
@@ -21,8 +22,10 @@ const ConditionEditor: React.FC<{
     onUpdate: (updatedCondition: Condition) => void;
     onRemove: () => void;
 }> = ({ condition, onUpdate, onRemove }) => {
-    const { ranks } = useProgressionState();
-    const { quests } = useQuestsState();
+    const { ranks, trophies } = useProgressionState();
+    const { quests, questGroups } = useQuestsState();
+    const { gameAssets } = useEconomyState();
+    const { guilds } = useCommunityState();
 
     const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newType = e.target.value as ConditionType;
@@ -37,8 +40,29 @@ const ConditionEditor: React.FC<{
             case ConditionType.DateRange:
                 newCondition = { type: newType, start: '', end: '', id: condition.id };
                 break;
+            case ConditionType.TimeOfDay:
+                newCondition = { type: newType, start: '09:00', end: '17:00', id: condition.id };
+                break;
             case ConditionType.QuestCompleted:
                 newCondition = { type: newType, questId: quests[0]?.id || '', id: condition.id };
+                break;
+            case ConditionType.QuestGroupCompleted:
+                newCondition = { type: newType, questGroupId: questGroups[0]?.id || '', id: condition.id };
+                break;
+            case ConditionType.TrophyAwarded:
+                newCondition = { type: newType, trophyId: trophies[0]?.id || '', id: condition.id };
+                break;
+            case ConditionType.UserHasItem:
+                newCondition = { type: newType, assetId: gameAssets[0]?.id || '', id: condition.id };
+                break;
+            case ConditionType.UserDoesNotHaveItem:
+                newCondition = { type: newType, assetId: gameAssets[0]?.id || '', id: condition.id };
+                break;
+            case ConditionType.UserIsMemberOfGuild:
+                newCondition = { type: newType, guildId: guilds[0]?.id || '', id: condition.id };
+                break;
+            case ConditionType.UserHasRole:
+                newCondition = { type: newType, role: Role.Explorer, id: condition.id };
                 break;
             default: return;
         }
@@ -52,7 +76,14 @@ const ConditionEditor: React.FC<{
                     <option value={ConditionType.MinRank}>Minimum Rank</option>
                     <option value={ConditionType.DayOfWeek}>Day of Week</option>
                     <option value={ConditionType.DateRange}>Date Range</option>
+                    <option value={ConditionType.TimeOfDay}>Time of Day</option>
                     <option value={ConditionType.QuestCompleted}>Quest Completed</option>
+                    <option value={ConditionType.QuestGroupCompleted}>Quest Group Completed</option>
+                    <option value={ConditionType.TrophyAwarded}>Trophy Awarded</option>
+                    <option value={ConditionType.UserHasItem}>User Has Item</option>
+                    <option value={ConditionType.UserDoesNotHaveItem}>User Does Not Have Item</option>
+                    <option value={ConditionType.UserIsMemberOfGuild}>User is Member of Guild</option>
+                    <option value={ConditionType.UserHasRole}>User Has Role</option>
                 </Input>
                 <button type="button" onClick={onRemove} className="mt-7 ml-2 text-red-400 hover:text-red-300">
                     <TrashIcon className="w-5 h-5"/>
@@ -92,6 +123,39 @@ const ConditionEditor: React.FC<{
                         ))}
                     </div>
                 </div>
+            )}
+            {condition.type === ConditionType.TimeOfDay && (
+                <div className="grid grid-cols-2 gap-3">
+                    <Input type="time" label="Start Time" value={condition.start} onChange={e => onUpdate({ ...condition, start: e.target.value })} />
+                    <Input type="time" label="End Time" value={condition.end} onChange={e => onUpdate({ ...condition, end: e.target.value })} />
+                </div>
+            )}
+            {condition.type === ConditionType.QuestGroupCompleted && (
+                <Input as="select" label="Quest Group" value={condition.questGroupId} onChange={e => onUpdate({ ...condition, questGroupId: e.target.value })}>
+                    {questGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </Input>
+            )}
+            {condition.type === ConditionType.TrophyAwarded && (
+                <Input as="select" label="Trophy" value={condition.trophyId} onChange={e => onUpdate({ ...condition, trophyId: e.target.value })}>
+                    {trophies.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </Input>
+            )}
+            {(condition.type === ConditionType.UserHasItem || condition.type === ConditionType.UserDoesNotHaveItem) && (
+                <Input as="select" label="Item" value={condition.assetId} onChange={e => onUpdate({ ...condition, assetId: e.target.value })}>
+                    {gameAssets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </Input>
+            )}
+            {condition.type === ConditionType.UserIsMemberOfGuild && (
+                 <Input as="select" label="Guild" value={condition.guildId} onChange={e => onUpdate({ ...condition, guildId: e.target.value })}>
+                    {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </Input>
+            )}
+            {condition.type === ConditionType.UserHasRole && (
+                <Input as="select" label="Role" value={condition.role} onChange={e => onUpdate({ ...condition, role: e.target.value as Role })}>
+                    <option value={Role.Explorer}>Explorer</option>
+                    <option value={Role.Gatekeeper}>Gatekeeper</option>
+                    <option value={Role.DonegeonMaster}>Donegeon Master</option>
+                </Input>
             )}
         </div>
     );

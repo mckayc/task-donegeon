@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -299,10 +300,11 @@ const MarketplacePage: React.FC = () => {
                     {visibleMarkets.map((market: Market & { openStatus: MarketOpenStatus }) => {
                         const { openStatus } = market;
                         // FIX: Explicitly check isOpen to narrow type before accessing 'reason'.
-                        let isTrulyDisabled = false;
-                        if (!openStatus.isOpen) {
-                            isTrulyDisabled = openStatus.reason !== 'CONDITIONAL';
-                        }
+                        // FIX: Rewrote to use ternary operator for cleaner type narrowing.
+                        const isTrulyDisabled = !openStatus.isOpen
+                            ? openStatus.reason !== 'CONDITIONAL'
+                            : false;
+
                         return (
                             <button 
                                 key={market.id} 
@@ -310,17 +312,15 @@ const MarketplacePage: React.FC = () => {
                                     if (openStatus.isOpen) {
                                         setActiveMarketId(market.id);
                                     } else {
-                                        // FIX: Added explicit check to help TypeScript correctly narrow the union type.
-                                        if (!openStatus.isOpen) {
-                                            if (openStatus.reason === 'CONDITIONAL') {
-                                                setViewingConditionsForMarket(market);
-                                            } else {
-                                                let message = openStatus.message;
-                                                if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
-                                                    message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
-                                                }
-                                                addNotification({ type: 'error', message, duration: 8000 });
+                                        // FIX: Removed redundant inner check. The outer 'else' block correctly narrows the type.
+                                        if (openStatus.reason === 'CONDITIONAL') {
+                                            setViewingConditionsForMarket(market);
+                                        } else {
+                                            let message = openStatus.message;
+                                            if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
+                                                message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
                                             }
+                                            addNotification({ type: 'error', message, duration: 8000 });
                                         }
                                     }
                                 }}

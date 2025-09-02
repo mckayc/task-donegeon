@@ -1,5 +1,6 @@
 
 
+
 const { dataSource, ensureDatabaseDirectoryExists } = require('../data-source');
 const fs = require('fs').promises;
 const { In, MoreThan, IsNull, Not, Brackets, Like } = require("typeorm");
@@ -408,7 +409,8 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId)
                 const newUser = {
                     ...userTemplate,
                     id: `user-${Date.now()}`,
-                    avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
+                    // FIX: Replaced the incorrect 'avatar' property with 'profilePictureUrl' to match the updated User entity schema.
+                    profilePictureUrl: null, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
                     guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false
                 };
                 if (resolution.resolution === 'rename') {

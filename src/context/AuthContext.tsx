@@ -1,7 +1,4 @@
 
-
-
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -23,7 +20,6 @@ interface AuthState {
 interface AuthDispatch {
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   setLoginHistory: React.Dispatch<React.SetStateAction<string[]>>;
-  // FIX: Replaced non-existent 'avatar' property with 'profilePictureUrl' in the addUser function's type definition to match the actual User type and prevent build errors.
   addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'profilePictureUrl' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | null>;
   updateUser: (userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => void;
   deleteUsers: (userIds: string[]) => void;

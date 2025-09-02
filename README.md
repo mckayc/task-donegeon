@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.23
+**Version:** 0.4.24
 
 ---
 
@@ -12,6 +12,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.24 (October 17, 2025)
+-   **Build Fix:** Applied a definitive fix for a persistent syntax error in the Help Guide that was causing recurring build failures.
 
 ### What's New in Version 0.4.23 (October 17, 2025)
 -   **Build Fix:** Applied a definitive fix for a persistent syntax error in the Help Guide that was causing recurring build failures.

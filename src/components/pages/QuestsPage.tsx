@@ -31,8 +31,11 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     if (!currentUser) return null;
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
-    const questGroup = useMemo(() => { const firstGroupId = quest.groupIds?.[0]; return firstGroupId ? questGroups.find(g => g.id === firstGroupId) : null; }, [quest.groupIds, questGroups]);
-
+    const questGroup = useMemo(() => { 
+        const firstGroupId = quest.groupIds?.[0]; 
+        return firstGroupId ? questGroups.find(g => g.id === firstGroupId) : null; 
+    }, [quest.groupIds ?? [], questGroups]);
+    
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
         return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };

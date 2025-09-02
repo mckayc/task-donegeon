@@ -173,7 +173,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                               <label key={set.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
                                   <input 
                                       type="checkbox"
-                                      checked={formData.status.conditionSetIds.includes(set.id)}
+                                      checked={formData.status.type === 'conditional' && formData.status.conditionSetIds.includes(set.id)}
                                       onChange={() => handleConditionSetToggle(set.id)}
                                       className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
                                   <div>

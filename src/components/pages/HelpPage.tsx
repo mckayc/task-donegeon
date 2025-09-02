@@ -462,16 +462,16 @@ export const HelpPage: React.FC = () => {
                         <li><strong>Create a Set:</strong> In `{settings.terminology.link_settings} &gt; {settings.terminology.link_manage_condition_sets}`, an {settings.terminology.admin} can create a new Condition Set. Each set has a name, a description, and a logic type (`ALL` or `ANY`).</li>
                         <li><strong>Add Conditions:</strong> Within a set, you can add one or more conditions. The new condition types include:
                             <ul className="list-disc list-inside pl-6 mt-2">
-                                <li>**Minimum {settings.terminology.level}:** Requires the player to have reached a certain {settings.terminology.level}.</li>
-                                <li>**Day of Week:** Active only on selected days.</li>
-                                <li>**Date Range:** Active only between a start and end date.</li>
-                                <li>**Time of Day:** Active only between a start and end time (e.g., 9 AM to 5 PM).</li>
-                                <li>**{settings.terminology.task} Completed:** Checks if a player has an **approved** completion for a specific {settings.terminology.task}.</li>
-                                <li>**{settings.terminology.group} of {settings.terminology.tasks} Completed:** Checks if a player has an **approved** completion for **every** {settings.terminology.task} within a specified Quest Group.</li>
-                                <li>**{settings.terminology.award} Awarded:** Checks if a player has earned a specific {settings.terminology.award}.</li>
-                                <li>**User Has/Doesn't Have Item:** Checks a player's inventory for the presence or absence of a specific item.</li>
-                                <li>**User is Member of {settings.terminology.group}:** Checks if the player is a member of a specific {settings.terminology.group}.</li>
-                                <li>**User Has Role:** Restricts access to players with a specific role ({settings.terminology.admin}, {settings.terminology.moderator}, or {settings.terminology.user}).</li>
+                                <li><strong>Minimum {settings.terminology.level}:</strong> Requires the player to have reached a certain {settings.terminology.level}.</li>
+                                <li><strong>Day of Week:</strong> Active only on selected days.</li>
+                                <li><strong>Date Range:</strong> Active only between a start and end date.</li>
+                                <li><strong>Time of Day:</strong> Active only between a start and end time (e.g., 9 AM to 5 PM).</li>
+                                <li><strong>{settings.terminology.task} Completed:</strong> Checks if a player has an **approved** completion for a specific {settings.terminology.task}.</li>
+                                <li><strong>{settings.terminology.group} of {settings.terminology.tasks} Completed:</strong> Checks if a player has an **approved** completion for **every** {settings.terminology.task} within a specified Quest Group.</li>
+                                <li><strong>{settings.terminology.award} Awarded:</strong> Checks if a player has earned a specific {settings.terminology.award}.</li>
+                                <li><strong>User Has/Doesn't Have Item:</strong> Checks a player's inventory for the presence or absence of a specific item.</li>
+                                <li><strong>User is Member of {settings.terminology.group}:</strong> Checks if the player is a member of a specific {settings.terminology.group}.</li>
+                                <li><strong>User Has Role:</strong> Restricts access to players with a specific role ({settings.terminology.admin}, {settings.terminology.moderator}, or {settings.terminology.user}).</li>
                             </ul>
                         </li>
                         <li><strong>Apply the Set:</strong>

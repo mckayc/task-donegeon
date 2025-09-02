@@ -1,5 +1,7 @@
 import { Quest } from '../quests/types';
 import { Rank } from '../ranks/types';
+// Fix: Import 'Condition' type to be used in MarketStatus.
+import { ConditionSet, Condition } from '../conditions/types';
 
 export enum RewardCategory {
   Currency = 'Currency',
@@ -56,44 +58,11 @@ export interface GameAsset {
   };
 }
 
-export enum MarketConditionType {
-    MinRank = 'MIN_RANK',
-    DayOfWeek = 'DAY_OF_WEEK',
-    DateRange = 'DATE_RANGE',
-    QuestCompleted = 'QUEST_COMPLETED',
-}
-
-interface BaseMarketCondition {
-    type: MarketConditionType;
-}
-
-export interface MinRankCondition extends BaseMarketCondition {
-    type: MarketConditionType.MinRank;
-    rankId: string;
-}
-
-export interface DayOfWeekCondition extends BaseMarketCondition {
-    type: MarketConditionType.DayOfWeek;
-    days: number[]; // 0 for Sunday, 6 for Saturday
-}
-
-export interface DateRangeCondition extends BaseMarketCondition {
-    type: MarketConditionType.DateRange;
-    start: string; // YYYY-MM-DD
-    end: string;   // YYYY-MM-DD
-}
-
-export interface QuestCompletedCondition extends BaseMarketCondition {
-    type: MarketConditionType.QuestCompleted;
-    questId: string;
-}
-
-export type MarketCondition = MinRankCondition | DayOfWeekCondition | DateRangeCondition | QuestCompletedCondition;
-
+// Fix: Updated MarketStatus to support inline conditions and logic, matching the implementation.
 export type MarketStatus =
   | { type: 'open' }
   | { type: 'closed' }
-  | { type: 'conditional', conditions: MarketCondition[], logic: 'all' | 'any' }; // 'all' for AND, 'any' for OR
+  | { type: 'conditional', logic: 'all' | 'any', conditions: Condition[] };
 
 export type MarketOpenStatus = {
     isOpen: true;

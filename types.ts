@@ -15,4 +15,5 @@ export * from './src/components/chat/types';
 export * from './src/components/dev/types';
 export * from './src/components/trading/types';
 export * from './src/components/chronicles/types';
+export * from './src/components/conditions/types';
 export * from './src/types/app';

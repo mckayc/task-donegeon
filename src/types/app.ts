@@ -13,6 +13,7 @@ import { ChatMessage } from '../components/chat/types';
 import { BugReport } from '../components/dev/types';
 import { TradeOffer, Gift } from '../components/trading/types';
 import { ChronicleEvent } from '../components/chronicles/types';
+import { ConditionSet } from '../components/conditions/types';
 
 
 // This file is for truly global types that don't belong to a specific feature domain.
@@ -200,6 +201,7 @@ export interface AppSettings {
   developerMode: {
     enabled: boolean;
   };
+  conditionSets: ConditionSet[];
   updatedAt?: string;
 }
 

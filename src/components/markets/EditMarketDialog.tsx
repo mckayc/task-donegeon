@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-import { Market, MarketStatus, MarketCondition, MarketConditionType, Quest } from '../../types';
+// Fix: Renamed MarketCondition/MarketConditionType to Condition/ConditionType to match correct types.
+import { Market, MarketStatus, Quest, Condition, ConditionType } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
@@ -76,7 +77,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
   const addCondition = () => {
       const currentStatus = formData.status;
       if (currentStatus.type === 'conditional') {
-          const newCondition: MarketCondition = { type: MarketConditionType.MinRank, rankId: ranks[0]?.id || '' };
+          const newCondition: Condition = { type: ConditionType.MinRank, rankId: ranks[0]?.id || '' };
           const newStatus: MarketStatus = {
             type: 'conditional',
             logic: currentStatus.logic,
@@ -86,7 +87,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
       }
   };
 
-  const updateCondition = (index: number, newCondition: MarketCondition) => {
+  const updateCondition = (index: number, newCondition: Condition) => {
       const currentStatus = formData.status;
       if (currentStatus.type === 'conditional') {
           const newConditions = [...currentStatus.conditions];
@@ -148,7 +149,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
     onClose();
   };
   
-  const renderConditionEditor = (condition: MarketCondition, index: number) => {
+  const renderConditionEditor = (condition: Condition, index: number) => {
     return (
         <div key={index} className="p-3 bg-stone-800/50 rounded-md space-y-2">
              <div className="flex justify-end">
@@ -156,41 +157,41 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input as="select" label="Condition Type" value={condition.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                    const newType = e.target.value as MarketConditionType;
-                    let newCondition: MarketCondition;
+                    const newType = e.target.value as ConditionType;
+                    let newCondition: Condition;
                     switch (newType) {
-                        case MarketConditionType.MinRank: newCondition = { type: newType, rankId: ranks[0]?.id || '' }; break;
-                        case MarketConditionType.DayOfWeek: newCondition = { type: newType, days: [] }; break;
-                        case MarketConditionType.DateRange: newCondition = { type: newType, start: '', end: '' }; break;
-                        case MarketConditionType.QuestCompleted: newCondition = { type: newType, questId: quests[0]?.id || '' }; break;
+                        case ConditionType.MinRank: newCondition = { type: newType, rankId: ranks[0]?.id || '' }; break;
+                        case ConditionType.DayOfWeek: newCondition = { type: newType, days: [] }; break;
+                        case ConditionType.DateRange: newCondition = { type: newType, start: '', end: '' }; break;
+                        case ConditionType.QuestCompleted: newCondition = { type: newType, questId: quests[0]?.id || '' }; break;
                         default: return;
                     }
                     updateCondition(index, newCondition);
                 }}>
-                    <option value={MarketConditionType.MinRank}>Minimum Rank</option>
-                    <option value={MarketConditionType.DayOfWeek}>Day of Week</option>
-                    <option value={MarketConditionType.DateRange}>Date Range</option>
-                    <option value={MarketConditionType.QuestCompleted}>Quest Completed</option>
+                    <option value={ConditionType.MinRank}>Minimum Rank</option>
+                    <option value={ConditionType.DayOfWeek}>Day of Week</option>
+                    <option value={ConditionType.DateRange}>Date Range</option>
+                    <option value={ConditionType.QuestCompleted}>Quest Completed</option>
                 </Input>
                 
-                {condition.type === MarketConditionType.MinRank && (
+                {condition.type === ConditionType.MinRank && (
                     <Input as="select" label="Rank" value={condition.rankId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, rankId: e.target.value })}>
                         {ranks.sort((a,b) => a.xpThreshold - b.xpThreshold).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </Input>
                 )}
-                {condition.type === MarketConditionType.QuestCompleted && (
+                {condition.type === ConditionType.QuestCompleted && (
                     <Input as="select" label="Quest" value={condition.questId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, questId: e.target.value })}>
                         {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
                     </Input>
                 )}
-                 {condition.type === MarketConditionType.DateRange && (
+                 {condition.type === ConditionType.DateRange && (
                     <>
                         <Input type="date" label="Start Date" value={condition.start} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, start: e.target.value })} />
                         <Input type="date" label="End Date" value={condition.end} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, end: e.target.value })} />
                     </>
                 )}
             </div>
-             {condition.type === MarketConditionType.DayOfWeek && (
+             {condition.type === ConditionType.DayOfWeek && (
                 <div>
                     <label className="block text-sm font-medium text-stone-300 mb-1">Days</label>
                     <div className="flex gap-2 flex-wrap">

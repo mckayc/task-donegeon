@@ -480,7 +480,7 @@ export const HelpPage: React.FC = () => {
                                 <li>**For {settings.terminology.tasks}:** In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
-                        <li><strong>NEW: User-Specific Sets:** In the "Edit Condition Set" dialog, a new "User Assignment" section allows you to limit the entire set to only apply to specific, selected users. This is perfect for rules you only want to affect certain people, like younger children.</li>
+                        <li><strong>NEW: User-Specific Sets:** In the "Edit Condition Set" dialog, a new "User Assignment" section allows you to limit the entire set to only apply to specific, selected users. This is perfect for rules you only want to affect certain people, like younger children.</li></strong>
                     </ol>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -230,9 +231,10 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 const MarketplacePage: React.FC = () => {
     const { settings, appliedModifiers, modifierDefinitions, scheduledEvents } = useSystemState();
-    const { quests, questCompletions } = useQuestsState();
-    const { ranks } = useProgressionState();
-    const { markets } = useEconomyState();
+    const { quests, questGroups, questCompletions } = useQuestsState();
+    const { ranks, userTrophies, trophies } = useProgressionState();
+    const { markets, gameAssets } = useEconomyState();
+    const { guilds } = useCommunityState();
     const { currentUser } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
     const { appMode, activeMarketId } = useUIState();
@@ -241,7 +243,8 @@ const MarketplacePage: React.FC = () => {
     
     const marketDependencies = useMemo(() => ({
         appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, allConditionSets: settings.conditionSets,
-    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, settings.conditionSets]);
+        userTrophies, trophies, gameAssets, guilds, questGroups,
+    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, settings.conditionSets, userTrophies, trophies, gameAssets, guilds, questGroups]);
 
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
@@ -258,7 +261,7 @@ const MarketplacePage: React.FC = () => {
             }
             if (!shouldShow) return null;
 
-            const status = isMarketOpenForUser(market, currentUser, marketDependencies);
+            const status = isMarketOpenForUser(market, currentUser, marketDependencies as any);
             return { ...market, openStatus: status };
 
         }).filter((m): m is Market & { openStatus: MarketOpenStatus } => !!m);

@@ -1,13 +1,11 @@
+
 import { Market, User, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType, ConditionSet } from '../types';
 import { toYMD } from './quests';
-import { checkAllConditionSetsMet } from './conditions';
+import { checkAllConditionSetsMet, ConditionDependencies } from './conditions';
 
-type MarketDependencies = {
+export type MarketDependencies = ConditionDependencies & {
     appliedModifiers: AppliedModifier[];
     modifierDefinitions: ModifierDefinition[];
-    quests: Quest[];
-    ranks: Rank[];
-    questCompletions: QuestCompletion[];
     allConditionSets: ConditionSet[];
 };
 
@@ -50,7 +48,7 @@ export const isMarketOpenForUser = (market: Market, user: User, dependencies: Ma
                 return { isOpen: false, reason: 'CONDITIONAL', message: 'Market has no conditions to open.' };
             }
             
-            const { allMet, failingSetName } = checkAllConditionSetsMet(conditionSetIds, user, dependencies as any);
+            const { allMet, failingSetName } = checkAllConditionSetsMet(conditionSetIds, user, dependencies);
 
             if (allMet) {
                  return { isOpen: true };

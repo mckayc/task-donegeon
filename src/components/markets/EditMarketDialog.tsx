@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-// Fix: Import useSystemState to access global settings, including condition sets.
 import { useSystemState } from '../../context/SystemContext';
 import { Market, MarketStatus, Quest, Condition, ConditionType } from '../../../types';
 import Button from '../user-interface/Button';
@@ -26,7 +25,6 @@ interface EditMarketDialogProps {
 const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { guilds } = useCommunityState();
   const { addMarket, updateMarket } = useEconomyDispatch();
-  // Fix: Get settings from useSystemState to access conditionSets.
   const { settings } = useSystemState();
   const allConditionSets = settings.conditionSets || [];
   
@@ -34,6 +32,10 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
     const data = market || initialData;
     if (mode !== 'create' && data) {
         const d = data as Partial<Market> & { title: string; description: string; icon: string; };
+        const status = d.status || { type: 'open' };
+        if (status.type === 'conditional' && !Array.isArray((status as any).conditionSetIds)) {
+            (status as any).conditionSetIds = [];
+        }
         return { 
             title: d.title, 
             description: d.description, 
@@ -41,7 +43,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
             iconType: d.iconType || 'emoji' as 'emoji' | 'image',
             icon: d.icon || '🛒',
             imageUrl: d.imageUrl || '',
-            status: d.status || { type: 'open' },
+            status: status as MarketStatus,
         };
     }
     // For create or ai-creation
@@ -73,13 +75,13 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
       setFormData(p => ({...p, status: newStatus }));
   };
   
-  // Fix: Replaced condition editing logic with a handler for selecting Condition Set IDs.
   const handleConditionSetToggle = (setId: string) => {
     const currentStatus = formData.status;
     if (currentStatus.type === 'conditional') {
-        const newSetIds = currentStatus.conditionSetIds.includes(setId)
-            ? currentStatus.conditionSetIds.filter(id => id !== setId)
-            : [...currentStatus.conditionSetIds, setId];
+        const currentIds = currentStatus.conditionSetIds || [];
+        const newSetIds = currentIds.includes(setId)
+            ? currentIds.filter(id => id !== setId)
+            : [...currentIds, setId];
         
         handleStatusChange({
             type: 'conditional',
@@ -160,11 +162,9 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
               <div className="flex items-center gap-4">
                 <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'open'} onChange={() => handleStatusChange({type: 'open'})} /> <span className="ml-2">Open</span></label>
                 <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'closed'} onChange={() => handleStatusChange({type: 'closed'})} /> <span className="ml-2">Closed</span></label>
-                {/* Fix: Changed onChange to create a valid MarketStatus for conditional type. */}
-                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'conditional'} onChange={() => handleStatusChange({type: 'conditional', conditionSetIds: []})} /> <span className="ml-2">Conditional</span></label>
+                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'conditional'} onChange={() => handleStatusChange({type: 'conditional', conditionSetIds: formData.status.type === 'conditional' ? formData.status.conditionSetIds : []})} /> <span className="ml-2">Conditional</span></label>
               </div>
                {formData.status.type === 'conditional' && (
-                  // Fix: Replaced the entire inline condition editor with a selector for Condition Sets.
                   <div className="space-y-4 pt-4 border-t border-stone-700/60">
                       <h4 className="font-semibold text-stone-300">Conditions for Opening</h4>
                       <p className="text-xs text-stone-400">Select one or more Condition Sets. The market will only be open if ALL selected sets are met.</p>
@@ -173,7 +173,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                               <label key={set.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
                                   <input 
                                       type="checkbox"
-                                      checked={formData.status.type === 'conditional' && formData.status.conditionSetIds.includes(set.id)}
+                                      checked={formData.status.type === 'conditional' && !!formData.status.conditionSetIds?.includes(set.id)}
                                       onChange={() => handleConditionSetToggle(set.id)}
                                       className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
                                   <div>

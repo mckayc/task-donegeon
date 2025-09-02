@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.13 - Condition Sets",
-  "version": "0.4.13",
+  "name": "Task Donegeon 2.0 - 0.4.14 - Quest Conditions",
+  "version": "0.4.14",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

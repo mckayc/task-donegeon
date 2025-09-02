@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType } from '../quests/types';
-import { RewardItem, RewardCategory } from '../items/types';
+import { RewardCategory } from '../users/types';
+import { RewardItem } from '../users/types';
 import { Role } from '../users/types';
 import { BugReport } from '../dev/types';
 import Button from '../user-interface/Button';

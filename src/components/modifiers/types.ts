@@ -1,4 +1,4 @@
-import { RewardItem } from '../items/types';
+import { RewardItem } from '../users/types';
 
 export enum ModifierEffectType {
   DeductRewards = 'DEDUCT_REWARDS',

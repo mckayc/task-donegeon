@@ -292,7 +292,6 @@ export const INITIAL_SETTINGS: AppSettings = {
     developerMode: {
       enabled: false,
     },
-    // Fix: Add missing conditionSets property to satisfy the AppSettings type.
     conditionSets: [],
 };
 

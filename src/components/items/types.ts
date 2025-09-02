@@ -1,6 +1,5 @@
 import { Quest } from '../quests/types';
 import { Rank } from '../ranks/types';
-// Fix: Import 'Condition' type to be used in MarketStatus.
 import { ConditionSet, Condition } from '../conditions/types';
 
 export enum RewardCategory {
@@ -58,11 +57,10 @@ export interface GameAsset {
   };
 }
 
-// Fix: Updated MarketStatus to support inline conditions and logic, matching the implementation.
 export type MarketStatus =
   | { type: 'open' }
   | { type: 'closed' }
-  | { type: 'conditional', logic: 'all' | 'any', conditions: Condition[] };
+  | { type: 'conditional', logic: 'all' | 'any', conditions: Condition[], conditionSetIds?: string[] };
 
 export type MarketOpenStatus = {
     isOpen: true;

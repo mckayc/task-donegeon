@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-// Fix: Renamed MarketCondition/MarketConditionType to Condition/ConditionType to match correct types.
-import { Market, MarketStatus, Quest, Condition, ConditionType } from '../../types';
+import { Market, MarketStatus, Quest, Condition, ConditionType } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
@@ -77,7 +76,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
   const addCondition = () => {
       const currentStatus = formData.status;
       if (currentStatus.type === 'conditional') {
-          const newCondition: Condition = { type: ConditionType.MinRank, rankId: ranks[0]?.id || '' };
+          const newCondition: Condition = { type: ConditionType.MinRank, rankId: ranks[0]?.id || '', id: `cond-${Date.now()}` };
           const newStatus: MarketStatus = {
             type: 'conditional',
             logic: currentStatus.logic,
@@ -160,10 +159,10 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                     const newType = e.target.value as ConditionType;
                     let newCondition: Condition;
                     switch (newType) {
-                        case ConditionType.MinRank: newCondition = { type: newType, rankId: ranks[0]?.id || '' }; break;
-                        case ConditionType.DayOfWeek: newCondition = { type: newType, days: [] }; break;
-                        case ConditionType.DateRange: newCondition = { type: newType, start: '', end: '' }; break;
-                        case ConditionType.QuestCompleted: newCondition = { type: newType, questId: quests[0]?.id || '' }; break;
+                        case ConditionType.MinRank: newCondition = { type: newType, rankId: ranks[0]?.id || '', id: condition.id }; break;
+                        case ConditionType.DayOfWeek: newCondition = { type: newType, days: [], id: condition.id }; break;
+                        case ConditionType.DateRange: newCondition = { type: newType, start: '', end: '', id: condition.id }; break;
+                        case ConditionType.QuestCompleted: newCondition = { type: newType, questId: quests[0]?.id || '', id: condition.id }; break;
                         default: return;
                     }
                     updateCondition(index, newCondition);
@@ -200,7 +199,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                                 <input type="checkbox" checked={condition.days.includes(dayIndex)} onChange={e => {
                                     const newDays = e.target.checked
                                         ? [...condition.days, dayIndex]
-                                        : condition.days.filter(d => d !== dayIndex);
+                                        : condition.days.filter((d: number) => d !== dayIndex);
                                     updateCondition(index, { ...condition, days: newDays });
                                 }} />
                                 {day}

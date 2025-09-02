@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -7,7 +9,7 @@ import Button from '../user-interface/Button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, MarketOpenStatus, ScheduledEvent } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
-import { isMarketOpenForUser } from '../../utils/markets';
+import { isMarketOpenForUser } from '../markets/utils/markets';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { toYMD } from '../../utils/quests';

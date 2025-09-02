@@ -126,7 +126,7 @@ export const AboutPage: React.FC = () => {
                     <p><strong>How it Works:</strong></p>
                     <ol className="list-decimal list-inside space-y-2">
                         <li><strong>Activation:</strong> An {settings.terminology.admin} can set the "Interactive Media" type of a {settings.terminology.task} to "AI Teacher". This adds an "AI Teacher" button to the {settings.terminology.task} detail dialog for players.</li>
-                        <li><strong>Baseline Assessment:</strong> When a session begins, the AI generates a short, 3-5 question multiple-choice quiz based on the {settings.terminology.task}'s topic to assess the user's existing knowledge. All questions include an **"I don't know"** option so the user never feels forced to guess.</li>
+                        <li><strong>Baseline Assessment:</strong> When a session begins, the AI generates a short, 3-5 question multiple-choice quiz based on the {settings.terminology.task}'s topic to assess the user's existing knowledge. All questions include an <strong>"I don't know"</strong> option so the user never feels forced to guess.</li>
                         <li><strong>Instant Feedback:</strong> The user answers the questions one by one and receives immediate feedback.</li>
                         <li><strong>Adaptive Learning Path:</strong> Once the quiz is complete, the results are sent to the AI. The AI analyzes these results to identify the user's weakest area and creates a personalized lesson plan that focuses on that specific topic.</li>
                         <li>
@@ -144,9 +144,9 @@ export const AboutPage: React.FC = () => {
                     <ul className="list-disc list-inside space-y-2 mt-2">
                         <li>From the `{settings.terminology.link_manage_users}` page, an {settings.terminology.admin} can click the "Adjust" button for any {settings.terminology.user}.</li>
                         <li>This opens a unified dialog where the {settings.terminology.admin} can perform multiple actions at once.</li>
-                        <li>**Grant Rewards:** Add any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
-                        <li>**Apply Setbacks:** Deduct any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
-                        <li>**Award Trophy:** Select and award any manually-awarded {settings.terminology.award}.</li>
+                        <li><strong>Grant Rewards:</strong> Add any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li><strong>Apply Setbacks:</strong> Deduct any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li><strong>Award Trophy:</strong> Select and award any manually-awarded {settings.terminology.award}.</li>
                         <li>All actions are logged in the `{settings.terminology.history}` as a single, consolidated "Manual Adjustment" event for clarity.</li>
                     </ul>
                     <h4>New Birthday Trophies</h4>
@@ -155,26 +155,26 @@ export const AboutPage: React.FC = () => {
                     <p><strong>Purpose:</strong> To create a persistent, shared access point for the application on a specific device, like a family tablet. This mode provides a fast user-switching interface and can automatically log users out after a period of inactivity.</p>
                     <p><strong>How it Works:</strong></p>
                     <ul className="list-disc list-inside space-y-2 mt-2">
-                        <li><strong>Global Prerequisite:</strong> An {settings.terminology.admin} must first enable the main **"Shared Mode"** feature in `{settings.terminology.link_settings} &gt; Shared / Kiosk Mode`. This makes the device-specific functionality available.</li>
+                        <li><strong>Global Prerequisite:</strong> An {settings.terminology.admin} must first enable the main <strong>"Shared Mode"</strong> feature in `{settings.terminology.link_settings} &gt; Shared / Kiosk Mode`. This makes the device-specific functionality available.</li>
                         <li>
                             <strong>Device Activation:</strong>
                             <ol className="list-decimal list-inside pl-6">
                                 <li>An {settings.terminology.admin} logs into the application on the device they want to turn into a kiosk (e.g., the living room tablet).</li>
                                 <li>They click their profile avatar in the header to open the dropdown menu.</li>
-                                <li>A new toggle switch, **"Kiosk Mode (This Device)"**, will be visible.</li>
-                                <li>The {settings.terminology.admin} flips this switch to **ON**. The page will reload.</li>
+                                <li>A new toggle switch, <strong>"Kiosk Mode (This Device)"</strong>, will be visible.</li>
+                                <li>The {settings.terminology.admin} flips this switch to <strong>ON</strong>. The page will reload.</li>
                             </ol>
                         </li>
-                        <li><strong>Persistent Kiosk State:</strong> Once activated, that device is now a dedicated Kiosk. It will **always** start on the shared user selection screen, even if the browser is closed or the device is restarted. This setting is saved locally in the browser's storage.</li>
+                        <li><strong>Persistent Kiosk State:</strong> Once activated, that device is now a dedicated Kiosk. It will <strong>always</strong> start on the shared user selection screen, even if the browser is closed or the device is restarted. This setting is saved locally in the browser's storage.</li>
                         <li>
                             <strong>Using the Kiosk:</strong>
                             <ul className="list-disc list-inside pl-6">
-                                <li>When a user logs in on the Kiosk device, a new **"Kiosk" button** appears in the header.</li>
+                                <li>When a user logs in on the Kiosk device, a new <strong>"Kiosk" button</strong> appears in the header.</li>
                                 <li>Clicking this "Kiosk" button is the primary way to log out. It immediately returns the device to the shared user selection screen for the next person.</li>
                                 <li>The automatic inactivity timer (if configured in `{settings.terminology.link_settings}`) will also correctly log users out and return to this screen.</li>
                             </ul>
                         </li>
-                        <li><strong>Deactivation:</strong> To turn Kiosk Mode off, an {settings.terminology.admin} must log in on that specific device, open their profile dropdown, and toggle the **"Kiosk Mode (This Device)"** switch to **OFF**.</li>
+                        <li><strong>Deactivation:</strong> To turn Kiosk Mode off, an {settings.terminology.admin} must log in on that specific device, open their profile dropdown, and toggle the <strong>"Kiosk Mode (This Device)"</strong> switch to <strong>OFF</strong>.</li>
                     </ul>
                 </div>
             </CollapsibleSection>

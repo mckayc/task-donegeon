@@ -1,5 +1,7 @@
+
 // FIX: Changed to `import type` to break a circular dependency with items/types.ts
-import type { RewardItem } from '../items/types';
+// FIX: Changed import from '../items/types' to '../users/types' to break circular dependency.
+import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
 
 export enum QuestType {

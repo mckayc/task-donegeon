@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 // Fix: Import Role from the main types file, not the local one.
-import { Condition, ConditionSet, ConditionSetLogic, ConditionType } from './types';
-import { Role } from '../../types';
+import { Condition, ConditionSet, ConditionSetLogic, ConditionType, Role } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useQuestsState } from '../../context/QuestsContext';

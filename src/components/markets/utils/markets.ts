@@ -1,42 +1,13 @@
-import { Market, User, IAppData, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType, ConditionSet } from '../../../../types';
-import { toYMD } from '../../quests/utils/quests';
 
-type MarketDependencies = {
+import { Market, User, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType, ConditionSet } from '../../../types';
+import { toYMD } from '../../quests/utils/quests';
+// FIX: Added missing import for condition checking utilities.
+import { checkAllConditionSetsMet, ConditionDependencies } from '../../../utils/conditions';
+
+export type MarketDependencies = ConditionDependencies & {
     appliedModifiers: AppliedModifier[];
     modifierDefinitions: ModifierDefinition[];
-    quests: Quest[];
-    ranks: Rank[];
-    questCompletions: QuestCompletion[];
     allConditionSets: ConditionSet[];
-};
-
-const checkCondition = (condition: Condition, user: User, dependencies: MarketDependencies): boolean => {
-    switch (condition.type) {
-        case ConditionType.MinRank:
-            const totalXp = Object.values(user.personalExperience).reduce<number>((sum, amount) => sum + Number(amount), 0);
-            const userRank = dependencies.ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
-            const requiredRank = dependencies.ranks.find(r => r.id === condition.rankId);
-            if (!userRank || !requiredRank) return false;
-            return userRank.xpThreshold >= requiredRank.xpThreshold;
-
-        case ConditionType.DayOfWeek:
-            const today = new Date().getDay();
-            return condition.days.includes(today);
-
-        case ConditionType.DateRange:
-            const todayYMD = toYMD(new Date());
-            return todayYMD >= condition.start && todayYMD <= condition.end;
-
-        case ConditionType.QuestCompleted:
-            return dependencies.questCompletions.some(c =>
-                c.userId === user.id &&
-                c.questId === condition.questId &&
-                c.status === QuestCompletionStatus.Approved
-            );
-        // Add cases for other condition types here as they are implemented
-        default:
-            return false;
-    }
 };
 
 export const isMarketOpenForUser = (market: Market, user: User, dependencies: MarketDependencies): MarketOpenStatus => {
@@ -77,25 +48,15 @@ export const isMarketOpenForUser = (market: Market, user: User, dependencies: Ma
             if (!conditionSetIds || conditionSetIds.length === 0) {
                 return { isOpen: false, reason: 'CONDITIONAL', message: 'Market has no conditions to open.' };
             }
-
-            const setsToEvaluate = dependencies.allConditionSets.filter(cs => conditionSetIds.includes(cs.id));
-            if (setsToEvaluate.length !== conditionSetIds.length) {
-                 console.warn("Market references a non-existent Condition Set.", market);
-                 return { isOpen: false, reason: 'CONDITIONAL', message: 'A condition for this market is configured incorrectly.' };
-            }
-
-            // An asset is available only if ALL linked condition sets are met
-            for (const set of setsToEvaluate) {
-                const conditionsMet = set.logic === 'ALL'
-                    ? set.conditions.every(cond => checkCondition(cond, user, dependencies))
-                    : set.conditions.some(cond => checkCondition(cond, user, dependencies));
-                
-                if (!conditionsMet) {
-                    return { isOpen: false, reason: 'CONDITIONAL', message: `You do not meet the requirements for: ${set.name}.` };
-                }
-            }
             
-            return { isOpen: true };
+            // FIX: Refactored to use the centralized checkAllConditionSetsMet function.
+            const { allMet, failingSetName } = checkAllConditionSetsMet(conditionSetIds, user, dependencies);
+
+            if (allMet) {
+                 return { isOpen: true };
+            } else {
+                 return { isOpen: false, reason: 'CONDITIONAL', message: `You do not meet the requirements for: ${failingSetName || 'this market'}.` };
+            }
         }
         default:
              return { isOpen: false, reason: 'CLOSED', message: 'Market status is unknown.' };

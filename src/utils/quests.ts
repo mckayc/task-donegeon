@@ -1,3 +1,4 @@
+
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind } from '../types';
 
 /**
@@ -274,6 +275,7 @@ export const questSorter = (user: User, allCompletions: QuestCompletion[], sched
     }
     return 0;
 };
+
 
 // FIX: Add getAvailabilityText function
 export const getAvailabilityText = (quest: Quest, completionsCount: number): string => {

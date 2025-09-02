@@ -1,12 +1,12 @@
+
 // FIX: Changed to `import type` to break a circular dependency with quests/types.ts
 import type { Quest } from '../quests/types';
 import { Rank } from '../ranks/types';
 import { ConditionSet, Condition } from '../conditions/types';
+// FIX: Import RewardItem and RewardCategory from users/types to break circular dependency with quests/types.
+import { RewardItem, RewardCategory } from '../users/types';
 
-export enum RewardCategory {
-  Currency = 'Currency',
-  XP = 'XP',
-}
+export { RewardCategory };
 
 export interface RewardTypeDefinition {
   id: string;
@@ -21,11 +21,6 @@ export interface RewardTypeDefinition {
   baseValue: number; 
   createdAt?: string;
   updatedAt?: string;
-}
-
-export interface RewardItem {
-  rewardTypeId: string;
-  amount: number;
 }
 
 export interface GameAsset {

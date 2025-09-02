@@ -1,7 +1,20 @@
+
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
   Explorer = 'Explorer',
+}
+
+// FIX: Moved from items/types.ts to break circular dependency
+export enum RewardCategory {
+  Currency = 'Currency',
+  XP = 'XP',
+}
+
+// FIX: Moved from items/types.ts to break circular dependency
+export interface RewardItem {
+  rewardTypeId: string;
+  amount: number;
 }
 
 export interface User {

@@ -1,3 +1,4 @@
+
 // Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';

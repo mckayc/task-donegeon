@@ -70,7 +70,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         claimLimit: 1,
         pendingClaims: [],
         approvedClaims: [],
-        conditionSetIds: [],
+        conditionSetIds: undefined,
     };
 
     // Mode: Edit
@@ -85,7 +85,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         endTime: questToEdit.endTime || null,
         dailyCompletionsLimit: questToEdit.dailyCompletionsLimit ?? 1,
         totalCompletionsLimit: questToEdit.totalCompletionsLimit ?? 0,
-        conditionSetIds: questToEdit.conditionSetIds || [],
+        conditionSetIds: questToEdit.conditionSetIds || undefined,
       };
     }
 
@@ -488,11 +488,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
            <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
                 <h3 className="font-semibold text-lg text-stone-200">Availability Conditions</h3>
                 <ToggleSwitch 
-                    enabled={(formData.conditionSetIds || []).length > 0} 
-                    setEnabled={(val: boolean) => setFormData(p => ({...p, conditionSetIds: val ? p.conditionSetIds || [] : []}))} 
+                    enabled={formData.conditionSetIds !== undefined} 
+                    setEnabled={(val: boolean) => setFormData(p => ({...p, conditionSetIds: val ? (p.conditionSetIds || []) : undefined}))} 
                     label="Enable Conditions" 
                 />
-                 {(formData.conditionSetIds || []).length > 0 && (
+                 {formData.conditionSetIds !== undefined && (
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                       {allConditionSets.map(set => (
                           <label key={set.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">

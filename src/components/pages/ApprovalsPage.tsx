@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
-// Fix: Imported `RewardItem` type to resolve TypeScript error.
 import { Quest, QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer, QuestCompletion, PurchaseRequest, RewardTypeDefinition, RewardItem } from '../../types';
 import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';

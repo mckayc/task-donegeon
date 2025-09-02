@@ -7,11 +7,10 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Avatar': lazy(() => import('../pages/AvatarPage')),
     'Collection': lazy(() => import('../pages/CollectionPage')),
     'Themes': lazy(() => import('../pages/ThemesPage')),
-    // Fix: Wrapped import in .then() for consistent module resolution, preventing errors from potentially malformed files.
-    'Quests': lazy(() => import('../pages/QuestsPage').then(module => ({ default: module.default }))),
+    'Quests': lazy(() => import('../pages/QuestsPage')),
     'Marketplace': lazy(() => import('../pages/MarketplacePage')),
     'Calendar': lazy(() => import('../pages/CalendarPage')),
-    'Progress': lazy(() => import('../pages/ProgressPage').then(module => ({ default: module.default }))),
+    'Progress': lazy(() => import('../pages/ProgressPage')),
     'Trophies': lazy(() => import('../pages/TrophiesPage')),
     'Ranks': lazy(() => import('../pages/RanksPage')),
     'Chronicles': lazy(() => import('../pages/ChroniclesPage')),
@@ -38,8 +37,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Asset Library': lazy(() => import('../pages/management/AssetLibraryPage')),
     'Profile': lazy(() => import('../pages/ProfilePage')),
     'About': lazy(() => import('../pages/AboutPage').then(module => ({ default: module.AboutPage }))),
-    // Fix: Changed lazy import for HelpPage to correctly resolve its default export.
-    'Help Guide': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.default }))),
+    'Help Guide': lazy(() => import('../pages/HelpPage')),
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
     'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),

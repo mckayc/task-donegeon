@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -427,34 +426,26 @@ const HelpPage: React.FC = () => {
                         <li><strong>Create a Set:</strong> In `{settings.terminology.link_settings} &gt; {settings.terminology.link_manage_condition_sets}`, an {settings.terminology.admin} can create a new Condition Set. Each set has a name, a description, and a logic type (`ALL` or `ANY`).</li>
                         <li><strong>Add Conditions:</strong> Within a set, you can add one or more conditions. The new condition types include:
                             <ul className="list-disc list-inside pl-6 mt-2">
-                                {/* Fix: Add settings.terminology prefix */}
                                 <li>**Minimum {settings.terminology.level}:** Requires the player to have reached a certain {settings.terminology.level}.</li>
                                 <li>**Day of Week:** Active only on selected days.</li>
                                 <li>**Date Range:** Active only between a start and end date.</li>
                                 <li>**Time of Day:** Active only between a start and end time (e.g., 9 AM to 5 PM).</li>
-                                {/* Fix: Add settings.terminology prefix */}
                                 <li>**{settings.terminology.task} Completed:** Checks if a player has an **approved** completion for a specific {settings.terminology.task}.</li>
-                                {/* Fix: Add settings.terminology prefix */}
                                 <li>**{settings.terminology.group} of {settings.terminology.tasks} Completed:** Checks if a player has an **approved** completion for **every** {settings.terminology.task} within a specified Quest Group.</li>
-                                {/* Fix: Add settings.terminology prefix */}
                                 <li>**{settings.terminology.award} Awarded:** Checks if a player has earned a specific {settings.terminology.award}.</li>
                                 <li>**User Has/Doesn't Have Item:** Checks a player's inventory for the presence or absence of a specific item.</li>
-                                {/* Fix: Add settings.terminology prefix */}
                                 <li>**User is Member of {settings.terminology.group}:** Checks if the player is a member of a specific {settings.terminology.group}.</li>
                                 <li>**User Has Role:** Restricts access to players with a specific role ({settings.terminology.admin}, {settings.terminology.moderator}, or {settings.terminology.user}).</li>
                             </ul>
                         </li>
                         <li><strong>Apply the Set:</strong>
                             <ul className="list-disc list-inside pl-6 mt-2">
-                                {/* Fix: Add settings.terminology prefix */}
                                 <li>**For {settings.terminology.stores}:** In the `Manage {settings.terminology.stores}` dialog, set the Status to "Conditional" and select one or more Condition Sets.</li>
-                                {/* Fix: Add settings.terminology prefix */}
                                 <li>**For {settings.terminology.tasks}:** In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
                     </ol>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
-                    {/* Fix: Add settings.terminology prefix */}
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>
                     <h3>AI Teacher</h3>
                     <p><strong>Purpose:</strong> An interactive, AI-powered tutor that provides lessons on the topic of a specific {settings.terminology.task}.</p>

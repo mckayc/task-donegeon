@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -31,8 +30,10 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     if (!currentUser) return null;
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
-    // FIX: Replaced `quest.groupId` with `quest.groupIds` to match the updated data model where quests can belong to multiple groups.
-    const questGroup = useMemo(() => quest.groupIds?.[0] ? questGroups.find(g => g.id === quest.groupIds[0]) : null, [quest.groupIds, questGroups]);
+    const questGroup = useMemo(() => {
+        const firstGroupId = quest.groupIds?.[0];
+        return firstGroupId ? questGroups.find(g => g.id === firstGroupId) : null;
+    }, [quest.groupIds, questGroups]);
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);

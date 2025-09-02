@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -308,12 +310,10 @@ const MarketplacePage: React.FC = () => {
                             <button 
                                 key={market.id} 
                                 onClick={() => {
-                                    // FIX: Restructured the conditional to check for the `isOpen: true` case first.
-                                    // This ensures that in the `else` block, TypeScript knows `openStatus` must be the
+                                    // FIX: Restructured the conditional to check for the `isOpen: false` case first.
+                                    // This ensures that in the `if` block, TypeScript knows `openStatus` must be the
                                     // "closed" variant of the type, making `reason`, `message`, and `redemptionQuest` accessible.
-                                    if (openStatus.isOpen) {
-                                        setActiveMarketId(market.id);
-                                    } else {
+                                    if (openStatus.isOpen === false) {
                                         if (openStatus.reason === 'CONDITIONAL') {
                                             setViewingConditionsForMarket(market);
                                         } else {
@@ -323,6 +323,8 @@ const MarketplacePage: React.FC = () => {
                                             }
                                             addNotification({ type: 'error', message, duration: 8000 });
                                         }
+                                    } else {
+                                        setActiveMarketId(market.id);
                                     }
                                 }}
                                 disabled={isTrulyDisabled}

@@ -102,4 +102,6 @@ export interface ConditionSet {
     description: string;
     logic: ConditionSetLogic;
     conditions: Condition[];
+    assignedUserIds?: string[];
+    isGlobal?: boolean;
 }

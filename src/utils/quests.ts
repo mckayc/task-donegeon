@@ -1,7 +1,5 @@
-
-
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../types';
-import { checkAllConditionSetsMet, ConditionDependencies } from './conditions';
+import { checkAllConditionSetsMet, ConditionDependencies, checkGlobalConditionsMet } from './conditions';
 
 /**
  * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
@@ -114,6 +112,17 @@ export const getQuestLockStatus = (
     user: User, 
     dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] }
 ): QuestLockStatus => {
+    // 1. Check global conditions first.
+    const globalCheck = checkGlobalConditionsMet(user, dependencies);
+    if (!globalCheck.allMet) {
+        return {
+            isLocked: true,
+            reason: 'CONDITIONAL',
+            message: `Globally locked by: ${globalCheck.failingSetName || 'a global rule'}.`
+        };
+    }
+
+    // 2. If global conditions pass, check quest-specific conditions.
     if (quest.conditionSetIds && quest.conditionSetIds.length > 0) {
         const { allMet, failingSetName } = checkAllConditionSetsMet(quest.conditionSetIds, user, dependencies);
         if (!allMet) {

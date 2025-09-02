@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Market } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
@@ -29,6 +29,8 @@ const ManageMarketsPage: React.FC = () => {
 
     const marketIds = React.useMemo(() => markets.map(m => m.id), [markets]);
     const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
+
+    const globalSets = useMemo(() => settings.conditionSets.filter(cs => cs.isGlobal), [settings.conditionSets]);
 
     const handleCreateMarket = () => {
         setEditingMarket(null);
@@ -95,6 +97,13 @@ const ManageMarketsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            {globalSets.length > 0 && (
+                <div className="bg-sky-900/50 border border-sky-700 text-sky-200 text-sm p-4 rounded-lg">
+                    <p>
+                        <span className="font-bold">Active Global Sets:</span> {globalSets.map(s => s.name).join(', ')}. These rules apply to all items on this page.
+                    </p>
+                </div>
+            )}
             <Card
                 title={`All Created ${settings.terminology.stores}`}
                 headerAction={headerActions}

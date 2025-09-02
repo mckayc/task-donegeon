@@ -25,6 +25,8 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_4_18_DATE = new Date(2025, 9, 16);
+const V0_4_17_DATE = new Date(2025, 9, 15);
 const V0_4_10_DATE = new Date(2025, 9, 15);
 const V0_4_06_DATE = new Date(2025, 9, 14);
 const V0_4_05_DATE = new Date(2025, 9, 13);
@@ -103,6 +105,24 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.18 ({V0_4_18_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quest Group Editor Fix:</strong> Resolved a critical bug where changes made in the "Edit Quest Group" dialog would not save correctly if only the group's name or description was modified. The data synchronization logic has been corrected to ensure all changes are reliably persisted.</li>
+                <li><strong>Updated Help Guide:</strong> The in-app Help Guide has been thoroughly updated to reflect the latest application features and specifications, including a more detailed explanation of the streamlined quest group management workflow.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.4.17 ({V0_4_17_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>User-Specific Condition Sets:</strong> Administrators can now assign a Condition Set to specific users. This allows for creating rules that apply only to certain individuals (e.g., younger children), providing more granular control over game content.</li>
+                <li><strong>Build Stability Fix:</strong> Resolved a recurring TypeScript build error related to potentially undefined properties, improving the reliability of the deployment pipeline.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.4.10 ({V0_4_10_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
@@ -374,7 +394,7 @@ const RoadmapContent: React.FC = () => (
     </div>
 );
 
-const HelpPage: React.FC = () => {
+export const HelpPage: React.FC = () => {
     const { settings } = useSystemState();
     
     return (
@@ -460,6 +480,7 @@ const HelpPage: React.FC = () => {
                                 <li>**For {settings.terminology.tasks}:** In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
+                        <li><strong>NEW: User-Specific Sets:** In the "Edit Condition Set" dialog, a new "User Assignment" section allows you to limit the entire set to only apply to specific, selected users. This is perfect for rules you only want to affect certain people, like younger children.</li>
                     </ol>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>

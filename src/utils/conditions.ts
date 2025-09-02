@@ -1,5 +1,3 @@
-
-
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role } from '../types';
 import { toYMD } from './quests';
 
@@ -79,6 +77,20 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
     }
 };
 
+export const checkGlobalConditionsMet = (
+    user: User, 
+    dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] }
+): { allMet: boolean, failingSetName: string | null } => {
+    const globalSets = dependencies.allConditionSets.filter(cs => cs.isGlobal);
+    if (globalSets.length === 0) {
+        return { allMet: true, failingSetName: null };
+    }
+    
+    const globalSetIds = globalSets.map(cs => cs.id);
+    // Global sets are ALWAYS combined with AND logic between sets.
+    return checkAllConditionSetsMet(globalSetIds, user, dependencies);
+};
+
 export const checkAllConditionSetsMet = (
     conditionSetIds: string[], 
     user: User, 
@@ -97,7 +109,18 @@ export const checkAllConditionSetsMet = (
 
     // An asset is available only if ALL linked condition sets are met
     for (const set of setsToEvaluate) {
-        const conditionsMet = set.logic === ConditionSetLogic.ALL
+        // First, check if the set is assigned to specific users.
+        if (set.assignedUserIds && set.assignedUserIds.length > 0) {
+            if (!set.assignedUserIds.includes(user.id)) {
+                // User is not assigned this set, so it fails for them immediately.
+                return { allMet: false, failingSetName: set.name };
+            }
+        }
+
+        // Global sets MUST use AND logic for safety.
+        const useAndLogic = set.isGlobal || set.logic === ConditionSetLogic.ALL;
+
+        const conditionsMet = useAndLogic
             ? set.conditions.every(cond => checkCondition(cond, user, dependencies))
             : set.conditions.some(cond => checkCondition(cond, user, dependencies));
         

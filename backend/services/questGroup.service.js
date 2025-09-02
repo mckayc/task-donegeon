@@ -51,7 +51,7 @@ const update = async (id, data) => {
 
         const { questIds, ...groupData } = data;
         questGroupRepo.merge(group, groupData);
-        const savedGroup = await questGroupRepo.save(group);
+        const savedGroup = await questGroupRepo.save(updateTimestamps(group));
         
         const allQuests = await questRepo.find();
         const newAssignedIds = new Set(questIds || []);

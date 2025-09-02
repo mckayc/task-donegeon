@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Condition, ConditionSet, ConditionSetLogic, ConditionType, Role } from '../../types';
 import Button from '../user-interface/Button';
@@ -8,6 +7,9 @@ import { useProgressionState } from '../../context/ProgressionContext';
 import { PlusIcon, TrashIcon } from '../user-interface/Icons';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import { useAuthState } from '../../context/AuthContext';
+import UserMultiSelect from '../user-interface/UserMultiSelect';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface EditConditionSetDialogProps {
   conditionSet: ConditionSet | null;
@@ -162,6 +164,7 @@ const ConditionEditor: React.FC<{
 };
 
 const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditionSet, onClose, onSave }) => {
+    const { users } = useAuthState();
     const [formData, setFormData] = useState<ConditionSet>(() => {
         if (conditionSet) return JSON.parse(JSON.stringify(conditionSet));
         return {
@@ -170,8 +173,11 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
             description: '',
             logic: ConditionSetLogic.ALL,
             conditions: [],
+            assignedUserIds: [],
+            isGlobal: false,
         };
     });
+    const [limitToUsers, setLimitToUsers] = useState(!!(conditionSet?.assignedUserIds && conditionSet.assignedUserIds.length > 0));
 
     const addCondition = () => {
         const newCondition: Condition = { id: `cond-${Date.now()}`, type: ConditionType.MinRank, rankId: '' };
@@ -190,7 +196,12 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData);
+        const finalPayload = { 
+            ...formData,
+            assignedUserIds: limitToUsers ? formData.assignedUserIds : undefined,
+            logic: formData.isGlobal ? ConditionSetLogic.ALL : formData.logic,
+        };
+        onSave(finalPayload);
     };
 
     const dialogTitle = conditionSet ? 'Edit Condition Set' : 'Create New Condition Set';
@@ -207,16 +218,39 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
                     <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData(p => ({...p, description: e.target.value}))} rows={2} />
                     
                     <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                        <h3 className="font-semibold text-stone-200">User Assignment</h3>
+                        <ToggleSwitch
+                            enabled={limitToUsers}
+                            setEnabled={setLimitToUsers}
+                            label="Limit this set to specific users"
+                        />
+                        {limitToUsers && (
+                            <UserMultiSelect
+                                allUsers={users}
+                                selectedUserIds={formData.assignedUserIds || []}
+                                onSelectionChange={(ids) => setFormData(p => ({...p, assignedUserIds: ids}))}
+                                label="Applicable Users"
+                            />
+                        )}
+                    </div>
+
+                    <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
                         <h3 className="font-semibold text-stone-200">Conditions Logic</h3>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="logic" checked={formData.logic === ConditionSetLogic.ALL} onChange={() => setFormData(p => ({ ...p, logic: ConditionSetLogic.ALL }))} />
-                                <span>All conditions must be met (AND)</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="logic" checked={formData.logic === ConditionSetLogic.ANY} onChange={() => setFormData(p => ({ ...p, logic: ConditionSetLogic.ANY }))} />
-                                <span>Any condition can be met (OR)</span>
-                            </label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Input as="select" label="Logic Type" value={formData.logic} onChange={e => setFormData(p => ({...p, logic: e.target.value as ConditionSetLogic}))} disabled={!!formData.isGlobal}>
+                                    <option value={ConditionSetLogic.ALL}>All conditions must be met (AND)</option>
+                                    <option value={ConditionSetLogic.ANY}>Any condition can be met (OR)</option>
+                                </Input>
+                                {formData.isGlobal && <p className="text-xs text-stone-400 mt-1">Global sets must use 'ALL' logic.</p>}
+                            </div>
+                            <div className="pt-7">
+                                <ToggleSwitch
+                                    enabled={!!formData.isGlobal}
+                                    setEnabled={(enabled) => setFormData(p => ({ ...p, isGlobal: enabled }))}
+                                    label="Apply Globally"
+                                />
+                            </div>
                         </div>
                         <div className="space-y-3 pt-4 border-t border-stone-700/60">
                             {formData.conditions.map((condition, index) => (

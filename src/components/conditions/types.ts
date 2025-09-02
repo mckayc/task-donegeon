@@ -11,6 +11,7 @@ export enum ConditionType {
     DateRange = 'DATE_RANGE',
     TimeOfDay = 'TIME_OF_DAY',
     QuestCompleted = 'QUEST_COMPLETED',
+    QuestGroupCompleted = 'QUEST_GROUP_COMPLETED',
     TrophyAwarded = 'TROPHY_AWARDED',
     UserHasItem = 'USER_HAS_ITEM',
     UserDoesNotHaveItem = 'USER_DOES_NOT_HAVE_ITEM',
@@ -50,6 +51,11 @@ export interface QuestCompletedCondition extends BaseCondition {
     questId: string;
 }
 
+export interface QuestGroupCompletedCondition extends BaseCondition {
+    type: ConditionType.QuestGroupCompleted;
+    questGroupId: string;
+}
+
 export interface TrophyAwardedCondition extends BaseCondition {
     type: ConditionType.TrophyAwarded;
     trophyId: string;
@@ -82,6 +88,7 @@ export type Condition =
   | DateRangeCondition
   | TimeOfDayCondition
   | QuestCompletedCondition
+  | QuestGroupCompletedCondition
   | TrophyAwardedCondition
   | UserHasItemCondition
   | UserDoesNotHaveItemCondition

@@ -94,6 +94,7 @@ export interface Quest {
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[]; // Kept for Ventures
+  conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
   createdAt?: string;
   updatedAt?: string;

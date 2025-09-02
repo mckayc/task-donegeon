@@ -1,7 +1,9 @@
+
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Quest, QuestType, User, QuestCompletionStatus, QuestKind } from '../../types';
+import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
-import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, formatTimeRemaining } from '../../utils/quests';
+import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, formatTimeRemaining, getQuestLockStatus, QuestLockStatus } from '../../utils/quests';
 import Card from '../user-interface/Card';
 import Avatar from '../user-interface/Avatar';
 import Button from '../user-interface/Button';
@@ -14,20 +16,29 @@ import { useSystemState } from '../../context/SystemContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useProgressionState } from '../../context/ProgressionContext';
+import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
+import { ConditionDependencies } from '../../utils/conditions';
 
 const SharedCalendarPage: React.FC = () => {
-    const { settings, scheduledEvents } = useSystemState();
+    const systemState = useSystemState();
+    const { settings, scheduledEvents } = systemState;
     const { guilds } = useCommunityState();
-    const { quests, questCompletions } = useQuestsState();
+    const { quests, questCompletions, questGroups } = useQuestsState();
     const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useQuestsDispatch();
     const { users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
     const { rewardTypes } = useEconomyState();
+    const progressionState = useProgressionState();
+    const economyState = useEconomyState();
+    // FIX: Define `communityState` by calling the `useCommunityState` hook.
+    const communityState = useCommunityState();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
     const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
     const [selectedQuestDetails, setSelectedQuestDetails] = useState<{ quest: Quest; user: User } | null>(null);
+    const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<{ quest: Quest; user: User } | null>(null);
 
     // Safely syncs the dialog's quest data with the main quests list from the provider.
     useEffect(() => {
@@ -133,9 +144,18 @@ const SharedCalendarPage: React.FC = () => {
         }
         setSelectedQuestDetails(null);
     };
+    
+    const conditionDependencies = useMemo(() => ({
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets]);
 
     const handleDetailView = (quest: Quest, user: User) => {
-        setSelectedQuestDetails({ quest, user });
+        const lockStatus = getQuestLockStatus(quest, user, conditionDependencies);
+        if (lockStatus.isLocked) {
+            setViewingConditionsForQuest({ quest, user });
+        } else {
+            setSelectedQuestDetails({ quest, user });
+        }
     };
 
     const handleToggleTodo = () => {
@@ -156,6 +176,7 @@ const SharedCalendarPage: React.FC = () => {
 
     const QuestCardComponent: React.FC<{ quest: Quest; user: User }> = ({ quest, user }) => {
         const now = new Date();
+        const lockStatus = getQuestLockStatus(quest, user, conditionDependencies);
         
         const { borderClass, timeStatusText, timeStatusColor, absoluteDueDateString } = useMemo(() => {
             let deadline: Date | null = null;
@@ -219,8 +240,8 @@ const SharedCalendarPage: React.FC = () => {
                 }
             }
             
-            return { borderClass: bClass, timeStatusText: tStatusText, timeStatusColor: tStatusColor, absoluteDueDateString: finalAbsoluteString };
-        }, [quest, now]);
+            return { borderClass: bClass, timeStatusText: lockStatus.isLocked ? 'Locked' : tStatusText, timeStatusColor: lockStatus.isLocked ? 'text-amber-400' : tStatusColor, absoluteDueDateString: finalAbsoluteString };
+        }, [quest, now, lockStatus]);
 
         let baseCardClass = 'bg-stone-800/60';
         if (quest.type === QuestType.Duty) baseCardClass = 'bg-sky-900/30';
@@ -235,8 +256,13 @@ const SharedCalendarPage: React.FC = () => {
              <button
                 key={quest.id}
                 onClick={() => handleDetailView(quest, user)}
-                className={`w-full text-left rounded-lg p-3 hover:bg-stone-700/50 transition-colors flex flex-col h-full border-2 ${baseCardClass} ${finalBorderClass}`}
+                className={`relative w-full text-left rounded-lg p-3 hover:bg-stone-700/50 transition-colors flex flex-col h-full border-2 ${baseCardClass} ${finalBorderClass}`}
             >
+                {lockStatus.isLocked && (
+                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center z-10">
+                        <span className="text-4xl" role="img" aria-label="Locked">🔒</span>
+                    </div>
+                )}
                 <div className="flex-grow">
                     <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
                     <div className="text-xs mt-1">
@@ -325,6 +351,13 @@ const SharedCalendarPage: React.FC = () => {
                     onToggleTodo={handleToggleTodo}
                     isTodo={selectedQuestDetails.quest.type === QuestType.Venture && !!selectedQuestDetails.quest.todoUserIds?.includes(selectedQuestDetails.user.id)}
                     dialogTitle={`For ${selectedQuestDetails.user.gameName}`}
+                />
+            )}
+             {viewingConditionsForQuest && (
+                <QuestConditionStatusDialog
+                    quest={viewingConditionsForQuest.quest}
+                    user={viewingConditionsForQuest.user}
+                    onClose={() => setViewingConditionsForQuest(null)}
                 />
             )}
         </div>

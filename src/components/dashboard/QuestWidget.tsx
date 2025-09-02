@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Quest, QuestKind, QuestType, QuestCompletionStatus } from '../../../types';
 import { useSystemState } from '../../context/SystemContext';
@@ -5,8 +6,9 @@ import { useUIState } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
-import { isQuestAvailableForUser, formatTimeRemaining, toYMD } from '../../utils/quests';
+import { isQuestAvailableForUser, formatTimeRemaining, toYMD, getQuestLockStatus } from '../../utils/quests';
 import { useCommunityState } from '../../context/CommunityContext';
+import { useProgressionState } from '../../context/ProgressionContext';
 
 interface QuestWidgetProps {
     quest: Quest;
@@ -16,13 +18,21 @@ interface QuestWidgetProps {
 const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) => {
     const { settings, scheduledEvents } = useSystemState();
     const { rewardTypes } = useEconomyState();
-    const { questCompletions } = useQuestsState();
+    const { quests, questCompletions, questGroups } = useQuestsState();
+    const { ranks, trophies, userTrophies } = useProgressionState();
+    const { gameAssets } = useEconomyState();
+    const { guilds } = useCommunityState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const now = new Date();
 
     if (!currentUser) return null;
 
+    const conditionDependencies = useMemo(() => ({
+        ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, allConditionSets: settings.conditionSets
+    }), [ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, settings.conditionSets]);
+
+    const lockStatus = useMemo(() => getQuestLockStatus(quest, currentUser, conditionDependencies), [quest, currentUser, conditionDependencies]);
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
 
     const { borderClass, isDimmed } = useMemo(() => {
@@ -119,6 +129,7 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
     }, [quest, now]);
 
     const progressText = useMemo(() => {
+        if (lockStatus.isLocked) return 'Locked';
         if (quest.type === QuestType.Journey) {
             const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.questId === quest.id);
             const completed = userCompletions.filter(c => c.status === QuestCompletionStatus.Approved).length;
@@ -138,7 +149,7 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
             return `Claims: ${totalApproved}/${limit}`;
         }
         return timeStatusText;
-    }, [quest, currentUser.id, questCompletions, timeStatusText]);
+    }, [quest, currentUser.id, questCompletions, timeStatusText, lockStatus]);
     
     const getRewardInfo = (id: string) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
     
@@ -153,13 +164,18 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
     const finalBorderClass = `${borderClass} ${optionalClass}`;
 
     const hasPendingCompletion = quest.type === QuestType.Journey && questCompletions.some(c => c.questId === quest.id && c.userId === currentUser.id && c.status === QuestCompletionStatus.Pending);
-    const cardIsDimmed = isDimmed && !hasPendingCompletion;
+    const cardIsDimmed = (isDimmed || lockStatus.isLocked) && !hasPendingCompletion;
 
     return (
         <button
             onClick={() => handleQuestSelect(quest)}
-            className={`w-full text-left p-3 rounded-lg border-2 cursor-pointer transition-all duration-300 grid grid-cols-1 md:grid-cols-3 gap-2 items-center ${baseCardClass} ${finalBorderClass} ${cardIsDimmed ? 'opacity-50' : ''}`}
+            className={`relative w-full text-left p-3 rounded-lg border-2 cursor-pointer transition-all duration-300 grid grid-cols-1 md:grid-cols-3 gap-2 items-center ${baseCardClass} ${finalBorderClass} ${cardIsDimmed ? 'opacity-50' : ''}`}
         >
+             {lockStatus.isLocked && (
+                <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center z-10">
+                    <span className="text-3xl" role="img" aria-label="Locked">🔒</span>
+                </div>
+            )}
             <div className="md:col-span-1 truncate">
                 <p className="font-semibold text-stone-100 flex items-center gap-2 truncate" title={quest.title}>
                     {isRedemption && <span title="Redemption Quest">⚖️</span>}

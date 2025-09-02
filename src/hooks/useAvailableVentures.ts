@@ -1,16 +1,28 @@
+
 import { useMemo } from 'react';
 import { useUIState } from '../context/UIContext';
 import { QuestType } from '../types';
-import { isQuestAvailableForUser } from '../utils/quests';
+import { isQuestAvailableForUser, getQuestLockStatus } from '../utils/quests';
 import { useAuthState } from '../context/AuthContext';
 import { useQuestsState } from '../context/QuestsContext';
 import { useSystemState } from '../context/SystemContext';
+import { useProgressionState } from '../context/ProgressionContext';
+import { useEconomyState } from '../context/EconomyContext';
+import { useCommunityState } from '../context/CommunityContext';
 
 export const useAvailableVentures = () => {
-    const { scheduledEvents } = useSystemState();
-    const { quests, questCompletions } = useQuestsState();
+    const systemState = useSystemState();
+    const { scheduledEvents } = systemState;
+    const { quests, questGroups, questCompletions } = useQuestsState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
+    const progressionState = useProgressionState();
+    const economyState = useEconomyState();
+    const communityState = useCommunityState();
+
+    const conditionDependencies = useMemo(() => ({
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets]);
 
     const top10AvailableVentures = useMemo(() => {
         if (!currentUser) return [];
@@ -19,13 +31,15 @@ export const useAvailableVentures = () => {
         
         const userCompletionsForMode = questCompletions.filter(c => c.userId === currentUser.id && c.guildId === currentGuildId);
 
-        const availableVentures = quests.filter(q => 
-            q.isActive &&
-            q.type === QuestType.Venture &&
-            q.guildId === currentGuildId &&
-            (q.assignedUserIds.length === 0 || q.assignedUserIds.includes(currentUser.id)) &&
-            isQuestAvailableForUser(q, userCompletionsForMode, new Date(), scheduledEvents, appMode)
-        );
+        const availableVentures = quests.filter(q => {
+            if (q.type !== QuestType.Venture || !q.isActive || q.guildId !== currentGuildId) return false;
+            if (q.assignedUserIds.length > 0 && !q.assignedUserIds.includes(currentUser.id)) return false;
+            
+            const lockStatus = getQuestLockStatus(q, currentUser, conditionDependencies);
+            if (lockStatus.isLocked) return false;
+            
+            return isQuestAvailableForUser(q, userCompletionsForMode, new Date(), scheduledEvents, appMode);
+        });
 
         availableVentures.sort((a, b) => {
             const aHasDate = !!a.startDateTime;
@@ -42,7 +56,7 @@ export const useAvailableVentures = () => {
         });
 
         return availableVentures.slice(0, 10);
-    }, [quests, currentUser, appMode, questCompletions, scheduledEvents]);
+    }, [quests, currentUser, appMode, questCompletions, scheduledEvents, conditionDependencies]);
 
     return top10AvailableVentures;
 }

@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem } from '../../types';
+import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem, ConditionSet } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import { ScheduleEventDialog } from '../admin/ScheduleEventDialog';
@@ -16,7 +17,7 @@ import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput,
 import { useChronicles } from '../chronicles/hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../../utils/quests';
+import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode, getQuestLockStatus } from '../../utils/quests';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
@@ -25,6 +26,9 @@ import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { AppMode } from '../../types/app';
+import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
+import { useProgressionState } from '../../context/ProgressionContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 type CalendarMode = 'events' | 'chronicles';
 
@@ -50,14 +54,18 @@ const rruleStringToObject = (rruleString: string) => {
 
 
 const CalendarPage: React.FC = () => {
-    const { settings, scheduledEvents } = useSystemState();
+    const systemState = useSystemState();
+    const { settings, scheduledEvents } = systemState;
     const { rewardTypes } = useEconomyState();
-    const { quests, questCompletions } = useQuestsState();
+    const { quests, questCompletions, questGroups } = useQuestsState();
     const { appMode } = useUIState();
     const { currentUser, users } = useAuthState();
     const { setActivePage } = useUIDispatch();
     const { markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
+    const progressionState = useProgressionState();
+    const economyState = useEconomyState();
+    const communityState = useCommunityState();
     
     const [mode, setMode] = useState<CalendarMode>('events');
     const [viewRange, setViewRange] = useState<{ start: Date; end: Date } | null>(null);
@@ -68,6 +76,7 @@ const CalendarPage: React.FC = () => {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [createInitialData, setCreateInitialData] = useState<Partial<Quest> & { hasDeadlines?: boolean } | null>(null);
     const [chronicleDetail, setChronicleDetail] = useState<{ date: Date; events: ChronicleEvent[] } | null>(null);
+    const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
     
     const calendarRef = useRef<FullCalendar>(null);
 
@@ -87,6 +96,10 @@ const CalendarPage: React.FC = () => {
             }
         }
     }, [quests, viewingQuest]);
+    
+    const conditionDependencies = useMemo(() => ({
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets]);
 
     const renderEventContent = (eventInfo: EventContentArg) => {
         const { event } = eventInfo;
@@ -171,12 +184,19 @@ const CalendarPage: React.FC = () => {
             // Quests
             const questEvents: EventInput[] = [];
             visibleQuests.forEach(quest => {
-                const baseProps = {
+                const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
+                
+                const baseProps: EventInput = {
                     title: quest.title,
                     backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
                     borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
                     extendedProps: { quest, type: 'quest' }
                 };
+
+                if (lockStatus.isLocked) {
+                    baseProps.title = `🔒 ${quest.title}`;
+                    baseProps.classNames = ['opacity-70'];
+                }
 
                 if (quest.type === QuestType.Venture || quest.type === QuestType.Journey) {
                     if (quest.startDateTime) {
@@ -284,14 +304,19 @@ const CalendarPage: React.FC = () => {
         }
         
         return sources;
-    }, [mode, appMode, scheduledEvents, visibleQuests, chronicles, settings.googleCalendar, users, viewRange, currentUser, questCompletions]);
+    }, [mode, appMode, scheduledEvents, visibleQuests, chronicles, settings.googleCalendar, users, viewRange, currentUser, questCompletions, conditionDependencies]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
         if (props.type === 'scheduled' && props.appEvent) {
             setViewingEvent(props.appEvent);
         } else if (props.type === 'quest' && props.quest) {
-            setViewingQuest({ quest: props.quest, date: clickInfo.event.start || new Date() });
+            const lockStatus = getQuestLockStatus(props.quest, currentUser, conditionDependencies);
+            if (lockStatus.isLocked) {
+                setViewingConditionsForQuest(props.quest);
+            } else {
+                setViewingQuest({ quest: props.quest, date: clickInfo.event.start || new Date() });
+            }
         } else if (clickInfo.event.url) {
             window.open(clickInfo.event.url, '_blank');
         }
@@ -508,6 +533,13 @@ const CalendarPage: React.FC = () => {
                     date={chronicleDetail.date}
                     events={chronicleDetail.events}
                     onClose={() => setChronicleDetail(null)}
+                />
+            )}
+            {viewingConditionsForQuest && (
+                <QuestConditionStatusDialog
+                    quest={viewingConditionsForQuest}
+                    user={currentUser}
+                    onClose={() => setViewingConditionsForQuest(null)}
                 />
             )}
         </div>

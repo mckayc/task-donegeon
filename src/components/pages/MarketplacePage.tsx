@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -16,6 +17,7 @@ import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
+import ConditionStatusDialog from '../markets/ConditionStatusDialog';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { settings, scheduledEvents } = useSystemState();
@@ -239,6 +241,7 @@ const MarketplacePage: React.FC = () => {
     const { appMode, activeMarketId } = useUIState();
     const { setActiveMarketId } = useUIDispatch();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const [viewingConditionsForMarket, setViewingConditionsForMarket] = useState<Market | null>(null);
     
     const marketDependencies = useMemo(() => ({
         appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, allConditionSets: settings.conditionSets,
@@ -294,26 +297,33 @@ const MarketplacePage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMarkets.map((market: Market & { openStatus: MarketOpenStatus }) => {
                         const { openStatus } = market;
-                        const isDisabled = !openStatus.isOpen;
+                        // FIX: Use a ternary operator to safely access properties on the discriminated union.
+                        const isTrulyDisabled = !openStatus.isOpen ? openStatus.reason !== 'CONDITIONAL' : false;
                         return (
                             <button 
                                 key={market.id} 
+                                // FIX: Restructure the onClick handler to ensure type narrowing for `openStatus`.
                                 onClick={() => {
-                                    if (openStatus.isOpen === false) {
-                                        let message = openStatus.message;
-                                        if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
-                                            message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
-                                        }
-                                        addNotification({ type: 'error', message, duration: 8000 });
-                                    } else {
+                                    if (openStatus.isOpen) {
                                         setActiveMarketId(market.id);
+                                    } else {
+                                        // Since isOpen is false, we can safely access other properties.
+                                        if (openStatus.reason === 'CONDITIONAL') {
+                                            setViewingConditionsForMarket(market);
+                                        } else {
+                                            let message = openStatus.message;
+                                            if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
+                                                message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
+                                            }
+                                            addNotification({ type: 'error', message, duration: 8000 });
+                                        }
                                     }
                                 }}
-                                disabled={isDisabled}
-                                className="text-left group"
+                                disabled={isTrulyDisabled}
+                                className={`text-left group ${isTrulyDisabled ? 'cursor-not-allowed' : ''}`}
                             >
-                                <div className={`relative bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200'}`}>
-                                    {isDisabled && (
+                                <div className={`relative bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center ${!openStatus.isOpen ? 'opacity-50' : ''} ${!isTrulyDisabled ? 'group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200' : ''}`}>
+                                    {!openStatus.isOpen && (
                                         <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center z-10">
                                             <span className="text-5xl" role="img" aria-label="Locked">🔒</span>
                                         </div>
@@ -359,6 +369,13 @@ const MarketplacePage: React.FC = () => {
                     imageUrl={previewImageUrl}
                     altText="Market icon preview"
                     onClose={() => setPreviewImageUrl(null)}
+                />
+            )}
+            {viewingConditionsForMarket && currentUser && (
+                <ConditionStatusDialog
+                    market={viewingConditionsForMarket}
+                    user={currentUser}
+                    onClose={() => setViewingConditionsForMarket(null)}
                 />
             )}
         </div>

@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
-import { Quest, QuestType, QuestKind } from '../../types';
+import { Quest, QuestType, QuestKind, User } from '../../types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
@@ -20,17 +21,25 @@ import { useAuthState } from '../../context/AuthContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import PendingApprovalsCard from '../dashboard/PendingApprovalsCard';
+import { getQuestLockStatus } from '../../utils/quests';
+import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
+import { useEconomyState } from '../../context/EconomyContext';
 
 const Dashboard: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
-    const { quests } = useQuestsState();
-    const { trophies } = useProgressionState();
+    const { quests, questGroups, questCompletions } = useQuestsState();
+    // FIX: Destructure `userTrophies` from `useProgressionState` as it is used in the `conditionDependencies` memo.
+    const { trophies, ranks, userTrophies } = useProgressionState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
+    const systemState = useSystemState();
+    const economyState = useEconomyState();
+    const communityState = useCommunityState();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [contributingQuest, setContributingQuest] = useState<Quest | null>(null);
+    const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
     
     const {
         rankData,
@@ -83,10 +92,22 @@ const Dashboard: React.FC = () => {
         }
     }, [quests, selectedQuest]);
 
+    const conditionDependencies = useMemo(() => ({
+        ranks, trophies, userTrophies, quests, questGroups, questCompletions, 
+        gameAssets: economyState.gameAssets, guilds: communityState.guilds, allConditionSets: systemState.settings.conditionSets
+    }), [ranks, trophies, userTrophies, quests, questGroups, questCompletions, economyState.gameAssets, communityState.guilds, systemState.settings.conditionSets]);
+
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
-    const handleQuestSelect = (quest: Quest) => setSelectedQuest(quest);
+    const handleQuestSelect = (quest: Quest) => {
+        const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
+        if (lockStatus.isLocked) {
+            setViewingConditionsForQuest(quest);
+        } else {
+            setSelectedQuest(quest);
+        }
+    };
 
     const handleStartAction = (questToAction: Quest) => {
         setSelectedQuest(null);
@@ -155,6 +176,13 @@ const Dashboard: React.FC = () => {
             )}
             {contributingQuest && (
                 <ContributeToQuestDialog quest={contributingQuest} onClose={() => setContributingQuest(null)} />
+            )}
+             {viewingConditionsForQuest && (
+                <QuestConditionStatusDialog
+                    quest={viewingConditionsForQuest}
+                    user={currentUser}
+                    onClose={() => setViewingConditionsForQuest(null)}
+                />
             )}
         </div>
     );

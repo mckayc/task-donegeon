@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -5,8 +6,8 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
-import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus } from '../../types';
-import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining, toYMD } from '../../utils/quests';
+import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet } from '../../types';
+import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining, toYMD, getQuestLockStatus, QuestLockStatus } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -14,8 +15,11 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import { useProgressionState } from '../../context/ProgressionContext';
+import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
+import { ConditionDependencies } from '../../utils/conditions';
 
-const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
+const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; lockStatus: QuestLockStatus; }> = ({ quest, now, onSelect, onImagePreview, lockStatus }) => {
     const { settings, scheduledEvents } = useSystemState();
     const { guilds } = useCommunityState();
     const { rewardTypes } = useEconomyState();
@@ -27,7 +31,6 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
-    const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
@@ -77,8 +80,8 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         const timeDiff = deadline ? deadline.getTime() - now.getTime() : Infinity;
 
         let bClass = 'border-stone-700';
-        let tStatusText = 'No due date';
-        let tStatusColor = 'text-stone-400';
+        let tStatusText = lockStatus.isLocked ? 'Locked' : 'No due date';
+        let tStatusColor = lockStatus.isLocked ? 'text-amber-400' : 'text-stone-400';
         let finalAbsoluteString: string | null = absoluteString;
 
         if (deadline) {
@@ -117,13 +120,13 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         
         return {
             borderClass: bClass,
-            timeStatusText: tStatusText,
-            timeStatusColor: tStatusColor,
+            timeStatusText: lockStatus.isLocked ? 'Locked' : tStatusText,
+            timeStatusColor: lockStatus.isLocked ? 'text-amber-400' : tStatusColor,
             isDimmed: finalDimState,
             absoluteDueDateString: finalAbsoluteString
         };
 
-    }, [quest, now, questCompletions, currentUser.id, isAvailable]);
+    }, [quest, now, questCompletions, currentUser.id, isAvailable, lockStatus]);
     
     let baseCardClass = 'bg-stone-800/60';
     if (quest.type === QuestType.Duty) baseCardClass = 'bg-sky-900/30';
@@ -152,13 +155,17 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
             hasPendingCompletion: pending
         };
     }, [quest, currentUser.id, questCompletions]);
-
-    const isClickable = quest.type === QuestType.Journey || isAvailable;
-    const cardIsDimmed = isDimmed && !hasPendingCompletion;
+    
+    const cardIsDimmed = (isDimmed || lockStatus.isLocked) && !hasPendingCompletion;
 
 
     return (
-        <div onClick={() => isClickable && onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 ${baseCardClass} ${borderClass} ${optionalClass} ${cardIsDimmed ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}>
+        <div onClick={() => onSelect(quest)} className={`relative border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 cursor-pointer ${baseCardClass} ${borderClass} ${optionalClass} ${cardIsDimmed ? 'opacity-50' : ''}`}>
+             {lockStatus.isLocked && (
+                <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center z-10">
+                    <span className="text-5xl" role="img" aria-label="Locked">🔒</span>
+                </div>
+            )}
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden bg-black/30`}>
@@ -224,15 +231,21 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 };
 
 const QuestsPage: React.FC = () => {
-    const { settings, scheduledEvents } = useSystemState();
+    const systemState = useSystemState();
+    const { settings, scheduledEvents } = systemState;
     const { appMode } = useUIState();
-    const { quests, questCompletions } = useQuestsState();
+    const { quests, questCompletions, questGroups } = useQuestsState();
     const { addQuest, updateQuest } = useQuestsDispatch();
     const { currentUser } = useAuthState();
+    const economyState = useEconomyState();
+    const progressionState = useProgressionState();
+    const communityState = useCommunityState();
+
     const [isCreateQuestOpen, setIsCreateQuestOpen] = useState(false);
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
@@ -250,7 +263,20 @@ const QuestsPage: React.FC = () => {
     const dutyQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Duty), [visibleQuests]);
     const ventureQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey), [visibleQuests]);
 
-    const handleQuestSelect = (quest: Quest) => setSelectedQuest(quest);
+    const conditionDependencies = useMemo(() => ({
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions]);
+
+    const handleQuestSelect = (quest: Quest) => {
+        if (!currentUser) return;
+        const lockStatus = getQuestLockStatus(quest, currentUser, { ...conditionDependencies, allConditionSets: settings.conditionSets });
+        if (lockStatus.isLocked) {
+            setViewingConditionsForQuest(quest);
+        } else {
+            setSelectedQuest(quest);
+        }
+    };
+
     const handleImagePreview = (url: string) => setPreviewImageUrl(url);
 
     const handleStartCompletion = () => {
@@ -276,9 +302,10 @@ const QuestsPage: React.FC = () => {
                 <Card title={settings.terminology.recurringTasks}>
                     {dutyQuests.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {dutyQuests.map(quest => (
-                                <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} />
-                            ))}
+                            {dutyQuests.map(quest => {
+                                const lockStatus = getQuestLockStatus(quest, currentUser, { ...conditionDependencies, allConditionSets: settings.conditionSets });
+                                return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
+                            })}
                         </div>
                     ) : (
                         <p className="text-stone-400">No {settings.terminology.recurringTasks.toLowerCase()} available right now.</p>
@@ -288,9 +315,10 @@ const QuestsPage: React.FC = () => {
                 <Card title={`${settings.terminology.singleTasks} & ${settings.terminology.journeys}`}>
                      {ventureQuests.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {ventureQuests.map(quest => (
-                                <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} />
-                            ))}
+                            {ventureQuests.map(quest => {
+                                const lockStatus = getQuestLockStatus(quest, currentUser, { ...conditionDependencies, allConditionSets: settings.conditionSets });
+                                return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
+                            })}
                         </div>
                     ) : (
                         <p className="text-stone-400">No {settings.terminology.singleTasks.toLowerCase()} available right now.</p>
@@ -309,6 +337,13 @@ const QuestsPage: React.FC = () => {
             )}
             {previewImageUrl && (
                 <ImagePreviewDialog imageUrl={previewImageUrl} altText="Quest Icon" onClose={() => setPreviewImageUrl(null)} />
+            )}
+            {viewingConditionsForQuest && (
+                <QuestConditionStatusDialog
+                    quest={viewingConditionsForQuest}
+                    user={currentUser}
+                    onClose={() => setViewingConditionsForQuest(null)}
+                />
             )}
         </div>
     );

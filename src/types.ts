@@ -15,4 +15,6 @@ export * from './components/chat/types';
 export * from './components/dev/types';
 export * from './components/trading/types';
 export * from './components/chronicles/types';
+// FIX: Add missing export for condition types.
+export * from './components/conditions/types';
 export * from './types/app';

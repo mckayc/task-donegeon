@@ -25,346 +25,52 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
-const V0_4_18_DATE = new Date(2025, 9, 16);
-const V0_4_17_DATE = new Date(2025, 9, 15);
-const V0_4_10_DATE = new Date(2025, 9, 15);
-const V0_4_06_DATE = new Date(2025, 9, 14);
-const V0_4_05_DATE = new Date(2025, 9, 13);
-const V0_4_04_DATE = new Date(2025, 9, 12);
-const V0_4_03_DATE = new Date(2025, 9, 11);
-const V0_4_02_DATE = new Date(2025, 9, 10);
-const V0_4_01_DATE = new Date(2025, 9, 9);
-const V0_4_0_DATE = new Date(2025, 9, 8);
-const V0_3_02_DATE = new Date(2025, 9, 7);
-const V0_3_01_DATE = new Date(2025, 9, 6);
-const V0_3_0_DATE = new Date(2025, 9, 5);
-const V0_2_01_DATE = new Date(2025, 9, 4);
-const V0_2_0_DATE = new Date(2025, 9, 3);
-const V0_1_99_DATE = new Date(2025, 9, 2);
-const V0_1_98_DATE = new Date(2025, 9, 1);
-const V0_1_97_DATE = new Date(2025, 8, 30);
-const V0_1_96_DATE = new Date(2025, 8, 29);
-const V0_1_95_DATE = new Date(2025, 8, 28);
-const V0_1_94_DATE = new Date(2025, 8, 27);
-const V0_1_93_DATE = new Date(2025, 8, 26);
-const V0_1_92_DATE = new Date(2025, 8, 25);
-const V0_1_91_DATE = new Date(2025, 8, 24);
-const V0_1_90_DATE = new Date(2025, 8, 23);
-const V0_1_89_DATE = new Date(2025, 8, 22);
-const V0_1_88_DATE = new Date(2025, 8, 21);
-const V0_1_87_DATE = new Date(2025, 8, 20);
-const V0_1_86_DATE = new Date(2025, 8, 19);
-const V0_1_85_DATE = new Date(2025, 8, 18);
-const V0_1_84_DATE = new Date(2025, 8, 17);
-const V0_1_83_DATE = new Date(2025, 8, 16);
-const V0_1_77_DATE = new Date(2025, 8, 15);
-const V0_1_76_DATE = new Date(2025, 8, 14);
-const V0_1_75_DATE = new Date(2025, 8, 13);
-const V0_1_74_DATE = new Date(2025, 8, 12);
-const V0_1_73_DATE = new Date(2025, 8, 11);
-const V0_1_72_DATE = new Date(2025, 8, 10);
-const V0_1_71_DATE = new Date(2025, 8, 9);
-const V0_1_70_DATE = new Date(2025, 8, 8);
-const V0_1_69_DATE = new Date(2025, 8, 7);
-const V0_1_68_DATE = new Date(2025, 8, 6);
-const V0_1_67_DATE = new Date(2025, 8, 5);
-const V0_1_66_DATE = new Date(2025, 8, 4);
-const V0_1_65_DATE = new Date(2025, 8, 3);
-const V0_1_64_DATE = new Date(2025, 8, 2);
-const V0_1_63_DATE = new Date(2025, 8, 1);
-const V0_1_62_DATE = new Date(2025, 7, 31);
-const V0_1_61_DATE = new Date(2025, 7, 30);
-const V0_1_60_DATE = new Date(2025, 7, 29);
-const V0_1_52_DATE = new Date(2025, 7, 28);
-const V0_1_50_DATE = new Date(2025, 7, 27);
-const V0_1_49_DATE = new Date(2025, 7, 26);
-const V0_1_40_DATE = new Date(2025, 7, 26);
-const V0_0_99Y_DATE = new Date(2025, 7, 19);
-const V0_0_54_DATE = new Date(2025, 7, 17);
-const V0_0_53_DATE = new Date(2025, 7, 15);
-const V0_0_52_DATE = new Date(2025, 7, 15);
-const V0_0_51_DATE = new Date(2025, 7, 8);
-const V0_0_97_DATE = new Date(2025, 6, 23);
-const V0_0_96_DATE = new Date(2025, 6, 22);
-const V0_0_95_DATE = new Date(2025, 6, 22);
-const V0_0_94_DATE = new Date(2025, 6, 26);
-const V0_0_93_DATE = new Date(2025, 6, 25);
-const V0_0_92_DATE = new Date(2025, 6, 24);
-const V0_0_91_DATE = new Date(2025, 6, 23);
-const V0_0_90_DATE = new Date(2025, 6, 22);
-const V0_0_89_DATE = new Date(2025, 6, 21);
-const V0_0_88_DATE = new Date(2025, 6, 20);
-const V0_0_87_DATE = new Date(2025, 6, 20);
-const V0_0_86_DATE = new Date(2025, 6, 19);
-const V0_0_85_DATE = new Date(2025, 6, 19);
-const V0_0_84_DATE = new Date(2025, 6, 19);
-const V0_0_83_DATE = new Date(2025, 6, 19);
-const V0_0_82_DATE = new Date(2025, 6, 19);
-const V0_0_81_DATE = new Date(2025, 6, 19);
-const V0_0_80_DATE = new Date(2025, 6, 19);
-
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.18 ({V0_4_18_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 13, 2025 (v0.4.05 - v0.4.24)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Quest Group Editor Fix:</strong> Resolved a critical bug where changes made in the "Edit Quest Group" dialog would not save correctly if only the group's name or description was modified. The data synchronization logic has been corrected to ensure all changes are reliably persisted.</li>
-                <li><strong>Updated Help Guide:</strong> The in-app Help Guide has been thoroughly updated to reflect the latest application features and specifications, including a more detailed explanation of the streamlined quest group management workflow.</li>
+                <li><strong>Build Stability Fixes:</strong> Resolved a recurring TypeScript JSX error in the help guide that was causing build failures.</li>
+                <li><strong>Enhanced AI Teacher:</strong> The AI Teacher is now a more effective and engaging tutor with personalized content, better question handling, and lesson summaries.</li>
+                <li><strong>Revamped Kiosk Mode:</strong> Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting activated by admins.</li>
+                <li><strong>Flexible Manual Adjustments:</strong> Overhauled the "Manual Adjustment" dialog for more flexibility in awarding rewards and trophies, including 16 new birthday trophies.</li>
+                <li><strong>Quest & Condition Enhancements:</strong> Introduced user-specific and global Condition Sets for granular content control and fixed a critical bug in the Quest Group editor.</li>
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.17 ({V0_4_17_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 6, 2025 (v0.3.01 - v0.4.04)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>User-Specific Condition Sets:</strong> Administrators can now assign a Condition Set to specific users. This allows for creating rules that apply only to certain individuals (e.g., younger children), providing more granular control over game content.</li>
-                <li><strong>Build Stability Fix:</strong> Resolved a recurring TypeScript build error related to potentially undefined properties, improving the reliability of the deployment pipeline.</li>
+                <li><strong>AI Teacher Launch:</strong> Developed and launched the full AI Teacher feature, moving from a backend foundation to a full-screen UI with an interactive "Teach, Check, Feedback" loop and robust tool-calling for quizzes.</li>
+                <li><strong>UI & UX Improvements:</strong> Fixed issues with AI Teacher button responsiveness and made minor improvements to Kiosk Mode and item approval defaults.</li>
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.10 ({V0_4_10_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 29, 2025 (v0.1.96 - v0.3.0)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Smarter, More Personal AI Teacher:</strong> The AI Teacher is now a more effective and engaging tutor.
-                    <ul className="list-disc list-inside pl-6">
-                        <li><strong>Personalized Content:</strong> The AI now uses the user's "About Me" and private "Admin Notes" to create relevant analogies and examples, making lessons more relatable.</li>
-                        <li><strong>Handles Questions:</strong> The AI can now gracefully handle interruptions. If a user asks a question, it will pause its lesson, provide a clear answer, and then seamlessly resume teaching.</li>
-                        <li><strong>Lesson Summaries:</strong> After a user successfully passes the final quiz, the AI provides a concise, bulleted summary of the key takeaways from the session to reinforce learning.</li>
-                    </ul>
-                </li>
+                <li><strong>Kiosk Mode Overhaul:</strong> Re-architected Kiosk Mode to be a more stable URL-based system (`/kiosk`), patching critical security and login flow bugs.</li>
+                <li><strong>AI Foundations:</strong> Implemented the backend foundation for the AI Teacher feature with stateful chat sessions.</li>
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.06 ({V0_4_06_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 22, 2025 (v0.1.90 - v0.1.95)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Revamped Kiosk Mode:</strong> Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting.
-                    <ul className="list-disc list-inside pl-6">
-                        <li><strong>Admin Activation:</strong> An admin can now log into any device, open their profile dropdown, and use a "Kiosk Mode" toggle to turn that specific device into a permanent kiosk.</li>
-                        <li><strong>Persistent State:</strong> Once enabled, a device will always boot directly to the shared user selection screen, surviving reloads and new sessions.</li>
-                        <li><strong>Clearer Logout:</strong> On kiosk devices, a dedicated "Kiosk" button appears in the header, providing an intuitive way for users to log out and return the device to the shared screen.</li>
-                        <li><strong>Cleanup:</strong> All old URL-based (`/kiosk`) logic has been removed for a cleaner, more robust implementation.</li>
-                    </ul>
-                </li>
+                <li><strong>Dashboard & Notifications:</strong> Introduced new dashboard widgets and header notifications for pending user items.</li>
+                <li><strong>Responsive Approvals:</strong> Made the Approvals page fully responsive for mobile devices.</li>
+                <li><strong>Enhanced Chronicles:</strong> The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.</li>
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.05 ({V0_4_05_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
+            <h4 className="text-lg font-bold text-stone-100">September 2025 (Pre v0.1.90)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Flexible Manual Adjustments:</strong> The "Manual Adjustment" dialog for users has been completely overhauled. Instead of a restrictive dropdown, administrators can now grant rewards, apply setbacks, and award a trophy all in a single, streamlined action, making it much easier to handle special occasions like birthdays.</li>
-                <li><strong>New Birthday Trophies:</strong> Added 16 new manually-awarded trophies to celebrate user birthdays for every age from 5 to 20.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.04 ({V0_4_04_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>New Full-Screen AI Teacher UI:</strong> Replaced the small AI Teacher side panel with a full-screen, two-column "Activity Panel." This provides a more immersive and standardized experience that can accommodate future media types like videos or documents. The left column contains the AI avatar and chat history, while the right serves as a dedicated user interaction workspace.</li>
-                <li><strong>Smarter AI Teaching Loop:</strong> Overhauled the AI's system instructions to follow a "Teach, Check, Feedback" loop. The AI is now required to ask a multiple-choice question after teaching a concept, which makes the learning process more effective and guarantees that the interactive choice buttons appear frequently and reliably.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.03 ({V0_4_03_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Robust AI Teacher Choices:</strong> Re-architected the AI Teacher's multiple-choice feature to use Gemini's "Tool Calling" functionality. This replaces the old, fragile string-parsing method with a reliable, structured data approach, ensuring interactive buttons now appear consistently.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.02 ({V0_4_02_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>AI Teacher Button Fix:</strong> Resolved an issue where the multiple-choice buttons in the AI Teacher chat were not responding to clicks. Users can now interact with the choices as intended.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.01 ({V0_4_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Simplified Kiosk Mode Entry:</strong> Removed the dedicated "Enter Kiosk Mode" button from the login page. A new "Enter Kiosk Mode" toggle is now available directly on the main App Lock screen for administrators.</li>
-                <li><strong>Default Item Approval:</strong> All newly created goods/items now require administrator approval by default to ensure better control over the game economy.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.4.0 ({V0_4_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Enhanced AI Teacher with Quizzes & Timers:</strong> The AI Teacher feature has been transformed into a full learning module.
-                    <ul className="list-disc list-inside pl-6">
-                        <li><strong>Proactive Start & In-Chat Quizzes:</strong> The AI is now more interactive, proactively starting conversations and asking questions mid-lesson to check for understanding.</li>
-                        <li><strong>Optional Learning Timer:</strong> Admins can now set a minimum learning time for "AI Teacher" quests. A timer appears in the chat, and users must complete it before they can take the final quiz.</li>
-                        <li><strong>Final Quiz for Completion:</strong> A new "I'm ready for the quiz" button appears (enabled after any required time is met), which prompts the AI to generate a 3-question quiz based on the conversation. Users must pass this quiz (2/3 correct) before the main "Complete Quest" button becomes enabled, ensuring a structured and effective learning experience.</li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.3.02 ({V0_3_02_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>AI Teacher Chat UI:</strong> Implemented the full chat interface for the AI Teacher feature. The panel now supports a real-time, back-and-forth conversation with the Gemini-powered AI, complete with a message history, typing indicators, and user avatars, all connected to the new stateful backend API.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.3.01 ({V0_3_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>AI Teacher UI Scaffolding:</strong> Implemented the frontend scaffolding for the AI Teacher feature. Admins can now designate a quest with an "AI Teacher" media type. This makes a new "AI Teacher" button appear in the quest details, which opens a placeholder panel for the future chat interface.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.3.0 ({V0_3_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>AI Teacher Foundation:</strong> Implemented the backend foundation for the new "AI Teacher" feature. This includes new, stateful API endpoints to manage interactive chat sessions with the Gemini API, laying the groundwork for personalized, quest-based learning conversations.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.2.01 ({V0_2_01_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Simplified Kiosk Button:</strong> Moved the Kiosk button to the main header, next to the fullscreen icon, and simplified the label to "Kiosk" for easier access on `/kiosk` URLs.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.2.0 ({V0_2_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Return to Kiosk Mode:</strong> Added a "Return to Kiosk" button to the user profile dropdown when using the app via the `/kiosk` URL. This provides a clear and intuitive way for users to end their session and return to the shared user selection screen.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.99 ({V0_1_99_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Critical Kiosk Security Fix:</strong> Patched a major security flaw where the Kiosk Mode page (`/kiosk`) could be accessed without authentication in a new session (e.g., an incognito window).</li>
-                <li><strong>Kiosk Login Flow Fixed:</strong> Resolved a critical bug where logging in from the Kiosk Mode screen would incorrectly redirect users to the main login page instead of their dashboard.</li>
-                <li><strong>Robust Kiosk State Management:</strong> The logout process is now path-aware, correctly returning users to the Kiosk screen when appropriate.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.98 ({V0_1_98_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>New URL-Based Kiosk Mode:</strong> Kiosk Mode is now accessed via a dedicated URL (`/kiosk`), improving reliability.</li>
-                <li><strong>Simplified Admin UI:</strong> Removed Kiosk toggles from the admin profile dropdown for a cleaner interface.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.97 ({V0_1_97_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Kiosk Mode State Management Fix:</strong> Resolved an issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.96 ({V0_1_96_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Kiosk Mode Logic Fix:</strong> Corrected a logical flaw to ensure the correct "Disable Kiosk Mode" toggle appears for admins on Kiosk-enabled devices.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.95 ({V0_1_95_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Revamped Kiosk Mode Activation:</strong> Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu.</li>
-                <li><strong>Full-Width Kiosk Header Scrolling:</strong> The entire header in Kiosk Mode is now horizontally scrollable on mobile devices.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.94 ({V0_1_94_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Per-Device Kiosk Mode:</strong> Kiosk/Shared Mode is now a device-specific setting, enabled via a button on the login screen.</li>
-                <li><strong>Mobile Header Fix:</strong> The Kiosk Mode header is now horizontally scrollable on mobile.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.93 ({V0_1_93_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Mobile-Friendly Approvals:</strong> The Approvals page is now fully responsive with a touch-friendly card view on mobile devices.</li>
-                <li><strong>Interactive Approval Cards:</strong> Quest and Claim approval cards on mobile are now clickable, opening a full detail dialog.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.92 ({V0_1_92_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Kiosk Mode Pending Notifications:</strong> The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items awaiting approval.</li>
-                <li><strong>Backend Optimizations:</strong> Added a new, efficient backend endpoint to fetch pending item counts for multiple users at once.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.91 ({V0_1_91_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Maintenance Release:</strong> Incremented version and updated the service worker to ensure all users receive the latest updates.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.90 ({V0_1_90_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>"My Pending Items" Dashboard Widget:</strong> Added a new card to the dashboard showing items awaiting approval.</li>
-                <li><strong>Pending Items Header Notification:</strong> A new bell icon in the header now displays a badge with a count of pending items.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.1.49 ({V0_1_49_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Mobile Responsiveness:</strong> Implemented a fully responsive design for mobile devices.</li>
-                <li><strong>Data Integrity & Reset Fixes:</strong> Resolved critical issues where core game elements would disappear after a full data reset.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.99y ({V0_0_99Y_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>New "Journey" Quest Type:</strong> The simple "Unlocks Next Quest" feature has been completely replaced by a new, powerful <strong>Journey</strong> quest type. Journeys are multi-stage adventures composed of multiple <strong>checkpoints</strong>.</li>
-                <li><strong>Dedicated Checkpoint Editor:</strong> Admins can now create epic, multi-step quests using a new, intuitive dialog to add and manage checkpoints, each with its own description and unique rewards.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">
-                Version 0.0.80 ({V0_0_80_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
-            </h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Initial public version.</li>
+                <li><strong>Full Mobile Responsiveness:</strong> Implemented a responsive design across the application.</li>
+                <li><strong>New "Journey" Quest Type:</strong> Introduced multi-stage quests with checkpoints.</li>
+                <li><strong>Visual Quest System:</strong> Added color-coded and animated borders to quest cards to indicate urgency and status.</li>
+                <li><strong>Core Feature Development:</strong> Initial public release and foundational feature development.</li>
             </ul>
         </div>
     </div>
 );
+
 
 const RoadmapContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
@@ -480,7 +186,7 @@ export const HelpPage: React.FC = () => {
                                 <li>**For {settings.terminology.tasks}:** In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
-                        <li><strong>NEW: User-Specific Sets:** In the "Edit Condition Set" dialog, a new "User Assignment" section allows you to limit the entire set to only apply to specific, selected users. This is perfect for rules you only want to affect certain people, like younger children.</li></strong>
+                        <li><strong>NEW: User-Specific Sets:** In the "Edit Condition Set" dialog, a new "User Assignment" section allows you to limit the entire set to only apply to specific, selected users. This is perfect for rules you only want to affect certain people, like younger children.</li>
                     </ol>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>
@@ -507,9 +213,9 @@ export const HelpPage: React.FC = () => {
                     <ul className="list-disc list-inside space-y-2 mt-2">
                         <li>From the `{settings.terminology.link_manage_users}` page, an {settings.terminology.admin} can click the "Adjust" button for any {settings.terminology.user}.</li>
                         <li>This opens a unified dialog where the {settings.terminology.admin} can perform multiple actions at once.</li>
-                        <li>**Grant Rewards:** Add any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
-                        <li>**Apply Setbacks:** Deduct any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
-                        <li>**Award Trophy:** Select and award any manually-awarded {settings.terminology.award}.</li>
+                        <li><strong>Grant Rewards:</strong> Add any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li><strong>Apply Setbacks:</strong> Deduct any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li><strong>Award Trophy:</strong> Select and award any manually-awarded {settings.terminology.award}.</li>
                         <li>All actions are logged in the `{settings.terminology.history}` as a single, consolidated "Manual Adjustment" event for clarity.</li>
                     </ul>
                     <h4>New Birthday Trophies</h4>

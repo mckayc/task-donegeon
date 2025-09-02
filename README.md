@@ -14,237 +14,129 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### What's New in Version 0.4.24 (October 17, 2025)
--   **Build Fix:** Applied a definitive fix for a persistent syntax error in the Help Guide that was causing recurring build failures.
+-   **Build Stability Fixes:** Resolved a recurring TypeScript JSX error in the help guide that was causing build failures and consolidated the version history for better readability and maintenance.
 
-### What's New in Version 0.4.23 (October 17, 2025)
--   **Build Fix:** Applied a definitive fix for a persistent syntax error in the Help Guide that was causing recurring build failures.
+### Weekly Summaries
 
-### What's New in Version 0.4.22 (October 17, 2025)
--   **Build Fix:** Corrected multiple syntax errors in the Help Guide that were causing the application build to fail.
+-   **Week of October 13, 2025 (v0.4.05 - v0.4.24):**
+    -   Introduced user-specific and global Condition Sets for granular content control.
+    -   Revamped Kiosk Mode to be a persistent, device-specific setting.
+    -   Overhauled Manual Adjustments for flexibility, adding new birthday trophies.
+    -   Enhanced the AI Teacher with personalization and better question handling.
+    -   Fixed critical bugs related to Quest Group saving and recurring build failures.
 
-### What's New in Version 0.4.21 (October 17, 2025)
--   **Build Fix:** Corrected multiple syntax errors in the Help Guide that were causing the application build to fail.
+-   **Week of October 6, 2025 (v0.3.01 - v0.4.04):**
+    -   Developed and launched the full AI Teacher feature, moving from a backend foundation to a full-screen UI with an interactive "Teach, Check, Feedback" loop and robust tool-calling for quizzes.
+    -   Fixed issues with AI Teacher button responsiveness and made minor improvements to Kiosk Mode and item approval defaults.
 
-### What's New in Version 0.4.20 (October 17, 2025)
--   **Build Fix:** Corrected a syntax error in the Help Guide that was causing the application build to fail.
+-   **Week of September 29, 2025 (v0.1.96 - v0.3.0):**
+    -   **Kiosk Mode Overhaul:** Re-architected Kiosk Mode to be a more stable URL-based system (`/kiosk`), patching critical security and login flow bugs.
+    -   **AI Foundations:** Implemented the backend foundation for the AI Teacher feature with stateful chat sessions.
 
-### What's New in Version 0.4.19 (October 17, 2025)
--   **Global Condition Sets:** Administrators can now create multiple Condition Sets and apply them globally with a new "Apply Globally" toggle. These sets are combined with `AND` logic and apply to all quests and markets, allowing for powerful, layered rules (e.g., "Weekend Hours" AND "Holiday Event"). A persistent banner on management pages provides clear context when global rules are active.
+-   **Week of September 22, 2025 (v0.1.90 - v0.1.95):**
+    -   **Dashboard & Notifications:** Introduced new dashboard widgets and header notifications for pending user items.
+    -   **Responsive Approvals:** Made the Approvals page fully responsive for mobile devices.
+    -   **Enhanced Chronicles:** The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.
 
-### What's New in Version 0.4.18 (October 16, 2025)
--   **Quest Group Editor Fix:** Resolved a critical bug where changes made in the "Edit Quest Group" dialog would not save correctly if only the group's name or description was modified. The data synchronization logic has been corrected to ensure all changes are reliably persisted.
--   **Updated Help Guide:** The in-app Help Guide has been thoroughly updated to reflect the latest application features and specifications, including a more detailed explanation of the streamlined quest group management workflow.
+-   **September 2025 (Pre v0.1.90):**
+    -   **Full Mobile Responsiveness:** Implemented a responsive design across the application.
+    -   **New "Journey" Quest Type:** Introduced multi-stage quests with checkpoints.
+    -   **Visual Quest System:** Added color-coded and animated borders to quest cards to indicate urgency and status.
+    -   **Core Feature Development:** Initial public release and foundational feature development.
+---
 
-### What's New in Version 0.4.10 (October 15, 2025)
--   **Smarter, More Personal AI Teacher:** The AI Teacher is now a more effective and engaging tutor.
-    -   **Personalized Content:** The AI now uses the user's "About Me" and private "Admin Notes" to create relevant analogies and examples, making lessons more relatable.
-    -   **Handles Questions:** The AI can now gracefully handle interruptions. If a user asks a question, it will pause its lesson, provide a clear answer, and then seamlessly resume teaching.
-    -   **Lesson Summaries:** After a user successfully passes the final quiz, the AI provides a concise, bulleted summary of the key takeaways from the session to reinforce learning.
+## ✨ Features
 
-### What's New in Version 0.4.06 (October 14, 2025)
--   **Revamped Kiosk Mode:** Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting.
-    -   **Admin Activation:** An admin can now log into any device, open their profile dropdown, and use a "Kiosk Mode" toggle to turn that specific device into a permanent kiosk.
-    -   **Persistent State:** Once enabled, a device will always boot directly to the shared user selection screen, surviving reloads and new sessions.
-    -   **Clearer Logout:** On kiosk devices, a dedicated "Kiosk" button appears in the header, providing an intuitive way for users to log out and return the device to the shared screen.
-    -   **Cleanup:** All old URL-based (`/kiosk`) logic has been removed for a cleaner, more robust implementation.
+### For Players ({users})
+-   **Gamified Experience:** Complete {tasks} to earn {points} and {xp}.
+-   **Character Progression:** Level up through a series of configurable {levels}.
+-   **Virtual Economy:** Spend {currency} in {stores} to buy virtual goods.
+-   **Avatar Customization:** Personalize your character with purchased items.
+-   **Trophy Room:** Earn {awards} for completing milestones.
+-   **Multiple Scopes:** Manage tasks in both a **Personal** space and within shared **{groups}**.
+-   **AI Teacher:** Engage with an AI-powered tutor on educational {tasks}.
 
-### What's New in Version 0.4.05 (October 13, 2025)
--   **Flexible Manual Adjustments:** The "Manual Adjustment" dialog for users has been completely overhauled. Instead of a restrictive dropdown, administrators can now grant rewards, apply setbacks, and award a trophy all in a single, streamlined action, making it much easier to handle special occasions like birthdays.
--   **New Birthday Trophies:** Added 16 new manually-awarded trophies to celebrate user birthdays for every age from 5 to 20.
+### For Admins ({admin}s)
+-   **Powerful Content Management:** Create and manage every aspect of the game world, including {tasks}, items, {stores}, {levels}, and {awards}.
+-   **AI Suggestion Engine:** Use Google Gemini to generate creative ideas for any game asset, from {tasks} to items to {awards}.
+-   **Asset Library:** Kickstart your world with pre-made content packs that can be imported with a single click.
+-   **Blueprint System:** Export your own custom content as a "Blueprint" file to share with others or back up your creations.
+-   **Dynamic Rules Engine:** Create powerful "Condition Sets" to control when {tasks} and {stores} become available based on player progress, time of day, or items owned.
+-   **User Management:** Easily manage members, assign roles, and make manual adjustments to player accounts.
+-   **Shared / Kiosk Mode:** Configure a device for shared family use with a quick-login screen and optional PIN protection.
+-   **In-Depth Theming:** Customize the application's entire look and feel, from fonts and colors to button shapes, using the Theme Editor.
+-   **Robust Data Management:** Create manual or automated backups of your entire application data (in JSON or SQLite format) and restore from them at any time.
 
-### What's New in Version 0.4.04 (October 12, 2025)
--   **New Full-Screen AI Teacher UI:** Replaced the small AI Teacher side panel with a full-screen, two-column "Activity Panel." This provides a more immersive and standardized experience that can accommodate future media types like videos or documents. The left column contains the AI avatar and chat history, while the right serves as a dedicated user interaction workspace.
--   **Smarter AI Teaching Loop:** Overhauled the AI's system instructions to follow a "Teach, Check, Feedback" loop. The AI is now required to ask a multiple-choice question after teaching a concept, which makes the learning process more effective and guarantees that the interactive choice buttons appear frequently and reliably.
+## 🗺️ Roadmap
 
-### What's New in Version 0.4.03 (October 11, 2025)
--   **Robust AI Teacher Choices:** Re-architected the AI Teacher's multiple-choice feature to use Gemini's "Tool Calling" functionality. This replaces the old, fragile string-parsing method with a reliable, structured data approach, ensuring interactive buttons now appear consistently.
+Here is the planned development path for Task Donegeon, prioritized for the most impactful features first.
 
-### What's New in Version 0.4.02 (October 10, 2025)
--   **AI Teacher Button Fix:** Resolved an issue where the multiple-choice buttons in the AI Teacher chat were not responding to clicks. Users can now interact with the choices as intended.
+### Phase 1: Foundational Features & Quality of Life
+-   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
+-   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
+-   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
+-   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
+-   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.
+-   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
 
-### What's New in Version 0.4.01 (October 9, 2025)
--   **Simplified Kiosk Mode Entry:** Removed the dedicated "Enter Kiosk Mode" button from the login page. A new "Enter Kiosk Mode" toggle is now available directly on the main App Lock screen for administrators.
--   **Default Item Approval:** All newly created goods/items now require administrator approval by default to ensure better control over the game economy.
+### Phase 2: Core Gameplay & Personalization
+-   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
+-   **Reward Rework:** Overhaul the reward system to allow for more complex and interesting rewards, such as items that grant temporary bonuses or unlock special abilities.
 
-### What's New in Version 0.4.0 (October 8, 2025)
--   **Enhanced AI Teacher with Quizzes & Timers:** The AI Teacher feature has been transformed into a full learning module.
-    -   **Proactive Start & In-Chat Quizzes:** The AI is now more interactive, proactively starting conversations and asking questions mid-lesson to check for understanding.
-    -   **Optional Learning Timer:** Admins can now set a minimum learning time for "AI Teacher" quests. A timer appears in the chat, and users must complete it before they can take the final quiz.
-    -   **Final Quiz for Completion:** A new "I'm ready for the quiz" button appears (enabled after any required time is met), which prompts the AI to generate a 3-question quiz based on the conversation. Users must pass this quiz (2/3 correct) before the main "Complete Quest" button becomes enabled, ensuring a structured and effective learning experience.
+## 🛠️ Tech Stack
 
-### What's New in Version 0.3.02 (October 7, 2025)
--   **AI Teacher Chat UI:** Implemented the full chat interface for the AI Teacher feature. The panel now supports a real-time, back-and-forth conversation with the Gemini-powered AI, complete with a message history, typing indicators, and user avatars, all connected to the new stateful backend API.
+-   **Frontend:** React, TypeScript, Vite, Tailwind CSS
+-   **Backend:** Node.js, Express
+-   **Database:** TypeORM with SQLite for easy, file-based persistence.
+-   **AI Integration:** Google Gemini API
 
-### What's New in Version 0.3.01 (October 6, 2025)
--   **AI Teacher UI Scaffolding:** Implemented the frontend scaffolding for the AI Teacher feature. Admins can now designate a quest with an "AI Teacher" media type. This makes a new "AI Teacher" button appear in the quest details, which opens a placeholder panel for the future chat interface.
+## 🚀 Getting Started
 
-### What's New in Version 0.3.0 (October 5, 2025)
--   **AI Teacher Foundation:** Implemented the backend foundation for the new "AI Teacher" feature. This includes new, stateful API endpoints to manage interactive chat sessions with the Gemini API, laying the groundwork for personalized, quest-based learning conversations.
+To get started with Task Donegeon, you'll need Node.js and npm installed. The application is designed to be self-contained and run easily on your local machine or a server.
 
-### What's New in Version 0.2.01 (October 4, 2025)
--   **Simplified Kiosk Button:** Moved the Kiosk button to the main header, next to the fullscreen icon, and simplified the label to "Kiosk" for easier access on `/kiosk` URLs.
+### Prerequisites
+-   Node.js (v18 or higher recommended)
+-   npm
 
-### What's New in Version 0.2.0 (October 3, 2025)
--   **Return to Kiosk Mode:** Added a "Return to Kiosk" button to the user profile dropdown when using the app via the `/kiosk` URL. This provides a clear and intuitive way for users to end their session and return to the shared user selection screen.
+### Environment Variables
+For full functionality, especially the AI Suggestion Engine, you need to configure environment variables. Create a `.env` file in the root directory of the project.
 
-### What's New in Version 0.1.99 (October 2, 2025)
--   **Critical Kiosk Security Fix:** Patched a major security flaw where the Kiosk Mode page (`/kiosk`) could be accessed without authentication in a new session (e.g., an incognito window). The application now correctly enforces the master `AppLockScreen` as the primary gatekeeper before any other content is rendered.
--   **Kiosk Login Flow Fixed:** Resolved a critical bug where logging in from the Kiosk Mode screen would incorrectly redirect users to the main login page instead of their dashboard. The user login flow from the shared view is now seamless and correct.
--   **Robust Kiosk State Management:** The logout process is now path-aware. Logging out from a Kiosk device correctly returns the user to the Kiosk selection screen, while logging out from a normal session correctly locks the application, preventing state confusion and fixing hard-refresh bugs.
+```env
+# (Required for AI Features) Your Google Gemini API Key
+# Get one from https://aistudio.google.com/app/apikey
+API_KEY="your_gemini_api_key_here"
 
-### What's New in Version 0.1.98 (October 1, 2025)
--   **New URL-Based Kiosk Mode:** Kiosk Mode has been re-architected to be more robust and reliable. It is no longer a device-specific state but is now accessed via a dedicated URL (`/kiosk`). This eliminates all state management bugs related to toggling the mode on and off.
--   **Simplified Admin UI:** The "Enable/Disable Kiosk Mode" toggle and "Exit" button have been removed from the admin profile dropdown to create a cleaner, more intuitive interface. Admins now simply navigate to the `/kiosk` URL on a device to set it up for shared use.
--   **Updated Documentation:** The in-app Help Guide and project README have been updated to reflect the new, simpler Kiosk Mode functionality.
+# (Optional, Recommended for Production) A long, random, secret string for signing authentication tokens.
+JWT_SECRET="your_long_random_secret_string"
 
-### What's New in Version 0.1.97 (September 30, 2025)
--   **Kiosk Mode State Management Fix:** Resolved a core state management issue where logging into a Kiosk-enabled device would incorrectly disable its Kiosk setting. The application now correctly distinguishes between the session's view (personal vs. shared) and the device's persistent Kiosk Mode setting, ensuring the UI for administrators is always correct.
+# (Optional, Recommended for Production) The path where the application's data (database, assets) will be stored.
+# This is crucial for persistent data when using Docker.
+APP_DATA_PATH="./data"
+```
 
-### What's New in Version 0.1.96 (September 29, 2025)
--   **Kiosk Mode Logic Fix:** Corrected a logical flaw where an administrator logged into a Kiosk-enabled device would see an "Exit" button and an "Enable Kiosk Mode" option instead of the correct "Disable Kiosk Mode" toggle. The UI now correctly reflects the device's state.
+## ⚙️ Installation and Running
 
-### What's New in Version 0.1.95 (September 28, 2025)
--   **Revamped Kiosk Mode Activation:** The "Enter Kiosk Mode" button has been removed from the public login page. Administrators now enable Kiosk Mode for a specific device directly from their profile dropdown menu, providing a more secure and intuitive workflow.
--   **Full-Width Kiosk Header Scrolling:** The entire header in Kiosk Mode is now horizontally scrollable on mobile devices. This ensures all controls and user avatars are always accessible, even on very narrow screens.
+### Using `npm` (for local development)
+1.  **Install dependencies** for both the frontend and backend:
+    ```bash
+    npm install
+    npm install --prefix backend
+    ```
+2.  **Build the frontend:**
+    ```bash
+    npm run build
+    ```
+3.  **Start the server:**
+    ```bash
+    npm start --prefix backend
+    ```
+4.  Open your browser and navigate to `http://localhost:3000`.
 
-### What's New in Version 0.1.94 (September 27, 2025)
--   **Per-Device Kiosk Mode:** Kiosk/Shared Mode is now a device-specific setting. The global setting enables the feature, and a new "Enter Kiosk Mode" button on the login screen allows any permitted device to enter this view. A device will remain in Kiosk Mode until a user explicitly logs in.
--   **Mobile Header Fix:** The user selection area in the Kiosk Mode header is now horizontally scrollable on mobile devices, ensuring all user avatars and the "Switch User" button are always accessible.
-
-### What's New in Version 0.1.93 (September 26, 2025)
--   **Mobile-Friendly Approvals:** The Approvals page is now fully responsive. On mobile devices, it displays a touch-friendly card view for each pending item (Quests, Claims, Purchases, and Trades), making it easier for administrators to manage approvals on the go.
--   **Interactive Approval Cards:** Quest and Claim approval cards on mobile are now clickable, opening a full detail dialog so admins can review the requirements before approving.
-
-### What's New in Version 0.1.92 (September 25, 2025)
--   **Kiosk Mode Pending Notifications:** The shared Kiosk Mode header now displays a notification badge on a user's avatar if they have items (quests or purchases) awaiting approval, providing an immediate visual cue without requiring login.
--   **Backend Optimizations:** Added a new, more efficient backend endpoint to fetch pending item counts for multiple users at once, improving performance for the Kiosk Mode view.
-
-### What's New in Version 0.1.91 (September 24, 2025)
--   **Maintenance Release:** Incremented application version number and updated the service worker to ensure all users receive the latest application updates correctly. This release also includes several internal bug fixes to improve build stability and correct data access patterns on the Quests and Management pages.
-
-### What's New in Version 0.1.90 (September 23, 2025)
--   **"My Pending Items" Dashboard Widget:** A new card has been added to the {link_dashboard} that provides a consolidated, at-a-glance view of all your submitted {tasks} and purchases that are awaiting administrator approval.
--   **Pending Items Header Notification:** A new bell icon (🔔) in the header now displays a badge with a count of your pending items. Clicking it opens a dropdown for a quick overview.
--   **Clearer Transaction UI in {history}:** To prevent confusion, the {history} log now displays the cost of a purchase only on the initial "Pending" event. Subsequent "Completed" or "Approved" events no longer repeat the cost, and "Rejected" or "Cancelled" events explicitly show a refund.
--   **Richer Purchase Logging:** Item purchases in the {history} log now display the specific item's image instead of a generic icon. If no item image is available, it defaults to the icon of the {store} where it was purchased.
-
-### What's New in Version 0.1.89 (September 22, 2025)
--   **Full Audit Trail for {history}:** The {history} system has been updated to provide a complete audit trail for multi-step actions. Instead of updating a single log entry, the system now creates a new, separate entry for each step, such as "Requested," "Approved," "Rejected," or "Cancelled," ensuring a full and transparent history of all transactions.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the new, more detailed logging behavior.
-
-### What's New in Version 0.1.88 (September 21, 2025)
--   **Enhanced Chronicle Logging:** Fixed an issue where creating new items ({link_manage_items}) and making purchases from a {store} were not being recorded. These events will now correctly appear in the {history} log.
--   **UI Fix:** Added "Admin Asset Management" to the default filters on the {history} page so that events related to creating and deleting assets are visible by default.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the new logging events.
-
-### What's New in Version 0.1.87 (September 20, 2025)
--   **Enhanced Number Input:** Fixed a bug in the number input component where holding down the increment/decrement buttons would not accelerate the value change. The component now correctly handles click-and-hold for rapid adjustments.
--   **UI Fix:** Increased the default width of the number input to prevent numbers with four or more digits from being cut off.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to document the number input's functionality.
-
-### What's New in Version 0.1.86 (September 19, 2025)
--   **Enhanced Time-Remaining Display:** All quest cards across the app ({link_quests} page, Dashboard, and Kiosk Mode) now show detailed time-remaining information. This includes days, hours, and minutes until a {task} is due.
--   **Smarter Deadline Logic:** The quest card display now intelligently switches to show the time remaining until a {task} is marked "Incomplete" if it's past its initial due time.
--   **Clearer Due Dates:** Alongside the time remaining, cards also display the absolute due date and time for better planning.
--   **Updated Help Guide:** The in-app {link_help_guide} has been updated to fully document the new time-remaining display system.
-
-### What's New in Version 0.1.85 (September 18, 2025)
--   **Self-Healing Backup System:** Fixed a critical issue where old automated backups would accumulate indefinitely if their parent schedule was edited or deleted. The system now automatically finds and deletes these "orphaned" backup files, ensuring that storage is managed correctly and preventing uncontrolled disk usage.
-
-### What's New in Version 0.1.84 (September 17, 2025)
--   **Consistent Quest Card Styling:** The "Quick Actions" widget on the Dashboard now uses the same detailed styling as the main Quests page, including dynamic, color-coded borders to indicate due dates and status for a more consistent user experience.
--   **Slower "Due Soon" Animation:** The pulsing animation for quest cards that are due soon has been slowed down to be less jarring.
-
-### What's New in Version 0.1.83 (September 16, 2025)
--   **Visible Quest Rewards:** The "Manage Quests" page now includes a "Rewards" column in the table view and displays rewards directly on the quest cards in mobile view, making it much easier for administrators to see the rewards for each quest at a glance.
-
-### What's New in Version 0.1.77 (September 15, 2025)
--   **Enhanced Chronicles System:** The `{history}` system has been overhauled to be more comprehensive and intelligent.
-    -   **New Event Logging:** The system now logs a wider range of activities, including when a {task} is marked as a "To-Do," when an exchange is made, and when a Triumph or Trial is applied.
-    -   **Consolidated Admin Logs:** To keep the `{history}` clean, consecutive creations or deletions of the same asset type by an {admin} are now grouped into a single, consolidated log entry (e.g., "Created 5 {tasks}").
-    -   **More Robust Logging:** All user-facing actions are now logged individually to provide a complete audit trail.
--   **Smarter Dashboard Widget:** The "Recent Activity" widget on the Dashboard now shows events from the last **7 days** and displays up to **50 items** or all of today's events, whichever is greater, giving a more comprehensive recent overview.
--   **Updated Documentation:** The in-app `{link_help_guide}` has been thoroughly updated with these new specifications, ensuring it remains the definitive source of truth for the application's functionality.
-
-### What's New in Version 0.1.76 (September 14, 2025)
--   **No Cap on Quick Actions:** The "Quick Actions" widget on the Dashboard now displays all available quests for the user, rather than being capped at 10. The list is scrollable if many quests are available.
--   **Kiosk Mode Logic Update:** Optional, dateless `{singleTasks}` (Ventures) that can be completed daily will now automatically appear for all assigned users in Kiosk Mode, without needing to be manually marked as a "To-Do".
--   **Updated Documentation:** The in-app Help Guide has been updated to reflect these new functional specifications.
-
-### What's New in Version 0.1.75 (September 13, 2025)
--   **Functional Specification UI Overhaul:** Implemented the full set of UI and behavior requirements from Bug Report #bug-1756437.
--   **Consistent Background Colors:** Quest cards now have consistent, distinct background colors based on their type ({recurringTask}, {singleTask}, {journey}) across all parts of the application.
--   **Time-Sensitive Border System:** Quest card borders now dynamically change color and animate based on their deadline proximity:
-    -   `Green:` More than 2 hours until due.
-    -   `Yellow:` 1-2 hours until due.
-    -   `Orange (pulsing):` Less than 1 hour until due.
-    -   `Red (pulsing):` Past due.
-    -   `Black:` Marked as incomplete for the day (for {recurringTasks}).
--   **Dimmed States:** Quests that are completed for the day or past their "incomplete" time are now visually dimmed to de-emphasize them.
--   **Updated Documentation:** The in-app Help Guide has been updated to fully document this new, detailed visual system.
-
-### What's New in Version 0.1.74 (September 12, 2025)
--   **Maintenance Release:** Incremented application version number and updated the service worker cache to ensure all users receive the latest application updates correctly.
-
-### What's New in Version 0.1.73 (September 11, 2025)
--   **Visual Task State System:** Quest cards on the main Quest Board and in Kiosk Mode now use a color-coded and animated border system to indicate their status at a glance (e.g., Overdue, Due Soon, To-Do, Optional).
--   **Kiosk Mode Upgrades:** The Kiosk Mode calendar view has been enhanced. It now features the new visual border system for quests and re-introduces categorization, separating quests into "{recurringTasks}" and "{singleTasks} & {journeys}" for better clarity.
--   **Functional Specification Documentation:** Re-established and updated the `HelpGuide.md` file to serve as the definitive source of truth for all application functionality, including the new visual quest state system.
-
-### What's New in Version 0.1.72 (September 10, 2025)
--   **Kiosk Mode Reward Display:** The shared Kiosk Mode calendar view now displays the rewards for each available quest, giving users a better at-a-glance understanding of their potential earnings.
-
-### What's New in Version 0.1.71 (September 9, 2025)
--   **Robust File Pathing Fix:** Resolved a stubborn avatar display issue by replacing all hardcoded absolute paths in the backend with dynamically resolved paths. This ensures the server can reliably locate and serve uploaded files (avatars, assets) and the database, regardless of the deployment environment.
-
-### What's New in Version 0.1.70 (September 8, 2025)
--   **Avatar Display Fix:** Resolved an issue where uploaded avatar images would appear broken in the development environment due to a missing server proxy configuration for media files.
-
-### What's New in Version 0.1.69 (September 7, 2025)
--   **Avatar System Simplification:** The avatar system has been streamlined. It no longer uses a layered system for equipped items and instead displays a single, user-uploaded profile picture. This resolves display issues and simplifies the user experience.
--   **Optimized Avatar Resizing:** The image cropper now resizes uploaded photos to a web-friendly 512x512 pixels, significantly reducing file sizes for faster performance and less storage usage.
-
-### What's New in Version 0.1.68 (September 6, 2025)
--   **Avatar Upload Optimization:** Cropped avatar uploads are now saved as JPEGs instead of PNGs, resulting in significantly smaller file sizes and faster uploads.
--   **Avatar Display Fix:** Resolved an issue where uploaded profile pictures would sometimes appear as broken images. The avatar component now correctly handles rendering custom profile pictures alongside equipped items.
--   **Reliable Picture Removal:** Fixed a bug where the "Remove Picture" button would not work reliably. It now correctly clears the user's profile picture on the first click.
-
-### What's New in Version 0.1.67 (September 5, 2025)
--   **Avatar Upload Fix:** Resolved a race condition that could cause avatar uploads to intermittently fail after cropping. The upload process is now more reliable.
--   **Admin Avatar Editing:** Administrators can now edit and manage user avatars directly from the "Edit User" dialog, including uploading new images, selecting from the gallery, and removing pictures.
-
-### What's New in Version 0.1.66 (September 4, 2025)
--   **Consistent Mobile Management Pages:** Applied the responsive card layout, previously on the "Manage Quests" page, to all other management pages (Users, Items, Markets, Trophies, etc.). This creates a unified, touch-friendly experience for administrators on mobile devices.
-
-### What's New in Version 0.1.65 (September 3, 2025)
--   **PWA Update Reliability:** Fixed a critical issue where the application would show an error page after an update. The service worker now correctly takes control of the page, ensuring a smooth and reliable update process without asset loading errors.
-
-### What's New in Version 0.1.64 (September 2, 2025)
--   **Version Bump:** Incremented application version number to trigger update notifications.
-
-### What's New in Version 0.1.63 (September 1, 2025)
--   **Responsive Manage Quests Page:** The "Manage Quests" page is now fully responsive. It will display a data table on desktop for efficient management and automatically switch to a touch-friendly card view on mobile devices for a better user experience. Bulk selection and actions are supported in both views.
-
-### What's New in Version 0.1.62 (August 31, 2025)
--   **Service Worker Update Reliability:** Overhauled the service worker registration and update detection logic to eliminate a race condition. The application will now reliably show an "Update Available" notification when a new version is ready to be installed.
-
-### What's New in Version 0.1.61 (August 30, 2025)
--   **New Enhanced Number Input:** Replaced all standard number input fields throughout the application with a custom stepper component. This new component features increment/decrement buttons, supports rapid changes by holding the buttons, and allows for easier direct text entry, resolving a long-standing issue with deleting the first digit in a number.
-
-### What's New in Version 0.1.60 (August 29, 2025)
--   **Version Update:** Incremented application version number to prepare for upcoming features.
-
-### What's New in Version 0.1.52 (August 28, 2025)
--   **Mobile Sidebar Scrolling:** Fixed a bug where the mobile sidebar menu would not scroll properly when sections were expanded, making some links inaccessible.
--   **Improved Number Inputs:** Corrected an issue where the first digit of a number could not be deleted in various reward and XP input fields across the application, improving the content editing experience.
-
-### What's New in Version 0.1.50 (August 27, 2025)
--   **UI Opacity Adjustments:** Made several UI overlays, such as the header and chat panel, fully opaque to improve readability and provide a more solid feel. The mobile sidebar overlay is also now darker to improve focus on the menu.
-
-### What's New in Version 0.1.49 (August 26, 2025)
--   **Mobile Responsiveness:** Implemented a fully responsive design. The application now adapts its layout for mobile devices, featuring an off-canvas sidebar, a condensed header, and touch-friendly card-based views on management pages to ensure a great user experience on any screen size.
--   **View Mode Switcher:** Added a manual toggle in the header to switch between mobile and desktop views, facilitating testing and improving usability on tablets.
--   **Data Integrity & Reset Fixes:** Resolved critical issues where core game elements like the default Guild, Exchange Market, and Explorer Chronicles would disappear after a full data reset. The system now correctly re-initializes these essential components.
--   **Revamped Asset Pack Importer:** Improved the asset pack import process. The import dialog now provides a clearer preview of all assets within the pack, including quests, markets, items, and trophies. It also includes a "select all" checkbox for easier bulk importing.
--   **Enhanced Setback Rules:** Added more granular control over setbacks in the "Game Rules" settings. Admins can now globally disable setbacks or choose to only apply them if quests are incomplete at the end of the day ("Forgive Late Setbacks").
--   **UI Polish in Settings:** Cleaned up the UI in the "Game Rules" section to prevent text from overlapping, improving readability.
+### Using Docker (recommended for production)
+A `Dockerfile` and `docker-compose.yml` are included for easy containerization.
+1.  **Ensure you have a `.env` file** in the root directory with your `API_KEY` and a secure `JWT_SECRET`.
+2.  **Build and run the container** using Docker Compose:
+    ```bash
+    docker-compose up --build -d
+    ```
+3.  The application will be available at `http://localhost:3000`. Your data will be persisted in a `data` directory created in the project root, as mapped in the `docker-compose.yml` file.

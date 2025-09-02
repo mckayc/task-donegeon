@@ -42,8 +42,8 @@ export interface QuestsDispatch {
   rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void>;
   markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
   unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
-  addQuestGroup: (groupData: Omit<QuestGroup, 'id'>) => Promise<QuestGroup | null>;
-  updateQuestGroup: (groupData: QuestGroup) => Promise<QuestGroup | null>;
+  addQuestGroup: (groupData: Omit<QuestGroup, 'id'> & { questIds?: string[] }) => Promise<QuestGroup | null>;
+  updateQuestGroup: (groupData: QuestGroup & { questIds?: string[] }) => Promise<QuestGroup | null>;
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
   addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
   updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
@@ -240,8 +240,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
             }
         },
-        addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data)),
-        updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data)),
+        addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data), 'Quest group created!'),
+        updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data), 'Quest group updated!'),
         assignQuestGroupToUsers: (groupId, userIds) => {
             if (!currentUser) return Promise.resolve();
             return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds, currentUser.id));

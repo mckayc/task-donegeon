@@ -419,6 +419,22 @@ const HelpPage: React.FC = () => {
 
             <CollapsibleSection title="Functional Specifications" defaultOpen>
                 <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+                    <h3>{settings.terminology.link_manage_quest_groups}</h3>
+                    <p><strong>Purpose:</strong> To organize {settings.terminology.tasks} into logical categories for easier management and bulk assignment.</p>
+                    <p><strong>How it Works:</strong></p>
+                    <ol className="list-decimal list-inside space-y-2">
+                        <li>From the `{settings.terminology.link_manage_quest_groups}` page, you can create a new group or edit an existing one.</li>
+                        <li>The "Create/Edit" dialog provides fields for the group's Name, Description, and Icon.</li>
+                        <li>
+                            **New Feature:** A new **"Assign {settings.terminology.tasks}"** section is now included directly in this dialog. It features a two-panel interface:
+                            <ul className="list-disc list-inside pl-6 mt-2">
+                                <li>**Available {settings.terminology.tasks}:** This panel on the left lists all {settings.terminology.tasks} that are not currently in another group, as well as {settings.terminology.tasks} from the group you are editing. It includes a search bar to help you quickly find specific {settings.terminology.tasks}.</li>
+                                <li>**{settings.terminology.tasks} in this Group:** This panel on the right shows all {settings.terminology.tasks} currently assigned to this group.</li>
+                            </ul>
+                        </li>
+                        <li>Simply click on a {settings.terminology.task} in either panel to instantly move it to the other, assigning or unassigning it from the group.</li>
+                        <li>When you save, the group is updated, and all selected {settings.terminology.tasks} are automatically linked to it, streamlining the entire organization process.</li>
+                    </ol>
                     <h3>Condition Sets</h3>
                     <p><strong>Purpose:</strong> To create reusable sets of rules that can control the availability of {settings.terminology.tasks} and {settings.terminology.stores}. This allows for dynamic content that unlocks based on a player's progress or other game state factors.</p>
                     <p><strong>How it Works:</strong></p>

@@ -299,8 +299,8 @@ const MarketplacePage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMarkets.map((market: Market & { openStatus: MarketOpenStatus }) => {
                         const { openStatus } = market;
-                        // FIX: Explicitly check isOpen to narrow type before accessing 'reason'.
-                        // FIX: Rewrote to use ternary operator for cleaner type narrowing.
+                        // FIX: The original code accessed `reason` without checking `isOpen`, causing a type error.
+                        // This is now fixed by using a ternary that only accesses `reason` when `isOpen` is false.
                         const isTrulyDisabled = !openStatus.isOpen
                             ? openStatus.reason !== 'CONDITIONAL'
                             : false;
@@ -309,10 +309,9 @@ const MarketplacePage: React.FC = () => {
                             <button 
                                 key={market.id} 
                                 onClick={() => {
-                                    if (openStatus.isOpen) {
-                                        setActiveMarketId(market.id);
-                                    } else {
-                                        // FIX: Removed redundant inner check. The outer 'else' block correctly narrows the type.
+                                    // FIX: Changed to check !isOpen first to ensure TypeScript correctly narrows the type
+                                    // inside this callback, resolving errors about accessing properties that only exist on the "closed" state.
+                                    if (!openStatus.isOpen) {
                                         if (openStatus.reason === 'CONDITIONAL') {
                                             setViewingConditionsForMarket(market);
                                         } else {
@@ -322,6 +321,8 @@ const MarketplacePage: React.FC = () => {
                                             }
                                             addNotification({ type: 'error', message, duration: 8000 });
                                         }
+                                    } else {
+                                        setActiveMarketId(market.id);
                                     }
                                 }}
                                 disabled={isTrulyDisabled}
@@ -365,7 +366,7 @@ const MarketplacePage: React.FC = () => {
                 </div>
             ) : (
                  <Card>
-                    <p className="text-stone-400 text-center">There are no ${settings.terminology.stores.toLowerCase()} available in this mode.</p>
+                    <p className="text-stone-400 text-center">There are no {settings.terminology.stores.toLowerCase()} available in this mode.</p>
                 </Card>
             )}
 

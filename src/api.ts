@@ -81,8 +81,8 @@ export const approveQuestCompletionAPI = (id: string, approverId: string, note?:
 export const rejectQuestCompletionAPI = (id: string, rejecterId: string, note?: string) => apiRequest('POST', `/api/quests/reject/${id}`, { rejecterId, note });
 export const markQuestAsTodoAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/mark-todo', { questId, userId });
 export const unmarkQuestAsTodoAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/unmark-todo', { questId, userId });
-export const addQuestGroupAPI = (data: Omit<QuestGroup, 'id'>) => apiRequest('POST', '/api/quest-groups', data);
-export const updateQuestGroupAPI = (data: QuestGroup) => apiRequest('PUT', `/api/quest-groups/${data.id}`, data);
+export const addQuestGroupAPI = (data: Omit<QuestGroup, 'id'> & { questIds?: string[] }) => apiRequest('POST', '/api/quest-groups', data);
+export const updateQuestGroupAPI = (data: QuestGroup & { questIds?: string[] }) => apiRequest('PUT', `/api/quest-groups/${data.id}`, data);
 export const assignQuestGroupToUsersAPI = (groupId: string, userIds: string[], actorId: string) => apiRequest('POST', '/api/quest-groups/assign', { groupId, userIds, actorId });
 export const addRotationAPI = (data: Omit<Rotation, 'id'>) => apiRequest('POST', '/api/rotations', data);
 export const updateRotationAPI = (data: Rotation) => apiRequest('PUT', `/api/rotations/${data.id}`, data);

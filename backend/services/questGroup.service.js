@@ -1,19 +1,32 @@
+
 const questGroupRepository = require('../repositories/questGroup.repository');
 const questRepository = require('../repositories/quest.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { dataSource } = require('../data-source');
 const { logAdminAssetAction } = require('../utils/helpers');
+const { QuestEntity } = require('../entities');
+const { In } = require("typeorm");
 
 
 const getAll = () => questGroupRepository.findAll();
 
 const create = async (data) => {
     return await dataSource.transaction(async manager => {
+        const questGroupRepo = manager.getRepository('QuestGroup');
+        const questRepo = manager.getRepository('Quest');
+
+        const { questIds, ...groupData } = data;
+
         const newGroup = {
-            ...data,
+            ...groupData,
             id: `qg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         };
-        const saved = await manager.getRepository('QuestGroup').save(newGroup);
+        const saved = await questGroupRepo.save(newGroup);
+
+        if (questIds && questIds.length > 0) {
+            await questRepo.update({ id: In(questIds) }, { groupId: saved.id });
+        }
+
         await logAdminAssetAction(manager, { actorId: data.actorId, actionType: 'create', assetType: 'Quest Group', assetCount: 1, assetName: saved.name });
         updateEmitter.emit('update');
         return saved;
@@ -21,9 +34,39 @@ const create = async (data) => {
 };
 
 const update = async (id, data) => {
-    const saved = await questGroupRepository.update(id, data);
-    if (saved) updateEmitter.emit('update');
-    return saved;
+    return await dataSource.transaction(async manager => {
+        const questGroupRepo = manager.getRepository('QuestGroup');
+        const questRepo = manager.getRepository('Quest');
+        
+        const group = await questGroupRepo.findOneBy({ id });
+        if (!group) return null;
+
+        const { questIds, ...groupData } = data;
+        questGroupRepo.merge(group, groupData);
+        const savedGroup = await questGroupRepo.save(group);
+        
+        const previouslyAssignedQuests = await questRepo.findBy({ groupId: id });
+        const previouslyAssignedIds = new Set(previouslyAssignedQuests.map(q => q.id));
+        const newAssignedIds = new Set(questIds || []);
+
+        const questsToUnassign = previouslyAssignedQuests
+            .filter(q => !newAssignedIds.has(q.id))
+            .map(q => q.id);
+        
+        const questsToAssign = (questIds || [])
+            .filter(qId => !previouslyAssignedIds.has(qId));
+
+        if (questsToUnassign.length > 0) {
+            await questRepo.update({ id: In(questsToUnassign) }, { groupId: null });
+        }
+
+        if (questsToAssign.length > 0) {
+            await questRepo.update({ id: In(questsToAssign) }, { groupId: id });
+        }
+
+        updateEmitter.emit('update');
+        return savedGroup;
+    });
 };
 
 const deleteMany = async (ids, actorId) => {

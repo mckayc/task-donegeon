@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -243,8 +240,8 @@ const MarketplacePage: React.FC = () => {
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     
     const marketDependencies = useMemo(() => ({
-        appliedModifiers, modifierDefinitions, quests, ranks, questCompletions
-    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions]);
+        appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, allConditionSets: settings.conditionSets,
+    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, settings.conditionSets]);
 
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];

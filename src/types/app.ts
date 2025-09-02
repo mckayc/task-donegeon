@@ -95,12 +95,13 @@ export interface Terminology {
   link_bug_tracker: string;
   link_themes: string;
   link_test_cases: string;
+  link_manage_condition_sets: string;
 }
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Triumphs & Trials'
-| 'Bug Tracker' | 'Themes' | 'Test Cases';
+| 'Bug Tracker' | 'Themes' | 'Test Cases' | 'Manage Condition Sets';
 
 export interface SidebarLink {
   type: 'link';

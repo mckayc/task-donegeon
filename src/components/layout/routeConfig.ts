@@ -42,4 +42,5 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Help Guide': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.default }))),
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
+    'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),
 };

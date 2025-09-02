@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+// Fix: Import useSystemState to access global settings, including condition sets.
 import { useSystemState } from '../../context/SystemContext';
 import { Market, MarketStatus, Quest, Condition, ConditionType } from '../../../types';
 import Button from '../user-interface/Button';
@@ -22,13 +23,12 @@ interface EditMarketDialogProps {
   onSave?: (updatedData: any) => void;
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { guilds } = useCommunityState();
-  const { ranks } = useProgressionState();
-  const { quests } = useQuestsState();
   const { addMarket, updateMarket } = useEconomyDispatch();
+  // Fix: Get settings from useSystemState to access conditionSets.
+  const { settings } = useSystemState();
+  const allConditionSets = settings.conditionSets || [];
   
   const getInitialFormData = useCallback(() => {
     const data = market || initialData;
@@ -73,55 +73,18 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
       setFormData(p => ({...p, status: newStatus }));
   };
   
-  const addCondition = () => {
-      const currentStatus = formData.status;
-      if (currentStatus.type === 'conditional') {
-          const newCondition: Condition = { type: ConditionType.MinRank, rankId: ranks[0]?.id || '', id: `cond-${Date.now()}` };
-          const newStatus: MarketStatus = {
-            type: 'conditional',
-            logic: currentStatus.logic,
-            conditions: [...currentStatus.conditions, newCondition]
-          };
-          handleStatusChange(newStatus);
-      }
-  };
-
-  const updateCondition = (index: number, newCondition: Condition) => {
-      const currentStatus = formData.status;
-      if (currentStatus.type === 'conditional') {
-          const newConditions = [...currentStatus.conditions];
-          newConditions[index] = newCondition;
-          const newStatus: MarketStatus = {
-            type: 'conditional',
-            logic: currentStatus.logic,
-            conditions: newConditions
-          };
-          handleStatusChange(newStatus);
-      }
-  };
-
-
-  const removeCondition = (index: number) => {
-      const currentStatus = formData.status;
-      if (currentStatus.type === 'conditional') {
-          const newStatus: MarketStatus = {
-            type: 'conditional',
-            logic: currentStatus.logic,
-            conditions: currentStatus.conditions.filter((_, i) => i !== index)
-          };
-          handleStatusChange(newStatus);
-      }
-  };
-
-  const handleConditionalLogicChange = (logic: 'all' | 'any') => {
+  // Fix: Replaced condition editing logic with a handler for selecting Condition Set IDs.
+  const handleConditionSetToggle = (setId: string) => {
     const currentStatus = formData.status;
     if (currentStatus.type === 'conditional') {
-        const newStatus: MarketStatus = {
+        const newSetIds = currentStatus.conditionSetIds.includes(setId)
+            ? currentStatus.conditionSetIds.filter(id => id !== setId)
+            : [...currentStatus.conditionSetIds, setId];
+        
+        handleStatusChange({
             type: 'conditional',
-            conditions: currentStatus.conditions,
-            logic: logic
-        };
-        handleStatusChange(newStatus);
+            conditionSetIds: newSetIds
+        });
     }
   };
 
@@ -148,70 +111,6 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
     onClose();
   };
   
-  const renderConditionEditor = (condition: Condition, index: number) => {
-    return (
-        <div key={index} className="p-3 bg-stone-800/50 rounded-md space-y-2">
-             <div className="flex justify-end">
-                <button type="button" onClick={() => removeCondition(index)} className="text-red-400 hover:text-red-300">&times;</button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input as="select" label="Condition Type" value={condition.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                    const newType = e.target.value as ConditionType;
-                    let newCondition: Condition;
-                    switch (newType) {
-                        case ConditionType.MinRank: newCondition = { type: newType, rankId: ranks[0]?.id || '', id: condition.id }; break;
-                        case ConditionType.DayOfWeek: newCondition = { type: newType, days: [], id: condition.id }; break;
-                        case ConditionType.DateRange: newCondition = { type: newType, start: '', end: '', id: condition.id }; break;
-                        case ConditionType.QuestCompleted: newCondition = { type: newType, questId: quests[0]?.id || '', id: condition.id }; break;
-                        default: return;
-                    }
-                    updateCondition(index, newCondition);
-                }}>
-                    <option value={ConditionType.MinRank}>Minimum Rank</option>
-                    <option value={ConditionType.DayOfWeek}>Day of Week</option>
-                    <option value={ConditionType.DateRange}>Date Range</option>
-                    <option value={ConditionType.QuestCompleted}>Quest Completed</option>
-                </Input>
-                
-                {condition.type === ConditionType.MinRank && (
-                    <Input as="select" label="Rank" value={condition.rankId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, rankId: e.target.value })}>
-                        {ranks.sort((a,b) => a.xpThreshold - b.xpThreshold).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </Input>
-                )}
-                {condition.type === ConditionType.QuestCompleted && (
-                    <Input as="select" label="Quest" value={condition.questId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, questId: e.target.value })}>
-                        {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
-                    </Input>
-                )}
-                 {condition.type === ConditionType.DateRange && (
-                    <>
-                        <Input type="date" label="Start Date" value={condition.start} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, start: e.target.value })} />
-                        <Input type="date" label="End Date" value={condition.end} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, end: e.target.value })} />
-                    </>
-                )}
-            </div>
-             {condition.type === ConditionType.DayOfWeek && (
-                <div>
-                    <label className="block text-sm font-medium text-stone-300 mb-1">Days</label>
-                    <div className="flex gap-2 flex-wrap">
-                        {WEEKDAYS.map((day, dayIndex) => (
-                            <label key={day} className="flex items-center gap-1 text-xs">
-                                <input type="checkbox" checked={condition.days.includes(dayIndex)} onChange={e => {
-                                    const newDays = e.target.checked
-                                        ? [...condition.days, dayIndex]
-                                        : condition.days.filter((d: number) => d !== dayIndex);
-                                    updateCondition(index, { ...condition, days: newDays });
-                                }} />
-                                {day}
-                            </label>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-  };
-
   const dialogTitle = mode === 'edit' ? 'Edit Market' : 'Create New Market';
   
   return (
@@ -261,17 +160,32 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
               <div className="flex items-center gap-4">
                 <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'open'} onChange={() => handleStatusChange({type: 'open'})} /> <span className="ml-2">Open</span></label>
                 <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'closed'} onChange={() => handleStatusChange({type: 'closed'})} /> <span className="ml-2">Closed</span></label>
-                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'conditional'} onChange={() => handleStatusChange({type: 'conditional', conditions: [], logic: 'all'})} /> <span className="ml-2">Conditional</span></label>
+                {/* Fix: Changed onChange to create a valid MarketStatus for conditional type. */}
+                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'conditional'} onChange={() => handleStatusChange({type: 'conditional', conditionSetIds: []})} /> <span className="ml-2">Conditional</span></label>
               </div>
                {formData.status.type === 'conditional' && (
+                  // Fix: Replaced the entire inline condition editor with a selector for Condition Sets.
                   <div className="space-y-4 pt-4 border-t border-stone-700/60">
-                     <div className="flex items-center gap-4">
-                         <span className="text-sm font-medium text-stone-300">Logic:</span>
-                         <label className="flex items-center"><input type="radio" name="logic" checked={formData.status.logic === 'all'} onChange={() => handleConditionalLogicChange('all')} /> <span className="ml-2">All conditions met (AND)</span></label>
-                         <label className="flex items-center"><input type="radio" name="logic" checked={formData.status.logic === 'any'} onChange={() => handleConditionalLogicChange('any')} /> <span className="ml-2">Any condition met (OR)</span></label>
-                     </div>
-                     <div className="space-y-3">{formData.status.conditions.map(renderConditionEditor)}</div>
-                     <Button type="button" variant="secondary" onClick={addCondition}>+ Add Condition</Button>
+                      <h4 className="font-semibold text-stone-300">Conditions for Opening</h4>
+                      <p className="text-xs text-stone-400">Select one or more Condition Sets. The market will only be open if ALL selected sets are met.</p>
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                          {allConditionSets.map(set => (
+                              <label key={set.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
+                                  <input 
+                                      type="checkbox"
+                                      checked={formData.status.conditionSetIds.includes(set.id)}
+                                      onChange={() => handleConditionSetToggle(set.id)}
+                                      className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
+                                  <div>
+                                      <span className="text-sm font-semibold text-stone-200">{set.name}</span>
+                                      <p className="text-xs text-stone-400">{set.description}</p>
+                                  </div>
+                              </label>
+                          ))}
+                          {allConditionSets.length === 0 && (
+                              <p className="text-xs text-stone-500 text-center">No Condition Sets have been created yet. You can create them in Settings.</p>
+                          )}
+                      </div>
                   </div>
                 )}
             </div>

@@ -60,7 +60,7 @@ export interface GameAsset {
 export type MarketStatus =
   | { type: 'open' }
   | { type: 'closed' }
-  | { type: 'conditional', logic: 'all' | 'any', conditions: Condition[], conditionSetIds?: string[] };
+  | { type: 'conditional', conditionSetIds: string[] };
 
 export type MarketOpenStatus = {
     isOpen: true;

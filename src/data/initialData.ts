@@ -1,3 +1,4 @@
+
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -135,6 +136,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Manage Ranks', emoji: '🏅', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_ranks' },
   { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_rewards' },
   { type: 'link', id: 'Manage Events', emoji: '🎉', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_events' },
+  { type: 'link', id: 'Manage Condition Sets', emoji: '🔗', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_condition_sets' },
   
   // System Tools Section
   { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: Role.DonegeonMaster, isVisible: true },
@@ -269,6 +271,8 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_bug_tracker: 'Bug Tracker',
       link_themes: 'Themes',
       link_test_cases: 'Test Cases',
+      // Fix: Add missing terminology key to satisfy the Terminology type.
+      link_manage_condition_sets: 'Manage Condition Sets',
     },
     enableAiFeatures: false,
     rewardValuation: {

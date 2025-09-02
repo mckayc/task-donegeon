@@ -110,6 +110,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_manage_trophies: 'Sidebar: Manage Trophies',
   link_manage_events: 'Sidebar: Manage Events',
   link_manage_rotations: 'Sidebar: Manage Rotations',
+  link_manage_condition_sets: 'Sidebar: Manage Condition Sets',
   link_triumphs_trials: 'Sidebar: Triumphs & Trials',
   link_appearance: 'Sidebar: Appearance',
   link_approvals: 'Sidebar: Approvals',
@@ -269,13 +270,6 @@ export const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'enabled', val)} label="Enable Shared Mode" />
                         {formState.sharedMode.enabled && (
                             <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                <div className="mt-4 p-3 bg-stone-950/60 rounded-lg">
-                                    <p className="text-sm font-semibold text-stone-200">Kiosk Mode URL</p>
-                                    <p className="text-xs text-stone-400 mt-1">Bookmark this URL on your shared devices to launch directly into Kiosk Mode.</p>
-                                    <div className="mt-2 p-2 bg-black/50 rounded-md font-mono text-emerald-300 text-sm break-all">
-                                        {`${window.location.origin}/kiosk`}
-                                    </div>
-                                </div>
                                 <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(val) => handleSettingChange('sharedMode', 'userIds', val)} label="Users in Shared View" />
                                 <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'allowCompletion', val)} label="Allow quest completion from shared view" />
                                 {formState.sharedMode.allowCompletion && (

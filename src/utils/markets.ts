@@ -1,4 +1,5 @@
-import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion } from '../types';
+
+import { Market, User, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType } from '../types';
 import { toYMD } from './quests';
 
 type MarketDependencies = {
@@ -46,24 +47,24 @@ export const isMarketOpenForUser = (market: Market, user: User, dependencies: Ma
             const { conditions, logic } = market.status;
             if (conditions.length === 0) return { isOpen: false, reason: 'CONDITIONAL', message: 'Market has no conditions to open.' };
 
-            const checkCondition = (condition: MarketCondition): boolean => {
+            const checkCondition = (condition: Condition): boolean => {
                 switch (condition.type) {
-                    case MarketConditionType.MinRank:
-                        const totalXp = Object.values(user.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
+                    case ConditionType.MinRank:
+                        const totalXp = Object.values(user.personalExperience).reduce<number>((sum, amount) => sum + Number(amount), 0);
                         const userRank = dependencies.ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
                         const requiredRank = dependencies.ranks.find(r => r.id === condition.rankId);
                         if (!userRank || !requiredRank) return false;
                         return userRank.xpThreshold >= requiredRank.xpThreshold;
 
-                    case MarketConditionType.DayOfWeek:
+                    case ConditionType.DayOfWeek:
                         const today = new Date().getDay();
                         return condition.days.includes(today);
 
-                    case MarketConditionType.DateRange:
+                    case ConditionType.DateRange:
                         const todayYMD = toYMD(new Date());
                         return todayYMD >= condition.start && todayYMD <= condition.end;
 
-                    case MarketConditionType.QuestCompleted:
+                    case ConditionType.QuestCompleted:
                         return dependencies.questCompletions.some(c =>
                             c.userId === user.id &&
                             c.questId === condition.questId &&

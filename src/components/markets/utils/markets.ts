@@ -2,7 +2,6 @@
 
 import { Market, User, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType, ConditionSet } from '../../../types';
 import { toYMD } from '../../../utils/quests';
-// FIX: Added missing import for condition checking utilities.
 import { checkAllConditionSetsMet, ConditionDependencies } from '../../../utils/conditions';
 
 export type MarketDependencies = ConditionDependencies & {
@@ -50,7 +49,6 @@ export const isMarketOpenForUser = (market: Market, user: User, dependencies: Ma
                 return { isOpen: false, reason: 'CONDITIONAL', message: 'Market has no conditions to open.' };
             }
             
-            // FIX: Refactored to use the centralized checkAllConditionSetsMet function.
             const { allMet, failingSetName } = checkAllConditionSetsMet(conditionSetIds, user, dependencies);
 
             if (allMet) {

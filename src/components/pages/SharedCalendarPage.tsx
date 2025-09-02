@@ -31,7 +31,6 @@ const SharedCalendarPage: React.FC = () => {
     const { rewardTypes } = useEconomyState();
     const progressionState = useProgressionState();
     const economyState = useEconomyState();
-    // FIX: Define `communityState` by calling the `useCommunityState` hook.
     const communityState = useCommunityState();
 
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -82,7 +81,6 @@ const SharedCalendarPage: React.FC = () => {
                  const isDutyToday = quest.type === QuestType.Duty && isQuestScheduledForDay(quest, currentDate);
                  const isVentureDueToday = (quest.type === QuestType.Venture || quest.type === QuestType.Journey) && quest.startDateTime && toYMD(new Date(quest.startDateTime)) === dateKey;
                  const isTodoForUser = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
-                 // FIX: Added a new condition to show optional, dateless, daily ventures automatically in kiosk mode.
                  const isOptionalDailyVenture = quest.type === QuestType.Venture && quest.isOptional && (quest.dailyCompletionsLimit ?? 0) > 0 && !quest.startDateTime;
                  
                  const isRelevantToday = isDutyToday || isVentureDueToday || isTodoForUser || isOptionalDailyVenture;

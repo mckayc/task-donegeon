@@ -1,7 +1,7 @@
 
 
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../types';
-import { checkAllConditionSetsMet, ConditionDependencies } from '../utils/conditions';
+import { checkAllConditionSetsMet, ConditionDependencies } from './conditions';
 
 /**
  * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
@@ -303,7 +303,6 @@ export const questSorter = (user: User, allCompletions: QuestCompletion[], sched
 };
 
 
-// FIX: Add getAvailabilityText function
 export const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     // This function provides a general status text. Specific user completion counts for limits are checked elsewhere.
     if (quest.kind === QuestKind.GuildCollaborative) {
@@ -319,7 +318,6 @@ export const getAvailabilityText = (quest: Quest, completionsCount: number): str
     return quest.kind === QuestKind.Redemption ? 'Redemption Opportunity' : 'Available';
 };
 
-// FIX: Add formatTimeRemaining function
 export const formatTimeRemaining = (deadline: Date, now: Date): string => {
     const diff = deadline.getTime() - now.getTime();
     if (diff <= 0) return '0m';

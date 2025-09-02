@@ -28,7 +28,6 @@ import { useEconomyState } from '../../context/EconomyContext';
 const Dashboard: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
     const { quests, questGroups, questCompletions } = useQuestsState();
-    // FIX: Destructure `userTrophies` from `useProgressionState` as it is used in the `conditionDependencies` memo.
     const { trophies, ranks, userTrophies } = useProgressionState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();

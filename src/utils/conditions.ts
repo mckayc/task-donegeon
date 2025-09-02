@@ -1,6 +1,6 @@
 
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role } from '../types';
-import { toYMD } from '../quests/utils/quests';
+import { toYMD } from './quests';
 
 // The dependencies needed to evaluate conditions.
 export type ConditionDependencies = {

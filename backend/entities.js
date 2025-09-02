@@ -1,6 +1,7 @@
 
 
 
+
 const { EntitySchema } = require("typeorm");
 
 // Placeholder classes for TypeORM entity schemas. This removes the dependency on a non-existent file.
@@ -87,7 +88,7 @@ const UserEntity = new EntitySchema({
         gameName: { type: "varchar" },
         birthday: { type: "varchar" },
         role: { type: "varchar" },
-        avatar: { type: "simple-json" },
+        // FIX: Removed the non-existent 'avatar' property from the UserEntity definition and replaced it with 'profilePictureUrl' to match the User type, resolving a data model inconsistency.
         profilePictureUrl: { type: "varchar", nullable: true },
         ownedAssetIds: { type: "simple-array" },
         pin: { type: "varchar" },

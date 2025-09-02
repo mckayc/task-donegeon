@@ -90,8 +90,6 @@ export const generateAssetPack = (
     // Add selected users, filtering out runtime/personal data to create a template
     assetPack.assets.users = allAssets.users
         .filter(u => selectedAssets.users.includes(u.id))
-        // FIX: Replaced non-existent 'avatar' property with 'profilePictureUrl'
-        // to correctly filter user-specific data when creating a shareable template.
         .map(({ 
             personalPurse, personalExperience, guildBalances, profilePictureUrl, 
             ownedAssetIds, ownedThemes, hasBeenOnboarded, ...userTemplate 

@@ -42,6 +42,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const { users } = useAuthState();
   const { addQuest, updateQuest, addQuestGroup } = useQuestsDispatch();
   const hasLoggedOpen = useRef(false);
+  const allConditionSets = settings.conditionSets || [];
 
   const getInitialFormData = useCallback((): QuestFormData => {
     // Base structure for a new quest
@@ -69,6 +70,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         claimLimit: 1,
         pendingClaims: [],
         approvedClaims: [],
+        conditionSetIds: [],
     };
 
     // Mode: Edit
@@ -83,6 +85,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         endTime: questToEdit.endTime || null,
         dailyCompletionsLimit: questToEdit.dailyCompletionsLimit ?? 1,
         totalCompletionsLimit: questToEdit.totalCompletionsLimit ?? 0,
+        conditionSetIds: questToEdit.conditionSetIds || [],
       };
     }
 
@@ -224,6 +227,16 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     setFormData(prev => ({ ...prev, ...scheduleUpdate }));
   };
 
+  const handleConditionSetToggle = (setId: string) => {
+    setFormData(prev => {
+        const currentIds = prev.conditionSetIds || [];
+        const newSetIds = currentIds.includes(setId)
+            ? currentIds.filter(id => id !== setId)
+            : [...currentIds, setId];
+        return { ...prev, conditionSetIds: newSetIds };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
@@ -277,6 +290,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         claimLimit: formData.type === QuestType.Duty ? 1 : formData.claimLimit,
         pendingClaims: formData.pendingClaims || [],
         approvedClaims: formData.approvedClaims || [],
+        conditionSetIds: formData.conditionSetIds?.length ? formData.conditionSetIds : undefined,
     };
 
     if (onSave) {
@@ -470,6 +484,35 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                  )}
               </div>
           )}
+
+           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                <h3 className="font-semibold text-lg text-stone-200">Availability Conditions</h3>
+                <ToggleSwitch 
+                    enabled={(formData.conditionSetIds || []).length > 0} 
+                    setEnabled={(val: boolean) => setFormData(p => ({...p, conditionSetIds: val ? p.conditionSetIds || [] : []}))} 
+                    label="Enable Conditions" 
+                />
+                 {(formData.conditionSetIds || []).length > 0 && (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {allConditionSets.map(set => (
+                          <label key={set.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
+                              <input 
+                                  type="checkbox"
+                                  checked={formData.conditionSetIds?.includes(set.id)}
+                                  onChange={() => handleConditionSetToggle(set.id)}
+                                  className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
+                              <div>
+                                  <span className="text-sm font-semibold text-stone-200">{set.name}</span>
+                                  <p className="text-xs text-stone-400">{set.description}</p>
+                              </div>
+                          </label>
+                      ))}
+                      {allConditionSets.length === 0 && (
+                          <p className="text-xs text-stone-500 text-center">No Condition Sets have been created yet. You can create them in Settings.</p>
+                      )}
+                  </div>
+                )}
+            </div>
 
           {hasDeadlines && (
             <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">

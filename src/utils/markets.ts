@@ -1,4 +1,3 @@
-
 import { Market, User, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType, ConditionSet } from '../types';
 import { toYMD } from './quests';
 import { checkAllConditionSetsMet, ConditionDependencies } from './conditions';

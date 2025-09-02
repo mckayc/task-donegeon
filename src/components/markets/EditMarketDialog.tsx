@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Market, MarketStatus, Quest, Condition, ConditionType } from '../../../types';

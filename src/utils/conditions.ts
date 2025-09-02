@@ -1,4 +1,5 @@
 
+
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role } from '../types';
 import { toYMD } from './quests';
 
@@ -50,7 +51,8 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
         case ConditionType.QuestGroupCompleted:
             const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
             if (!group) return false;
-            const questsInGroup = dependencies.quests.filter(q => q.groupId === group.id);
+            // FIX: Property 'groupId' does not exist on type 'Quest'. Did you mean 'groupIds'?
+            const questsInGroup = dependencies.quests.filter(q => q.groupIds?.includes(group.id));
             if (questsInGroup.length === 0) return true; // No quests to complete
             return questsInGroup.every(q => 
                 dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved)

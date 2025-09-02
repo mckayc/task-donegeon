@@ -1,9 +1,10 @@
 
+
 const questGroupRepository = require('../repositories/questGroup.repository');
 const questRepository = require('../repositories/quest.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { dataSource } = require('../data-source');
-const { logAdminAssetAction } = require('../utils/helpers');
+const { logAdminAssetAction, updateTimestamps } = require('../utils/helpers');
 const { QuestEntity } = require('../entities');
 const { In } = require("typeorm");
 
@@ -24,7 +25,14 @@ const create = async (data) => {
         const saved = await questGroupRepo.save(newGroup);
 
         if (questIds && questIds.length > 0) {
-            await questRepo.update({ id: In(questIds) }, { groupId: saved.id });
+            const questsToUpdate = await questRepo.findBy({ id: In(questIds) });
+            for (const quest of questsToUpdate) {
+                if (!quest.groupIds) quest.groupIds = [];
+                if (!quest.groupIds.includes(saved.id)) {
+                    quest.groupIds.push(saved.id);
+                }
+            }
+            await questRepo.save(questsToUpdate.map(q => updateTimestamps(q)));
         }
 
         await logAdminAssetAction(manager, { actorId: data.actorId, actionType: 'create', assetType: 'Quest Group', assetCount: 1, assetName: saved.name });
@@ -45,23 +53,26 @@ const update = async (id, data) => {
         questGroupRepo.merge(group, groupData);
         const savedGroup = await questGroupRepo.save(group);
         
-        const previouslyAssignedQuests = await questRepo.findBy({ groupId: id });
-        const previouslyAssignedIds = new Set(previouslyAssignedQuests.map(q => q.id));
+        const allQuests = await questRepo.find();
         const newAssignedIds = new Set(questIds || []);
+        const questsToSave = [];
 
-        const questsToUnassign = previouslyAssignedQuests
-            .filter(q => !newAssignedIds.has(q.id))
-            .map(q => q.id);
-        
-        const questsToAssign = (questIds || [])
-            .filter(qId => !previouslyAssignedIds.has(qId));
+        for (const quest of allQuests) {
+            const wasInGroup = quest.groupIds?.includes(id);
+            const shouldBeInGroup = newAssignedIds.has(quest.id);
 
-        if (questsToUnassign.length > 0) {
-            await questRepo.update({ id: In(questsToUnassign) }, { groupId: null });
+            if (wasInGroup && !shouldBeInGroup) {
+                quest.groupIds = quest.groupIds.filter(gid => gid !== id);
+                questsToSave.push(quest);
+            } else if (!wasInGroup && shouldBeInGroup) {
+                if (!quest.groupIds) quest.groupIds = [];
+                quest.groupIds.push(id);
+                questsToSave.push(quest);
+            }
         }
-
-        if (questsToAssign.length > 0) {
-            await questRepo.update({ id: In(questsToAssign) }, { groupId: id });
+        
+        if (questsToSave.length > 0) {
+            await questRepo.save(questsToSave.map(q => updateTimestamps(q)));
         }
 
         updateEmitter.emit('update');
@@ -71,7 +82,24 @@ const update = async (id, data) => {
 
 const deleteMany = async (ids, actorId) => {
     return await dataSource.transaction(async manager => {
-        await manager.getRepository('Quest').update({ groupId: In(ids) }, { groupId: null });
+        const allQuests = await manager.getRepository('Quest').find();
+        const questsToUpdate = [];
+        const idsToDelete = new Set(ids);
+        
+        for (const quest of allQuests) {
+            const originalLength = quest.groupIds?.length || 0;
+            if (quest.groupIds) {
+                quest.groupIds = quest.groupIds.filter(gid => !idsToDelete.has(gid));
+                if (quest.groupIds.length < originalLength) {
+                    questsToUpdate.push(quest);
+                }
+            }
+        }
+        
+        if (questsToUpdate.length > 0) {
+            await manager.getRepository('Quest').save(questsToUpdate.map(q => updateTimestamps(q)));
+        }
+
         await manager.getRepository('QuestGroup').delete(ids);
         await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Quest Group', assetCount: ids.length });
         updateEmitter.emit('update');

@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -299,19 +300,20 @@ const MarketplacePage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMarkets.map((market: Market & { openStatus: MarketOpenStatus }) => {
                         const { openStatus } = market;
-                        // FIX: The original code accessed `reason` without checking `isOpen`, causing a type error.
-                        // This is now fixed by using a ternary that only accesses `reason` when `isOpen` is false.
-                        const isTrulyDisabled = !openStatus.isOpen
-                            ? openStatus.reason !== 'CONDITIONAL'
-                            : false;
+                        // FIX: Explicitly check for `isOpen === false` to help TypeScript correctly narrow the union type
+                        // and allow safe access to properties like `reason`.
+                        const isTrulyDisabled = openStatus.isOpen === false && openStatus.reason !== 'CONDITIONAL';
 
                         return (
                             <button 
                                 key={market.id} 
                                 onClick={() => {
-                                    // FIX: Changed to check !isOpen first to ensure TypeScript correctly narrows the type
-                                    // inside this callback, resolving errors about accessing properties that only exist on the "closed" state.
-                                    if (!openStatus.isOpen) {
+                                    // FIX: Restructured the conditional to check for the `isOpen: true` case first.
+                                    // This ensures that in the `else` block, TypeScript knows `openStatus` must be the
+                                    // "closed" variant of the type, making `reason`, `message`, and `redemptionQuest` accessible.
+                                    if (openStatus.isOpen) {
+                                        setActiveMarketId(market.id);
+                                    } else {
                                         if (openStatus.reason === 'CONDITIONAL') {
                                             setViewingConditionsForMarket(market);
                                         } else {
@@ -321,8 +323,6 @@ const MarketplacePage: React.FC = () => {
                                             }
                                             addNotification({ type: 'error', message, duration: 8000 });
                                         }
-                                    } else {
-                                        setActiveMarketId(market.id);
                                     }
                                 }}
                                 disabled={isTrulyDisabled}

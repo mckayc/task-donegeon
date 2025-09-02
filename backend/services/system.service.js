@@ -364,7 +364,7 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId)
                     if(newAssetData.rewards) newAssetData.rewards = newAssetData.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
                     if(newAssetData.lateSetbacks) newAssetData.lateSetbacks = (newAssetData.lateSetbacks || []).map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
                     if(newAssetData.incompleteSetbacks) newAssetData.incompleteSetbacks = (newAssetData.incompleteSetbacks || []).map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
-                    if (newAssetData.groupId) newAssetData.groupId = idMap.get(newAssetData.groupId) || newAssetData.groupId;
+                    if (newAssetData.groupIds) newAssetData.groupIds = newAssetData.groupIds.map(gid => idMap.get(gid) || gid);
                 }
                 if(assetType === 'gameAssets') {
                     // Ensure non-nullable fields have defaults if missing from pack
@@ -451,7 +451,13 @@ const deleteSelectedAssets = async (assets, actorId) => {
             await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Quest', assetCount: assets.quests.length });
         }
         if (assets.questGroups?.length) {
-            await manager.update(QuestEntity, { groupId: In(assets.questGroups) }, { groupId: null });
+            const allQuests = await manager.getRepository(QuestEntity).find();
+            const questsToUpdate = allQuests.filter(q => q.groupIds && q.groupIds.some(gid => assets.questGroups.includes(gid)));
+            for(const quest of questsToUpdate) {
+                quest.groupIds = quest.groupIds.filter(gid => !assets.questGroups.includes(gid));
+            }
+            if(questsToUpdate.length > 0) await manager.save(QuestEntity, questsToUpdate.map(q => updateTimestamps(q)));
+            
             await manager.getRepository(QuestGroupEntity).delete(assets.questGroups);
             await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Quest Group', assetCount: assets.questGroups.length });
         }

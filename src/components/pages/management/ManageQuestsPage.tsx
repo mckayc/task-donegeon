@@ -161,9 +161,10 @@ const ManageQuestsPage: React.FC = () => {
         const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
 
         const filtered = quests.filter(quest => {
+            // FIX: Property 'groupId' does not exist on type 'Quest'. Did you mean 'groupIds'?
             const groupMatch = groupId === 'All' || 
-                               (groupId === 'Uncategorized' && !quest.groupId) ||
-                               quest.groupId === groupId;
+                               (groupId === 'Uncategorized' && (!quest.groupIds || quest.groupIds.length === 0)) ||
+                               quest.groupIds?.includes(groupId);
 
             const searchMatch = !debouncedSearchTerm ||
                 quest.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||

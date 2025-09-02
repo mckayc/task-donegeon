@@ -13,7 +13,8 @@ const findAllWithRelations = async () => {
 
 const findById = (id) => repo.findOneBy({ id });
 const findByIdWithRelations = (id) => repo.findOne({ where: { id }, relations: ['assignedUsers'] });
-const findByGroupId = (groupId) => repo.findBy({ groupId });
+// FIX: Updated to use `groupIds` which is a simple-array. TypeORM doesn't have a direct `contains` for simple-array, so we have to filter in code. This is inefficient but works for now. A better solution is a many-to-many relation.
+const findByGroupId = (groupId) => repo.find().then(quests => quests.filter(q => q.groupIds?.includes(groupId)));
 const findByIds = (ids) => repo.findBy({ id: In(ids) });
 
 const create = async (data) => {
@@ -45,7 +46,23 @@ const update = async (id, data) => {
 
 const deleteMany = (ids) => repo.delete(ids);
 
-const unassignGroup = (groupIds) => repo.update({ groupId: In(groupIds) }, { groupId: null });
+const unassignGroup = (groupIds) => {
+    // This is more complex with an array. We need to fetch, filter, and save.
+    return dataSource.transaction(async manager => {
+        const questRepo = manager.getRepository(QuestEntity);
+        const allQuests = await questRepo.find();
+        const questsToUpdate = [];
+        for (const quest of allQuests) {
+            if (quest.groupIds && quest.groupIds.some(gId => groupIds.includes(gId))) {
+                quest.groupIds = quest.groupIds.filter(gId => !groupIds.includes(gId));
+                questsToUpdate.push(quest);
+            }
+        }
+        if(questsToUpdate.length > 0) {
+            await questRepo.save(questsToUpdate.map(q => updateTimestamps(q)));
+        }
+    });
+};
 
 const assignGroupToUsers = async (groupId, userIds) => {
     const questsInGroup = await findByGroupId(groupId);

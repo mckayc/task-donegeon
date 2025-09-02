@@ -24,7 +24,8 @@ const QuestGroupCard: React.FC<{
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { quests } = useQuestsState();
-    const questCount = useMemo(() => quests.filter(q => q.groupId === group.id).length, [quests, group.id]);
+    // FIX: Property 'groupId' does not exist on type 'Quest'. Did you mean 'groupIds'?
+    const questCount = useMemo(() => quests.filter(q => q.groupIds?.includes(group.id)).length, [quests, group.id]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

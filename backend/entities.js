@@ -156,7 +156,7 @@ const QuestEntity = new EntitySchema({
         dismissals: { type: "simple-json", nullable: true },
         todoUserIds: { type: "simple-array", nullable: true },
         guildId: { type: "varchar", nullable: true },
-        groupId: { type: "varchar", nullable: true },
+        groupIds: { type: "simple-array", nullable: true },
         checkpoints: { type: "simple-json", nullable: true },
         checkpointCompletionTimestamps: { type: "simple-json", nullable: true },
         requiresClaim: { type: "boolean", default: false },

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { QuestGroup, Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -42,14 +43,13 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                 description: groupToEdit.description,
                 icon: groupToEdit.icon,
             });
-            setAssignedQuestIds(allQuests.filter(q => q.groupId === groupToEdit.id).map(q => q.id));
+            setAssignedQuestIds(allQuests.filter(q => q.groupIds?.includes(groupToEdit.id)).map(q => q.id));
         }
     }, [groupToEdit, allQuests]);
 
     const { availableQuests, assignedQuests } = useMemo(() => {
         const assigned = new Set(assignedQuestIds);
         const available = allQuests.filter(q => 
-            (!q.groupId || q.groupId === groupToEdit?.id) && 
             !assigned.has(q.id) &&
             q.title.toLowerCase().includes(questSearch.toLowerCase())
         );
@@ -57,7 +57,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
             availableQuests: available,
             assignedQuests: allQuests.filter(q => assigned.has(q.id)),
         };
-    }, [assignedQuestIds, allQuests, questSearch, groupToEdit]);
+    }, [assignedQuestIds, allQuests, questSearch]);
 
     const handleTransfer = (ids: string[], direction: 'assign' | 'unassign') => {
         if (direction === 'assign') {

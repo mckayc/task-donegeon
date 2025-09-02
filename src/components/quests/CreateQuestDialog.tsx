@@ -60,7 +60,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         requiresApproval: settings.questDefaults.requiresApproval,
         isOptional: settings.questDefaults.isOptional,
         assignedUserIds: users.map(u => u.id),
-        guildId: '', groupId: '', tags: [],
+        guildId: '', groupIds: [], tags: [],
         startDateTime: null, endDateTime: null, allDay: true, rrule: 'FREQ=DAILY',
         startTime: null, endTime: null, 
         dailyCompletionsLimit: 1, totalCompletionsLimit: 0,
@@ -130,7 +130,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             tags: initialData.tags || [],
             rewards: suggestedRewardItems,
             checkpoints: suggestedCheckpoints,
-            groupId: suggestedGroupId,
+            groupIds: suggestedGroupId ? [suggestedGroupId] : [],
             type: suggestedType,
             rrule: suggestedType === QuestType.Duty ? 'FREQ=DAILY' : null,
         };
@@ -249,11 +249,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     if (bugLogger.isRecording()) {
       bugLogger.add({ type: 'ACTION', message: `Submitted '${dialogTitle}' form.` });
     }
-
-    let finalGroupId = formData.groupId;
+    
+    let finalGroupIds = formData.groupIds || [];
     if (isCreatingNewGroup && newGroupName.trim()) {
         const newGroup = await addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
-        finalGroupId = newGroup?.id;
+        if (newGroup?.id) {
+            finalGroupIds = [...finalGroupIds, newGroup.id];
+        }
     }
 
     const questPayload: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> = {
@@ -282,7 +284,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         isOptional: formData.isOptional,
         assignedUserIds: formData.assignedUserIds,
         guildId: formData.guildId || undefined,
-        groupId: finalGroupId || undefined,
+        groupIds: finalGroupIds.length > 0 ? finalGroupIds : undefined,
         requiresApproval: formData.requiresApproval,
         todoUserIds: formData.todoUserIds,
         checkpoints: formData.type === QuestType.Journey ? (formData.checkpoints || []) : undefined,
@@ -305,15 +307,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     }
   };
   
-  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const { value } = e.target;
-      if (value === '--new--') {
-          setIsCreatingNewGroup(true);
-          setFormData(p => ({...p, groupId: ''}));
-      } else {
-          setIsCreatingNewGroup(false);
-          setFormData(p => ({...p, groupId: value}));
-      }
+  const handleGroupToggle = (groupId: string) => {
+    setFormData(p => {
+        const newGroupIds = p.groupIds?.includes(groupId)
+            ? p.groupIds.filter(id => id !== groupId)
+            : [...(p.groupIds || []), groupId];
+        return { ...p, groupIds: newGroupIds };
+    });
   };
 
   const handleKindChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -433,21 +433,36 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
               )}
             </div>
            <div>
-                <h3 className="font-semibold text-stone-200 mb-1">Quest Group</h3>
-                 <select name="groupId" value={isCreatingNewGroup ? '--new--' : formData.groupId} onChange={handleGroupChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
-                    <option value="">Uncategorized</option>
-                    {questGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                    <option value="--new--">Create New Group...</option>
-                </select>
-                 {isCreatingNewGroup && (
-                    <Input
-                        label="New Group Name"
-                        value={newGroupName}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewGroupName(e.target.value)}
-                        className="mt-2"
-                        autoFocus
+                <h3 className="font-semibold text-stone-200 mb-1">Quest Groups</h3>
+                <div className="p-2 border border-stone-600 rounded-md max-h-40 overflow-y-auto space-y-2">
+                    {questGroups.map(g => (
+                        <label key={g.id} className="flex items-center gap-2 cursor-pointer p-1 rounded-md hover:bg-stone-700/50">
+                            <input
+                                type="checkbox"
+                                checked={formData.groupIds?.includes(g.id)}
+                                onChange={() => handleGroupToggle(g.id)}
+                                className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"
+                            />
+                            <span>{g.icon} {g.name}</span>
+                        </label>
+                    ))}
+                </div>
+                <div className="mt-2">
+                    <ToggleSwitch
+                        enabled={isCreatingNewGroup}
+                        setEnabled={setIsCreatingNewGroup}
+                        label="Create New Group"
                     />
-                )}
+                    {isCreatingNewGroup && (
+                        <Input
+                            label="New Group Name"
+                            value={newGroupName}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewGroupName(e.target.value)}
+                            className="mt-2"
+                            autoFocus
+                        />
+                    )}
+                </div>
             </div>
 
           <QuestScheduling value={formData} onChange={handleScheduleChange} />

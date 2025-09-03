@@ -1,5 +1,3 @@
-
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 // FIX: Corrected import path for useSystemDispatch hook.
 import { useSystemDispatch } from '../../context/SystemContext';
@@ -35,7 +33,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
         if (score > highScore) {
             setHighScore(score);
         }
-        // FIX: Passed the 'gameId' and 'score' to the `submitScore` function call within the `gameOver` handler to resolve the "Expected 1 arguments, but got 0" error.
+        // FIX: Passed the 'gameId' and 'score' to the `submitScore` function call within the `gameOver` handler to resolve the "Expected arguments" error.
         submitScore('minigame-snake', score);
         if (gameLoopRef.current) {
             clearTimeout(gameLoopRef.current);
@@ -91,8 +89,10 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
             gameLoopRef.current = window.setTimeout(gameLoop, 100);
         };
         
-        generateFood();
-        gameLoop();
+        if (!isGameOver) {
+          generateFood();
+          gameLoop();
+        }
 
         return () => {
             if (gameLoopRef.current) {
@@ -115,6 +115,13 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
+
+    const resetGame = useCallback(() => {
+        setScore(0);
+        snakeRef.current = [{ x: 10, y: 10 }];
+        directionRef.current = { x: 1, y: 0 };
+        setIsGameOver(false);
+    }, []);
 
     const DPadButton: React.FC<{ dir: 'up' | 'down' | 'left' | 'right', children: React.ReactNode }> = ({ dir, children }) => {
         const handleClick = () => {

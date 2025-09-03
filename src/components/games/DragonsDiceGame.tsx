@@ -174,7 +174,7 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
     const [highScore, setHighScore] = useState(0);
     const [isRulesOpen, setIsRulesOpen] = useState(false);
     
-    const [gameState, setGameState] = useState<'pre-game' | 'rolling' | 'scoring' | 'round-over' | 'game-over'>('pre-game');
+    const [gameState, setGameState] = useState<'pre-game' | 'rolling' | 'scoring' | 'round-over' | 'game-over' | 'busted'>('pre-game');
     const [message, setMessage] = useState("Roll the dice to begin!");
     const { submitScore } = useSystemDispatch();
 
@@ -218,19 +218,8 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                 const { allScoringDiceIndices, combinations: foundCombinations } = findScoringCombinations(newDice, keptDice);
 
                 if (allScoringDiceIndices.size === 0) {
-                    const newBankedScores = [...bankedRoundScores, 0];
-                    setBankedRoundScores(newBankedScores);
-
-                    if (currentRound >= 5) {
-                        const finalTotal = newBankedScores.reduce((a, b) => a + b, 0);
-                        if (finalTotal > highScore) setHighScore(finalTotal);
-                        submitScore('minigame-dragons-dice', finalTotal);
-                        setMessage(`Busted on the last round! Final Score: ${finalTotal}`);
-                        setGameState('game-over');
-                    } else {
-                        setMessage(`BUSTED! You get 0 for Round ${currentRound}.`);
-                        setGameState('round-over');
-                    }
+                    setMessage(`BUSTED! You get 0 for Round ${currentRound}.`);
+                    setGameState('busted');
                 } else {
                     const newBankable = new Array(6).fill(false);
                     allScoringDiceIndices.forEach(i => newBankable[i] = true);
@@ -241,7 +230,23 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                 }
             }
         }, 100);
-    }, [dice, keptDice, bankedRoundScores, currentRound, highScore, submitScore]);
+    }, [dice, keptDice, currentRound]);
+
+    const handleBustAcknowledge = useCallback(() => {
+        const newBankedScores = [...bankedRoundScores, 0];
+        setBankedRoundScores(newBankedScores);
+    
+        if (currentRound >= 5) {
+            const finalTotal = newBankedScores.reduce((a, b) => a + b, 0);
+            if (finalTotal > highScore) setHighScore(finalTotal);
+            submitScore('minigame-dragons-dice', finalTotal);
+            setMessage(`Busted on the last round! Final Score: ${finalTotal}`);
+            setGameState('game-over');
+        } else {
+            setMessage(`Round ${currentRound} is over. Get ready for the next one!`);
+            setGameState('round-over');
+        }
+    }, [bankedRoundScores, currentRound, highScore, submitScore]);
 
     const handleDieClick = (index: number) => {
         if (gameState !== 'scoring' || !bankableDice[index]) return;
@@ -366,8 +371,9 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                         <Button onClick={bankScore} disabled={!isSelectionValid}>Bank & End Round</Button>
                     </>
                 )}
-                 {gameState === 'round-over' && <Button onClick={startNewRound}>Start Round {currentRound + 1}</Button>}
-                 {gameState === 'game-over' && <Button onClick={resetGame}>Play Again</Button>}
+                {gameState === 'busted' && <Button onClick={handleBustAcknowledge}>{currentRound >= 5 ? 'End Game' : 'End Round'}</Button>}
+                {gameState === 'round-over' && <Button onClick={startNewRound}>Start Round {currentRound + 1}</Button>}
+                {gameState === 'game-over' && <Button onClick={resetGame}>Play Again</Button>}
             </div>
 
             <div className="w-full flex justify-between items-center mt-8 pt-4 border-t border-stone-700/60">

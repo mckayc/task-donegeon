@@ -174,8 +174,16 @@ export const HelpPage: React.FC = () => {
                                 <li><strong>For {settings.terminology.tasks}:</strong> In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
-                        <li><strong>User-Specific & Global Sets:</strong> In the "Edit Condition Set" dialog, you can limit the set to only apply to specific users. You can also mark a set as <strong>"Global"</strong>, which forces it to apply to <strong>all</strong> {settings.terminology.tasks} and {settings.terminology.stores}, creating a sitewide rule. The logic for global sets now correctly handles circular dependencies, ensuring a {settings.terminology.task} isn't locked by a global rule that requires its own completion.</li>
+                        <li><strong>User-Specific &amp; Global Sets:</strong> In the "Edit Condition Set" dialog, you can limit the set to only apply to specific users. You can also mark a set as <strong>"Global"</strong>, which forces it to apply to <strong>all</strong> {settings.terminology.tasks} and {settings.terminology.stores}, creating a sitewide rule.</li>
                     </ol>
+                    <h4>Exempted Assets for Global Sets</h4>
+                    <p>When a set is marked as "Global," a new section called <strong>"Exempted Assets"</strong> appears. This allows you to specify certain {settings.terminology.tasks} or {settings.terminology.stores} that should <em>ignore</em> this global rule.</p>
+                    <p><strong>Automatic Exemptions:</strong> To prevent impossible situations (deadlocks), the system automatically adds quests to the exemption list if they are used as part of a condition within that same global set. For example:</p>
+                    <ul className="list-disc list-inside pl-6 mt-2">
+                       <li>If you add a "{`Quest Completed`}" condition, that specific {settings.terminology.task} is automatically exempted.</li>
+                       <li>If you add a "{`Quest Group Completed`}" condition, <strong>all</strong> {settings.terminology.tasks} within that group are automatically exempted.</li>
+                    </ul>
+                    <p>You can manually add more exemptions for any other {settings.terminology.tasks} or {settings.terminology.stores} as needed.</p>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>
                     <h3>AI Teacher</h3>

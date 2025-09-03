@@ -10,6 +10,7 @@ import { useCommunityState } from '../../context/CommunityContext';
 import { useAuthState } from '../../context/AuthContext';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
+import ExemptionSelectorDialog from './ExemptionSelectorDialog';
 
 interface EditConditionSetDialogProps {
   conditionSet: ConditionSet | null;
@@ -165,6 +166,8 @@ const ConditionEditor: React.FC<{
 
 const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditionSet, onClose, onSave }) => {
     const { users } = useAuthState();
+    const { quests, questGroups } = useQuestsState();
+    const { markets } = useEconomyState();
     const [formData, setFormData] = useState<ConditionSet>(() => {
         if (conditionSet) return JSON.parse(JSON.stringify(conditionSet));
         return {
@@ -175,9 +178,41 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
             conditions: [],
             assignedUserIds: [],
             isGlobal: false,
+            exemptQuestIds: [],
+            exemptMarketIds: [],
         };
     });
     const [limitToUsers, setLimitToUsers] = useState(!!(conditionSet?.assignedUserIds && conditionSet.assignedUserIds.length > 0));
+    const [isExemptionSelectorOpen, setIsExemptionSelectorOpen] = useState(false);
+
+    useEffect(() => {
+        if (!formData.isGlobal) return;
+
+        const autoExemptedQuestIds = new Set<string>(formData.exemptQuestIds || []);
+        let changed = false;
+
+        formData.conditions.forEach(condition => {
+            if (condition.type === ConditionType.QuestCompleted) {
+                if (!autoExemptedQuestIds.has(condition.questId)) {
+                    autoExemptedQuestIds.add(condition.questId);
+                    changed = true;
+                }
+            } else if (condition.type === ConditionType.QuestGroupCompleted) {
+                const questsInGroup = quests.filter(q => q.groupIds?.includes(condition.questGroupId));
+                questsInGroup.forEach(q => {
+                    if (!autoExemptedQuestIds.has(q.id)) {
+                        autoExemptedQuestIds.add(q.id);
+                        changed = true;
+                    }
+                });
+            }
+        });
+
+        if (changed) {
+            setFormData(p => ({ ...p, exemptQuestIds: Array.from(autoExemptedQuestIds) }));
+        }
+    }, [formData.isGlobal, formData.conditions, quests, formData.exemptQuestIds]);
+
 
     const addCondition = () => {
         const newCondition: Condition = { id: `cond-${Date.now()}`, type: ConditionType.MinRank, rankId: '' };
@@ -194,12 +229,18 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
         setFormData(p => ({ ...p, conditions: p.conditions.filter((_, i) => i !== index) }));
     };
 
+    const handleExemptionSave = (questIds: string[], marketIds: string[]) => {
+        setFormData(p => ({ ...p, exemptQuestIds: questIds, exemptMarketIds: marketIds }));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const finalPayload = { 
+        const finalPayload = {
             ...formData,
             assignedUserIds: limitToUsers ? formData.assignedUserIds : undefined,
             logic: formData.isGlobal ? ConditionSetLogic.ALL : formData.logic,
+            exemptQuestIds: formData.exemptQuestIds || [],
+            exemptMarketIds: formData.exemptMarketIds || [],
         };
         onSave(finalPayload);
     };
@@ -207,73 +248,93 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
     const dialogTitle = conditionSet ? 'Edit Condition Set' : 'Create New Condition Set';
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-0 max-w-2xl w-full max-h-[90vh] flex flex-col">
-                 <div className="p-8 border-b border-stone-700/60 flex-shrink-0">
-                    <h2 className="text-3xl font-medieval text-emerald-400">{dialogTitle}</h2>
-                </div>
+        <>
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-0 max-w-2xl w-full max-h-[90vh] flex flex-col">
+                    <div className="p-8 border-b border-stone-700/60 flex-shrink-0">
+                        <h2 className="text-3xl font-medieval text-emerald-400">{dialogTitle}</h2>
+                    </div>
 
-                <form id="condition-set-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
-                    <Input label="Set Name" value={formData.name} onChange={e => setFormData(p => ({...p, name: e.target.value}))} required />
-                    <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData(p => ({...p, description: e.target.value}))} rows={2} />
-                    
-                    <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-                        <h3 className="font-semibold text-stone-200">User Assignment</h3>
-                        <ToggleSwitch
-                            enabled={limitToUsers}
-                            setEnabled={setLimitToUsers}
-                            label="Limit this set to specific users"
-                        />
-                        {limitToUsers && (
-                            <UserMultiSelect
-                                allUsers={users}
-                                selectedUserIds={formData.assignedUserIds || []}
-                                onSelectionChange={(ids) => setFormData(p => ({...p, assignedUserIds: ids}))}
-                                label="Applicable Users"
+                    <form id="condition-set-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
+                        <Input label="Set Name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} required />
+                        <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} rows={2} />
+                        
+                        <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                            <h3 className="font-semibold text-stone-200">User Assignment</h3>
+                            <ToggleSwitch
+                                enabled={limitToUsers}
+                                setEnabled={setLimitToUsers}
+                                label="Limit this set to specific users"
                             />
+                            {limitToUsers && (
+                                <UserMultiSelect
+                                    allUsers={users}
+                                    selectedUserIds={formData.assignedUserIds || []}
+                                    onSelectionChange={(ids) => setFormData(p => ({...p, assignedUserIds: ids}))}
+                                    label="Applicable Users"
+                                />
+                            )}
+                        </div>
+
+                        <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                            <h3 className="font-semibold text-stone-200">Conditions Logic</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Input as="select" label="Logic Type" value={formData.logic} onChange={e => setFormData(p => ({...p, logic: e.target.value as ConditionSetLogic}))} disabled={!!formData.isGlobal}>
+                                        <option value={ConditionSetLogic.ALL}>All conditions must be met (AND)</option>
+                                        <option value={ConditionSetLogic.ANY}>Any condition can be met (OR)</option>
+                                    </Input>
+                                    {formData.isGlobal && <p className="text-xs text-stone-400 mt-1">Global sets must use 'ALL' logic.</p>}
+                                </div>
+                                <div className="pt-7">
+                                    <ToggleSwitch
+                                        enabled={!!formData.isGlobal}
+                                        setEnabled={(enabled) => setFormData(p => ({ ...p, isGlobal: enabled }))}
+                                        label="Apply Globally"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-3 pt-4 border-t border-stone-700/60">
+                                {formData.conditions.map((condition, index) => (
+                                    <ConditionEditor
+                                        key={condition.id}
+                                        condition={condition}
+                                        onUpdate={(updated) => updateCondition(index, updated)}
+                                        onRemove={() => removeCondition(index)}
+                                    />
+                                ))}
+                            </div>
+                            <Button type="button" variant="secondary" onClick={addCondition}>
+                                <PlusIcon className="w-4 h-4 mr-2"/> Add Condition
+                            </Button>
+                        </div>
+                        
+                        {formData.isGlobal && (
+                             <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                                <h3 className="font-semibold text-stone-200">Exempted Assets</h3>
+                                <p className="text-xs text-stone-400">
+                                    Assets listed here will NOT be affected by this global condition set. Quests used as part of a condition are automatically exempted to prevent deadlocks.
+                                </p>
+                                <Button type="button" variant="secondary" onClick={() => setIsExemptionSelectorOpen(true)}>Manage Exemptions</Button>
+                            </div>
                         )}
-                    </div>
+                    </form>
 
-                    <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-                        <h3 className="font-semibold text-stone-200">Conditions Logic</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Input as="select" label="Logic Type" value={formData.logic} onChange={e => setFormData(p => ({...p, logic: e.target.value as ConditionSetLogic}))} disabled={!!formData.isGlobal}>
-                                    <option value={ConditionSetLogic.ALL}>All conditions must be met (AND)</option>
-                                    <option value={ConditionSetLogic.ANY}>Any condition can be met (OR)</option>
-                                </Input>
-                                {formData.isGlobal && <p className="text-xs text-stone-400 mt-1">Global sets must use 'ALL' logic.</p>}
-                            </div>
-                            <div className="pt-7">
-                                <ToggleSwitch
-                                    enabled={!!formData.isGlobal}
-                                    setEnabled={(enabled) => setFormData(p => ({ ...p, isGlobal: enabled }))}
-                                    label="Apply Globally"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-3 pt-4 border-t border-stone-700/60">
-                            {formData.conditions.map((condition, index) => (
-                                <ConditionEditor
-                                    key={condition.id}
-                                    condition={condition}
-                                    onUpdate={(updated) => updateCondition(index, updated)}
-                                    onRemove={() => removeCondition(index)}
-                                />
-                            ))}
-                        </div>
-                        <Button type="button" variant="secondary" onClick={addCondition}>
-                            <PlusIcon className="w-4 h-4 mr-2"/> Add Condition
-                        </Button>
+                    <div className="p-6 border-t border-stone-700/60 mt-auto flex justify-end space-x-4">
+                        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                        <Button type="submit" form="condition-set-form">{conditionSet ? 'Save Changes' : 'Create Set'}</Button>
                     </div>
-                </form>
-
-                <div className="p-6 border-t border-stone-700/60 mt-auto flex justify-end space-x-4">
-                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="condition-set-form">{conditionSet ? 'Save Changes' : 'Create Set'}</Button>
                 </div>
             </div>
-        </div>
+            {isExemptionSelectorOpen && (
+                <ExemptionSelectorDialog
+                    initialQuestIds={formData.exemptQuestIds || []}
+                    initialMarketIds={formData.exemptMarketIds || []}
+                    onSave={handleExemptionSave}
+                    onClose={() => setIsExemptionSelectorOpen(false)}
+                />
+            )}
+        </>
     );
 };
 

@@ -1,4 +1,3 @@
-
 import { Role } from '../components/users/types';
 import { ConditionSet } from '../components/conditions/types';
 import { SystemState } from '../context/SystemContext';
@@ -15,7 +14,6 @@ export type Page =
   | 'Manage Rotations' | 'Manage Goods' | 'Manage Markets' | 'Manage Rewards'
   | 'Manage Ranks' | 'Manage Trophies' | 'Manage Events' | 'Triumphs & Trials'
   | 'Suggestion Engine' | 'Object Exporter' | 'Asset Manager' | 'Backup & Import'
-  // FIX: Added 'Themes' to the page list to make it a valid page.
   | 'Asset Library' | 'Appearance' | 'Settings' | 'About' | 'Help Guide' | 'Themes'
   | 'Bug Tracker' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames';
 
@@ -94,12 +92,10 @@ export interface Terminology {
 }
 
 export type SidebarConfigItem = 
-  // FIX: Allowed 'Chat' as a special non-page ID for sidebar links.
   | { type: 'link'; id: Page | 'Chat'; emoji: string; isVisible: boolean; level: number; role: string; termKey?: keyof Terminology }
   | { type: 'header'; id: string; title: string; emoji?: string; level: number; role: string; isVisible: boolean; }
   | { type: 'separator'; id: string; level: number; role: string; isVisible: boolean; };
 
-// FIX: Exported derived types for use in components, resolving module export errors.
 export type SidebarLink = Extract<SidebarConfigItem, { type: 'link' }>;
 export type SidebarHeader = Extract<SidebarConfigItem, { type: 'header' }>;
 
@@ -173,10 +169,8 @@ export interface BackupSchedule {
     lastBackupTimestamp?: number;
 }
 
-// FIX: Exported AppMode to resolve module export errors.
 export type AppMode =
   | { mode: 'personal' }
   | { mode: 'guild', guildId: string };
 
-// FIX: Exported IAppData for use in data-related operations.
 export interface IAppData extends SystemState, QuestsState, AuthState, EconomyState, ProgressionState, CommunityState {}

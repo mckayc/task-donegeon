@@ -1,6 +1,7 @@
 
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+// FIX: Corrected import path for useSystemDispatch hook.
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
 
@@ -22,9 +23,11 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
     const gridSize = 20;
 
     const generateFood = useCallback(() => {
-        const x = Math.floor(Math.random() * (canvasRef.current!.width / gridSize));
-        const y = Math.floor(Math.random() * (canvasRef.current!.height / gridSize));
-        foodRef.current = { x, y };
+        if (canvasRef.current) {
+            const x = Math.floor(Math.random() * (canvasRef.current.width / gridSize));
+            const y = Math.floor(Math.random() * (canvasRef.current.height / gridSize));
+            foodRef.current = { x, y };
+        }
     }, [gridSize]);
 
     const gameOver = useCallback(() => {
@@ -38,14 +41,6 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
             clearTimeout(gameLoopRef.current);
         }
     }, [score, highScore, submitScore]);
-
-    const resetGame = useCallback(() => {
-        snakeRef.current = [{ x: 10, y: 10 }];
-        directionRef.current = { x: 1, y: 0 };
-        setScore(0);
-        setIsGameOver(false);
-        generateFood();
-    }, [generateFood]);
 
     const draw = useCallback((ctx: CanvasRenderingContext2D) => {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -68,8 +63,9 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
             const head = { x: snake[0].x + directionRef.current.x, y: snake[0].y + directionRef.current.y };
             
             if (
-                head.x < 0 || head.x >= canvasRef.current!.width / gridSize ||
-                head.y < 0 || head.y >= canvasRef.current!.height / gridSize ||
+                !canvasRef.current ||
+                head.x < 0 || head.x >= canvasRef.current.width / gridSize ||
+                head.y < 0 || head.y >= canvasRef.current.height / gridSize ||
                 snake.some(segment => segment.x === head.x && segment.y === head.y)
             ) {
                 gameOver();

@@ -117,8 +117,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Avatar', emoji: '🧑‍🎤', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_avatar' },
   { type: 'link', id: 'Ranks', emoji: '🎖️', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_ranks' },
   { type: 'link', id: 'Collection', emoji: '🎒', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_collection' },
-  // FIX: Replaced the invalid 'Themes' page link with a link to the 'Appearance' page, which handles theme management.
-  { type: 'link', id: 'Appearance', emoji: '🎨', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_themes' },
+  { type: 'link', id: 'Themes', emoji: '🎨', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_themes' },
   { type: 'link', id: 'Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_trophies' },
 
   // User Management Section
@@ -140,6 +139,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_rewards' },
   { type: 'link', id: 'Manage Events', emoji: '🎉', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_events' },
   { type: 'link', id: 'Manage Condition Sets', emoji: '🔗', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_condition_sets' },
+  { type: 'link', id: 'Manage Minigames', emoji: '🕹️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_minigames' },
   
   // System Tools Section
   { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: Role.DonegeonMaster, isVisible: true },
@@ -158,7 +158,6 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   
   { type: 'separator', id: 'sep-settings-chat', level: 0, role: Role.Explorer, isVisible: true },
 
-  // FIX: Corrected the 'Chat' link ID to be a valid Page or special case.
   { type: 'link', id: 'Chat', emoji: '💬', isVisible: true, level: 0, role: Role.Explorer, termKey: 'link_chat' },
 
   // Help Section

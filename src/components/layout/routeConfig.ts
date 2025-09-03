@@ -7,7 +7,6 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Dashboard': lazy(() => import('../pages/Dashboard')),
     'Avatar': lazy(() => import('../pages/AvatarPage')),
     'Collection': lazy(() => import('../pages/CollectionPage')),
-    // FIX: Added 'Themes' to the route configuration to make the Themes page accessible in the application.
     'Themes': lazy(() => import('../pages/ThemesPage')),
     'Quests': lazy(() => import('../pages/QuestsPage')),
     'Marketplace': lazy(() => import('../pages/MarketplacePage')),

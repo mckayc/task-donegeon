@@ -1,6 +1,6 @@
 
 
-const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity, ChronicleEventEntity } = require('../entities');
+const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity, ChronicleEventEntity, MinigameEntity, GameScoreEntity } = require('../entities');
 const { In, IsNull, MoreThan } = require("typeorm");
 const { SystemNotificationEntity: SysNotifEntity } = require('../entities'); // alias for checkAndAwardTrophies
 const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
@@ -146,6 +146,8 @@ const getFullAppData = async (manager) => {
     data.gifts = await manager.find(GiftEntity);
     data.rotations = await manager.find(RotationEntity);
     data.chronicleEvents = await manager.find(ChronicleEventEntity, { order: { date: "DESC" } });
+    data.minigames = await manager.find(MinigameEntity);
+    data.gameScores = await manager.find(GameScoreEntity, { order: { playedAt: "DESC" } });
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     let finalSettings = settingRow ? settingRow.settings : INITIAL_SETTINGS;

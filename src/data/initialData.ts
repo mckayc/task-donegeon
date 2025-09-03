@@ -136,7 +136,10 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_rewards' },
   { type: 'link', id: 'Manage Events', emoji: '🎉', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_events' },
   { type: 'link', id: 'Manage Condition Sets', emoji: '🔗', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_condition_sets' },
+<<<<<<< HEAD
   // FIX: Added 'Manage Minigames' to the sidebar configuration.
+=======
+>>>>>>> 157d821ce991aa4416a10957820bbabaae63f969
   { type: 'link', id: 'Manage Minigames', emoji: '🎮', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_minigames' },
   
   // System Tools Section

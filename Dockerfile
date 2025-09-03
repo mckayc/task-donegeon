@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY backend/package*.json ./backend/
 
-# Install all dependencies for both frontend and backend, including dev dependencies
+# Install all dependencies for both frontend and backend, including dev dependencies.
 RUN npm install
 RUN npm install --prefix backend
 

@@ -42,5 +42,9 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
     'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),
     // FIX: Add a route for the new 'Manage Minigames' page, pointing to a placeholder.
+<<<<<<< HEAD
     'Manage Minigames': lazy(() => import('../pages/management/ManageMinigamesPage')),
+=======
+    'Manage Minigames': lazy(() => import('../pages/management/ManageSetbacksPage')),
+>>>>>>> 157d821ce991aa4416a10957820bbabaae63f969
 };

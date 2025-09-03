@@ -5,10 +5,10 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
-const { GuildEntity, UserEntity, MarketEntity, TrophyEntity, MinigameEntity } = require('./entities');
+const { GuildEntity, UserEntity, MarketEntity, TrophyEntity, MinigameEntity, RewardTypeDefinitionEntity } = require('./entities');
 const { updateTimestamps } = require('./utils/helpers');
 const { In } = require('typeorm');
-const { INITIAL_TROPHIES } = require('./initialData');
+const { INITIAL_TROPHIES, INITIAL_REWARD_TYPES } = require('./initialData');
 
 // --- Routers ---
 const questsRouter = require('./routes/quests.routes');
@@ -217,6 +217,19 @@ const initializeApp = async () => {
             console.log(`[Data Sync] Found ${trophiesToAdd.length} missing birthday trophies. Adding them now...`);
             await trophyRepo.save(trophiesToAdd.map(t => updateTimestamps(t, true)));
             console.log('[Data Sync] Birthday trophies added.');
+        }
+    }
+
+    // MIGRATION/SYNC: Ensure core Game Token reward type exists.
+    const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
+    const gameTokenReward = await rewardTypeRepo.findOneBy({ id: 'core-token' });
+    if (!gameTokenReward) {
+        console.log('[Data Sync] Game Token reward type not found. Creating it...');
+        const gameTokenData = INITIAL_REWARD_TYPES.find(rt => rt.id === 'core-token');
+        if (gameTokenData) {
+            const newGameToken = rewardTypeRepo.create(gameTokenData);
+            await rewardTypeRepo.save(updateTimestamps(newGameToken, true));
+            console.log('[Data Sync] Game Token reward type created.');
         }
     }
 

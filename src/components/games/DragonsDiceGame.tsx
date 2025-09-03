@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
@@ -71,12 +70,12 @@ const Die: React.FC<{ value: number; isSelected: boolean; isKept: boolean; onCli
                 ${!isKept ? 'hover:ring-emerald-500' : ''}`}
         >
             <div className={`w-full h-full flex flex-col ${dotPatterns[value]}`}>
-                {value === 1 && <>{baseDot}</>}
+                {value === 1 && baseDot}
                 {value === 2 && <>{baseDot}<div className="self-end">{baseDot}</div></>}
                 {value === 3 && <>{baseDot}<div className="self-center">{baseDot}</div><div className="self-end">{baseDot}</div></>}
-                {value === 4 && <div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div>}
-                {value === 5 && <div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="self-center">{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div>}
-                {value === 6 && <div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div>}
+                {value === 4 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
+                {value === 5 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="self-center">{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
+                {value === 6 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
             </div>
         </button>
     );

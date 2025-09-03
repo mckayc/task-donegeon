@@ -128,6 +128,8 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_bug_tracker: 'Sidebar: Bug Tracker',
   link_themes: 'Sidebar: Themes',
   link_test_cases: 'Sidebar: Test Cases',
+  // FIX: Added missing terminology label for minigames.
+  link_manage_minigames: 'Sidebar: Manage Minigames',
 };
 
 const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];

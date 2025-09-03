@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -19,16 +20,17 @@ import ErrorBoundary from './components/layout/ErrorBoundary';
 // FIX: Corrected the import path to point to the root types file.
 import { Role, Guild, ThemeDefinition } from '../types';
 import UpdateAvailable from './components/user-interface/UpdateAvailable';
+import GameOverlay from './components/games/GameOverlay';
 
 const App: React.FC = () => {
   const { settings, themes, isUpdateAvailable } = useSystemState();
   const { guilds } = useCommunityState();
-  const { appMode, activePage, isKioskDevice } = useUIState();
+  const { appMode, activePage, isKioskDevice, activeGame } = useUIState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser } = useAuthState();
   const { isRecording, isPickingElement, trackClicks, trackElementDetails } = useDeveloperState();
   const { addLogEntry } = useDeveloperDispatch();
   const { installUpdate } = useSystemDispatch();
-  const { setIsMobileView } = useUIDispatch();
+  const { setIsMobileView, setActiveGame } = useUIDispatch();
   const isDataLoaded = useIsDataLoaded();
   
   const [showUpdateToast, setShowUpdateToast] = useState(false);
@@ -201,6 +203,7 @@ const App: React.FC = () => {
       
       {renderAppContent()}
 
+      {activeGame && <GameOverlay gameId={activeGame} onClose={() => setActiveGame(null)} />}
       {showBugReporter && <BugReporter />}
     </ErrorBoundary>
   );

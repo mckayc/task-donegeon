@@ -6,18 +6,19 @@ import Button from '../../user-interface/Button';
 import { Minigame } from '../../../../types';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import GameStatsDialog from '../../games/GameStatsDialog';
+import EditMinigameDialog from '../../admin/EditMinigameDialog';
 
 const ManageMinigamesPage: React.FC = () => {
     const { settings, minigames } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const [gameForStats, setGameForStats] = useState<Minigame | null>(null);
     const [gameToDelete, setGameToDelete] = useState<Minigame | null>(null);
+    const [editingGame, setEditingGame] = useState<Minigame | null>(null);
 
     const handleDelete = () => {
         if (!gameToDelete) return;
-        // This would call an API to delete the minigame
-        // For now, we'll just close the dialog.
-        // deleteSelectedAssets({ minigames: [gameToDelete.id] });
+        // This is a placeholder for future admin functionality.
+        // Core games should not be deletable by users.
         setGameToDelete(null);
     };
 
@@ -37,7 +38,7 @@ const ManageMinigamesPage: React.FC = () => {
                             </div>
                             <div className="flex gap-2">
                                 <Button variant="secondary" size="sm" onClick={() => setGameForStats(game)}>Stats</Button>
-                                {/* <Button variant="destructive" size="sm" onClick={() => setGameToDelete(game)}>Delete</Button> */}
+                                <Button variant="secondary" size="sm" onClick={() => setEditingGame(game)}>Edit</Button>
                             </div>
                         </div>
                     ))}
@@ -45,6 +46,9 @@ const ManageMinigamesPage: React.FC = () => {
             </Card>
             {gameForStats && (
                 <GameStatsDialog game={gameForStats} onClose={() => setGameForStats(null)} />
+            )}
+            {editingGame && (
+                <EditMinigameDialog game={editingGame} onClose={() => setEditingGame(null)} />
             )}
             <ConfirmDialog
                 isOpen={!!gameToDelete}

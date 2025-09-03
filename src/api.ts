@@ -1,5 +1,4 @@
 
-
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore,
 } from '../types';
@@ -30,7 +29,6 @@ const apiUpload = async (path: string, file: File) => {
 
 
 // --- Auth API ---
-// FIX: Corrected the type definition for addUserAPI, replacing the non-existent 'avatar' property with 'profilePictureUrl' to align with the User type.
 export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'profilePictureUrl' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, actorId?: string) => apiRequest('POST', '/api/users', { ...data, actorId });
 export const updateUserAPI = (id: string, data: Partial<User>) => apiRequest('PUT', `/api/users/${id}`, data);
 export const deleteUsersAPI = (ids: string[], actorId?: string) => apiRequest('DELETE', '/api/users', { ids, actorId });
@@ -98,10 +96,14 @@ export const rejectClaimAPI = (questId: string, userId: string, adminId: string)
 
 // --- Minigames API ---
 export const getMinigamesAPI = () => apiRequest('GET', '/api/minigames');
+export const updateMinigameAPI = (gameId: string, data: Partial<Minigame>) => apiRequest('PUT', `/api/minigames/${gameId}`, data);
 export const getGameScoresAPI = () => apiRequest('GET', '/api/minigames/scores');
 export const playMinigameAPI = (gameId: string, userId: string) => apiRequest('POST', `/api/minigames/${gameId}/play`, { userId });
 export const submitScoreAPI = (scoreData: { gameId: string; userId: string; score: number }) => apiRequest('POST', '/api/minigames/score', scoreData);
 export const deleteMinigameAPI = (gameId: string) => apiRequest('DELETE', `/api/minigames/${gameId}`);
+export const resetAllScoresForGameAPI = (gameId: string) => apiRequest('POST', `/api/minigames/${gameId}/reset-all-scores`);
+export const resetScoresForUsersAPI = (gameId: string, userIds: string[]) => apiRequest('POST', `/api/minigames/${gameId}/reset-user-scores`, { userIds });
+
 
 // --- System & Dev API ---
 export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }, actorId: string) => {

@@ -29,6 +29,7 @@ const CHRONICLE_EVENT_TYPES = [
     ChronicleEventType.Triumph,
     ChronicleEventType.Trial,
     ChronicleEventType.QuestAssigned,
+    ChronicleEventType.PrizeWon,
 ].map(type => ({
     type,
     label: type.replace(/([A-Z])/g, ' $1').trim(),

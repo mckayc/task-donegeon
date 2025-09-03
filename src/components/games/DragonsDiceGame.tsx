@@ -185,9 +185,10 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
         setBankableDice(new Array(6).fill(false));
         setCombinations([]);
         setCurrentRoundScore(0);
-        setCurrentRound(prev => prev + 1);
+        const nextRound = currentRound + 1;
+        setCurrentRound(nextRound);
         setGameState('pre-game');
-        setMessage(`Round ${currentRound + 1}: Roll the dice!`);
+        setMessage(`Round ${nextRound}: Roll the dice!`);
     }, [currentRound]);
 
     const resetGame = useCallback(() => {
@@ -203,70 +204,60 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
         setMessage("Roll the dice to begin!");
     }, []);
     
-    const rollDice = useCallback(() => {
+    const handleBust = useCallback(() => {
+        const newBankedScores = [...bankedRoundScores, 0];
+        setBankedRoundScores(newBankedScores);
+
+        if (currentRound >= 5) {
+            const finalTotal = newBankedScores.reduce((a, b) => a + b, 0);
+            if (finalTotal > highScore) setHighScore(finalTotal);
+            submitScore('minigame-dragons-dice', finalTotal);
+            setMessage(`Game Over! Busted on the last round. Final Score: ${finalTotal}`);
+            setGameState('game-over');
+        } else {
+            startNewRound();
+        }
+    }, [bankedRoundScores, currentRound, highScore, submitScore, startNewRound]);
+    
+    const rollDice = useCallback((currentKeptDice: boolean[]) => {
         setGameState('rolling');
         setSelectedDice(new Array(6).fill(false));
         setMessage("Rolling...");
 
         let rollCount = 0;
         const interval = setInterval(() => {
-            const newDice = dice.map((d, i) => keptDice[i] ? d : Math.floor(Math.random() * 6) + 1);
+            const newDice = dice.map((d, i) => currentKeptDice[i] ? d : Math.floor(Math.random() * 6) + 1);
             setDice(newDice as number[]);
             rollCount++;
             if (rollCount >= 10) {
                 clearInterval(interval);
-                const { allScoringDiceIndices, combinations: foundCombinations } = findScoringCombinations(newDice, keptDice);
+                const { allScoringDiceIndices } = findScoringCombinations(newDice, currentKeptDice);
 
                 if (allScoringDiceIndices.size === 0) {
-                    setMessage(`BUSTED! You get 0 for Round ${currentRound}.`);
+                    setMessage(`You get 0 for Round ${currentRound}.`);
                     setGameState('busted');
                 } else {
                     const newBankable = new Array(6).fill(false);
                     allScoringDiceIndices.forEach(i => newBankable[i] = true);
                     setBankableDice(newBankable);
-                    setCombinations(foundCombinations);
+                    // We don't need to set combinations here as it's not used for validation anymore.
                     setGameState('scoring');
                     setMessage("Select your scoring dice.");
                 }
             }
         }, 100);
-    }, [dice, keptDice, currentRound]);
-
-    const handleBustAcknowledge = useCallback(() => {
-        const newBankedScores = [...bankedRoundScores, 0];
-        setBankedRoundScores(newBankedScores);
-    
-        if (currentRound >= 5) {
-            const finalTotal = newBankedScores.reduce((a, b) => a + b, 0);
-            if (finalTotal > highScore) setHighScore(finalTotal);
-            submitScore('minigame-dragons-dice', finalTotal);
-            setMessage(`Busted on the last round! Final Score: ${finalTotal}`);
-            setGameState('game-over');
-        } else {
-            setMessage(`Round ${currentRound} is over. Get ready for the next one!`);
-            setGameState('round-over');
-        }
-    }, [bankedRoundScores, currentRound, highScore, submitScore]);
+    }, [dice, currentRound]);
 
     const handleDieClick = (index: number) => {
         if (gameState !== 'scoring' || !bankableDice[index]) return;
         
         const newSelected = [...selectedDice];
-        const clickedValue = dice[index];
-        const clickedCombination = combinations.find(c => c.indices.includes(index));
-
-        if (clickedCombination) {
-            const isGroup = clickedCombination.indices.length > 1;
-            const isCurrentlySelected = newSelected[index];
-            if (isGroup) {
-                 clickedCombination.indices.forEach(i => {
-                    newSelected[i] = !isCurrentlySelected;
-                });
-            } else {
-                newSelected[index] = !isCurrentlySelected;
-            }
-            setSelectedDice(newSelected);
-        }
+        newSelected[index] = !newSelected[index];
+        
+        // This is a simplified selection logic. A more advanced version might group
+        // dice (e.g., selecting one '2' in a 3-of-a-kind selects all three).
+        // For now, this allows individual selection of any bankable die.
+        setSelectedDice(newSelected);
     };
     
     const keepAndRoll = () => {
@@ -289,10 +280,10 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
             setKeptDice(new Array(6).fill(false));
             setDice(new Array(6).fill(null)); // Clear the dice visually
             setMessage("Hot Dice! You scored with all dice. Roll again!");
-            setGameState('pre-game'); // Go to a state that shows the "Roll Dice" button
+            setGameState('pre-game');
         } else {
             setKeptDice(newKept);
-            rollDice();
+            rollDice(newKept);
         }
         
         setSelectedDice(new Array(6).fill(false));
@@ -327,11 +318,11 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
     const isSelectionValid = useMemo(() => {
         const selectedValues = dice.filter((d, i) => selectedDice[i]) as number[];
         if (selectedValues.length === 0) return false;
-        const nonScoringSelected = selectedDice.some((isSelected, index) => isSelected && !bankableDice[index]);
-        if (nonScoringSelected) return false;
         
-        return calculateScoreForDice(selectedValues) > 0;
-    }, [dice, selectedDice, bankableDice]);
+        // Ensure every selected die is part of some scorable group
+        const diceToScore = dice.filter((d, i) => selectedDice[i]);
+        return calculateScoreForDice(diceToScore as number[]) > 0;
+    }, [dice, selectedDice]);
     
     const totalScore = useMemo(() => {
         return bankedRoundScores.reduce((a, b) => a + b, 0);
@@ -354,7 +345,12 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6 relative">
+                {gameState === 'busted' && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10 rounded-xl">
+                        <h2 className="text-7xl font-bold font-medieval text-red-500 animate-pulse">BUSTED!</h2>
+                    </div>
+                )}
                 {dice.map((value, i) => value !== null ? (
                     <Die key={i} value={value} isSelected={selectedDice[i]} isKept={keptDice[i]} isBankable={bankableDice[i]} onClick={() => handleDieClick(i)} />
                 ) : (
@@ -363,7 +359,7 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
             </div>
 
             <div className="w-full flex justify-center gap-4 flex-wrap min-h-[40px]">
-                {gameState === 'pre-game' && <Button onClick={rollDice}>Roll Dice</Button>}
+                {gameState === 'pre-game' && <Button onClick={() => rollDice(keptDice)}>Roll Dice</Button>}
                 {gameState === 'rolling' && <Button disabled>Rolling...</Button>}
                 {gameState === 'scoring' && (
                     <>
@@ -371,7 +367,7 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                         <Button onClick={bankScore} disabled={!isSelectionValid}>Bank & End Round</Button>
                     </>
                 )}
-                {gameState === 'busted' && <Button onClick={handleBustAcknowledge}>{currentRound >= 5 ? 'End Game' : 'End Round'}</Button>}
+                {gameState === 'busted' && <Button onClick={handleBust}>{currentRound >= 5 ? 'Finish Game' : 'Start Next Round'}</Button>}
                 {gameState === 'round-over' && <Button onClick={startNewRound}>Start Round {currentRound + 1}</Button>}
                 {gameState === 'game-over' && <Button onClick={resetGame}>Play Again</Button>}
             </div>

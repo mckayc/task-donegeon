@@ -1,4 +1,3 @@
-
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../types';
 import { checkAllConditionSetsMet, ConditionDependencies, checkGlobalConditionsMet } from './conditions';
 
@@ -114,7 +113,7 @@ export const getQuestLockStatus = (
     dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] }
 ): QuestLockStatus => {
     // 1. Check global conditions first.
-    const globalCheck = checkGlobalConditionsMet(user, dependencies, quest.id);
+    const globalCheck = checkGlobalConditionsMet(user, dependencies, { questId: quest.id });
     if (!globalCheck.allMet) {
         return {
             isLocked: true,

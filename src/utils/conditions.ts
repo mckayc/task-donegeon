@@ -1,4 +1,3 @@
-
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role } from '../types';
 import { toYMD, isQuestScheduledForDay } from './quests';
 
@@ -114,16 +113,31 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
 export const checkGlobalConditionsMet = (
     user: User, 
     dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] },
-    questIdToExclude?: string,
+    options: { questId?: string, marketId?: string } = {}
 ): { allMet: boolean, failingSetName: string | null } => {
+    const { questId, marketId } = options;
     const globalSets = dependencies.allConditionSets.filter(cs => cs.isGlobal);
     if (globalSets.length === 0) {
         return { allMet: true, failingSetName: null };
     }
     
-    const globalSetIds = globalSets.map(cs => cs.id);
-    // Global sets are ALWAYS combined with AND logic between sets.
-    return checkAllConditionSetsMet(globalSetIds, user, dependencies, questIdToExclude);
+    for (const set of globalSets) {
+        // Exemption check
+        if (questId && set.exemptQuestIds?.includes(questId)) {
+            continue; // This quest is exempt from this global set
+        }
+        if (marketId && set.exemptMarketIds?.includes(marketId)) {
+            continue; // This market is exempt from this global set
+        }
+        
+        // Global sets are ALWAYS combined with AND logic between sets.
+        const { allMet, failingSetName } = checkAllConditionSetsMet([set.id], user, dependencies, questId);
+        if (!allMet) {
+            return { allMet: false, failingSetName: failingSetName || set.name };
+        }
+    }
+
+    return { allMet: true, failingSetName: null };
 };
 
 export const checkAllConditionSetsMet = (

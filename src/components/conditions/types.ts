@@ -104,4 +104,6 @@ export interface ConditionSet {
     conditions: Condition[];
     assignedUserIds?: string[];
     isGlobal?: boolean;
+    exemptQuestIds?: string[];
+    exemptMarketIds?: string[];
 }

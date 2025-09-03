@@ -282,8 +282,9 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
         if (newKept.every(k => k === true)) {
             // Hot Dice!
             setKeptDice(new Array(6).fill(false));
-            setMessage("Hot Dice! Roll all 6 again.");
-            setTimeout(() => rollDice(), 500);
+            setDice(new Array(6).fill(null)); // Clear the dice visually
+            setMessage("Hot Dice! You scored with all dice. Roll again!");
+            setGameState('pre-game'); // Go to a state that shows the "Roll Dice" button
         } else {
             setKeptDice(newKept);
             rollDice();

@@ -15,7 +15,6 @@ const ManageConditionSetsPage: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSet, setEditingSet] = useState<ConditionSet | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [setForGlobalConfirmation, setSetForGlobalConfirmation] = useState<ConditionSet | null>(null);
 
     const conditionSets = settings.conditionSets || [];
 
@@ -53,24 +52,6 @@ const ManageConditionSetsPage: React.FC = () => {
         setIsDialogOpen(false);
     };
 
-    const handleGlobalToggle = (set: ConditionSet, enabled: boolean) => {
-        if (enabled && set.logic === ConditionSetLogic.ANY) {
-            setSetForGlobalConfirmation(set);
-        } else {
-            const newSet = { ...set, isGlobal: enabled };
-            const newSets = conditionSets.map(cs => cs.id === newSet.id ? newSet : cs);
-            updateSettings({ ...settings, conditionSets: newSets });
-        }
-    };
-    
-    const handleConfirmGlobalToggle = () => {
-        if (!setForGlobalConfirmation) return;
-        const newSet = { ...setForGlobalConfirmation, isGlobal: true, logic: ConditionSetLogic.ALL };
-        const newSets = conditionSets.map(cs => cs.id === newSet.id ? newSet : cs);
-        updateSettings({ ...settings, conditionSets: newSets });
-        setSetForGlobalConfirmation(null);
-    };
-
     return (
         <div className="space-y-6">
             <Card
@@ -88,11 +69,12 @@ const ManageConditionSetsPage: React.FC = () => {
                                 </p>
                             </div>
                             <div className="flex items-center gap-4 w-full md:w-auto justify-end">
-                                 <ToggleSwitch
-                                    label="Apply Globally"
-                                    enabled={!!set.isGlobal}
-                                    setEnabled={(enabled) => handleGlobalToggle(set, enabled)}
-                                />
+                                 <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold text-stone-300">Global:</span>
+                                    <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${set.isGlobal ? 'bg-purple-500/20 text-purple-300' : 'bg-stone-500/20 text-stone-300'}`}>
+                                        {set.isGlobal ? 'Yes' : 'No'}
+                                    </span>
+                                </div>
                                 <Button variant="secondary" size="sm" onClick={() => handleEdit(set)}>Edit</Button>
                                 <Button variant="destructive" size="sm" onClick={() => handleDeleteRequest(set.id)}>Delete</Button>
                             </div>
@@ -120,14 +102,6 @@ const ManageConditionSetsPage: React.FC = () => {
                 onConfirm={handleConfirmDelete}
                 title="Delete Condition Set"
                 message={`Are you sure you want to delete this condition set? Any assets using it will become inaccessible until they are updated.`}
-            />
-
-            <ConfirmDialog
-                isOpen={!!setForGlobalConfirmation}
-                onClose={() => setSetForGlobalConfirmation(null)}
-                onConfirm={handleConfirmGlobalToggle}
-                title="Switch to 'ALL' (AND) Logic?"
-                message="Globally applied sets must use 'ALL' (AND) logic for safety. To apply this set globally, its logic will be automatically switched from 'ANY' (OR). Do you want to proceed?"
             />
         </div>
     );

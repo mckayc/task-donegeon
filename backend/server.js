@@ -88,7 +88,7 @@ const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
 const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
 
-const { runScheduledBackups, runScheduledRotations } = require('../controllers/management.controller');
+const { runScheduledBackups, runScheduledRotations } = require('./controllers/management.controller');
 const startAutomatedBackupScheduler = () => {
     setInterval(runScheduledBackups, 3600000); // Check every hour
     setTimeout(runScheduledBackups, 10000); // Also run 10s after start

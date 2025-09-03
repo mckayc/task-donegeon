@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { QuestGroup, Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -88,7 +86,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                 <div className="p-8 border-b border-stone-700/60 flex-shrink-0">
                     <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
                 </div>
-                <form onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
+                <form id="quest-group-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Input
                             label="Group Name"
@@ -154,7 +152,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                 </form>
                 <div className="p-6 mt-auto border-t border-stone-700/60 flex-shrink-0 flex justify-end space-x-4">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit">{groupToEdit ? 'Save Changes' : 'Create Group'}</Button>
+                    <Button type="submit" form="quest-group-form">{groupToEdit ? 'Save Changes' : 'Create Group'}</Button>
                 </div>
             </div>
         </div>

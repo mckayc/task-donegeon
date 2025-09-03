@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Quest, User, ConditionSet } from '../../types';
 import Button from '../user-interface/Button';
 import { useSystemState } from '../../context/SystemContext';
@@ -26,9 +26,15 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
     const dependencies: ConditionDependencies = {
         ranks, questCompletions, quests, questGroups, userTrophies, trophies, gameAssets, guilds
     };
-
-    const conditionSetIds = quest.conditionSetIds || [];
-    const conditionSets = settings.conditionSets.filter(cs => conditionSetIds.includes(cs.id));
+    
+    const conditionSets = useMemo(() => {
+        const questSetIds = new Set(quest.conditionSetIds || []);
+        const globalSetIds = new Set(settings.conditionSets.filter(cs => cs.isGlobal).map(cs => cs.id));
+        
+        const allApplicableSetIds = new Set([...questSetIds, ...globalSetIds]);
+        
+        return settings.conditionSets.filter(cs => allApplicableSetIds.has(cs.id));
+    }, [settings.conditionSets, quest.conditionSetIds]);
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={onClose}>

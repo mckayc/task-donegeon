@@ -223,3 +223,67 @@ const initializeApp = async () => {
 
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
+    await ensureDefaultAssetPacksExist();
+    
+    // Start schedulers
+    startAutomatedBackupScheduler();
+    startAutomatedRotationScheduler();
+
+    console.log("Application initialization complete.");
+};
+
+// === API Routes ===
+app.use('/api/quests', questsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/markets', marketsRouter);
+app.use('/api/reward-types', rewardsRouter);
+app.use('/api/ranks', ranksRouter);
+app.use('/api/trophies', trophiesRouter);
+app.use('/api/assets', assetsRouter);
+app.use('/api/quest-groups', questGroupsRouter);
+app.use('/api/themes', themesRouter);
+app.use('/api/events', eventsRouter);
+app.use('/api/rotations', rotationsRouter);
+app.use('/api/applied-modifiers', appliedModifiersRouter);
+app.use('/api/trades', tradesRouter);
+app.use('/api/gifts', giftsRouter);
+app.use('/api/guilds', guildsRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/bug-reports', bugReportsRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/setbacks', setbacksRouter);
+app.use('/api/minigames', minigamesRouter);
+// Modular routers
+app.use('/api/data', dataRouter);
+app.use('/api/system', systemRouter);
+app.use('/api/chronicles', chroniclesRouter);
+app.use('/api/ai', aiRouter);
+// Management routers from the management.routes.js file
+app.use('/api/asset-packs', managementRouters.assetPacksRouter);
+app.use('/api/image-packs', managementRouters.imagePacksRouter);
+app.use('/api/backups', managementRouters.backupsRouter);
+app.use('/api/media', managementRouters.mediaRouter);
+
+// === Static File Serving ===
+// Serve static assets from the 'dist' directory (frontend build output)
+app.use(express.static(path.join(__dirname, '..', 'dist')));
+// Serve uploaded assets from the 'data/assets' directory
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// === Catch-all for Frontend Routing ===
+// For any other request, serve the index.html file to let the React router handle it.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+});
+
+
+// === Start the server after initialization ===
+initializeApp().then(() => {
+    app.listen(port, () => {
+        console.log(`Server running at http://localhost:${port}`);
+    });
+}).catch(error => {
+    console.error("Failed to initialize application:", error);
+    process.exit(1);
+});

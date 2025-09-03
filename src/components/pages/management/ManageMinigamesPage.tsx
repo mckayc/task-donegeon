@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import Card from '../../user-interface/Card';
 import Button from '../../user-interface/Button';
-import { Minigame } from '../../../types';
+import { Minigame } from '../../../../types';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import GameStatsDialog from '../../games/GameStatsDialog';
 

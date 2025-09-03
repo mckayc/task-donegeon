@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { AppMode, Page } from '../types/app';
 import { bugLogger } from '../utils/bugLogger';
@@ -10,7 +11,6 @@ export interface UIState {
   appMode: AppMode;
   activeMarketId: string | null;
   isKioskDevice: boolean;
-  // FIX: Added activeGame to UIState to manage game overlay visibility.
   activeGame: string | null;
 }
 
@@ -21,7 +21,6 @@ export interface UIDispatch {
   setIsMobileView: (isMobile: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   setActiveMarketId: (marketId: string | null) => void;
-  // FIX: Added setActiveGame to UIDispatch to allow components to control the game overlay.
   setActiveGame: (gameId: string | null) => void;
 }
 
@@ -41,7 +40,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isMobileView, setIsMobileView] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [appMode, _setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [activeMarketId, _setActiveMarketId] = useState<string | null>(null);
-  // FIX: Added state for managing the active game.
   const [activeGame, _setActiveGame] = useState<string | null>(null);
   const [isKioskDevice, setIsKioskDevice] = useState<boolean>(() => {
       if (typeof window !== 'undefined') {
@@ -93,7 +91,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     _setActiveMarketId(marketId);
   };
 
-  // FIX: Implemented the setActiveGame function.
   const setActiveGame = (gameId: string | null) => {
       _setActiveGame(gameId);
   };
@@ -106,7 +103,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     appMode,
     activeMarketId,
     isKioskDevice,
-    // FIX: Included activeGame in the context state value.
     activeGame,
   }), [activePage, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame]);
 
@@ -117,7 +113,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setIsMobileView,
     setAppMode,
     setActiveMarketId,
-    // FIX: Included setActiveGame in the context dispatch value.
     setActiveGame,
   };
 

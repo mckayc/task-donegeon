@@ -148,8 +148,7 @@ export const HelpPage: React.FC = () => {
                                 <li><strong>For {settings.terminology.tasks}:</strong> In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
-                        {/* FIX: Replaced undefined variables `{tasks}` and `{stores}` with `{settings.terminology.tasks}` and `{settings.terminology.stores}`. */}
-                        <li><strong>NEW: User-Specific & Global Sets:</strong> In the "Edit Condition Set" dialog, you can limit the set to only apply to specific users. You can also mark a set as **"Global"**, which forces it to apply to **all** {settings.terminology.tasks} and {settings.terminology.stores}, creating a sitewide rule.</li>
+                        <li><strong>NEW: User-Specific & Global Sets:</strong> In the "Edit Condition Set" dialog, you can limit the set to only apply to specific users. You can also mark a set as <strong>"Global"</strong>, which forces it to apply to <strong>all</strong> {settings.terminology.tasks} and {settings.terminology.stores}, creating a sitewide rule.</li>
                     </ol>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>

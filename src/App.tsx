@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import { useUIState, useUIDispatch } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
@@ -17,7 +16,6 @@ import { useCommunityState } from './context/CommunityContext';
 import { useSystemState, useSystemDispatch } from './context/SystemContext';
 import { useIsDataLoaded } from './context/DataProvider';
 import ErrorBoundary from './components/layout/ErrorBoundary';
-// FIX: Corrected the import path to point to the root types file.
 import { Role, Guild, ThemeDefinition } from '../types';
 import UpdateAvailable from './components/user-interface/UpdateAvailable';
 import GameOverlay from './components/games/GameOverlay';

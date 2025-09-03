@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -128,7 +129,6 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_bug_tracker: 'Sidebar: Bug Tracker',
   link_themes: 'Sidebar: Themes',
   link_test_cases: 'Sidebar: Test Cases',
-  // FIX: Added missing terminology label for minigames.
   link_manage_minigames: 'Sidebar: Manage Minigames',
 };
 
@@ -187,7 +187,7 @@ export const SettingsPage: React.FC = () => {
         setConfirmation(null);
     };
 
-    const handleSaveSchedule = (scheduleData: Omit<BackupSchedule, 'id'>) => {
+    const handleSaveSchedule = (scheduleData: Omit<BackupSchedule, 'id' | 'lastBackupTimestamp'>) => {
         const updatedSchedules = [...formState.automatedBackups.schedules];
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);

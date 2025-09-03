@@ -1,29 +1,24 @@
-import { Role, User, AdminAdjustment } from '../components/users/types';
-import { ThemeDefinition } from '../components/themes/types';
-import { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from '../components/items/types';
-import { Quest, QuestGroup, QuestCompletion } from '../components/quests/types';
-import { Trophy, UserTrophy } from '../components/trophies/types';
-import { Rank } from '../components/ranks/types';
-import { Rotation } from '../components/rotations/types';
-import { Guild } from '../components/guilds/types';
-import { ModifierDefinition, AppliedModifier } from '../components/modifiers/types';
-import { ScheduledEvent } from '../components/events/types';
-import { SystemLog, SystemNotification } from '../components/system/types';
-import { ChatMessage } from '../components/chat/types';
-import { BugReport } from '../components/dev/types';
-import { TradeOffer, Gift } from '../components/trading/types';
-import { ChronicleEvent } from '../components/chronicles/types';
+
+
+import { Role } from '../components/users/types';
 import { ConditionSet } from '../components/conditions/types';
+import { SystemState } from '../context/SystemContext';
+import { QuestsState } from '../context/QuestsContext';
+import { AuthState } from '../context/AuthContext';
+import { EconomyState } from '../context/EconomyContext';
+import { ProgressionState } from '../context/ProgressionContext';
+import { CommunityState } from '../context/CommunityContext';
 
-
-// This file is for truly global types that don't belong to a specific feature domain.
-
-export type AppMode = {
-    mode: 'personal';
-} | {
-    mode: 'guild';
-    guildId: string;
-};
+export type Page =
+  | 'Dashboard' | 'Quests' | 'Calendar' | 'Marketplace' | 'Avatar' | 'Collection'
+  | 'Guild' | 'Progress' | 'Trophies' | 'Ranks' | 'Chronicles' | 'Profile'
+  | 'Approvals' | 'Manage Users' | 'Manage Guilds' | 'Manage Quests' | 'Manage Quest Groups'
+  | 'Manage Rotations' | 'Manage Goods' | 'Manage Markets' | 'Manage Rewards'
+  | 'Manage Ranks' | 'Manage Trophies' | 'Manage Events' | 'Triumphs & Trials'
+  | 'Suggestion Engine' | 'Object Exporter' | 'Asset Manager' | 'Backup & Import'
+  // FIX: Added 'Themes' to the page list to make it a valid page.
+  | 'Asset Library' | 'Appearance' | 'Settings' | 'About' | 'Help Guide' | 'Themes'
+  | 'Bug Tracker' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames';
 
 export interface Terminology {
   appName: string;
@@ -96,155 +91,93 @@ export interface Terminology {
   link_bug_tracker: string;
   link_themes: string;
   link_test_cases: string;
-  // FIX: Add missing property for managing minigames.
   link_manage_minigames: string;
 }
 
-// FIX: Add 'Manage Minigames' to the list of valid pages.
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
-| 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Triumphs & Trials'
-| 'Bug Tracker' | 'Themes' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames';
+export type SidebarConfigItem = 
+  // FIX: Allowed 'Chat' as a special non-page ID for sidebar links.
+  | { type: 'link'; id: Page | 'Chat'; emoji: string; isVisible: boolean; level: number; role: string; termKey?: keyof Terminology }
+  | { type: 'header'; id: string; title: string; emoji?: string; level: number; role: string; isVisible: boolean; }
+  | { type: 'separator'; id: string; level: number; role: string; isVisible: boolean; };
 
-export interface SidebarLink {
-  type: 'link';
-  id: Page;
-  emoji: string;
-  isVisible: boolean;
-  level: number;
-  role: Role;
-  termKey?: keyof Terminology;
-}
+// FIX: Exported derived types for use in components, resolving module export errors.
+export type SidebarLink = Extract<SidebarConfigItem, { type: 'link' }>;
+export type SidebarHeader = Extract<SidebarConfigItem, { type: 'header' }>;
 
-export interface SidebarHeader {
-    type: 'header';
-    title: string;
-    emoji?: string;
-    id: string;
-    level: 0;
-    role: Role;
-    isVisible: boolean;
-}
-
-export interface SidebarSeparator {
-    type: 'separator';
-    id: string;
-    level: 0;
-    role: Role;
-    isVisible: boolean;
-}
-
-export type SidebarConfigItem = SidebarLink | SidebarHeader | SidebarSeparator;
-
-export interface RewardValuationSettings {
-  enabled: boolean;
-  realWorldCurrency: string;
-  currencyExchangeFeePercent: number;
-  xpExchangeFeePercent: number;
+export interface AppSettings {
+    contentVersion: number;
+    favicon: string;
+    theme: string;
+    terminology: Terminology;
+    enableAiFeatures: boolean;
+    rewardValuation: {
+        enabled: boolean;
+        realWorldCurrency: string;
+        currencyExchangeFeePercent: number;
+        xpExchangeFeePercent: number;
+    };
+    setbacks: {
+        enabled: boolean;
+        forgiveLate: boolean;
+    };
+    questDefaults: {
+        requiresApproval: boolean;
+        isOptional: boolean;
+        isActive: boolean;
+    };
+    security: {
+        requirePinForUsers: boolean;
+        requirePasswordForAdmin: boolean;
+        allowProfileEditing: boolean;
+        allowAdminSelfApproval: boolean;
+    };
+    sharedMode: {
+        enabled: boolean;
+        quickUserSwitchingEnabled: boolean;
+        allowCompletion: boolean;
+        requirePinForCompletion: boolean;
+        autoExit: boolean;
+        autoExitMinutes: number;
+        userIds: string[];
+    };
+    automatedBackups: {
+        enabled: boolean;
+        schedules: BackupSchedule[];
+        format: 'json' | 'sqlite' | 'both';
+    };
+    loginNotifications: {
+        enabled: boolean;
+    };
+    chat: {
+        enabled: boolean;
+        chatEmoji: string;
+    };
+    sidebars: {
+        main: SidebarConfigItem[];
+    };
+    googleCalendar: {
+        enabled: boolean;
+        apiKey: string;
+        calendarId: string;
+    };
+    developerMode: {
+        enabled: boolean;
+    };
+    conditionSets: ConditionSet[];
 }
 
 export interface BackupSchedule {
-  id: string;
-  frequency: number;
-  unit: 'hours' | 'days' | 'weeks';
-  maxBackups: number;
-  lastBackupTimestamp?: number;
+    id: string;
+    frequency: number;
+    unit: 'hours' | 'days' | 'weeks';
+    maxBackups: number;
+    lastBackupTimestamp?: number;
 }
 
-export interface AppSettings {
-  contentVersion: number;
-  favicon: string;
-  setbacks: {
-    enabled: boolean;
-    forgiveLate: boolean;
-  };
-  questDefaults: {
-    requiresApproval: boolean;
-    isOptional: boolean;
-    isActive: boolean;
-  };
-  security: {
-    requirePinForUsers: boolean;
-    requirePasswordForAdmin: boolean;
-    allowProfileEditing: boolean;
-    allowAdminSelfApproval: boolean;
-  };
-  sharedMode: {
-    enabled: boolean;
-    quickUserSwitchingEnabled: boolean;
-    allowCompletion: boolean;
-    requirePinForCompletion: boolean;
-    autoExit: boolean;
-    autoExitMinutes: number;
-    userIds: string[];
-  };
-  automatedBackups: {
-    enabled: boolean;
-    schedules: BackupSchedule[];
-    format: 'json' | 'sqlite' | 'both';
-  };
-  loginNotifications: {
-    enabled: boolean;
-  };
-  theme: string;
-  terminology: Terminology;
-  enableAiFeatures: boolean;
-  rewardValuation: RewardValuationSettings;
-  chat: {
-    enabled: boolean;
-    chatEmoji: string;
-  };
-  sidebars: {
-      main: SidebarConfigItem[];
-  };
-  googleCalendar: {
-    enabled: boolean;
-    apiKey: string;
-    calendarId: string;
-  };
-  developerMode: {
-    enabled: boolean;
-  };
-  conditionSets: ConditionSet[];
-  updatedAt?: string;
-}
+// FIX: Exported AppMode to resolve module export errors.
+export type AppMode =
+  | { mode: 'personal' }
+  | { mode: 'guild', guildId: string };
 
-export interface SystemStatus {
-  geminiConnected: boolean;
-  database: {
-    connected: boolean;
-    isCustomPath: boolean;
-  };
-  jwtSecretSet: boolean;
-}
-
-// MASTER DATA INTERFACE (Aggregator)
-export interface IAppData {
-  users: User[];
-  quests: Quest[];
-  questGroups: QuestGroup[];
-  markets: Market[];
-  rewardTypes: RewardTypeDefinition[];
-  questCompletions: QuestCompletion[];
-  purchaseRequests: PurchaseRequest[];
-  guilds: Guild[];
-  ranks: Rank[];
-  trophies: Trophy[];
-  userTrophies: UserTrophy[];
-  adminAdjustments: AdminAdjustment[];
-  gameAssets: GameAsset[];
-  systemLogs: SystemLog[];
-  settings: AppSettings;
-  themes: ThemeDefinition[];
-  loginHistory: string[];
-  chatMessages: ChatMessage[];
-  systemNotifications: SystemNotification[];
-  scheduledEvents: ScheduledEvent[];
-  rotations: Rotation[];
-  bugReports: BugReport[];
-  modifierDefinitions: ModifierDefinition[];
-  appliedModifiers: AppliedModifier[];
-  tradeOffers: TradeOffer[];
-  gifts: Gift[];
-  chronicleEvents: ChronicleEvent[];
-}
+// FIX: Exported IAppData for use in data-related operations.
+export interface IAppData extends SystemState, QuestsState, AuthState, EconomyState, ProgressionState, CommunityState {}

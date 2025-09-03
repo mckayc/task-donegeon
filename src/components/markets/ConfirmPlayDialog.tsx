@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Minigame } from '../../types';
+import { Minigame } from '../../../types';
 import Button from '../user-interface/Button';
 import { useSystemDispatch } from '../../context/SystemContext';
 import { useUIDispatch } from '../../context/UIContext';

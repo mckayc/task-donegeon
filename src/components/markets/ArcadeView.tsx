@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { Market, Minigame } from '../../types';
+import { Market, Minigame } from '../../../types';
 import Card from '../user-interface/Card';
-import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { useSystemState } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIDispatch } from '../../context/UIContext';
 import Button from '../user-interface/Button';
@@ -19,6 +19,7 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
     const [gameToPlay, setGameToPlay] = useState<Minigame | null>(null);
 
     const scoresByUserAndGame = useMemo(() => {
+        if (!currentUser) return {};
         const scores: { [gameId: string]: { userHighScore: number, globalHighScore: number } } = {};
         minigames.forEach(game => {
             const gameSpecificScores = gameScores.filter(s => s.gameId === game.id);
@@ -27,7 +28,7 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
                 return;
             }
             const userHighScore = Math.max(0, ...gameSpecificScores
-                .filter(s => s.userId === currentUser!.id)
+                .filter(s => s.userId === currentUser.id)
                 .map(s => s.score));
             const globalHighScore = Math.max(0, ...gameSpecificScores.map(s => s.score));
             scores[game.id] = { userHighScore, globalHighScore };

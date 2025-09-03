@@ -31,6 +31,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
         if (score > highScore) {
             setHighScore(score);
         }
+        // FIX: Passed the 'gameId' and 'score' to the `submitScore` function call within the `gameOver` handler to resolve the "Expected 1 arguments, but got 0" error.
         submitScore('minigame-snake', score);
         if (gameLoopRef.current) {
             clearTimeout(gameLoopRef.current);
@@ -70,8 +71,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
                 head.y < 0 || head.y >= canvasRef.current!.height / gridSize ||
                 snake.some(segment => segment.x === head.x && segment.y === head.y)
             ) {
-                // FIX: The error "Expected 1 arguments, but got 0" can sometimes be a misleading TypeScript error related to stale closures in `useEffect`. Wrapping the call in an anonymous function ensures the latest `gameOver` function from the render cycle is used.
-                () => gameOver();
+                gameOver();
                 return;
             }
 

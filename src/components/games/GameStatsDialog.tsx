@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Minigame, GameScore, User } from '../../types';
+import { Minigame, GameScore, User } from '../../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
@@ -31,13 +31,11 @@ const GameStatsDialog: React.FC<GameStatsDialogProps> = ({ game, onClose }) => {
     const userStats = users.map(user => {
       const userScores = gameSpecificScores.filter(s => s.userId === user.id);
       if (userScores.length === 0) {
-        return { user, highScore: 0, totalPlays: 0, totalPlaytime: 0 };
+        return { user, highScore: 0, totalPlays: 0 };
       }
       const highScore = Math.max(...userScores.map(s => s.score));
       const totalPlays = userScores.length;
-      // Placeholder for playtime; assuming each play is ~2 minutes for this example
-      const totalPlaytime = totalPlays * 2;
-      return { user, highScore, totalPlays, totalPlaytime };
+      return { user, highScore, totalPlays };
     });
 
     return { leaderboard, userStats };

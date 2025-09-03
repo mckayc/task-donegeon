@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
-const { GuildEntity, UserEntity, MarketEntity, TrophyEntity, MinigameEntity, GameScoreEntity } = require('./entities');
+const { GuildEntity, UserEntity, MarketEntity, TrophyEntity, MinigameEntity } = require('./entities');
 const { updateTimestamps } = require('./utils/helpers');
 const { In } = require('typeorm');
 const { INITIAL_TROPHIES } = require('./initialData');
@@ -88,7 +88,7 @@ const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
 const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
 
-const { runScheduledBackups, runScheduledRotations } = require('./controllers/management.controller');
+const { runScheduledBackups, runScheduledRotations } = require('../controllers/management.controller');
 const startAutomatedBackupScheduler = () => {
     setInterval(runScheduledBackups, 3600000); // Check every hour
     setTimeout(runScheduledBackups, 10000); // Also run 10s after start
@@ -223,63 +223,3 @@ const initializeApp = async () => {
 
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
-    await fs.mkdir(BACKUP_DIR, { recursive: true });
-    
-    await ensureDefaultAssetPacksExist();
-    startAutomatedBackupScheduler();
-    startAutomatedRotationScheduler();
-
-    console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
-    console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
-    console.log(`Asset Pack directory is ready at: ${ASSET_PACKS_DIR}`);
-
-    app.listen(port, () => {
-        console.log(`Task Donegeon backend listening at http://localhost:${port}`);
-    });
-};
-
-initializeApp().catch(err => {
-    console.error("Critical error during application initialization:", err);
-    process.exit(1);
-});
-
-// === API ROUTES ===
-app.use('/api/data', dataRouter);
-app.use('/api/system', systemRouter);
-app.use('/api/ai', aiRouter);
-app.use('/api/chronicles', chroniclesRouter);
-app.use('/api/asset-packs', managementRouters.assetPacksRouter);
-app.use('/api/image-packs', managementRouters.imagePacksRouter);
-app.use('/api/backups', managementRouters.backupsRouter);
-app.use('/api/media', managementRouters.mediaRouter);
-
-app.use('/api/quests', questsRouter);
-app.use('/api/users', usersRouter);
-app.use('/api/guilds', guildsRouter);
-app.use('/api/markets', marketsRouter);
-app.use('/api/reward-types', rewardsRouter);
-app.use('/api/ranks', ranksRouter);
-app.use('/api/trophies', trophiesRouter);
-app.use('/api/assets', assetsRouter);
-app.use('/api/quest-groups', questGroupsRouter);
-app.use('/api/themes', themesRouter);
-app.use('/api/events', eventsRouter);
-app.use('/api/rotations', rotationsRouter);
-app.use('/api/applied-modifiers', appliedModifiersRouter);
-app.use('/api/trades', tradesRouter);
-app.use('/api/gifts', giftsRouter);
-app.use('/api/settings', settingsRouter);
-app.use('/api/chat', chatRouter);
-app.use('/api/bug-reports', bugReportsRouter);
-app.use('/api/notifications', notificationsRouter);
-app.use('/api/setbacks', setbacksRouter); // This is for Modifier Definitions
-app.use('/api/minigames', minigamesRouter);
-
-// Serve static assets from the 'uploads' directory
-app.use('/uploads', express.static(UPLOADS_DIR));
-
-// Serve frontend
-app.use(express.static(path.join(__dirname, '..', 'dist')));
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
-});

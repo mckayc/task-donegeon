@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { Rotation, Quest, User } from '../../types';
@@ -95,7 +96,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
     };
 
     const handleToggleQuestGroup = (groupId: string) => {
-        // FIX: Property 'groupId' does not exist on type 'Quest'. Did you mean 'groupIds'?
+        // FIX: Corrected a property access error by changing `quest.groupId` to `quest.groupIds` to correctly check for group membership in arrays.
         const questsInGroup = quests.filter(q => q.groupIds?.includes(groupId)).map(q => q.id);
         if (questsInGroup.length === 0) return;
     
@@ -205,7 +206,6 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                                     <h3 className="text-sm font-medium text-stone-300 mb-1">Quest Groups</h3>
                                     <div className="p-2 border border-stone-600 rounded-md h-full overflow-y-auto grid grid-cols-1 gap-2">
                                         {questGroups.map(group => {
-                                            // FIX: Property 'groupId' does not exist on type 'Quest'. Did you mean 'groupIds'?
                                             const questsInGroup = quests.filter(q => q.groupIds?.includes(group.id));
                                             return (
                                                 <RotationQuestGroupCard

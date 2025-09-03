@@ -119,7 +119,7 @@ const buildDependencyGraph = (pack: AssetPack): Node[] => {
             name: qg.name,
             type: 'Quest Group',
             icon: qg.icon,
-            // FIX: Property 'groupId' does not exist on type 'Quest'. Did you mean 'groupIds'?
+            // FIX: Property 'groupId' does not exist on type 'Quest'. Changed to 'groupIds' to correctly filter quests by group.
             contains: quests
                 .filter(q => q.groupIds?.includes(qg.id))
                 .map(q => ({ id: q.id, name: q.title, type: 'Quest', icon: q.icon })),

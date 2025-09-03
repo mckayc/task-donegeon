@@ -1,3 +1,4 @@
+
 import { lazy } from 'react';
 import { Page } from '../../types/app';
 
@@ -6,6 +7,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Dashboard': lazy(() => import('../pages/Dashboard')),
     'Avatar': lazy(() => import('../pages/AvatarPage')),
     'Collection': lazy(() => import('../pages/CollectionPage')),
+    // FIX: Added 'Themes' to the route configuration to make the Themes page accessible in the application.
     'Themes': lazy(() => import('../pages/ThemesPage')),
     'Quests': lazy(() => import('../pages/QuestsPage')),
     'Marketplace': lazy(() => import('../pages/MarketplacePage')),
@@ -41,10 +43,5 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
     'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),
-    // FIX: Add a route for the new 'Manage Minigames' page, pointing to a placeholder.
-<<<<<<< HEAD
     'Manage Minigames': lazy(() => import('../pages/management/ManageMinigamesPage')),
-=======
-    'Manage Minigames': lazy(() => import('../pages/management/ManageSetbacksPage')),
->>>>>>> 157d821ce991aa4416a10957820bbabaae63f969
 };

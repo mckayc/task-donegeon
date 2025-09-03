@@ -1,3 +1,5 @@
+
+
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -56,6 +58,7 @@ export const INITIAL_REWARD_TYPES: RewardTypeDefinition[] = [
     { id: 'core-gold', name: 'Gold Coins', category: RewardCategory.Currency, description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 0.20 },
     { id: 'core-gems', name: 'Gems', category: RewardCategory.Currency, description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 1.00 },
     { id: 'core-crystal', name: 'Crystals', category: RewardCategory.Currency, description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.10 },
+    { id: 'core-token', name: 'Game Token', category: RewardCategory.Currency, description: 'Used to play minigames in The Arcade.', isCore: true, iconType: 'emoji', icon: '🪙', baseValue: 0.25 },
     { id: 'core-strength', name: 'Strength', category: RewardCategory.XP, description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.05 },
     { id: 'core-diligence', name: 'Diligence', category: RewardCategory.XP, description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.05 },
     { id: 'core-wisdom', name: 'Wisdom', category: RewardCategory.XP, description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.05 },
@@ -114,7 +117,8 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Avatar', emoji: '🧑‍🎤', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_avatar' },
   { type: 'link', id: 'Ranks', emoji: '🎖️', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_ranks' },
   { type: 'link', id: 'Collection', emoji: '🎒', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_collection' },
-  { type: 'link', id: 'Themes', emoji: '🎨', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_themes' },
+  // FIX: Replaced the invalid 'Themes' page link with a link to the 'Appearance' page, which handles theme management.
+  { type: 'link', id: 'Appearance', emoji: '🎨', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_themes' },
   { type: 'link', id: 'Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.Explorer, termKey: 'link_trophies' },
 
   // User Management Section
@@ -136,11 +140,6 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_rewards' },
   { type: 'link', id: 'Manage Events', emoji: '🎉', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_events' },
   { type: 'link', id: 'Manage Condition Sets', emoji: '🔗', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_condition_sets' },
-<<<<<<< HEAD
-  // FIX: Added 'Manage Minigames' to the sidebar configuration.
-=======
->>>>>>> 157d821ce991aa4416a10957820bbabaae63f969
-  { type: 'link', id: 'Manage Minigames', emoji: '🎮', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_minigames' },
   
   // System Tools Section
   { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: Role.DonegeonMaster, isVisible: true },
@@ -151,7 +150,6 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_asset_library' },
   { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_suggestion_engine' },
   { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_bug_tracker' },
-  { type: 'link', id: 'Test Cases', emoji: '🧪', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_test_cases' },
   
   { type: 'separator', id: 'sep-system-settings', level: 0, role: Role.DonegeonMaster, isVisible: true },
 
@@ -160,6 +158,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   
   { type: 'separator', id: 'sep-settings-chat', level: 0, role: Role.Explorer, isVisible: true },
 
+  // FIX: Corrected the 'Chat' link ID to be a valid Page or special case.
   { type: 'link', id: 'Chat', emoji: '💬', isVisible: true, level: 0, role: Role.Explorer, termKey: 'link_chat' },
 
   // Help Section
@@ -202,6 +201,7 @@ export const INITIAL_SETTINGS: AppSettings = {
             frequency: 24,
             unit: 'hours',
             maxBackups: 7,
+            lastBackupTimestamp: 0
         }],
         format: 'json',
     },
@@ -276,7 +276,6 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_themes: 'Themes',
       link_test_cases: 'Test Cases',
       link_manage_condition_sets: 'Manage Condition Sets',
-      // FIX: Added missing terminology key for minigames.
       link_manage_minigames: 'Manage Minigames',
     },
     enableAiFeatures: false,

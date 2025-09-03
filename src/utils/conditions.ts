@@ -108,7 +108,8 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
 
 export const checkGlobalConditionsMet = (
     user: User, 
-    dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] }
+    dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] },
+    questIdToExclude?: string,
 ): { allMet: boolean, failingSetName: string | null } => {
     const globalSets = dependencies.allConditionSets.filter(cs => cs.isGlobal);
     if (globalSets.length === 0) {
@@ -117,7 +118,7 @@ export const checkGlobalConditionsMet = (
     
     const globalSetIds = globalSets.map(cs => cs.id);
     // Global sets are ALWAYS combined with AND logic between sets.
-    return checkAllConditionSetsMet(globalSetIds, user, dependencies);
+    return checkAllConditionSetsMet(globalSetIds, user, dependencies, questIdToExclude);
 };
 
 export const checkAllConditionSetsMet = (

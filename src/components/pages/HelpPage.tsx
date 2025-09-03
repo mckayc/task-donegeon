@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -28,6 +27,13 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 27, 2025 (v0.4.27)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Snake Minigame Overhaul:</strong> The Snake minigame in the Arcade has been significantly improved for better playability. The game window is now larger, the initial speed is slower, a "3, 2, 1, GO!" countdown has been added, and players can now restart the game by pressing any arrow key on the "Game Over" screen.</li>
+                <li><strong>Global Condition Fix:</strong> Resolved a critical logic bug where a quest that was part of a quest group used in a *globally applied* condition set would lock itself, making it impossible to complete. The global condition check now correctly excludes the quest being evaluated from its own group's completion requirements.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 20, 2025 (v0.4.25)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
@@ -123,6 +129,11 @@ export const HelpPage: React.FC = () => {
 
             <CollapsibleSection title="Functional Specifications" defaultOpen>
                 <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+                    <h3>The Arcade & Minigames</h3>
+                    <p>The "Arcade" is a special {settings.terminology.store} where users can spend "Game Tokens" to play minigames.</p>
+                     <ul className="list-disc list-inside space-y-2">
+                        <li><strong>Snake:</strong> The classic game of snake. The game now features a larger play area, a slower starting speed, and a "3, 2, 1, GO!" countdown. You can also press any arrow key on the "Game Over" screen to instantly start a new game.</li>
+                    </ul>
                     <h3>Condition Sets</h3>
                     <p><strong>Purpose:</strong> To create reusable sets of rules that can control the availability of {settings.terminology.tasks} and {settings.terminology.stores}. This allows for dynamic content that unlocks based on a player's progress or other game state factors.</p>
                     <p><strong>How it Works:</strong></p>
@@ -148,7 +159,7 @@ export const HelpPage: React.FC = () => {
                                 <li><strong>For {settings.terminology.tasks}:</strong> In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
-                        <li><strong>NEW: User-Specific & Global Sets:</strong> In the "Edit Condition Set" dialog, you can limit the set to only apply to specific users. You can also mark a set as <strong>"Global"</strong>, which forces it to apply to <strong>all</strong> {settings.terminology.tasks} and {settings.terminology.stores}, creating a sitewide rule.</li>
+                        <li><strong>User-Specific & Global Sets:</strong> In the "Edit Condition Set" dialog, you can limit the set to only apply to specific users. You can also mark a set as <strong>"Global"</strong>, which forces it to apply to <strong>all</strong> {settings.terminology.tasks} and {settings.terminology.stores}, creating a sitewide rule. The logic for global sets now correctly handles circular dependencies, ensuring a {settings.terminology.task} isn't locked by a global rule that requires its own completion.</li>
                     </ol>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>

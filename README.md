@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.24
+**Version:** 0.4.27
 
 ---
 
@@ -13,10 +13,17 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
 
-### What's New in Version 0.4.24 (October 17, 2025)
--   **Build Stability Fixes:** Resolved a recurring TypeScript JSX error in the help guide that was causing build failures and consolidated the version history for better readability and maintenance.
+### What's New in Version 0.4.27 (October 27, 2025)
+-   **Snake Minigame Overhaul:** The Snake minigame in the Arcade has been significantly improved for better playability. The game window is now larger, the initial speed is slower, a "3, 2, 1, GO!" countdown has been added, and players can now restart the game by pressing any arrow key on the "Game Over" screen.
+-   **Global Condition Fix:** Resolved a critical logic bug where a quest that was part of a quest group used in a *globally applied* condition set would lock itself, making it impossible to complete. The global condition check now correctly excludes the quest being evaluated from its own group's completion requirements.
 
 ### Weekly Summaries
+
+-   **Week of October 20, 2025 (v0.4.25):**
+    -   **Conditional Market Unlocks:** Locked markets now show a dialog detailing the specific conditions a user must meet to gain access, mirroring the functionality of locked quests.
+    -   **Global Conditions:** Introduced "Global" condition sets that can lock content across the entire application, providing a new layer of administrative control.
+    -   **Circular Dependency Fix:** Resolved a critical logic bug where a quest could be locked by a condition requiring the completion of its own quest group. The system now intelligently ignores the quest being checked when evaluating its group's completion status.
+    -   **Refactored Logic:** Refactored the internal condition checking logic to be more robust and consistent between quests and markets.
 
 -   **Week of October 13, 2025 (v0.4.05 - v0.4.24):**
     -   Introduced user-specific and global Condition Sets for granular content control.

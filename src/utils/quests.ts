@@ -114,7 +114,7 @@ export const getQuestLockStatus = (
     dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] }
 ): QuestLockStatus => {
     // 1. Check global conditions first.
-    const globalCheck = checkGlobalConditionsMet(user, dependencies);
+    const globalCheck = checkGlobalConditionsMet(user, dependencies, quest.id);
     if (!globalCheck.allMet) {
         return {
             isLocked: true,

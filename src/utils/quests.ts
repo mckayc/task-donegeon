@@ -205,16 +205,13 @@ export const isQuestAvailableForUser = (
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {
     const approvedOrPending = questUserCompletions.filter(c => c.status === QuestCompletionStatus.Approved || c.status === QuestCompletionStatus.Pending);
-    // Prevent completing duties for a future date
-    if (toYMD(today) > toYMD(new Date())) {
-        return false;
-    }
       
     if (!onVacation && quest.endTime) {
       if (isQuestScheduledForDay(quest, today)) {
+          const now = new Date(); // Use the *actual* current time for this check
           const [hours, minutes] = quest.endTime.split(':').map(Number);
-          const deadlineToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
-          if (today > deadlineToday) {
+          const deadlineToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+          if (now > deadlineToday) {
               return false;
           }
       }

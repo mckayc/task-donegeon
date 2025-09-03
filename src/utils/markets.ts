@@ -1,4 +1,3 @@
-
 import { Market, User, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType, ConditionSet } from '../types';
 import { toYMD } from './quests';
 import { checkAllConditionSetsMet, ConditionDependencies, checkGlobalConditionsMet } from './conditions';
@@ -11,7 +10,7 @@ export type MarketDependencies = ConditionDependencies & {
 
 export const isMarketOpenForUser = (market: Market, user: User, dependencies: MarketDependencies): MarketOpenStatus => {
     // 1. Check global conditions first. They are the most restrictive.
-    const globalCheck = checkGlobalConditionsMet(user, dependencies);
+    const globalCheck = checkGlobalConditionsMet(user, dependencies, { marketId: market.id });
     if (!globalCheck.allMet) {
         return {
             isOpen: false,

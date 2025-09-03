@@ -59,11 +59,9 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 q.groupIds?.includes(group.id) && 
                 q.id !== questIdToExclude
             );
-            if (questsInGroup.length === 0) return true;
 
             const now = new Date();
-            // Filter out quests that are definitively unavailable due to time.
-            // This prevents deadlocks where an expired quest makes a group impossible to complete.
+            // Filter out quests that are definitively unavailable due to time to prevent deadlocks.
             const availableQuestsInGroup = questsInGroup.filter(q => {
                 if (!q.isActive) return false;
                 
@@ -83,7 +81,13 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 return true;
             });
 
-            // Now, check if all *available* quests have been completed.
+            // If the original group had quests, but none are currently available (e.g., all have expired),
+            // the condition cannot be met, so it should fail. This prevents [].every() from returning true.
+            if (questsInGroup.length > 0 && availableQuestsInGroup.length === 0) {
+                return false;
+            }
+
+            // Check if all *available* quests have been completed.
             return availableQuestsInGroup.every(q => 
                 dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved)
             );

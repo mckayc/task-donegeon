@@ -1,5 +1,4 @@
 
-
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../context/SystemContext';
 import { useUIState } from '../context/UIContext';
@@ -169,11 +168,9 @@ export const useDashboardData = () => {
         return users.map(user => {
             let userTotalXp = 0;
             if (currentGuildId) {
-                // FIX: Changed `amount: number` to `amount: any` to satisfy TypeScript's strictness which infers `unknown`.
-                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount: any) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum, amount) => sum + Number(amount), 0 as number);
             } else {
-                // FIX: Changed `amount: number` to `amount: any` to satisfy TypeScript's strictness which infers `unknown`.
-                userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount: any) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.personalExperience).reduce((sum, amount) => sum + Number(amount), 0 as number);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);

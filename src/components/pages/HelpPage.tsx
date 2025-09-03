@@ -28,6 +28,14 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of November 3, 2025 (v0.4.28)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>The Arcade Expansion:</strong> Five new minigames have been added to the Arcade: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.</li>
+                <li><strong>Arcade Leaderboard:</strong> A new "All-Time Arcade Legends" leaderboard now appears in the Arcade, showing the top players based on cumulative scores across all games.</li>
+                <li><strong>High Score Display:</strong> Each minigame card now displays the name of the current global high score holder.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 27, 2025 (v0.4.27)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Snake Minigame Overhaul:</strong> The Snake minigame in the Arcade has been significantly improved for better playability. The game window is now larger, the initial speed is slower, a "3, 2, 1, GO!" countdown has been added, and players can now restart the game by pressing any arrow key on the "Game Over" screen.</li>
@@ -132,8 +140,15 @@ export const HelpPage: React.FC = () => {
                     <h3>The Arcade & Minigames</h3>
                     <p>The "Arcade" is a special {settings.terminology.store} where users can spend "Game Tokens" to play minigames.</p>
                      <ul className="list-disc list-inside space-y-2">
+                        <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!</li>
+                        <li><strong>Rune Breaker:</strong> A fantasy-themed version of the classic *Breakout*. Control a magical shield and bounce an orb to break rows of enchanted runes.</li>
+                        <li><strong>Dungeon Dash:</strong> A simple side-scrolling "endless runner." An adventurer runs automatically, and the player taps to make them jump over pits and slide under obstacles.</li>
+                        <li><strong>Forge Master:</strong> A rhythm and timing game. The player must click at the right moment to strike a piece of hot metal with a hammer to forge a powerful weapon.</li>
+                        <li><strong>Archer's Folly:</strong> An archery game where the player clicks and drags to aim their bow, hitting a series of moving targets.</li>
                         <li><strong>Snake:</strong> The classic game of snake. The game now features a larger play area, a slower starting speed, and a "3, 2, 1, GO!" countdown. You can also press any arrow key on the "Game Over" screen to instantly start a new game.</li>
                     </ul>
+                    <h4>Arcade Leaderboard</h4>
+                    <p>The Arcade now features an "All-Time Arcade Legends" leaderboard. It shows the top 5 players based on their <strong>cumulative scores</strong> across <strong>all</strong> minigames. Additionally, each individual game card now proudly displays the name of the current high score holder for that specific game.</p>
                     <h3>Condition Sets</h3>
                     <p><strong>Purpose:</strong> To create reusable sets of rules that can control the availability of {settings.terminology.tasks} and {settings.terminology.stores}. This allows for dynamic content that unlocks based on a player's progress or other game state factors.</p>
                     <p><strong>How it Works:</strong></p>

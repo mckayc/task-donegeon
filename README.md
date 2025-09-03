@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.27
+**Version:** 0.4.29
 
 ---
 
@@ -12,6 +12,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
+
+### What's New in Version 0.4.28 (November 3, 2025)
+-   **The Arcade Expansion:** Five new minigames have been added: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.
+-   **Arcade Leaderboard:** A new "All-Time Arcade Legends" leaderboard now appears in the Arcade, showing top players based on cumulative scores across all games.
+-   **High Score Display:** Each minigame card now displays the name of the current global high score holder.
 
 ### What's New in Version 0.4.27 (October 27, 2025)
 -   **Snake Minigame Overhaul:** The Snake minigame in the Arcade has been significantly improved for better playability. The game window is now larger, the initial speed is slower, a "3, 2, 1, GO!" countdown has been added, and players can now restart the game by pressing any arrow key on the "Game Over" screen.
@@ -65,7 +70,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### For Admins ({admin}s)
 -   **Powerful Content Management:** Create and manage every aspect of the game world, including {tasks}, items, {stores}, {levels}, and {awards}.
--   **AI Suggestion Engine:** Use Google Gemini to generate creative ideas for any game asset, from {tasks} to items to {awards}.
+-   **AI Suggestion Engine:** Use Google's Gemini AI to generate creative ideas for any game asset, from {tasks} to items to {awards}.
 -   **Asset Library:** Kickstart your world with pre-made content packs that can be imported with a single click.
 -   **Blueprint System:** Export your own custom content as a "Blueprint" file to share with others or back up your creations.
 -   **Dynamic Rules Engine:** Create powerful "Condition Sets" to control when {tasks} and {stores} become available based on player progress, time of day, or items owned.
@@ -82,68 +87,21 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
 -   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
 -   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
--   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
--   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.
--   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
+-   **Showcase Page:**/g, '')}</p>
+          </div>
+        </div>
+      </CollapsibleSection>
 
-### Phase 2: Core Gameplay & Personalization
--   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward Rework:** Overhaul the reward system to allow for more complex and interesting rewards, such as items that grant temporary bonuses or unlock special abilities.
+      <CollapsibleSection title="Roadmap">
+        <RoadmapContent />
+      </CollapsibleSection>
 
-## 🛠️ Tech Stack
+      <CollapsibleSection title="Appendix: Version History">
+        <VersionHistoryContent />
+      </CollapsibleSection>
+    </div>
+  );
+};
 
--   **Frontend:** React, TypeScript, Vite, Tailwind CSS
--   **Backend:** Node.js, Express
--   **Database:** TypeORM with SQLite for easy, file-based persistence.
--   **AI Integration:** Google Gemini API
-
-## 🚀 Getting Started
-
-To get started with Task Donegeon, you'll need Node.js and npm installed. The application is designed to be self-contained and run easily on your local machine or a server.
-
-### Prerequisites
--   Node.js (v18 or higher recommended)
--   npm
-
-### Environment Variables
-For full functionality, especially the AI Suggestion Engine, you need to configure environment variables. Create a `.env` file in the root directory of the project.
-
-```env
-# (Required for AI Features) Your Google Gemini API Key
-# Get one from https://aistudio.google.com/app/apikey
-API_KEY="your_gemini_api_key_here"
-
-# (Optional, Recommended for Production) A long, random, secret string for signing authentication tokens.
-JWT_SECRET="your_long_random_secret_string"
-
-# (Optional, Recommended for Production) The path where the application's data (database, assets) will be stored.
-# This is crucial for persistent data when using Docker.
-APP_DATA_PATH="./data"
+export default AboutPage;
 ```
-
-## ⚙️ Installation and Running
-
-### Using `npm` (for local development)
-1.  **Install dependencies** for both the frontend and backend:
-    ```bash
-    npm install
-    npm install --prefix backend
-    ```
-2.  **Build the frontend:**
-    ```bash
-    npm run build
-    ```
-3.  **Start the server:**
-    ```bash
-    npm start --prefix backend
-    ```
-4.  Open your browser and navigate to `http://localhost:3000`.
-
-### Using Docker (recommended for production)
-A `Dockerfile` and `docker-compose.yml` are included for easy containerization.
-1.  **Ensure you have a `.env` file** in the root directory with your `API_KEY` and a secure `JWT_SECRET`.
-2.  **Build and run the container** using Docker Compose:
-    ```bash
-    docker-compose up --build -d
-    ```
-3.  The application will be available at `http://localhost:3000`. Your data will be persisted in a `data` directory created in the project root, as mapped in the `docker-compose.yml` file.

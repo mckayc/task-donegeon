@@ -1,18 +1,43 @@
 
 import React from 'react';
 import SnakeGame from './SnakeGame';
+import DragonsDiceGame from './DragonsDiceGame';
 import { motion } from 'framer-motion';
+import Button from '../user-interface/Button';
+import RuneBreakerGame from './RuneBreakerGame';
+import DungeonDashGame from './DungeonDashGame';
+import ForgeMasterGame from './ForgeMasterGame';
+import ArchersFollyGame from './ArchersFollyGame';
 
 interface GameOverlayProps {
   gameId: string;
   onClose: () => void;
 }
 
+const PlaceholderGame: React.FC<{ gameName: string; onClose: () => void; }> = ({ gameName, onClose }) => (
+    <div className="text-white text-center">
+        <h2 className="text-4xl font-medieval text-amber-400">{gameName}</h2>
+        <p className="mt-4 text-lg">Coming Soon!</p>
+        <Button onClick={onClose} className="mt-8">Back to Arcade</Button>
+    </div>
+);
+
+
 const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
   const renderGame = () => {
     switch (gameId) {
       case 'minigame-snake':
         return <SnakeGame onClose={onClose} />;
+      case 'minigame-dragons-dice':
+        return <DragonsDiceGame onClose={onClose} />;
+      case 'minigame-rune-breaker':
+        return <RuneBreakerGame onClose={onClose} />;
+      case 'minigame-dungeon-dash':
+        return <DungeonDashGame onClose={onClose} />;
+      case 'minigame-forge-master':
+        return <ForgeMasterGame onClose={onClose} />;
+      case 'minigame-archers-folly':
+        return <ArchersFollyGame onClose={onClose} />;
       default:
         return (
             <div className="text-white">

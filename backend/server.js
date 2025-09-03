@@ -205,6 +205,26 @@ const initializeApp = async () => {
         console.log('[Data Sync] Snake game created.');
     }
 
+    // MIGRATION/SYNC: Add new minigames if they don't exist
+    const newMinigames = [
+        { id: 'minigame-dragons-dice', name: "Dragon's Dice", description: "A classic dice game of risk and reward. Roll the dice, bank points, but don't get greedy or you'll lose it all!", icon: '🎲', cost: 1 },
+        { id: 'minigame-rune-breaker', name: 'Rune Breaker', description: 'A fantasy-themed version of the classic Breakout. Control a magical shield and bounce an orb to break rows of enchanted runes.', icon: '🛡️', cost: 1 },
+        { id: 'minigame-dungeon-dash', name: 'Dungeon Dash', description: 'A simple side-scrolling "endless runner." An adventurer runs automatically, and the player taps to make them jump over pits and slide under obstacles.', icon: '🏃‍♂️', cost: 1 },
+        { id: 'minigame-forge-master', name: 'Forge Master', description: 'A rhythm and timing game. The player must click or tap at the right moment to strike a piece of hot metal with a hammer, following a moving bar on the screen.', icon: '🔨', cost: 1 },
+        { id: 'minigame-archers-folly', name: "Archer's Folly", description: 'An archery game where the player clicks and drags to aim their bow. They must hit a series of moving targets, accounting for arrow drop over distance.', icon: '🏹', cost: 1 },
+    ];
+
+    for (const gameData of newMinigames) {
+        let game = await manager.findOne(MinigameEntity, { where: { id: gameData.id } });
+        if (!game) {
+            console.log(`[Data Sync] ${gameData.name} game not found. Creating it...`);
+            game = manager.create(MinigameEntity, gameData);
+            await manager.save(updateTimestamps(game, true));
+            console.log(`[Data Sync] ${gameData.name} game created.`);
+        }
+    }
+
+
     // MIGRATION/SYNC: Add birthday trophies if they don't exist
     const trophyRepo = manager.getRepository(TrophyEntity);
     const birthdayTrophyIds = INITIAL_TROPHIES.filter(t => t.id.startsWith('trophy-bday-')).map(t => t.id);

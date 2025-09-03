@@ -11,41 +11,47 @@ const WINNING_SCORE = 5000;
 // Helper to calculate score of a set of dice
 const calculateScore = (dice: number[]): { score: number, scoringDice: number[] } => {
     let score = 0;
+    const diceToScore = [...dice];
     const counts: { [key: number]: number } = {};
-    dice.forEach(d => counts[d] = (counts[d] || 0) + 1);
+    diceToScore.forEach(d => counts[d] = (counts[d] || 0) + 1);
+    const scoredDice: number[] = [];
 
-    const scoringDice: number[] = [];
-
-    // Check for special combinations first
-    const sortedDice = [...new Set(dice)].sort();
-    if (sortedDice.length === 6 && sortedDice.join(',') === '1,2,3,4,5,6') {
-        return { score: 1500, scoringDice: dice };
-    }
-    const pairs = Object.values(counts).filter(c => c === 2).length;
-    if (pairs === 3) {
-        return { score: 1500, scoringDice: dice };
+    // Special combinations for 6 dice
+    if (diceToScore.length === 6) {
+        const uniqueDice = new Set(diceToScore);
+        if (uniqueDice.size === 6) return { score: 1500, scoringDice: diceToScore }; // Straight 1-6
+        if (Object.values(counts).filter(c => c === 2).length === 3) return { score: 1500, scoringDice: diceToScore }; // 3 pairs
     }
 
-    // Three of a kind
+    // 3+ of a kind
     for (let i = 1; i <= 6; i++) {
-        if (counts[i] >= 3) {
-            score += i === 1 ? 1000 : i * 100;
-            counts[i] -= 3;
-            for(let j=0; j<3; j++) scoringDice.push(i);
+        const count = counts[i] || 0;
+        if (count >= 3) {
+            let setScore = i === 1 ? 1000 : i * 100;
+            // For 4, 5, or 6 of a kind, double the score for each additional die
+            setScore *= Math.pow(2, count - 3);
+            score += setScore;
+            
+            for (let j = 0; j < count; j++) {
+                scoredDice.push(i);
+                const indexToRemove = diceToScore.indexOf(i);
+                if (indexToRemove > -1) {
+                    diceToScore.splice(indexToRemove, 1);
+                }
+            }
         }
     }
 
     // Singles
-    if (counts[1]) {
-        score += counts[1] * 100;
-        for(let j=0; j<counts[1]; j++) scoringDice.push(1);
-    }
-    if (counts[5]) {
-        score += counts[5] * 50;
-        for(let j=0; j<counts[5]; j++) scoringDice.push(5);
-    }
+    const ones = diceToScore.filter(d => d === 1);
+    score += ones.length * 100;
+    scoredDice.push(...ones);
 
-    return { score, scoringDice };
+    const fives = diceToScore.filter(d => d === 5);
+    score += fives.length * 50;
+    scoredDice.push(...fives);
+    
+    return { score, scoringDice: scoredDice };
 };
 
 
@@ -70,9 +76,9 @@ const Die: React.FC<{ value: number; isSelected: boolean; isKept: boolean; onCli
                 ${!isKept ? 'hover:ring-emerald-500' : ''}`}
         >
             <div className={`w-full h-full flex flex-col ${dotPatterns[value]}`}>
-                {value === 1 && baseDot}
-                {value === 2 && <>{baseDot}<div className="self-end">{baseDot}</div></>}
-                {value === 3 && <>{baseDot}<div className="self-center">{baseDot}</div><div className="self-end">{baseDot}</div></>}
+                {value === 1 && <>{baseDot}</>}
+                {value === 2 && <><>{baseDot}</><div className="self-end">{baseDot}</div></>}
+                {value === 3 && <><>{baseDot}</><div className="self-center">{baseDot}</div><div className="self-end">{baseDot}</div></>}
                 {value === 4 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
                 {value === 5 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="self-center">{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
                 {value === 6 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
@@ -80,6 +86,39 @@ const Die: React.FC<{ value: number; isSelected: boolean; isKept: boolean; onCli
         </button>
     );
 };
+
+const Rules: React.FC<{onClose: () => void}> = ({onClose}) => (
+    <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-20" onClick={onClose}>
+        <div className="bg-stone-800 p-6 rounded-lg max-w-lg w-full border border-stone-600" onClick={e => e.stopPropagation()}>
+            <h3 className="text-2xl font-medieval text-amber-300 mb-4">Dragon's Dice Rules</h3>
+            <div className="text-left space-y-2 text-stone-300 text-sm max-h-96 overflow-y-auto pr-4">
+                <p>The goal is to be the first to reach 5000 points.</p>
+                <p>On your turn, you roll all six dice. You must select at least one scoring die. You can then choose to **Bank** your score and end your turn, or **Roll Again** with the remaining non-scoring dice.</p>
+                <p>If you roll and none of the dice are scoring dice, you **BUST**! You lose all points for that turn.</p>
+                <p>If you manage to score with all six dice in a turn ("Hot Dice"), you can roll all six dice again and continue your turn!</p>
+                <h4 className="font-bold text-lg text-emerald-300 pt-2">Scoring:</h4>
+                 <ul className="list-disc list-inside space-y-1">
+                    <li>Single 1: <strong>100</strong> points</li>
+                    <li>Single 5: <strong>50</strong> points</li>
+                    <li>Three 1s: <strong>1000</strong> points</li>
+                    <li>Three 2s: <strong>200</strong> points</li>
+                    <li>Three 3s: <strong>300</strong> points</li>
+                    <li>Three 4s: <strong>400</strong> points</li>
+                    <li>Three 5s: <strong>500</strong> points</li>
+                    <li>Three 6s: <strong>600</strong> points</li>
+                    <li>4-of-a-kind: <strong>Double</strong> the 3-of-a-kind score</li>
+                    <li>5-of-a-kind: <strong>4x</strong> the 3-of-a-kind score</li>
+                    <li>6-of-a-kind: <strong>8x</strong> the 3-of-a-kind score</li>
+                    <li>1-6 Straight: <strong>1500</strong> points</li>
+                    <li>Three Pairs: <strong>1500</strong> points</li>
+                </ul>
+            </div>
+            <div className="text-right mt-6">
+                <Button onClick={onClose}>Got It</Button>
+            </div>
+        </div>
+    </div>
+);
 
 
 const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
@@ -90,40 +129,41 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
     const [turnScore, setTurnScore] = useState(0);
     const [totalScore, setTotalScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
+    const [isRulesOpen, setIsRulesOpen] = useState(false);
     
     const [gameState, setGameState] = useState<'pre-game' | 'rolling' | 'scoring' | 'busted' | 'won'>('pre-game');
     const [message, setMessage] = useState("Roll the dice to begin!");
     const { submitScore } = useSystemDispatch();
 
-    const resetTurn = () => {
+    const resetTurn = useCallback(() => {
         setDice(new Array(6).fill(null));
         setKeptDice(new Array(6).fill(false));
         setSelectedDice(new Array(6).fill(false));
         setTurnScore(0);
-    };
+    }, []);
 
-    const resetGame = () => {
+    const resetGame = useCallback(() => {
         resetTurn();
         setTotalScore(0);
         setGameState('pre-game');
         setMessage("Roll the dice to begin!");
-    };
+    }, [resetTurn]);
     
-    const rollDice = () => {
+    const rollDice = useCallback(() => {
         setGameState('rolling');
         setSelectedDice(new Array(6).fill(false));
         setMessage("Rolling...");
 
         let rollCount = 0;
         const interval = setInterval(() => {
-            const newDice = dice.map((_, i) => keptDice[i] ? dice[i] : Math.floor(Math.random() * 6) + 1);
+            const newDice = dice.map((d, i) => keptDice[i] ? d : Math.floor(Math.random() * 6) + 1);
             setDice(newDice as number[]);
             rollCount++;
             if (rollCount >= 10) {
                 clearInterval(interval);
-                const availableDice = newDice.filter((d, i) => !keptDice[i]);
-                const { scoringDice } = calculateScore(availableDice as number[]);
-                if (scoringDice.length === 0) {
+                const availableDice = newDice.filter((d, i) => !keptDice[i]) as number[];
+                const { score } = calculateScore(availableDice);
+                if (score === 0) {
                     setGameState('busted');
                     setMessage("BUSTED! No scoring dice. Turn over.");
                     setTurnScore(0);
@@ -133,7 +173,7 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                 }
             }
         }, 100);
-    };
+    }, [dice, keptDice]);
 
     const handleDieClick = (index: number) => {
         if (gameState !== 'scoring' || keptDice[index]) return;
@@ -199,7 +239,8 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
     }, [dice, selectedDice]);
 
     return (
-        <div className="flex flex-col items-center justify-center p-4 text-white w-full max-w-2xl mx-auto">
+        <div className="bg-stone-900 bg-opacity-80 backdrop-blur-sm rounded-2xl border-2 border-stone-700 p-6 flex flex-col items-center justify-center text-white w-full max-w-3xl mx-auto relative">
+            {isRulesOpen && <Rules onClose={() => setIsRulesOpen(false)} />}
             <div className="w-full flex justify-between items-center mb-4 font-bold text-lg">
                 <span>Total: {totalScore}</span>
                 <span className="text-2xl font-medieval text-amber-300">Dragon's Dice</span>
@@ -222,7 +263,7 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                 ))}
             </div>
 
-            <div className="w-full flex justify-center gap-4">
+            <div className="w-full flex justify-center gap-4 flex-wrap">
                 {gameState === 'pre-game' && <Button onClick={rollDice}>Roll Dice</Button>}
                 {gameState === 'rolling' && <Button disabled>Rolling...</Button>}
                 {gameState === 'scoring' && (
@@ -236,7 +277,10 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                  {(gameState === 'won' || gameState === 'busted') && <Button onClick={resetGame} variant="secondary">Play Again</Button>}
             </div>
 
-            <Button variant="secondary" onClick={onClose} className="mt-8">Exit Game</Button>
+            <div className="w-full flex justify-between items-center mt-8 pt-4 border-t border-stone-700/60">
+                 <Button variant="secondary" onClick={() => setIsRulesOpen(true)}>Rules</Button>
+                 <Button variant="secondary" onClick={onClose}>Exit Game</Button>
+            </div>
         </div>
     );
 };

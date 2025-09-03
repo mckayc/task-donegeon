@@ -22,7 +22,11 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
     const { submitScore } = useSystemDispatch();
 
     const playerRef = useRef({ x: 50, y: GAME_HEIGHT - GROUND_HEIGHT - PLAYER_HEIGHT, width: PLAYER_WIDTH, height: PLAYER_HEIGHT, dy: 0, isJumping: false });
-    const obstaclesRef = useRef<{ x: number, width: number, type: 'pit' }[]>([]);
+    const obstaclesRef = useRef<{ x: number, y: number, width: number, height: number, type: 'spike' }[]>([]);
+    const backgroundLayersRef = useRef([
+        { x: 0, speed: 0.2, color: 'hsl(224 39% 10%)', height: 200, y: GAME_HEIGHT - GROUND_HEIGHT - 200 },
+        { x: 0, speed: 0.5, color: 'hsl(224 39% 15%)', height: 150, y: GAME_HEIGHT - GROUND_HEIGHT - 150 }
+    ]);
     const gameSpeedRef = useRef(5);
     const animationFrameId = useRef<number | null>(null);
 
@@ -41,6 +45,19 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
         if (!ctx) return;
 
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        ctx.fillStyle = 'hsl(224 71% 4%)';
+        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+        // Draw Parallax Background
+        backgroundLayersRef.current.forEach(layer => {
+            ctx.fillStyle = layer.color;
+            layer.x -= gameSpeedRef.current * layer.speed;
+            if (layer.x < -GAME_WIDTH) {
+                layer.x = 0;
+            }
+            ctx.fillRect(layer.x, layer.y, GAME_WIDTH, layer.height);
+            ctx.fillRect(layer.x + GAME_WIDTH, layer.y, GAME_WIDTH, layer.height);
+        });
 
         // Draw Ground
         ctx.fillStyle = '#4a4a4a';
@@ -49,12 +66,22 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
         // Draw Player
         ctx.fillStyle = '#10b981';
         ctx.fillRect(playerRef.current.x, playerRef.current.y, playerRef.current.width, playerRef.current.height);
+        // Player Eye
+        ctx.fillStyle = 'white';
+        ctx.fillRect(playerRef.current.x + 25, playerRef.current.y + 10, 8, 8);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(playerRef.current.x + 28, playerRef.current.y + 13, 4, 4);
 
-        // Draw Obstacles
-        ctx.fillStyle = '#212121';
+        // Draw Obstacles (Spikes)
+        ctx.fillStyle = '#b91c1c'; // red-700
         obstaclesRef.current.forEach(obstacle => {
-            if (obstacle.type === 'pit') {
-                ctx.fillRect(obstacle.x, GAME_HEIGHT - GROUND_HEIGHT, obstacle.width, GROUND_HEIGHT);
+            if (obstacle.type === 'spike') {
+                ctx.beginPath();
+                ctx.moveTo(obstacle.x, obstacle.y);
+                ctx.lineTo(obstacle.x + obstacle.width / 2, obstacle.y - obstacle.height);
+                ctx.lineTo(obstacle.x + obstacle.width, obstacle.y);
+                ctx.closePath();
+                ctx.fill();
             }
         });
     }, []);
@@ -80,11 +107,12 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
             const obstacle = obstaclesRef.current[i];
             obstacle.x -= gameSpeedRef.current;
 
-            // Collision detection with pits
+            // Collision detection with spikes
             if (
                 player.x < obstacle.x + obstacle.width &&
                 player.x + player.width > obstacle.x &&
-                player.y + player.height > GAME_HEIGHT - GROUND_HEIGHT
+                player.y < obstacle.y + obstacle.height &&
+                player.y + player.height > obstacle.y
             ) {
                 setGameState('game-over');
                 if (score > highScore) setHighScore(score);
@@ -99,10 +127,13 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
         
         // Add new obstacles
         if (obstaclesRef.current.length === 0 || obstaclesRef.current[obstaclesRef.current.length - 1].x < GAME_WIDTH - 300 - Math.random() * 200) {
+            const spikeHeight = 30 + Math.random() * 30;
             obstaclesRef.current.push({
                 x: GAME_WIDTH,
-                width: 50 + Math.random() * 100,
-                type: 'pit'
+                y: GAME_HEIGHT - GROUND_HEIGHT,
+                width: 20,
+                height: spikeHeight,
+                type: 'spike'
             });
         }
         
@@ -152,12 +183,12 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
                 <span className="text-2xl font-medieval text-amber-300">Dungeon Dash</span>
                 <span>High Score: {highScore}</span>
             </div>
-             <div className="relative" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }} onMouseDown={handleJump} onTouchStart={handleJump}>
+             <div className="relative cursor-pointer" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }} onClick={handleJump} onTouchStart={handleJump}>
                 <canvas ref={canvasRef} width={GAME_WIDTH} height={GAME_HEIGHT} className="bg-stone-800 border-2 border-emerald-500 rounded-lg w-full h-full"></canvas>
                 {gameState === 'pre-game' && (
                     <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white text-center">
                         <h2 className="text-4xl font-bold font-medieval text-emerald-400">Dungeon Dash</h2>
-                        <p className="mt-2">Click, tap, or press Space to jump over the pits!</p>
+                        <p className="mt-2">Click, tap, or press Space to jump over the spikes!</p>
                         <Button onClick={resetGame} className="mt-6">Start Game</Button>
                     </div>
                 )}

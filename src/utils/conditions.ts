@@ -41,6 +41,11 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
              return currentTime >= startTime && currentTime <= endTime;
 
         case ConditionType.QuestCompleted:
+            // If the condition is to complete the very quest we are currently checking,
+            // we must ignore this condition to prevent a deadlock.
+            if (condition.questId === questIdToExclude) {
+                return true;
+            }
             return dependencies.questCompletions.some(c =>
                 c.userId === user.id &&
                 c.questId === condition.questId &&

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
@@ -14,9 +15,10 @@ const INDICATOR_WIDTH = 10;
 const INDICATOR_HEIGHT = 40;
 const ANVIL_Y = 300;
 
-const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => {
+export const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [score, setScore] = useState(0);
+    const [combo, setCombo] = useState(0);
     const [strikes, setStrikes] = useState(3);
     const [gameState, setGameState] = useState<'pre-game' | 'playing' | 'game-over'>('pre-game');
     const [feedback, setFeedback] = useState<{ text: string, color: string, x: number, y: number, alpha: number } | null>(null);
@@ -27,15 +29,17 @@ const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => {
     
     // Define target zones
     const forgeBarWidth = GAME_WIDTH - 100;
-    const targetZoneWidth = 100;
-    const perfectZoneWidth = 20;
-    const targetZoneX = (GAME_WIDTH - targetZoneWidth) / 2;
-    const perfectZoneX = (GAME_WIDTH - perfectZoneWidth) / 2;
+    const [targetZoneWidth, setTargetZoneWidth] = useState(100);
+    const [perfectZoneWidth, setPerfectZoneWidth] = useState(20);
+    const [targetZoneX, setTargetZoneX] = useState((GAME_WIDTH - targetZoneWidth) / 2);
+    const perfectZoneX = targetZoneX + (targetZoneWidth - perfectZoneWidth) / 2;
     
     const resetGame = useCallback(() => {
         setScore(0);
+        setCombo(0);
         setStrikes(3);
         indicatorRef.current = { x: 50, speed: 4 };
+        setTargetZoneX((GAME_WIDTH - 100) / 2);
         setGameState('playing');
         setFeedback(null);
     }, []);
@@ -78,7 +82,7 @@ const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => {
             setFeedback(f => f ? { ...f, y: f.y - 0.5, alpha: f.alpha - 0.01 } : null);
         }
 
-    }, [feedback, perfectZoneX, targetZoneX, forgeBarWidth]);
+    }, [feedback, perfectZoneX, targetZoneX, forgeBarWidth, perfectZoneWidth, targetZoneWidth]);
     
     const gameLoop = useCallback(() => {
         if (gameState !== 'playing') return;
@@ -101,80 +105,90 @@ const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => {
         
         let strikeScore = 0;
         let feedbackText = 'Miss!';
-        let feedbackColor = '156, 163, 175'; // gray
+        let feedbackColor = '239, 68, 68'; // Red for miss
+        let comboBonus = 0;
+        let newStrikes = strikes;
 
-        if (indicatorX >= perfectZoneX && indicatorX <= perfectZoneX + perfectZoneWidth - INDICATOR_WIDTH) {
+        if (indicatorX >= perfectZoneX && indicatorX <= perfectZoneX + perfectZoneWidth) {
             strikeScore = 100;
             feedbackText = 'Perfect!';
-            feedbackColor = '239, 68, 68'; // red
-            indicatorRef.current.speed *= 1.05;
-        } else if (indicatorX >= targetZoneX && indicatorX <= targetZoneX + targetZoneWidth - INDICATOR_WIDTH) {
-            strikeScore = 50;
-            feedbackText = 'Good';
-            feedbackColor = '234, 179, 8'; // yellow
-             indicatorRef.current.speed *= 1.02;
-        } else {
-            setStrikes(prev => {
-                const newStrikes = prev - 1;
-                if (newStrikes <= 0) {
-                    setGameState('game-over');
-                    submitScore('minigame-forge-master', score);
-                }
-                return newStrikes;
+            feedbackColor = '74, 222, 128'; // Green
+            setCombo(c => {
+                comboBonus = (c + 1) * 10;
+                return c + 1;
             });
+        } else if (indicatorX >= targetZoneX && indicatorX <= targetZoneX + targetZoneWidth) {
+            strikeScore = 50;
+            feedbackText = 'Good!';
+            feedbackColor = '250, 204, 21'; // Yellow
+            setCombo(0);
+        } else {
+            setCombo(0);
+            newStrikes = strikes - 1;
+            setStrikes(newStrikes);
         }
         
-        setFeedback({ text: feedbackText, color: feedbackColor, x: GAME_WIDTH / 2, y: ANVIL_Y - 20, alpha: 1 });
-        setScore(prev => prev + strikeScore);
+        const finalScore = score + strikeScore + comboBonus;
+        setScore(finalScore);
+        setFeedback({ text: `${feedbackText}${comboBonus > 0 ? ` +${comboBonus} combo` : ''}`, color: feedbackColor, x: indicatorX, y: FORGE_BAR_Y - 20, alpha: 1 });
 
-    }, [gameState, perfectZoneX, perfectZoneWidth, targetZoneX, targetZoneWidth, score, submitScore]);
+        if (newStrikes <= 0) {
+            setGameState('game-over');
+            submitScore('minigame-forge-master', finalScore);
+        }
+        
+    }, [gameState, combo, perfectZoneX, perfectZoneWidth, targetZoneX, targetZoneWidth, score, strikes, submitScore]);
+    
+    useEffect(() => {
+        if (gameState === 'playing') {
+            animationFrameId.current = requestAnimationFrame(gameLoop);
+        }
+        return () => {
+            if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+        };
+    }, [gameState, gameLoop]);
     
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
-            if (e.code === 'Space' || e.code === 'Enter') {
-                 e.preventDefault();
-                 if (gameState === 'playing') {
-                     handleStrike();
-                 } else {
-                     resetGame();
-                 }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameState === 'pre-game' || gameState === 'game-over') {
+                    resetGame();
+                } else {
+                    handleStrike();
+                }
             }
         };
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [gameState, handleStrike, resetGame]);
 
-    useEffect(() => {
-        if (gameState === 'playing') {
-            animationFrameId.current = requestAnimationFrame(gameLoop);
-        }
-        return () => {
-            if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-        };
-    }, [gameState, gameLoop]);
-
     return (
         <div className="flex flex-col items-center justify-center p-4">
              <div className="w-full max-w-[600px] flex justify-between items-center mb-4 text-white font-bold text-lg">
                 <span>Score: {score}</span>
                 <span className="text-2xl font-medieval text-amber-300">Forge Master</span>
-                <span>Strikes Left: {strikes}</span>
+                <span>Strikes: {strikes}</span>
             </div>
-             <div className="relative" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }} onClick={handleStrike}>
-                <canvas ref={canvasRef} width={GAME_WIDTH} height={GAME_HEIGHT} className="bg-stone-800 border-2 border-emerald-500 rounded-lg w-full h-full cursor-pointer"></canvas>
+             <div className="relative" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }} onClick={handleStrike} >
+                <canvas 
+                    ref={canvasRef} 
+                    width={GAME_WIDTH} 
+                    height={GAME_HEIGHT} 
+                    className="bg-stone-800 border-2 border-emerald-500 rounded-lg w-full h-full cursor-pointer"
+                />
                 {gameState === 'pre-game' && (
-                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white text-center p-4">
+                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white text-center">
                         <h2 className="text-4xl font-bold font-medieval text-emerald-400">Forge Master</h2>
-                        <p className="mt-2">Click or press Space when the spark is in the target zone to strike the anvil!</p>
-                        <p className="mt-1 text-sm">Aim for the red 'Perfect' zone for more points.</p>
+                        <p className="mt-2">Click or press Space when the indicator is in the target zone!</p>
                         <Button onClick={resetGame} className="mt-6">Start Forging</Button>
                     </div>
                 )}
                 {gameState === 'game-over' && (
                     <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white">
-                        <h2 className="text-4xl font-bold font-medieval text-red-500">Out of Strikes!</h2>
+                        <h2 className="text-4xl font-bold font-medieval text-red-500">Forge Broken!</h2>
                         <p className="text-xl mt-2">Final Score: {score}</p>
-                        <Button onClick={resetGame} className="mt-6">Forge Again</Button>
+                        <Button onClick={resetGame} className="mt-6">Try Again</Button>
                     </div>
                 )}
             </div>
@@ -182,5 +196,3 @@ const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => {
         </div>
     );
 };
-
-export default ForgeMasterGame;

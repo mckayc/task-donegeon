@@ -97,9 +97,7 @@ const Die: React.FC<{ value: number; isSelected: boolean; isKept: boolean; isBan
     };
     const baseDot = <div className="w-4 h-4 bg-stone-800 rounded-full" />;
 
-    const stateClasses = isKept
-        ? 'opacity-40'
-        : isSelected
+    const stateClasses = isSelected
         ? 'ring-4 ring-emerald-400 scale-105'
         : isBankable
         ? 'ring-2 ring-sky-400'
@@ -109,18 +107,20 @@ const Die: React.FC<{ value: number; isSelected: boolean; isKept: boolean; isBan
         <button
             onClick={onClick}
             disabled={isKept || !isBankable}
-            className={`w-20 h-20 bg-stone-200 rounded-lg p-2 flex flex-col transition-all duration-200
-                ${stateClasses}
+            className={`w-20 h-20 rounded-lg p-2 flex flex-col transition-all duration-200
+                ${isKept ? 'bg-stone-600 opacity-60' : `bg-stone-200 ${stateClasses}`}
                 ${!isKept && isBankable ? 'hover:ring-emerald-500 cursor-pointer' : 'cursor-default'}`}
         >
-            <div className={`w-full h-full flex flex-col ${dotPatterns[value]}`}>
-                {value === 1 && <>{baseDot}</>}
-                {value === 2 && <><>{baseDot}</><div className="self-end">{baseDot}</div></>}
-                {value === 3 && <><>{baseDot}</><div className="self-center">{baseDot}</div><div className="self-end">{baseDot}</div></>}
-                {value === 4 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
-                {value === 5 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="self-center">{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
-                {value === 6 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
-            </div>
+            {!isKept && (
+                <div className={`w-full h-full flex flex-col ${dotPatterns[value]}`}>
+                    {value === 1 && <>{baseDot}</>}
+                    {value === 2 && <><>{baseDot}</><div className="self-end">{baseDot}</div></>}
+                    {value === 3 && <><>{baseDot}</><div className="self-center">{baseDot}</div><div className="self-end">{baseDot}</div></>}
+                    {value === 4 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
+                    {value === 5 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="self-center">{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
+                    {value === 6 && <><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div><div className="flex justify-between w-full">{baseDot}{baseDot}</div></>}
+                </div>
+            )}
         </button>
     );
 };

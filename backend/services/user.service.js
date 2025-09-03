@@ -1,7 +1,4 @@
 
-
-
-
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
@@ -49,7 +46,7 @@ const clone = async (id) => {
     const userToClone = await userRepository.findById(id);
     if (!userToClone) return null;
 
-    const { id: oldId, username, email, gameName, ...restOfUser } = userToClone;
+    const { id: oldId, username, email, gameName, profilePictureUrl, ...restOfUser } = userToClone;
     
     // Create unique credentials for the clone
     const timestamp = Date.now().toString().slice(-5);

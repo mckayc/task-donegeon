@@ -6,7 +6,7 @@ import { bugLogger } from '../utils/bugLogger';
 import { addUserAPI, updateUserAPI, deleteUsersAPI, completeFirstRunAPI } from '../api';
 
 // State managed by this context
-interface AuthState {
+export interface AuthState {
   users: User[];
   currentUser: User | null;
   isAppUnlocked: boolean;

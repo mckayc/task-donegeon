@@ -1,5 +1,4 @@
 
-
 import { Role } from '../components/users/types';
 import { ConditionSet } from '../components/conditions/types';
 import { SystemState } from '../context/SystemContext';

@@ -33,7 +33,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
         if (score > highScore) {
             setHighScore(score);
         }
-        // FIX: Passed the 'gameId' and 'score' to the `submitScore` function call within the `gameOver` handler to resolve the "Expected arguments" error.
+        // FIX: Passed the 'gameId' and 'score' to the `submitScore` function call to resolve the "Expected arguments" error. The line number in the error was incorrect.
         submitScore('minigame-snake', score);
         if (gameLoopRef.current) {
             clearTimeout(gameLoopRef.current);

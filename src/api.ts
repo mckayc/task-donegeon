@@ -1,6 +1,7 @@
+
 import {
-    AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem,
-} from './types';
+    AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore,
+} from '../types';
 
 // Generic API Request Function
 const apiRequest = async (method: string, path: string, body?: any) => {
@@ -29,7 +30,7 @@ const apiUpload = async (path: string, file: File) => {
 
 // --- Auth API ---
 // FIX: Corrected the type definition for addUserAPI, replacing the non-existent 'avatar' property with 'profilePictureUrl' to align with the User type.
-export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'profilePictureUrl' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, actorId?: string) => apiRequest('POST', '/api/users', { ...data, actorId });
+export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, actorId?: string) => apiRequest('POST', '/api/users', { ...data, actorId });
 export const updateUserAPI = (id: string, data: Partial<User>) => apiRequest('PUT', `/api/users/${id}`, data);
 export const deleteUsersAPI = (ids: string[], actorId?: string) => apiRequest('DELETE', '/api/users', { ids, actorId });
 export const completeFirstRunAPI = (adminUserData: any) => apiRequest('POST', '/api/data/first-run', { adminUserData });
@@ -94,6 +95,12 @@ export const unclaimQuestAPI = (questId: string, userId: string) => apiRequest('
 export const approveClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/approve-claim', { questId, userId, adminId });
 export const rejectClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/reject-claim', { questId, userId, adminId });
 
+// --- Minigames API ---
+export const getMinigamesAPI = () => apiRequest('GET', '/api/minigames');
+export const getGameScoresAPI = () => apiRequest('GET', '/api/minigames/scores');
+export const playMinigameAPI = (gameId: string, userId: string) => apiRequest('POST', `/api/minigames/${gameId}/play`, { userId });
+export const submitScoreAPI = (scoreData: { gameId: string; userId: string; score: number }) => apiRequest('POST', '/api/minigames/score', scoreData);
+export const deleteMinigameAPI = (gameId: string) => apiRequest('DELETE', `/api/minigames/${gameId}`);
 
 // --- System & Dev API ---
 export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: string[] }, actorId: string) => {
@@ -119,7 +126,7 @@ export const markSystemNotificationsAsReadAPI = (ids: string[], userId: string) 
 export const addScheduledEventAPI = (data: Omit<ScheduledEvent, 'id'>) => apiRequest('POST', '/api/events', data);
 export const updateScheduledEventAPI = (data: ScheduledEvent) => apiRequest('PUT', `/api/events/${data.id}`, data);
 export const deleteScheduledEventAPI = (id: string) => apiRequest('DELETE', `/api/events/${id}`);
-export const importAssetPackAPI = (pack: AssetPack, resolutions: ImportResolution[], actorId: string, userIdsToAssign?: string[]) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions, userIdsToAssign, actorId });
+export const importAssetPackAPI = (pack: AssetPack, resolutions: any, actorId: string, userIdsToAssign?: string[]) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions, userIdsToAssign, actorId });
 export const addBugReportAPI = (data: Partial<BugReport>) => apiRequest('POST', '/api/bug-reports', data);
 export const updateBugReportAPI = (id: string, updates: Partial<BugReport>) => apiRequest('PUT', `/api/bug-reports/${id}`, updates);
 export const deleteBugReportsAPI = (ids: string[]) => apiRequest('DELETE', '/api/bug-reports', { ids });

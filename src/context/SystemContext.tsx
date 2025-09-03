@@ -1,12 +1,12 @@
 
 // Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
-import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent } from '../types';
+import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent, Minigame, GameScore } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI } from '../api';
+import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI, playMinigameAPI, submitScoreAPI } from '../api';
 import { swLogger } from '../utils/swLogger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
@@ -24,6 +24,8 @@ export interface SystemState {
     modifierDefinitions: ModifierDefinition[];
     appliedModifiers: AppliedModifier[];
     chronicleEvents: ChronicleEvent[];
+    minigames: Minigame[];
+    gameScores: GameScore[];
     isUpdateAvailable: ServiceWorker | null;
 }
 
@@ -65,6 +67,8 @@ export interface SystemDispatch {
   cloneUser: (userId: string) => Promise<User | null>;
   sendMessage: (messageData: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => Promise<ChatMessage | null>;
   markMessagesAsRead: (payload: { partnerId?: string; guildId?: string }) => Promise<void>;
+  playMinigame: (gameId: string) => Promise<boolean>;
+  submitScore: (gameId: string, score: number) => Promise<GameScore | null>;
   setUpdateAvailable: (worker: ServiceWorker | null) => void;
   installUpdate: () => void;
   checkForUpdate: () => Promise<void>;
@@ -86,6 +90,8 @@ const initialState: SystemState = {
     modifierDefinitions: [],
     appliedModifiers: [],
     chronicleEvents: [],
+    minigames: [],
+    gameScores: [],
     isUpdateAvailable: null,
 };
 
@@ -317,6 +323,23 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         markMessagesAsRead: async (payload) => {
             if (!currentUser) return;
             await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
+        },
+        playMinigame: async (gameId) => {
+            if (!currentUser) return false;
+            const result = await apiAction(() => playMinigameAPI(gameId, currentUser.id));
+            if (result) {
+                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                return true;
+            }
+            return false;
+        },
+        submitScore: async (gameId, score) => {
+            if (!currentUser) return null;
+            const result = await apiAction(() => submitScoreAPI({ gameId, userId: currentUser.id, score }));
+            if (result) {
+                dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { gameScores: [result] } });
+            }
+            return result;
         },
         setUpdateAvailable: (worker: ServiceWorker | null) => {
             dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });

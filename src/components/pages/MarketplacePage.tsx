@@ -18,6 +18,7 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import ConditionStatusDialog from '../markets/ConditionStatusDialog';
+import ArcadeView from '../markets/ArcadeView';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { settings, scheduledEvents } = useSystemState();
@@ -275,12 +276,13 @@ const MarketplacePage: React.FC = () => {
 
 
     if (activeMarket) {
-        // Dedicated view for the exchange
+        if (activeMarket.id === 'market-arcade') {
+            return <ArcadeView market={activeMarket} />;
+        }
         if (activeMarket.id === 'market-bank') {
             return <ExchangeView market={activeMarket} />;
         }
         
-        // Standard view for all other markets
         return (
             <div>
                  <Button variant="secondary" onClick={() => setActiveMarketId(null)} className="mb-6">

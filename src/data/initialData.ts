@@ -136,6 +136,8 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_rewards' },
   { type: 'link', id: 'Manage Events', emoji: '🎉', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_events' },
   { type: 'link', id: 'Manage Condition Sets', emoji: '🔗', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_condition_sets' },
+  // FIX: Added 'Manage Minigames' to the sidebar configuration.
+  { type: 'link', id: 'Manage Minigames', emoji: '🎮', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_minigames' },
   
   // System Tools Section
   { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: Role.DonegeonMaster, isVisible: true },
@@ -271,6 +273,8 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_themes: 'Themes',
       link_test_cases: 'Test Cases',
       link_manage_condition_sets: 'Manage Condition Sets',
+      // FIX: Added missing terminology key for minigames.
+      link_manage_minigames: 'Manage Minigames',
     },
     enableAiFeatures: false,
     rewardValuation: {

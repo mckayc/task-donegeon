@@ -78,6 +78,7 @@ export interface Terminology {
   link_manage_trophies: string;
   link_manage_events: string;
   link_manage_rotations: string;
+  link_manage_condition_sets: string;
   link_triumphs_trials: string;
   link_appearance: string;
   link_approvals: string;
@@ -95,13 +96,15 @@ export interface Terminology {
   link_bug_tracker: string;
   link_themes: string;
   link_test_cases: string;
-  link_manage_condition_sets: string;
+  // FIX: Add missing property for managing minigames.
+  link_manage_minigames: string;
 }
 
+// FIX: Add 'Manage Minigames' to the list of valid pages.
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Triumphs & Trials'
-| 'Bug Tracker' | 'Themes' | 'Test Cases' | 'Manage Condition Sets';
+| 'Bug Tracker' | 'Themes' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames';
 
 export interface SidebarLink {
   type: 'link';

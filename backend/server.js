@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
-const { GuildEntity, UserEntity, MarketEntity, TrophyEntity } = require('./entities');
+const { GuildEntity, UserEntity, MarketEntity, TrophyEntity, MinigameEntity, GameScoreEntity } = require('./entities');
 const { updateTimestamps } = require('./utils/helpers');
 const { In } = require('typeorm');
 const { INITIAL_TROPHIES } = require('./initialData');
@@ -31,6 +31,7 @@ const chatRouter = require('./routes/chat.routes');
 const bugReportsRouter = require('./routes/bugReports.routes');
 const notificationsRouter = require('./routes/notifications.routes');
 const setbacksRouter = require('./routes/setbacks.routes');
+const minigamesRouter = require('./routes/minigames.routes');
 // --- NEW MODULAR ROUTERS ---
 const dataRouter = require('./routes/data.routes');
 const managementRouters = require('./routes/management.routes');
@@ -173,6 +174,37 @@ const initializeApp = async () => {
         console.log('[Data Sync] Default market created.');
     }
     
+    // MIGRATION/SYNC: Ensure The Arcade market exists.
+    let arcadeMarket = await manager.findOne(MarketEntity, { where: { id: 'market-arcade' } });
+    if (!arcadeMarket) {
+        console.log('[Data Sync] Arcade market not found. Creating it...');
+        arcadeMarket = manager.create(MarketEntity, {
+            id: 'market-arcade',
+            title: "The Arcade",
+            description: "Spend your Game Tokens to play fun minigames and compete for high scores!",
+            iconType: 'emoji',
+            icon: '🕹️',
+            status: { type: 'open' },
+        });
+        await manager.save(updateTimestamps(arcadeMarket, true));
+        console.log('[Data Sync] The Arcade created.');
+    }
+
+    // MIGRATION/SYNC: Ensure the Snake minigame exists.
+    let snakeGame = await manager.findOne(MinigameEntity, { where: { id: 'minigame-snake' } });
+    if (!snakeGame) {
+        console.log('[Data Sync] Snake game not found. Creating it...');
+        snakeGame = manager.create(MinigameEntity, {
+            id: 'minigame-snake',
+            name: 'Snake',
+            description: 'The classic game of snake. Eat the food to grow longer, but don\'t run into yourself or the walls!',
+            icon: '🐍',
+            cost: 1, // Costs 1 Game Token
+        });
+        await manager.save(updateTimestamps(snakeGame, true));
+        console.log('[Data Sync] Snake game created.');
+    }
+
     // MIGRATION/SYNC: Add birthday trophies if they don't exist
     const trophyRepo = manager.getRepository(TrophyEntity);
     const birthdayTrophyIds = INITIAL_TROPHIES.filter(t => t.id.startsWith('trophy-bday-')).map(t => t.id);
@@ -241,6 +273,7 @@ app.use('/api/chat', chatRouter);
 app.use('/api/bug-reports', bugReportsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/setbacks', setbacksRouter); // This is for Modifier Definitions
+app.use('/api/minigames', minigamesRouter);
 
 // Serve static assets from the 'uploads' directory
 app.use('/uploads', express.static(UPLOADS_DIR));

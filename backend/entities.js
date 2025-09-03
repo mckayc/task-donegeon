@@ -1,7 +1,4 @@
 
-
-
-
 const { EntitySchema } = require("typeorm");
 
 // Placeholder classes for TypeORM entity schemas. This removes the dependency on a non-existent file.
@@ -32,6 +29,8 @@ class Rotation {}
 class TradeOffer {}
 class Gift {}
 class ChronicleEvent {}
+class Minigame {}
+class GameScore {}
 
 const ChronicleEventEntity = new EntitySchema({
     name: "ChronicleEvent",
@@ -402,32 +401,11 @@ const AdminAdjustmentEntity = new EntitySchema({
     }
 });
 
-const RotationEntity = new EntitySchema({
-    name: "Rotation",
-    target: Rotation,
-    columns: {
-        id: { primary: true, type: "varchar" },
-        name: { type: "varchar" },
-        description: { type: "text" },
-        questIds: { type: "simple-array" },
-        userIds: { type: "simple-array" },
-        activeDays: { type: "simple-array" },
-        frequency: { type: "varchar" },
-        lastAssignmentDate: { type: "varchar", nullable: true },
-        lastUserIndex: { type: "integer", default: -1 },
-        lastQuestStartIndex: { type: "integer", default: -1 },
-        questsPerUser: { type: "integer", default: 1 },
-        isActive: { type: "boolean", default: true },
-        startDate: { type: "varchar", nullable: true },
-        endDate: { type: "varchar", nullable: true },
-        createdAt: { type: "varchar", nullable: true },
-        updatedAt: { type: "varchar", nullable: true },
-    }
-});
-
+const RotationEntity = new EntitySchema({ name: "Rotation", target: Rotation, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, questIds: { type: "simple-array" }, userIds: { type: "simple-array" }, activeDays: { type: "simple-array" }, frequency: { type: "varchar" }, lastAssignmentDate: { type: "varchar", nullable: true }, lastUserIndex: { type: "integer", default: -1 }, lastQuestStartIndex: { type: "integer", default: -1 }, questsPerUser: { type: "integer", default: 1 }, isActive: { type: "boolean", default: true }, startDate: { type: "varchar", nullable: true }, endDate: { type: "varchar", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const TradeOfferEntity = new EntitySchema({ name: "TradeOffer", target: TradeOffer, columns: { id: { primary: true, type: "varchar" }, initiatorId: { type: "varchar" }, recipientId: { type: "varchar" }, guildId: { type: "varchar" }, status: { type: "varchar" }, initiatorOffer: { type: "simple-json" }, recipientOffer: { type: "simple-json" }, initiatorLocked: { type: "boolean" }, recipientLocked: { type: "boolean" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const GiftEntity = new EntitySchema({ name: "Gift", target: Gift, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar" }, recipientId: { type: "varchar" }, assetId: { type: "varchar" }, guildId: { type: "varchar" }, sentAt: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
-
+const MinigameEntity = new EntitySchema({ name: "Minigame", target: Minigame, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, icon: { type: "varchar" }, cost: { type: "integer" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
+const GameScoreEntity = new EntitySchema({ name: "GameScore", target: GameScore, columns: { id: { primary: true, type: "varchar" }, gameId: { type: "varchar" }, userId: { type: "varchar" }, score: { type: "integer" }, playedAt: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 
 const allEntities = [
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
@@ -435,7 +413,7 @@ const allEntities = [
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
-    ChronicleEventEntity,
+    ChronicleEventEntity, MinigameEntity, GameScoreEntity,
 ];
 
 module.exports = { 
@@ -445,5 +423,5 @@ module.exports = {
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
-    ChronicleEventEntity,
+    ChronicleEventEntity, MinigameEntity, GameScoreEntity,
 };

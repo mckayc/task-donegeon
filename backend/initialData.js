@@ -1,3 +1,4 @@
+
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -212,6 +213,7 @@ const INITIAL_REWARD_TYPES = [
     { id: 'core-gold', name: 'Gold Coins', category: 'Currency', description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 0.20 },
     { id: 'core-gems', name: 'Gems', category: 'Currency', description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 1.00 },
     { id: 'core-crystal', name: 'Crystals', category: 'Currency', description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.10 },
+    { id: 'core-token', name: 'Game Token', category: 'Currency', description: 'Used to play minigames in The Arcade.', isCore: true, iconType: 'emoji', icon: '🪙', baseValue: 0.25 },
     { id: 'core-strength', name: 'Strength', category: 'XP', description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.05 },
     { id: 'core-diligence', name: 'Diligence', category: 'XP', description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.05 },
     { id: 'core-wisdom', name: 'Wisdom', category: 'XP', description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.05 },

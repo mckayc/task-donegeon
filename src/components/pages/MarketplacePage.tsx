@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -302,17 +297,12 @@ const MarketplacePage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMarkets.map((market: Market & { openStatus: MarketOpenStatus }) => {
                         const { openStatus } = market;
-                        // FIX: Explicitly check for `isOpen === false` to help TypeScript correctly narrow the union type
-                        // and allow safe access to properties like `reason`.
                         const isTrulyDisabled = openStatus.isOpen === false && openStatus.reason !== 'CONDITIONAL';
 
                         return (
                             <button 
                                 key={market.id} 
                                 onClick={() => {
-                                    // FIX: Restructured the conditional to check for the `isOpen: false` case first.
-                                    // This ensures that in the `if` block, TypeScript knows `openStatus` must be the
-                                    // "closed" variant of the type, making `reason`, `message`, and `redemptionQuest` accessible.
                                     if (openStatus.isOpen === false) {
                                         if (openStatus.reason === 'CONDITIONAL') {
                                             setViewingConditionsForMarket(market);

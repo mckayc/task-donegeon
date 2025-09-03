@@ -1,6 +1,6 @@
 
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role } from '../types';
-import { toYMD } from './quests';
+import { toYMD, isQuestScheduledForDay } from './quests';
 
 // The dependencies needed to evaluate conditions.
 export type ConditionDependencies = {
@@ -47,7 +47,7 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 c.status === QuestCompletionStatus.Approved
             );
         
-        case ConditionType.QuestGroupCompleted:
+        case ConditionType.QuestGroupCompleted: {
             const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
             if (!group) return false;
             
@@ -55,11 +55,35 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 q.groupIds?.includes(group.id) && 
                 q.id !== questIdToExclude
             );
-            
-            if (questsInGroup.length === 0) return true; // No OTHER quests to complete
-            return questsInGroup.every(q => 
+            if (questsInGroup.length === 0) return true;
+
+            const now = new Date();
+            // Filter out quests that are definitively unavailable due to time.
+            // This prevents deadlocks where an expired quest makes a group impossible to complete.
+            const availableQuestsInGroup = questsInGroup.filter(q => {
+                if (!q.isActive) return false;
+                
+                // Venture/Journey check for final deadline
+                if (q.endDateTime && now > new Date(q.endDateTime)) {
+                    return false; 
+                }
+                // Duty check for daily "incomplete" time
+                if (q.type === 'Duty' && q.endTime) {
+                    const [h, m] = q.endTime.split(':').map(Number);
+                    const incompleteTime = new Date(now);
+                    incompleteTime.setHours(h, m, 0, 0);
+                    if (isQuestScheduledForDay(q, now) && now > incompleteTime) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            // Now, check if all *available* quests have been completed.
+            return availableQuestsInGroup.every(q => 
                 dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved)
             );
+        }
 
         case ConditionType.TrophyAwarded:
             return dependencies.userTrophies.some(ut => ut.userId === user.id && ut.trophyId === condition.trophyId);

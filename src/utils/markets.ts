@@ -1,6 +1,7 @@
+
 import { Market, User, QuestCompletionStatus, RewardItem, ScheduledEvent, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus, Rank, QuestCompletion, Condition, ConditionType, ConditionSet } from '../types';
 import { toYMD } from './quests';
-import { checkAllConditionSetsMet, ConditionDependencies } from './conditions';
+import { checkAllConditionSetsMet, ConditionDependencies, checkGlobalConditionsMet } from './conditions';
 
 export type MarketDependencies = ConditionDependencies & {
     appliedModifiers: AppliedModifier[];
@@ -9,7 +10,17 @@ export type MarketDependencies = ConditionDependencies & {
 };
 
 export const isMarketOpenForUser = (market: Market, user: User, dependencies: MarketDependencies): MarketOpenStatus => {
-    // First, check if an active modifier is closing this market for the user.
+    // 1. Check global conditions first. They are the most restrictive.
+    const globalCheck = checkGlobalConditionsMet(user, dependencies);
+    if (!globalCheck.allMet) {
+        return {
+            isOpen: false,
+            reason: 'CONDITIONAL',
+            message: `Globally locked by: ${globalCheck.failingSetName || 'a global rule'}.`
+        };
+    }
+
+    // 2. Check if an active modifier is closing this market for the user.
     const now = new Date();
     const activeModifier = dependencies.appliedModifiers.find(s => {
         if (s.userId !== user.id || s.status !== 'Active') return false;
@@ -35,7 +46,7 @@ export const isMarketOpenForUser = (market: Market, user: User, dependencies: Ma
         };
     }
 
-    // If not closed by a setback, check the market's own status.
+    // 3. If not closed by a modifier or global rule, check the market's own status.
     switch (market.status.type) {
         case 'open':
             return { isOpen: true };

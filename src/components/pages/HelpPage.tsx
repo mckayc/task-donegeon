@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -28,13 +29,21 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 20, 2025 (v0.4.25)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Conditional Market Unlocks:</strong> Locked markets now show a dialog detailing the specific conditions a user must meet to gain access, mirroring the functionality of locked quests.</li>
+                <li><strong>Global Conditions:</strong> Introduced "Global" condition sets that can lock content across the entire application, providing a new layer of administrative control.</li>
+                <li><strong>Circular Dependency Fix:</strong> Resolved a critical logic bug where a quest could be locked by a condition requiring the completion of its own quest group. The system now intelligently ignores the quest being checked when evaluating its group's completion status.</li>
+                <li><strong>Refactored Logic:</strong> Refactored the internal condition checking logic to be more robust and consistent between quests and markets.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 13, 2025 (v0.4.05 - v0.4.24)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Build Stability Fixes:</strong> Resolved a recurring TypeScript JSX error in the help guide that was causing build failures.</li>
                 <li><strong>Enhanced AI Teacher:</strong> The AI Teacher is now a more effective and engaging tutor with personalized content, better question handling, and lesson summaries.</li>
                 <li><strong>Revamped Kiosk Mode:</strong> Kiosk Mode has been completely re-engineered to be a persistent, device-specific setting activated by admins.</li>
                 <li><strong>Flexible Manual Adjustments:</strong> Overhauled the "Manual Adjustment" dialog for more flexibility in awarding rewards and trophies, including 16 new birthday trophies.</li>
-                <li><strong>Quest & Condition Enhancements:</strong> Introduced user-specific and global Condition Sets for granular content control and fixed a critical bug in the Quest Group editor.</li>
             </ul>
         </div>
         <div>
@@ -42,30 +51,6 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>AI Teacher Launch:</strong> Developed and launched the full AI Teacher feature, moving from a backend foundation to a full-screen UI with an interactive "Teach, Check, Feedback" loop and robust tool-calling for quizzes.</li>
                 <li><strong>UI & UX Improvements:</strong> Fixed issues with AI Teacher button responsiveness and made minor improvements to Kiosk Mode and item approval defaults.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of September 29, 2025 (v0.1.96 - v0.3.0)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Kiosk Mode Overhaul:</strong> Re-architected Kiosk Mode to be a more stable URL-based system (`/kiosk`), patching critical security and login flow bugs.</li>
-                <li><strong>AI Foundations:</strong> Implemented the backend foundation for the AI Teacher feature with stateful chat sessions.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of September 22, 2025 (v0.1.90 - v0.1.95)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Dashboard & Notifications:</strong> Introduced new dashboard widgets and header notifications for pending user items.</li>
-                <li><strong>Responsive Approvals:</strong> Made the Approvals page fully responsive for mobile devices.</li>
-                <li><strong>Enhanced Chronicles:</strong> The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">September 2025 (Pre v0.1.90)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Full Mobile Responsiveness:</strong> Implemented a responsive design across the application.</li>
-                <li><strong>New "Journey" Quest Type:</strong> Introduced multi-stage quests with checkpoints.</li>
-                <li><strong>Visual Quest System:</strong> Added color-coded and animated borders to quest cards to indicate urgency and status.</li>
-                <li><strong>Core Feature Development:</strong> Initial public release and foundational feature development.</li>
             </ul>
         </div>
     </div>
@@ -133,34 +118,11 @@ export const HelpPage: React.FC = () => {
                         <li><strong>Personal Mode:</strong> This is your individual space. {settings.terminology.tasks} you complete here add to your personal balances of currency and XP. You can spend this personal currency in personal {settings.terminology.stores}.<br/><em>Example: A personal {settings.terminology.task} might be "Read a chapter of a book" or "Practice piano for 30 minutes".</em></li>
                         <li><strong>{settings.terminology.group} Mode:</strong> When you switch to a {settings.terminology.group}, you'll see {settings.terminology.tasks} and {settings.terminology.stores} specific to that group. Rewards earned here go into your balance for that specific {settings.terminology.group}, creating a separate economy. This is perfect for family chores or group projects.<br/><em>Example: A {settings.terminology.group} {settings.terminology.task} might be "Help clean the kitchen after dinner" or "Rake the leaves in the yard".</em></li>
                     </ul>
-                    <h3>The Three {settings.terminology.task} Types</h3>
-                    <p>All tasks fall into one of three categories:</p>
-                    <ul className="list-disc list-inside space-y-2 mt-2">
-                        <li><strong>{settings.terminology.recurringTasks}:</strong> These are repeating tasks that happen on a schedule. They are great for building habits. For {settings.terminology.recurringTasks} with a specific time, you can set a <strong>Due Time</strong> (the deadline) and an optional <strong>Incomplete Time</strong> (the final cutoff). The time between these two appears on the calendar as a colored "late period" to show the grace period before penalties are applied.<br/><em>Example: "Take out the trash every Tuesday" or "Make your bed every morning".</em></li>
-                        <li><strong>{settings.terminology.singleTasks}:</strong> These are one-time tasks or projects. They can be completable once, or have a certain number of available "slots" for multiple people to complete.<br/><em>Example: "Organize the garage" (completable once) or "Help wash the car" (could have 2 slots).</em></li>
-                        <li><strong>{settings.terminology.journeys}:</strong> These are epic, multi-step adventures. Each {settings.terminology.journey} is made of several 'checkpoints' that must be completed in order.<br/><em>Example: A "Book Report" {settings.terminology.journey} might have checkpoints like "Read the Book", "Write the Draft", and "Finalize the Report".</em></li>
-                    </ul>
                 </div>
             </CollapsibleSection>
 
             <CollapsibleSection title="Functional Specifications" defaultOpen>
                 <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
-                    <h3>{settings.terminology.link_manage_quest_groups}</h3>
-                    <p><strong>Purpose:</strong> To organize {settings.terminology.tasks} into logical categories for easier management and bulk assignment.</p>
-                    <p><strong>How it Works:</strong></p>
-                    <ol className="list-decimal list-inside space-y-2">
-                        <li>From the `{settings.terminology.link_manage_quest_groups}` page, you can create a new group or edit an existing one.</li>
-                        <li>The "Create/Edit" dialog provides fields for the group's Name, Description, and Icon.</li>
-                        <li>
-                            <strong>New Feature:</strong> A new <strong>"Assign {settings.terminology.tasks}"</strong> section is now included directly in this dialog. It features a two-panel interface:
-                            <ul className="list-disc list-inside pl-6 mt-2">
-                                <li><strong>Available {settings.terminology.tasks}:</strong> This panel on the left lists all {settings.terminology.tasks} that are not currently in another group, as well as {settings.terminology.tasks} from the group you are editing. It includes a search bar to help you quickly find specific {settings.terminology.tasks}.</li>
-                                <li><strong>{settings.terminology.tasks} in this Group:</strong> This panel on the right shows all {settings.terminology.tasks} currently assigned to this group.</li>
-                            </ul>
-                        </li>
-                        <li>Simply click on a {settings.terminology.task} in either panel to instantly move it to the other, assigning or unassigning it from the group.</li>
-                        <li>When you save, the group is updated, and all selected {settings.terminology.tasks} are automatically linked to it, streamlining the entire organization process.</li>
-                    </ol>
                     <h3>Condition Sets</h3>
                     <p><strong>Purpose:</strong> To create reusable sets of rules that can control the availability of {settings.terminology.tasks} and {settings.terminology.stores}. This allows for dynamic content that unlocks based on a player's progress or other game state factors.</p>
                     <p><strong>How it Works:</strong></p>
@@ -173,7 +135,7 @@ export const HelpPage: React.FC = () => {
                                 <li><strong>Date Range:</strong> Active only between a start and end date.</li>
                                 <li><strong>Time of Day:</strong> Active only between a start and end time (e.g., 9 AM to 5 PM).</li>
                                 <li><strong>{settings.terminology.task} Completed:</strong> Checks if a player has an <strong>approved</strong> completion for a specific {settings.terminology.task}.</li>
-                                <li><strong>{settings.terminology.group} of {settings.terminology.tasks} Completed:</strong> Checks if a player has an <strong>approved</strong> completion for <strong>every</strong> {settings.terminology.task} within a specified Quest Group.</li>
+                                <li><strong>{settings.terminology.group} of {settings.terminology.tasks} Completed:</strong> Checks if a player has an <strong>approved</strong> completion for <strong>every</strong> available {settings.terminology.task} within a specified Quest Group. The system is smart enough to ignore the {settings.terminology.task} being checked (if it's part of the group) to prevent impossible deadlocks.</li>
                                 <li><strong>{settings.terminology.award} Awarded:</strong> Checks if a player has earned a specific {settings.terminology.award}.</li>
                                 <li><strong>User Has/Doesn't Have Item:</strong> Checks a player's inventory for the presence or absence of a specific item.</li>
                                 <li><strong>User is Member of {settings.terminology.group}:</strong> Checks if the player is a member of a specific {settings.terminology.group}.</li>
@@ -186,7 +148,8 @@ export const HelpPage: React.FC = () => {
                                 <li><strong>For {settings.terminology.tasks}:</strong> In the `Manage {settings.terminology.tasks}` dialog, a new "Availability Conditions" section allows you to enable conditions and select one or more Condition Sets.</li>
                             </ul>
                         </li>
-                        <li><strong>NEW: User-Specific Sets:</strong> In the "Edit Condition Set" dialog, a new "User Assignment" section allows you to limit the entire set to only apply to specific, selected users. This is perfect for rules you only want to affect certain people, like younger children.</li>
+                        {/* FIX: Replaced undefined variables `{tasks}` and `{stores}` with `{settings.terminology.tasks}` and `{settings.terminology.stores}`. */}
+                        <li><strong>NEW: User-Specific & Global Sets:</strong> In the "Edit Condition Set" dialog, you can limit the set to only apply to specific users. You can also mark a set as **"Global"**, which forces it to apply to **all** {settings.terminology.tasks} and {settings.terminology.stores}, creating a sitewide rule.</li>
                     </ol>
                     <h4>Player Experience: The Lock Icon 🔒</h4>
                     <p>When a {settings.terminology.task} or {settings.terminology.store} is unavailable due to unmet conditions, it will be visible but will display a lock icon (🔒). Clicking this icon opens a new dialog that clearly lists all the required conditions and shows the player's current status for each one with a checkmark (✅) or a cross (❌). This provides immediate, clear feedback on what they need to do to unlock the content.</p>

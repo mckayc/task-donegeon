@@ -1,3 +1,4 @@
+
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role } from '../types';
 import { toYMD } from './quests';
 
@@ -13,7 +14,7 @@ export type ConditionDependencies = {
     guilds: Guild[];
 };
 
-export const checkCondition = (condition: Condition, user: User, dependencies: ConditionDependencies): boolean => {
+export const checkCondition = (condition: Condition, user: User, dependencies: ConditionDependencies, questIdToExclude?: string): boolean => {
     switch (condition.type) {
         case ConditionType.MinRank:
             const totalXp = Object.values(user.personalExperience).reduce<number>((sum, amount) => sum + Number(amount), 0);
@@ -49,9 +50,13 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
         case ConditionType.QuestGroupCompleted:
             const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
             if (!group) return false;
-            // FIX: Property 'groupId' does not exist on type 'Quest'. Did you mean 'groupIds'?
-            const questsInGroup = dependencies.quests.filter(q => q.groupIds?.includes(group.id));
-            if (questsInGroup.length === 0) return true; // No quests to complete
+            
+            const questsInGroup = dependencies.quests.filter(q => 
+                q.groupIds?.includes(group.id) && 
+                q.id !== questIdToExclude
+            );
+            
+            if (questsInGroup.length === 0) return true; // No OTHER quests to complete
             return questsInGroup.every(q => 
                 dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved)
             );
@@ -94,7 +99,8 @@ export const checkGlobalConditionsMet = (
 export const checkAllConditionSetsMet = (
     conditionSetIds: string[], 
     user: User, 
-    dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] }
+    dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] },
+    questIdToExclude?: string
 ): { allMet: boolean, failingSetName: string | null } => {
     
     if (!conditionSetIds || conditionSetIds.length === 0) {
@@ -121,8 +127,8 @@ export const checkAllConditionSetsMet = (
         const useAndLogic = set.isGlobal || set.logic === ConditionSetLogic.ALL;
 
         const conditionsMet = useAndLogic
-            ? set.conditions.every(cond => checkCondition(cond, user, dependencies))
-            : set.conditions.some(cond => checkCondition(cond, user, dependencies));
+            ? set.conditions.every(cond => checkCondition(cond, user, dependencies, questIdToExclude))
+            : set.conditions.some(cond => checkCondition(cond, user, dependencies, questIdToExclude));
         
         if (!conditionsMet) {
             return { allMet: false, failingSetName: set.name };

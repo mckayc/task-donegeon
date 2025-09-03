@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Quest, User, ConditionSet } from '../../types';
+import { Quest, User, ConditionSet, QuestCompletionStatus } from '../../types';
 import Button from '../user-interface/Button';
 import { useSystemState } from '../../context/SystemContext';
 import { useQuestsState } from '../../context/QuestsContext';
@@ -51,20 +51,45 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                             <p className="text-xs text-stone-500 mb-2">
                                 You must meet {set.logic === 'ALL' ? 'ALL' : 'ANY'} of these conditions:
                             </p>
-                            <ul className="space-y-2">
+                            <ul className="space-y-3">
                                 {set.conditions.map(condition => {
-                                    const isMet = checkCondition(condition, user, dependencies);
+                                    const isMet = checkCondition(condition, user, dependencies, quest.id);
                                     const description = getConditionDescription(condition, dependencies);
+
+                                    let subList: React.ReactNode = null;
+                                    if (condition.type === 'QUEST_GROUP_COMPLETED') {
+                                        const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
+                                        if (group) {
+                                            const questsInGroup = dependencies.quests.filter(q => q.groupIds?.includes(group.id));
+                                            subList = (
+                                                <ul className="pl-8 mt-1 space-y-1">
+                                                    {questsInGroup.map(q => {
+                                                        const isQuestCompleted = dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved);
+                                                        return (
+                                                            <li key={q.id} className="flex items-center gap-2 text-xs">
+                                                                {isQuestCompleted ? <CheckCircleIcon className="w-4 h-4 text-green-500" /> : <XCircleIcon className="w-4 h-4 text-red-500" />}
+                                                                <span className={isQuestCompleted ? 'text-stone-500 line-through' : 'text-stone-300'}>{q.title}</span>
+                                                            </li>
+                                                        )
+                                                    })}
+                                                </ul>
+                                            );
+                                        }
+                                    }
+                                    
                                     return (
-                                        <li key={condition.id} className="flex items-center gap-3 text-sm">
-                                            {isMet ? (
-                                                <CheckCircleIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
-                                            ) : (
-                                                <XCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
-                                            )}
-                                            <span className={isMet ? 'text-stone-400 line-through' : 'text-stone-200'}>
-                                                {description}
-                                            </span>
+                                        <li key={condition.id}>
+                                            <div className="flex items-start gap-3 text-sm">
+                                                {isMet ? (
+                                                    <CheckCircleIcon className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                                                ) : (
+                                                    <XCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                                                )}
+                                                <span className={isMet ? 'text-stone-400 line-through' : 'text-stone-200'}>
+                                                    {description}
+                                                </span>
+                                            </div>
+                                            {subList}
                                         </li>
                                     );
                                 })}

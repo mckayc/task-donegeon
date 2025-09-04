@@ -7,7 +7,7 @@ import { QuestType } from '../../types';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useAuthState } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
-import { useQuestsState } from '../../context/QuestsState';
+import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 
 interface QuestIdea {

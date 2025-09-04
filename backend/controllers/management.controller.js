@@ -273,9 +273,14 @@ const uploadMedia = async (req, res) => {
 
 const browseMedia = async (req, res) => {
     const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg'];
+    const MAX_RECURSION_DEPTH = 15;
     const files = [];
 
-    const readDirRecursive = async (currentDir, relativePath) => {
+    const readDirRecursive = async (currentDir, relativePath, depth) => {
+        if (depth > MAX_RECURSION_DEPTH) {
+            console.warn(`[Media Browser] Reached max directory depth of ${MAX_RECURSION_DEPTH} at ${currentDir}. Aborting this branch to prevent hangs.`);
+            return;
+        }
         try {
             const entries = await fsp.readdir(currentDir, { withFileTypes: true });
             for (const entry of entries) {
@@ -285,7 +290,7 @@ const browseMedia = async (req, res) => {
                 const fullEntryPath = path.join(currentDir, entry.name);
                 const newRelativePath = path.join(relativePath, entry.name);
                 if (entry.isDirectory()) {
-                    await readDirRecursive(fullEntryPath, newRelativePath);
+                    await readDirRecursive(fullEntryPath, newRelativePath, depth + 1);
                 } else if (VIDEO_EXTENSIONS.includes(path.extname(entry.name).toLowerCase())) {
                     files.push(`/media${newRelativePath.replace(/\\/g, '/')}`);
                 }
@@ -299,7 +304,7 @@ const browseMedia = async (req, res) => {
         }
     };
     
-    await readDirRecursive(MEDIA_DIR, '/');
+    await readDirRecursive(MEDIA_DIR, '/', 0);
     res.json(files);
 };
 

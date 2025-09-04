@@ -1,3 +1,4 @@
+
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../types';
 import { checkAllConditionSetsMet, ConditionDependencies, checkGlobalConditionsMet } from './conditions';
 
@@ -207,10 +208,9 @@ export const isQuestAvailableForUser = (
       
     if (!onVacation && quest.endTime) {
       if (isQuestScheduledForDay(quest, today)) {
-          const now = new Date(); // Use the *actual* current time for this check
           const [hours, minutes] = quest.endTime.split(':').map(Number);
-          const deadlineToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-          if (now > deadlineToday) {
+          const deadlineForDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+          if (today > deadlineForDay) {
               return false;
           }
       }

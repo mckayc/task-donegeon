@@ -16,4 +16,5 @@ export * from './components/dev/types';
 export * from './components/trading/types';
 export * from './components/chronicles/types';
 export * from './components/conditions/types';
+export * from './components/games/types';
 export * from './types/app';

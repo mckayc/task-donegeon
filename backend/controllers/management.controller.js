@@ -1,5 +1,4 @@
 
-
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs'); // For sync operations
@@ -280,6 +279,9 @@ const browseMedia = async (req, res) => {
         try {
             const entries = await fsp.readdir(currentDir, { withFileTypes: true });
             for (const entry of entries) {
+                if (entry.isSymbolicLink()) {
+                    continue; // Skip symbolic links to prevent potential infinite loops
+                }
                 const fullEntryPath = path.join(currentDir, entry.name);
                 const newRelativePath = path.join(relativePath, entry.name);
                 if (entry.isDirectory()) {

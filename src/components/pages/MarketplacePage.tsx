@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -82,27 +83,27 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
         const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [asset.costGroups, saleForThisItem]);
         
+        const balances = useMemo(() => {
+            if (!currentUser) return new Map<string, number>();
+            const purse = appMode.mode === 'guild' && appMode.guildId ? currentUser.guildBalances[appMode.guildId]?.purse || {} : currentUser.personalPurse;
+            const xp = appMode.mode === 'guild' && appMode.guildId ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
+            const combined = new Map<string, number>();
+            rewardTypes.forEach(rt => {
+                const balance = (rt.category === RewardCategory.Currency ? purse[rt.id] : xp[rt.id]) || 0;
+                combined.set(rt.id, balance);
+            });
+            return combined;
+        }, [currentUser, appMode, rewardTypes]);
+
         const canAffordAny = useMemo(() => {
             if (!currentUser) return false;
             
-            let balances: { purse: { [key: string]: number }, experience: { [key: string]: number } };
-            
-            if (appMode.mode === 'guild' && appMode.guildId) {
-                balances = currentUser.guildBalances[appMode.guildId] || { purse: {}, experience: {} };
-            } else {
-                balances = { purse: currentUser.personalPurse, experience: currentUser.personalExperience };
-            }
-            
-            const getBalance = (rewardTypeId: string): number => {
-                const rewardDef = rewardTypes.find(rt => rt.id === rewardTypeId);
-                if (!rewardDef) return 0;
-                return (rewardDef.category === 'Currency' ? balances.purse[rewardTypeId] : balances.experience[rewardTypeId]) || 0;
-            };
+            const getBalance = (rewardTypeId: string): number => balances.get(rewardTypeId) || 0;
 
             return finalCostGroups.some(group => 
                 group.every(costItem => getBalance(costItem.rewardTypeId) >= costItem.amount)
             );
-        }, [currentUser, appMode, finalCostGroups, rewardTypes]);
+        }, [currentUser, finalCostGroups, balances]);
 
         const userPurchaseCount = currentUser.ownedAssetIds.filter((id: string) => id === asset.id).length;
         const isSoldOut = asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && asset.purchaseCount >= asset.purchaseLimit;
@@ -153,10 +154,15 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                                             {group.map((r, rIndex) => {
                                                 const info = getRewardInfo(r.rewardTypeId);
                                                 const finalCost = finalCostGroups[index][rIndex].amount;
+                                                const userBalance = balances.get(r.rewardTypeId) || 0;
+                                                const hasEnough = userBalance >= finalCost;
                                                 return (
-                                                    <span key={r.rewardTypeId} className={`text-amber-300 flex items-center gap-1 ${saleForThisItem ? 'line-through text-amber-300/60' : ''}`} title={info.name}>
-                                                        {r.amount} <span className="text-base">{info.icon}</span>
+                                                    <span key={r.rewardTypeId} className="flex items-center gap-1" title={`${info.name} - You have: ${Math.floor(userBalance)}`}>
+                                                        <span className={`text-amber-300 flex items-center gap-1 ${saleForThisItem ? 'line-through text-amber-300/60' : ''}`}>
+                                                            {r.amount} <span className="text-base">{info.icon}</span>
+                                                        </span>
                                                         {saleForThisItem && <span className="text-green-400 font-bold no-underline ml-1">{finalCost} {info.icon}</span>}
+                                                        <span className={`text-xs ml-0.5 ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>({Math.floor(userBalance)})</span>
                                                     </span>
                                                 )
                                             })}

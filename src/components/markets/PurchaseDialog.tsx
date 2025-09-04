@@ -77,7 +77,14 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
                                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold mt-1">
                                             {costItems.map(r => {
                                                 const { name, icon } = getRewardInfo(r.rewardTypeId);
-                                                return <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1" title={name}>{r.amount} <span className="text-base">{icon}</span></span>;
+                                                const userBalance = getBalance(r.rewardTypeId);
+                                                const hasEnough = userBalance >= r.amount;
+                                                return (
+                                                    <span key={r.rewardTypeId} className="flex items-center gap-1" title={`${name} - You have: ${Math.floor(userBalance)}`}>
+                                                        <span className="text-amber-300 flex items-center gap-1">{r.amount} <span className="text-base">{icon}</span></span>
+                                                        <span className={`text-xs ml-0.5 ${hasEnough ? 'text-green-400' : 'text-red-400'}`}>({Math.floor(userBalance)})</span>
+                                                    </span>
+                                                );
                                             })}
                                         </div>
                                     </div>

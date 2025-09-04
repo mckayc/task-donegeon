@@ -31,6 +31,7 @@ const QuestApprovalTable: React.FC<{
                     <th className="p-4 font-semibold">User</th>
                     <th className="p-4 font-semibold">Quest</th>
                     <th className="p-4 font-semibold">Scope</th>
+                    <th className="p-4 font-semibold">Submitted At</th>
                     <th className="p-4 font-semibold">User Note</th>
                     <th className="p-4 font-semibold w-1/4">Admin Note</th>
                     <th className="p-4 font-semibold">Actions</th>
@@ -50,6 +51,7 @@ const QuestApprovalTable: React.FC<{
                                 ) : 'Unknown Quest'}
                             </td>
                             <td className="p-4 text-stone-400">{getGuildName(c.guildId)}</td>
+                            <td className="p-4 text-stone-400">{new Date(c.completedAt).toLocaleString()}</td>
                             <td className="p-4 text-stone-400 italic truncate max-w-xs" title={c.note}>"{c.note || 'None'}"</td>
                             <td className="p-4">
                                 <Input 
@@ -132,6 +134,7 @@ const PurchaseApprovalTable: React.FC<{
                     <th className="p-4 font-semibold">User</th>
                     <th className="p-4 font-semibold">Item</th>
                     <th className="p-4 font-semibold">Cost</th>
+                    <th className="p-4 font-semibold">Requested At</th>
                     <th className="p-4 font-semibold">Scope</th>
                     <th className="p-4 font-semibold">Actions</th>
                 </tr>
@@ -142,6 +145,7 @@ const PurchaseApprovalTable: React.FC<{
                         <td className="p-4 font-semibold text-emerald-300">{getUserName(p.userId)}</td>
                         <td className="p-4 text-amber-300">{p.assetDetails.name}</td>
                         <td className="p-4 text-stone-300">{p.assetDetails.cost.map(c => `${c.amount} ${rewardTypes.find(rt => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</td>
+                        <td className="p-4 text-stone-400">{new Date(p.requestedAt).toLocaleString()}</td>
                         <td className="p-4 text-stone-400">{getGuildName(p.guildId)}</td>
                         <td className="p-4">
                             <div className="flex gap-2">
@@ -167,6 +171,7 @@ const TradeApprovalTable: React.FC<{
             <thead className="border-b border-stone-700/60">
                 <tr>
                     <th className="p-4 font-semibold">From</th>
+                    <th className="p-4 font-semibold">Offered At</th>
                     <th className="p-4 font-semibold">Scope</th>
                     <th className="p-4 font-semibold">Status</th>
                     <th className="p-4 font-semibold">Actions</th>
@@ -176,6 +181,7 @@ const TradeApprovalTable: React.FC<{
                 {trades.map(t => (
                     <tr key={t.id} className="border-b border-stone-700/40 last:border-b-0">
                         <td className="p-4 font-semibold text-emerald-300">{getUserName(t.initiatorId)}</td>
+                        <td className="p-4 text-stone-400">{new Date(t.createdAt).toLocaleString()}</td>
                         <td className="p-4 text-stone-400">{getGuildName(t.guildId)}</td>
                         <td className="p-4 text-yellow-400">{t.status === TradeStatus.OfferUpdated ? 'Offer Updated' : 'New Offer'}</td>
                         <td className="p-4">
@@ -299,6 +305,7 @@ const MobileQuestApprovalCard: React.FC<any> = ({ completion, notes, handleNoteC
                     <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(completion.guildId)}</span>
                 </p>
                 <p className="text-stone-400 text-sm">{completion.note ? `Note: "${completion.note}"` : 'No note provided.'}</p>
+                <p className="text-xs text-stone-500">Submitted: {new Date(completion.completedAt).toLocaleString()}</p>
             </button>
             <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-stone-700/60">
                 <Input placeholder="Add a note (optional)..." value={notes[completion.id] || ''} onChange={(e) => handleNoteChange(completion.id, e.target.value)} className="flex-grow" />
@@ -337,6 +344,7 @@ const MobilePurchaseApprovalCard: React.FC<any> = ({ purchase, approvePurchaseRe
                 <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(purchase.guildId)}</span>
             </p>
             <p className="text-stone-400 text-sm mt-1">Cost: {purchase.assetDetails.cost.map((c: RewardItem) => `${c.amount} ${rewardTypes.find((rt: RewardTypeDefinition) => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</p>
+            <p className="text-xs text-stone-500">Requested: {new Date(purchase.requestedAt).toLocaleString()}</p>
         </div>
         <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-stone-700/60">
             <Button size="sm" variant="destructive" onClick={() => rejectPurchaseRequest(purchase.id, currentUser.id)}>Reject</Button>
@@ -353,6 +361,7 @@ const MobileTradeApprovalCard: React.FC<any> = ({ trade, setTradeToView, getUser
                     <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(trade.guildId)}</span>
             </p>
             <p className="text-stone-400 text-sm mt-1">{trade.status === TradeStatus.OfferUpdated ? 'The offer has been updated.' : 'A new offer has been proposed.'}</p>
+            <p className="text-xs text-stone-500">Offered: {new Date(trade.createdAt).toLocaleString()}</p>
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0 justify-end">
             <Button size="sm" onClick={() => setTradeToView(trade)}>View Offer</Button>

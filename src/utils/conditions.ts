@@ -15,6 +15,7 @@ export type ConditionDependencies = {
 
 export const checkCondition = (condition: Condition, user: User, dependencies: ConditionDependencies, questIdToExclude?: string): boolean => {
     const now = new Date();
+    const todayYMD = toYMD(now);
     switch (condition.type) {
         case ConditionType.MinRank:
             const totalXp = Object.values(user.personalExperience).reduce<number>((sum, amount) => sum + Number(amount), 0);
@@ -28,7 +29,6 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
             return condition.days.includes(today);
 
         case ConditionType.DateRange:
-            const todayYMD = toYMD(new Date());
             return todayYMD >= condition.start && todayYMD <= condition.end;
 
         case ConditionType.TimeOfDay:
@@ -51,9 +51,11 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 if (c.userId !== user.id || c.questId !== condition.questId || !requiredQuestStatuses.includes(c.status)) {
                     return false;
                 }
-                if (questForCondition.type === QuestType.Duty) {
-                    return toYMD(new Date(c.completedAt)) === toYMD(now);
+                // For a condition check on a recurring quest, we care about "today".
+                if (questForCondition.type === QuestType.Duty || (questForCondition.type === QuestType.Venture && (questForCondition.dailyCompletionsLimit ?? 0) > 0)) {
+                    return toYMD(new Date(c.completedAt)) === todayYMD;
                 }
+                // For one-time ventures/journeys, any completion is fine
                 return true;
             });
         }
@@ -96,10 +98,9 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                     if (c.userId !== user.id || c.questId !== q.id || !requiredGroupStatuses.includes(c.status)) {
                         return false;
                     }
-                    if (q.type === QuestType.Duty) {
-                        return toYMD(new Date(c.completedAt)) === toYMD(now);
-                    }
-                    return true;
+                    // For a group completion check, we always care about "today".
+                    // This applies to both duties and ventures within the group.
+                    return toYMD(new Date(c.completedAt)) === todayYMD;
                 })
             );
         }

@@ -58,7 +58,7 @@ const MarketTable: React.FC<MarketTableProps> = ({
                         const statusConfig = {
                             open: { text: 'Open', color: 'bg-green-500/20 text-green-300' },
                             closed: { text: 'Closed', color: 'bg-stone-500/20 text-stone-300' },
-                            conditional: { text: 'Conditional', color: 'bg-blue-500/20 text-blue-300' },
+                            conditional: { text: 'Conditionally Open', color: 'bg-blue-500/20 text-blue-300' },
                         };
 
                         return (

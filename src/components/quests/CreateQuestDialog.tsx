@@ -502,7 +502,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           )}
 
            <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-                <h3 className="font-semibold text-lg text-stone-200">Availability Conditions</h3>
+                <h3 className="font-semibold text-lg text-stone-200">Conditionally Active</h3>
                 <ToggleSwitch 
                     enabled={formData.conditionSetIds !== undefined} 
                     setEnabled={(val: boolean) => setFormData(p => ({...p, conditionSetIds: val ? (p.conditionSetIds || []) : undefined}))} 

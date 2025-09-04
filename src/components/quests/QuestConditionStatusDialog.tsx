@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { Quest, User, ConditionSet, QuestCompletionStatus } from '../../types';
 import Button from '../user-interface/Button';
@@ -9,7 +10,6 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { checkCondition, getConditionDescription, ConditionDependencies } from '../../utils/conditions';
-import { isQuestScheduledForDay } from '../../utils/quests';
 
 interface QuestConditionStatusDialogProps {
   quest: Quest;
@@ -61,33 +61,10 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                     if (condition.type === 'QUEST_GROUP_COMPLETED') {
                                         const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
                                         if (group) {
-                                            const now = new Date();
-                                            const questsInGroup = dependencies.quests.filter(q => 
-                                                q.groupIds?.includes(group.id) && 
-                                                q.id !== quest.id // Prevent self-locking from being displayed
-                                            );
-                                            
-                                            // Filter for only currently available quests to display to the user
-                                            const availableQuestsInGroup = questsInGroup.filter(q => {
-                                                if (!q.isActive) return false;
-                                                
-                                                if (q.endDateTime && now > new Date(q.endDateTime)) {
-                                                    return false; 
-                                                }
-                                                if (q.type === 'Duty' && q.endTime) {
-                                                    const [h, m] = q.endTime.split(':').map(Number);
-                                                    const incompleteTime = new Date(now);
-                                                    incompleteTime.setHours(h, m, 0, 0);
-                                                    if (isQuestScheduledForDay(q, now) && now > incompleteTime) {
-                                                        return false;
-                                                    }
-                                                }
-                                                return true;
-                                            });
-
+                                            const questsInGroup = dependencies.quests.filter(q => q.groupIds?.includes(group.id));
                                             subList = (
                                                 <ul className="pl-8 mt-1 space-y-1">
-                                                    {availableQuestsInGroup.map(q => {
+                                                    {questsInGroup.map(q => {
                                                         const isQuestCompleted = dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved);
                                                         return (
                                                             <li key={q.id} className="flex items-center gap-2 text-xs">

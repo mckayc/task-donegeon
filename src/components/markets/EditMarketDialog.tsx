@@ -161,7 +161,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
               <div className="flex items-center gap-4">
                 <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'open'} onChange={() => handleStatusChange({type: 'open'})} /> <span className="ml-2">Open</span></label>
                 <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'closed'} onChange={() => handleStatusChange({type: 'closed'})} /> <span className="ml-2">Closed</span></label>
-                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'conditional'} onChange={() => handleStatusChange({type: 'conditional', conditionSetIds: formData.status.type === 'conditional' ? formData.status.conditionSetIds : []})} /> <span className="ml-2">Conditional</span></label>
+                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'conditional'} onChange={() => handleStatusChange({type: 'conditional', conditionSetIds: formData.status.type === 'conditional' ? formData.status.conditionSetIds : []})} /> <span className="ml-2">Conditionally Open</span></label>
               </div>
                {formData.status.type === 'conditional' && (
                   <div className="space-y-4 pt-4 border-t border-stone-700/60">

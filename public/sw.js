@@ -1,5 +1,5 @@
-// v70
-const CACHE_NAME = 'task-donegeon-cache-v70';
+// v74
+const CACHE_NAME = 'task-donegeon-cache-v74';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -34,7 +34,7 @@ self.addEventListener('fetch', event => {
   }
 
   // Prevent the service worker from intercepting API calls or file uploads
-  if (event.request.url.includes('/api/') || event.request.url.includes('/uploads/')) {
+  if (event.request.url.includes('/api/') || event.request.url.includes('/uploads/') || event.request.url.includes('/media/')) {
     return;
   }
 

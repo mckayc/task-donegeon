@@ -27,6 +27,7 @@ export enum QuestAvailability {
 export enum QuestMediaType {
   AITeacher = 'AI_TEACHER',
   AIStory = 'AI_STORY',
+  Video = 'VIDEO',
 }
 
 export interface Checkpoint {
@@ -58,6 +59,7 @@ export interface Quest {
   kind: QuestKind; // New field to distinguish quest types
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
+  videoUrl?: string;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;

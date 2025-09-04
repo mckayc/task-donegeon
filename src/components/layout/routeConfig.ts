@@ -1,4 +1,5 @@
 
+
 import { lazy } from 'react';
 import { Page } from '../../types/app';
 
@@ -38,7 +39,8 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Asset Library': lazy(() => import('../pages/management/AssetLibraryPage')),
     'Profile': lazy(() => import('../pages/ProfilePage')),
     'About': lazy(() => import('../pages/AboutPage').then(module => ({ default: module.AboutPage }))),
-    'Help Guide': lazy(() => import('../pages/HelpPage')),
+    // FIX: Corrected the lazy import to handle a named export by wrapping it in a default export object.
+    'Help Guide': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.HelpPage }))),
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
     'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),

@@ -21,6 +21,7 @@ import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import NumberInput from '../user-interface/NumberInput';
+import MediaBrowserDialog from '../video/MediaBrowserDialog';
 
 type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
 
@@ -53,6 +54,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         kind: QuestKind.Personal,
         mediaType: undefined,
         aiTutorSessionMinutes: undefined,
+        videoUrl: '',
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
@@ -170,6 +172,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(initialData?.isNewGroup && !!initialData.groupName);
   const [newGroupName, setNewGroupName] = useState(initialData?.isNewGroup ? initialData.groupName || '' : '');
   const [isJourneyEditorOpen, setIsJourneyEditorOpen] = useState(false);
+  const [isMediaBrowserOpen, setIsMediaBrowserOpen] = useState(false);
   
   const userList = initialDataFromBug ? users.filter(u => u.role === Role.DonegeonMaster) : users;
 
@@ -265,6 +268,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         kind: formData.kind,
         mediaType: formData.mediaType || undefined,
         aiTutorSessionMinutes: formData.mediaType === QuestMediaType.AITeacher ? formData.aiTutorSessionMinutes : undefined,
+        videoUrl: formData.mediaType === QuestMediaType.Video ? formData.videoUrl : undefined,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -325,6 +329,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
       kind: newKind,
       guildId: isPersonalScope ? '' : p.guildId,
     }));
+  };
+
+  const handleMediaSelect = (path: string) => {
+      setFormData(p => ({...p, videoUrl: path}));
+      setIsMediaBrowserOpen(false);
   };
 
   const hasDeadlines = !!(formData.endTime || formData.endDateTime);
@@ -422,6 +431,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                   <option value="">None</option>
                   <option value={QuestMediaType.AITeacher}>AI Teacher</option>
                   <option value={QuestMediaType.AIStory}>AI Story</option>
+                  <option value={QuestMediaType.Video}>Video</option>
               </Input>
               {formData.mediaType === QuestMediaType.AITeacher && (
                 <NumberInput 
@@ -432,6 +442,22 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 />
               )}
             </div>
+             {formData.mediaType === QuestMediaType.Video && (
+                <div className="p-4 bg-stone-900/50 rounded-lg space-y-2">
+                    <div className="flex items-end gap-2">
+                        <Input 
+                            label="Video URL or Path" 
+                            name="videoUrl" 
+                            value={formData.videoUrl || ''} 
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, videoUrl: e.target.value}))} 
+                            placeholder="e.g., YouTube URL or /media/my-video.mp4"
+                            className="flex-grow"
+                        />
+                         <Button type="button" variant="secondary" onClick={() => setIsMediaBrowserOpen(true)}>Browse Library</Button>
+                    </div>
+                     <p className="text-xs text-stone-400">Enter a URL for a YouTube video or a local path to a video file in your media library (e.g., <code>/media/filename.mp4</code>).</p>
+                </div>
+            )}
            <div>
                 <h3 className="font-semibold text-stone-200 mb-1">Quest Groups</h3>
                 <div className="p-2 border border-stone-600 rounded-md max-h-40 overflow-y-auto space-y-2">
@@ -604,6 +630,12 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 setIsJourneyEditorOpen(false);
             }}
             onClose={() => setIsJourneyEditorOpen(false)}
+        />
+    )}
+    {isMediaBrowserOpen && (
+        <MediaBrowserDialog
+            onSelect={handleMediaSelect}
+            onClose={() => setIsMediaBrowserOpen(false)}
         />
     )}
     </>

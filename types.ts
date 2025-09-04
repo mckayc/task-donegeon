@@ -1,4 +1,5 @@
 
+
 // Re-export all the modularized types
 export * from './src/components/users/types';
 export * from './src/components/items/types';
@@ -18,4 +19,5 @@ export * from './src/components/trading/types';
 export * from './src/components/chronicles/types';
 export * from './src/components/conditions/types';
 export * from './src/components/games/types';
+export * from './src/components/video/types';
 export * from './src/types/app';

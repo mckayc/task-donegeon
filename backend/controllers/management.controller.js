@@ -12,6 +12,7 @@ const { dataSource } = require('../data-source');
 // === Paths Configuration ===
 const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
 const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
+const MEDIA_DIR = process.env.APP_MEDIA_PATH || path.resolve(DATA_ROOT, 'media');
 const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 
 // === Multer Configuration ===
@@ -271,6 +272,36 @@ const uploadMedia = async (req, res) => {
     res.status(201).json({ url });
 };
 
+const browseMedia = async (req, res) => {
+    const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg'];
+    const files = [];
+
+    const readDirRecursive = async (currentDir, relativePath) => {
+        try {
+            const entries = await fsp.readdir(currentDir, { withFileTypes: true });
+            for (const entry of entries) {
+                const fullEntryPath = path.join(currentDir, entry.name);
+                const newRelativePath = path.join(relativePath, entry.name);
+                if (entry.isDirectory()) {
+                    await readDirRecursive(fullEntryPath, newRelativePath);
+                } else if (VIDEO_EXTENSIONS.includes(path.extname(entry.name).toLowerCase())) {
+                    files.push(`/media${newRelativePath.replace(/\\/g, '/')}`);
+                }
+            }
+        } catch (error) {
+            // If MEDIA_DIR doesn't exist, it's not a server error, just return an empty list.
+            if (error.code !== 'ENOENT') {
+                console.error(`Error reading media directory ${currentDir}:`, error);
+                // To avoid breaking the client, we'll just log and continue.
+            }
+        }
+    };
+    
+    await readDirRecursive(MEDIA_DIR, '/');
+    res.json(files);
+};
+
+
 module.exports = {
     // Other exports for different routers
     upload: upload.single('file'),
@@ -282,6 +313,7 @@ module.exports = {
     importImagePack: asyncMiddleware(importImagePack),
     getLocalGallery: asyncMiddleware(getLocalGallery),
     uploadMedia: asyncMiddleware(uploadMedia),
+    browseMedia: asyncMiddleware(browseMedia),
     // Backup exports
     runScheduledBackups,
     runScheduledRotations,

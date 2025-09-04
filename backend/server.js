@@ -84,6 +84,7 @@ app.use('/api', activityLogMiddleware);
 // === Backup/Asset Directories & Scheduler ===
 const DATA_ROOT = path.resolve(__dirname, '..', 'data');
 const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
+const MEDIA_DIR = process.env.APP_MEDIA_PATH || path.resolve(DATA_ROOT, 'media');
 const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
 const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
@@ -256,6 +257,7 @@ const initializeApp = async () => {
 
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
+    await fs.mkdir(MEDIA_DIR, { recursive: true });
     await ensureDefaultAssetPacksExist();
     
     // Start schedulers
@@ -303,6 +305,8 @@ app.use('/api/media', managementRouters.mediaRouter);
 app.use(express.static(path.join(__dirname, '..', 'dist')));
 // Serve uploaded assets from the 'data/assets' directory
 app.use('/uploads', express.static(UPLOADS_DIR));
+// Serve media files from the user-configurable 'data/media' directory
+app.use('/media', express.static(MEDIA_DIR));
 
 // === Catch-all for Frontend Routing ===
 // For any other request, serve the index.html file to let the React router handle it.

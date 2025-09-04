@@ -11,6 +11,7 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import AiTeacherPanel from '../chat/AiTeacherPanel';
 import AiStoryPanel from '../chat/AiStoryPanel';
+import VideoPlayerOverlay from '../video/VideoPlayerOverlay';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -33,6 +34,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
     const [isQuizPassed, setIsQuizPassed] = useState(false);
+    const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
 
     // Prioritize the user passed in props (for shared view), fallback to logged-in user
     const currentUser = userForView || loggedInUser;
@@ -288,6 +290,11 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                     Read AI Story
                                 </Button>
                             )}
+                            {quest.mediaType === QuestMediaType.Video && quest.videoUrl && (
+                                <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>
+                                    ▶️ Watch Video
+                                </Button>
+                            )}
                             {onToggleTodo && quest.type === QuestType.Venture && (
                                 <ToggleSwitch
                                     enabled={!!isTodo}
@@ -314,6 +321,12 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     user={currentUser}
                     onClose={() => setIsAiStoryOpen(false)}
                     onStoryFinished={handleComplete}
+                />
+            )}
+            {isVideoPlayerOpen && quest.videoUrl && (
+                <VideoPlayerOverlay
+                    videoUrl={quest.videoUrl}
+                    onClose={() => setIsVideoPlayerOpen(false)}
                 />
             )}
         </>

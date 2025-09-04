@@ -1,4 +1,5 @@
 
+
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs'); // For sync operations
@@ -273,39 +274,54 @@ const uploadMedia = async (req, res) => {
 
 const browseMedia = async (req, res) => {
     const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg'];
-    const MAX_RECURSION_DEPTH = 15;
+    const { path: relativePath = '/' } = req.query;
+
+    console.log(`[Media Browser] Browsing path: ${relativePath}`);
+
+    // --- Security Check ---
+    const resolvedMediaDir = path.resolve(MEDIA_DIR);
+    const requestedPath = path.join(resolvedMediaDir, relativePath);
+    const resolvedRequestedPath = path.resolve(requestedPath);
+
+    if (!resolvedRequestedPath.startsWith(resolvedMediaDir)) {
+        console.warn(`[Media Browser] SECURITY: Attempted directory traversal: ${relativePath}`);
+        return res.status(400).json({ error: 'Invalid path specified.' });
+    }
+    // --- End Security Check ---
+
+    const directories = [];
     const files = [];
 
-    const readDirRecursive = async (currentDir, relativePath, depth) => {
-        if (depth > MAX_RECURSION_DEPTH) {
-            console.warn(`[Media Browser] Reached max directory depth of ${MAX_RECURSION_DEPTH} at ${currentDir}. Aborting this branch to prevent hangs.`);
-            return;
-        }
-        try {
-            const entries = await fsp.readdir(currentDir, { withFileTypes: true });
-            for (const entry of entries) {
-                if (entry.isSymbolicLink()) {
-                    continue; // Skip symbolic links to prevent potential infinite loops
-                }
-                const fullEntryPath = path.join(currentDir, entry.name);
-                const newRelativePath = path.join(relativePath, entry.name);
-                if (entry.isDirectory()) {
-                    await readDirRecursive(fullEntryPath, newRelativePath, depth + 1);
-                } else if (VIDEO_EXTENSIONS.includes(path.extname(entry.name).toLowerCase())) {
-                    files.push(`/media${newRelativePath.replace(/\\/g, '/')}`);
-                }
+    try {
+        const entries = await fsp.readdir(resolvedRequestedPath, { withFileTypes: true });
+
+        for (const entry of entries) {
+            if (entry.name.startsWith('.')) {
+                continue;
             }
-        } catch (error) {
-            // If MEDIA_DIR doesn't exist, it's not a server error, just return an empty list.
-            if (error.code !== 'ENOENT') {
-                console.error(`Error reading media directory ${currentDir}:`, error);
-                // To avoid breaking the client, we'll just log and continue.
+            if (entry.isDirectory()) {
+                directories.push(entry.name);
+            } else if (VIDEO_EXTENSIONS.includes(path.extname(entry.name).toLowerCase())) {
+                files.push(entry.name);
             }
         }
-    };
-    
-    await readDirRecursive(MEDIA_DIR, '/', 0);
-    res.json(files);
+        
+        directories.sort();
+        files.sort();
+
+        console.log(`[Media Browser] Found ${directories.length} directories and ${files.length} files.`);
+
+        res.json({ directories, files });
+
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.warn(`[Media Browser] Directory not found: ${resolvedRequestedPath}`);
+            res.status(404).json({ error: 'Directory not found.' });
+        } else {
+            console.error(`[Media Browser] Error reading directory ${resolvedRequestedPath}:`, error);
+            res.status(500).json({ error: 'Failed to read media directory.' });
+        }
+    }
 };
 
 

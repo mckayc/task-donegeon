@@ -1,5 +1,4 @@
 
-
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
@@ -182,7 +181,7 @@ const adjust = async (adjustmentData) => {
 
 const getPendingItems = async (userId) => {
     const questCompletions = await dataSource.getRepository(QuestCompletionEntity).find({
-        where: { userId, status: 'Pending' },
+        where: { user: { id: userId }, status: 'Pending' },
         relations: ['quest'],
         order: { completedAt: 'DESC' }
     });

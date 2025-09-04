@@ -1,4 +1,4 @@
-import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role } from '../types';
+import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role, QuestType } from '../types';
 import { toYMD, isQuestScheduledForDay } from './quests';
 
 // The dependencies needed to evaluate conditions.
@@ -14,6 +14,7 @@ export type ConditionDependencies = {
 };
 
 export const checkCondition = (condition: Condition, user: User, dependencies: ConditionDependencies, questIdToExclude?: string): boolean => {
+    const now = new Date();
     switch (condition.type) {
         case ConditionType.MinRank:
             const totalXp = Object.values(user.personalExperience).reduce<number>((sum, amount) => sum + Number(amount), 0);
@@ -31,7 +32,6 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
             return todayYMD >= condition.start && todayYMD <= condition.end;
 
         case ConditionType.TimeOfDay:
-             const now = new Date();
              const currentTime = now.getHours() * 60 + now.getMinutes();
              const [startH, startM] = condition.start.split(':').map(Number);
              const startTime = startH * 60 + startM;
@@ -39,18 +39,24 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
              const endTime = endH * 60 + endM;
              return currentTime >= startTime && currentTime <= endTime;
 
-        case ConditionType.QuestCompleted:
-            // If the condition is to complete the very quest we are currently checking,
-            // we must ignore this condition to prevent a deadlock.
+        case ConditionType.QuestCompleted: {
             if (condition.questId === questIdToExclude) {
                 return true;
             }
             const requiredQuestStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
-            return dependencies.questCompletions.some(c =>
-                c.userId === user.id &&
-                c.questId === condition.questId &&
-                requiredQuestStatuses.includes(c.status)
-            );
+            const questForCondition = dependencies.quests.find(q => q.id === condition.questId);
+            if (!questForCondition) return false;
+
+            return dependencies.questCompletions.some(c => {
+                if (c.userId !== user.id || c.questId !== condition.questId || !requiredQuestStatuses.includes(c.status)) {
+                    return false;
+                }
+                if (questForCondition.type === QuestType.Duty) {
+                    return toYMD(new Date(c.completedAt)) === toYMD(now);
+                }
+                return true;
+            });
+        }
         
         case ConditionType.QuestGroupCompleted: {
             const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
@@ -61,16 +67,13 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 q.id !== questIdToExclude
             );
 
-            const now = new Date();
             // Filter out quests that are definitively unavailable due to time to prevent deadlocks.
             const availableQuestsInGroup = questsInGroup.filter(q => {
                 if (!q.isActive) return false;
                 
-                // Venture/Journey check for final deadline
                 if (q.endDateTime && now > new Date(q.endDateTime)) {
                     return false; 
                 }
-                // Duty check for daily "incomplete" time
                 if (q.type === 'Duty' && q.endTime) {
                     const [h, m] = q.endTime.split(':').map(Number);
                     const incompleteTime = new Date(now);
@@ -82,16 +85,22 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 return true;
             });
 
-            // If the original group had quests, but none are currently available (e.g., all have expired),
-            // the condition cannot be met, so it should fail. This prevents [].every() from returning true.
             if (questsInGroup.length > 0 && availableQuestsInGroup.length === 0) {
                 return false;
             }
 
             const requiredGroupStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
-            // Check if all *available* quests have been completed with one of the required statuses.
+            
             return availableQuestsInGroup.every(q => 
-                dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && requiredGroupStatuses.includes(c.status))
+                dependencies.questCompletions.some(c => {
+                    if (c.userId !== user.id || c.questId !== q.id || !requiredGroupStatuses.includes(c.status)) {
+                        return false;
+                    }
+                    if (q.type === QuestType.Duty) {
+                        return toYMD(new Date(c.completedAt)) === toYMD(now);
+                    }
+                    return true;
+                })
             );
         }
 
@@ -128,15 +137,13 @@ export const checkGlobalConditionsMet = (
     }
     
     for (const set of globalSets) {
-        // Exemption check
         if (questId && set.exemptQuestIds?.includes(questId)) {
-            continue; // This quest is exempt from this global set
+            continue; 
         }
         if (marketId && set.exemptMarketIds?.includes(marketId)) {
-            continue; // This market is exempt from this global set
+            continue; 
         }
         
-        // Global sets are ALWAYS combined with AND logic between sets.
         const { allMet, failingSetName } = checkAllConditionSetsMet([set.id], user, dependencies, questId);
         if (!allMet) {
             return { allMet: false, failingSetName: failingSetName || set.name };
@@ -163,17 +170,13 @@ export const checkAllConditionSetsMet = (
          return { allMet: false, failingSetName: 'an unknown set' };
     }
 
-    // An asset is available only if ALL linked condition sets are met
     for (const set of setsToEvaluate) {
-        // First, check if the set is assigned to specific users.
         if (set.assignedUserIds && set.assignedUserIds.length > 0) {
             if (!set.assignedUserIds.includes(user.id)) {
-                // User is not assigned this set, so it fails for them immediately.
                 return { allMet: false, failingSetName: set.name };
             }
         }
 
-        // Global sets MUST use AND logic for safety.
         const useAndLogic = set.isGlobal || set.logic === ConditionSetLogic.ALL;
 
         const conditionsMet = useAndLogic

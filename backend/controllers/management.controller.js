@@ -1,5 +1,3 @@
-
-
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs'); // For sync operations
@@ -15,7 +13,7 @@ const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
 const MEDIA_DIR = process.env.CONTAINER_MEDIA_PATH || '/app/media';
 const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 
-// === Multer Configuration ===
+// === Multer Configuration for ASSET GALLERY ===
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const category = req.params.category || req.body.category || 'Miscellaneous';
@@ -33,7 +31,39 @@ const storage = multer.diskStorage({
         cb(null, `${Date.now()}-${sanitizedFilename}`);
     }
 });
-const upload = multer({ storage, limits: { fileSize: 25 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 25 * 1024 * 1024 } }).single('file');
+
+
+// === Multer Configuration for MEDIA LIBRARY ===
+const mediaStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const relativePath = req.body.path || '/';
+
+        // --- Security Validation ---
+        const resolvedMediaDir = path.resolve(MEDIA_DIR);
+        const requestedDest = path.join(resolvedMediaDir, relativePath);
+        const resolvedDest = path.resolve(requestedDest);
+
+        if (!resolvedDest.startsWith(resolvedMediaDir)) {
+            console.error('[Multer Security] Attempted directory traversal:', relativePath);
+            return cb(new Error('Invalid path specified.'), '');
+        }
+        // --- End Security ---
+
+        fs.mkdir(resolvedDest, { recursive: true }, (err) => {
+            if (err) return cb(err, '');
+            cb(null, resolvedDest);
+        });
+    },
+    filename: (req, file, cb) => {
+        // Sanitize filename to prevent security issues
+        const sanitizedFilename = path.basename(file.originalname).replace(/[^a-zA-Z0-9-._]/g, '_');
+        cb(null, sanitizedFilename);
+    }
+});
+
+const mediaUpload = multer({ storage: mediaStorage, limits: { fileSize: 1 * 1024 * 1024 * 1024 } }).single('videoFile'); // 1 GB limit for video files
+
 
 // --- Scheduled Backups ---
 const runScheduledBackups = () => {
@@ -272,6 +302,15 @@ const uploadMedia = async (req, res) => {
     res.status(201).json({ url });
 };
 
+const uploadToMediaLibrary = (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    // Multer has already handled saving and validation. We just send success.
+    res.status(201).json({ message: 'File uploaded successfully to media library.' });
+};
+
+
 const browseMedia = async (req, res) => {
     const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg'];
     const { path: relativePath = '/' } = req.query;
@@ -327,7 +366,8 @@ const browseMedia = async (req, res) => {
 
 module.exports = {
     // Other exports for different routers
-    upload: upload.single('file'),
+    upload,
+    mediaUpload, // New multer instance for media library
     discoverAssetPacks: asyncMiddleware(discoverAssetPacks),
     getAssetPack: asyncMiddleware(getAssetPack),
     fetchRemoteAssetPack: asyncMiddleware(fetchRemoteAssetPack),
@@ -336,6 +376,7 @@ module.exports = {
     importImagePack: asyncMiddleware(importImagePack),
     getLocalGallery: asyncMiddleware(getLocalGallery),
     uploadMedia: asyncMiddleware(uploadMedia),
+    uploadToMediaLibrary: asyncMiddleware(uploadToMediaLibrary), // New controller for media library
     browseMedia: asyncMiddleware(browseMedia),
     // Backup exports
     runScheduledBackups,

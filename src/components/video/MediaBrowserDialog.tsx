@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import { Folder, Video, ArrowUp } from 'lucide-react';
+import { Folder, Video, ArrowUp, UploadCloud } from 'lucide-react';
 
 interface MediaBrowserDialogProps {
     onSelect: (path: string) => void;
@@ -14,33 +14,69 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
     const [currentPath, setCurrentPath] = useState('/');
     const [contents, setContents] = useState<{ directories: string[], files: string[] }>({ directories: [], files: [] });
     const [isLoading, setIsLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
     const { addNotification } = useNotificationsDispatch();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const fetchMedia = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`/api/media/browse?path=${encodeURIComponent(currentPath)}`);
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Failed to browse media library on the server.');
+            }
+            const data = await response.json();
+            setContents(data);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+            setError(message);
+            addNotification({ type: 'error', message });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPath, addNotification]);
 
     useEffect(() => {
-        const fetchMedia = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const response = await fetch(`/api/media/browse?path=${encodeURIComponent(currentPath)}`);
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error || 'Failed to browse media library on the server.');
-                }
-                const data = await response.json();
-                setContents(data);
-            } catch (err) {
-                const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-                setError(message);
-                addNotification({ type: 'error', message });
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchMedia();
-    }, [currentPath, addNotification]);
+    }, [fetchMedia]);
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('videoFile', file);
+        formData.append('path', currentPath);
+
+        try {
+            const response = await fetch('/api/media/upload/library', {
+                method: 'POST',
+                body: formData,
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Upload failed.');
+            }
+            addNotification({ type: 'success', message: `Successfully uploaded "${file.name}".` });
+            fetchMedia(); // Refresh the directory
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unknown error occurred during upload.';
+            addNotification({ type: 'error', message });
+        } finally {
+            setIsUploading(false);
+            // Reset file input to allow uploading the same file again
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
 
     const { filteredDirs, filteredFiles } = useMemo(() => {
         if (!debouncedSearchTerm) {
@@ -79,6 +115,18 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             className="flex-grow"
                             autoFocus
                         />
+                         <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileUpload}
+                            accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                            disabled={isUploading}
+                        />
+                        <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                            <UploadCloud className="w-5 h-5 mr-2" />
+                            {isUploading ? 'Uploading...' : 'Upload Video'}
+                        </Button>
                     </div>
                     <div className="mt-2 text-sm text-stone-400 font-mono bg-stone-900/50 p-2 rounded-md truncate">
                         Current Path: {`/media${currentPath}`}

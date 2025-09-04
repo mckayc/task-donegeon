@@ -1,5 +1,3 @@
-
-
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -7,7 +5,7 @@ import { Trophy, TrophyRequirementType } from '../components/trophies/types';
 import { QuestType, Quest, QuestGroup, QuestCompletion } from '../components/quests/types';
 import { Market } from '../types';
 import { Guild } from '../components/guilds/types';
-import { AppSettings, SidebarConfigItem } from '../types/app';
+import { AppSettings, SidebarConfigItem, Terminology } from '../types/app';
 import { GameAsset } from '../components/items/types';
 import { ThemeDefinition, ThemeStyle } from '../components/themes/types';
 
@@ -210,33 +208,39 @@ export const INITIAL_SETTINGS: AppSettings = {
     theme: 'emerald',
     terminology: {
       appName: 'Task Donegeon',
+      // Singular
       task: 'Quest',
-      tasks: 'Quests',
       recurringTask: 'Duty',
-      recurringTasks: 'Duties',
       singleTask: 'Venture',
-      singleTasks: 'Ventures',
       journey: 'Journey',
-      journeys: 'Journeys',
-      shoppingCenter: 'Marketplace',
       store: 'Market',
-      stores: 'Markets',
       history: 'Chronicles',
       group: 'Guild',
-      groups: 'Guilds',
       level: 'Rank',
-      levels: 'Ranks',
       award: 'Trophy',
-      awards: 'Trophies',
       point: 'Reward',
-      points: 'Rewards',
       xp: 'XP',
       currency: 'Currency',
       negativePoint: 'Setback',
+      // Plural
+      tasks: 'Quests',
+      recurringTasks: 'Duties',
+      singleTasks: 'Ventures',
+      journeys: 'Journeys',
+      shoppingCenter: 'Marketplace',
+      stores: 'Markets',
+      groups: 'Guilds',
+      levels: 'Ranks',
+      awards: 'Trophies',
+      points: 'Rewards',
       negativePoints: 'Setbacks',
+      // FIX: Added the missing 'users' property to the terminology object.
+      users: 'Explorers',
+      // Roles
       admin: 'Donegeon Master',
       moderator: 'Gatekeeper',
       user: 'Explorer',
+      // Sidebar Links
       link_dashboard: 'Dashboard',
       link_quests: 'Quests',
       link_marketplace: 'Marketplace',
@@ -406,7 +410,7 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-52', name: 'The Repairman', description: 'For fixing something that was broken.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] },
     { id: 'trophy-53', name: 'The Pet Pal', description: 'For taking excellent care of a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] },
     { id: 'trophy-54', name: 'The Dust Slayer', description: 'For dusting the entire house.', iconType: 'emoji', icon: '🌬️', isManual: true, requirements: [] },
-    { id: 'trophy-55', name: 'Honor Roll', description: 'For getting straight A\'s on a report card.', iconType: 'emoji', icon: '🅰️', isManual: true, requirements: [] },
+    { id: 'trophy-55', name: 'Honor Roll', description: "For getting straight A's on a report card.", iconType: 'emoji', icon: '🅰️', isManual: true, requirements: [] },
     { id: 'trophy-56', name: 'Perfect Attendance', description: 'For not missing a single day of school.', iconType: 'emoji', icon: '🗓️', isManual: true, requirements: [] },
     { id: 'trophy-57', name: 'Science Fair Winner', description: 'For winning a prize at the science fair.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] },
     { id: 'trophy-58', name: 'Spelling Bee Champ', description: 'For winning the spelling bee.', iconType: 'emoji', icon: '🐝', isManual: true, requirements: [] },

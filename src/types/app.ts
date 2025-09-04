@@ -45,6 +45,7 @@ export interface Terminology {
   awards: string;
   points: string;
   negativePoints: string;
+  users: string;
   // Roles
   admin: string;
   moderator: string;

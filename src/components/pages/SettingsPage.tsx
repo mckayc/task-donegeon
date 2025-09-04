@@ -1,4 +1,3 @@
-
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -86,6 +85,8 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   awards: 'Awards (Plural)',
   points: 'Points (Plural)',
   negativePoints: 'Negative Points (Plural)',
+  // FIX: Added label for 'users' plural terminology.
+  users: 'Users (Plural)',
   // Roles
   admin: 'Admin (e.g., Donegeon Master)',
   moderator: 'Moderator (e.g., Gatekeeper)',

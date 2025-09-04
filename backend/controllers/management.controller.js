@@ -12,7 +12,7 @@ const { dataSource } = require('../data-source');
 // === Paths Configuration ===
 const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
 const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
-const MEDIA_DIR = process.env.APP_MEDIA_PATH || path.resolve(DATA_ROOT, 'media');
+const MEDIA_DIR = process.env.CONTAINER_MEDIA_PATH || '/app/media';
 const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 
 // === Multer Configuration ===

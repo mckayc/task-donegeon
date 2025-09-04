@@ -84,7 +84,7 @@ app.use('/api', activityLogMiddleware);
 // === Backup/Asset Directories & Scheduler ===
 const DATA_ROOT = path.resolve(__dirname, '..', 'data');
 const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
-const MEDIA_DIR = process.env.APP_MEDIA_PATH || path.resolve(DATA_ROOT, 'media');
+const MEDIA_DIR = process.env.CONTAINER_MEDIA_PATH || '/app/media';
 const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
 const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
@@ -257,6 +257,7 @@ const initializeApp = async () => {
 
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
+    // This will check/create the MEDIA_DIR if it doesn't exist, which is good practice.
     await fs.mkdir(MEDIA_DIR, { recursive: true });
     await ensureDefaultAssetPacksExist();
     

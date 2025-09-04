@@ -51,6 +51,16 @@ export const HelpPage: React.FC = () => {
 
             <CollapsibleSection title="Functional Specifications">
                 <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+                    <h3>The {settings.terminology.history}: Your History</h3>
+                     <p>The {settings.terminology.history} page serves as a complete audit log for all significant events that happen in your game world. It's designed for transparency and to give you a clear history of all activities.</p>
+                    <h4>What's Logged?</h4>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li><strong>All Reward Transactions:</strong> Every time {settings.terminology.points} are gained or lost, it's recorded. This includes {settings.terminology.task} completions, item purchases, exchanges, and gifts.</li>
+                        <li><strong>Manual Adjustments:</strong> Any rewards, setbacks, or trophies granted by an {settings.terminology.admin} are logged with the reason provided, ensuring transparency.</li>
+                        <li><strong>Multi-Step Actions:</strong> Actions that require multiple steps, such as a {settings.terminology.task} that needs approval, will now appear as separate, distinct entries. You'll see one entry for "Submitted" and a second entry for when it was "Approved" or "Rejected", providing a clear timeline of events.</li>
+                        <li><strong>Social and System Events:</strong> Trades, gifts, announcements, and system-level events are also recorded.</li>
+                    </ul>
+
                     <h3>The Arcade & Minigames</h3>
                     <p>The "Arcade" is a special {settings.terminology.store} where users can spend "Game Tokens" to play minigames.</p>
                      <ul className="list-disc list-inside space-y-2">
@@ -67,6 +77,29 @@ export const HelpPage: React.FC = () => {
                     </ul>
                     <h4>Arcade Leaderboard</h4>
                     <p>The Arcade now features an "All-Time Arcade Legends" leaderboard. It shows the top 5 players based on their <strong>cumulative scores</strong> across <strong>all</strong> minigames. Additionally, each individual game card now proudly displays the name of the current high score holder for that specific game.</p>
+                    
+                    <h3>Manual Adjustments</h3>
+                    <p><strong>Purpose:</strong> To give an {settings.terminology.admin} a flexible way to manually grant {settings.terminology.points} or award {settings.terminology.awards} for actions that happen outside the formal {settings.terminology.task} system (e.g., a birthday gift, a reward for a good report card).</p>
+                    <p><strong>How it Works:</strong></p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li>From the `{settings.terminology.link_manage_users}` page, an {settings.terminology.admin} can click the "Adjust" button for any {settings.terminology.user}.</li>
+                        <li>This opens a unified dialog where the {settings.terminology.admin} can perform multiple actions at once.</li>
+                        <li><strong>Grant Rewards:</strong> Add any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li><strong>Apply Setbacks:</strong> Deduct any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
+                        <li><strong>Award Trophy:</strong> Select and award any manually-awarded {settings.terminology.award}.</li>
+                        <li><strong>Full Transparency:</strong> All manual adjustments are logged in the `{settings.terminology.history}` with the provided reason, ensuring everyone can see why the change was made.</li>
+                    </ul>
+
+                    <h3>Triumphs & Trials</h3>
+                    <p><strong>Purpose:</strong> To create reusable templates for positive (Triumphs) or negative (Trials) effects that can be applied to users. This is useful for rule enforcement or rewarding exceptional behavior.</p>
+                    <p><strong>How it Works:</strong></p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li><strong>Define a Template:</strong> In `{settings.terminology.link_triumphs_trials}`, an {settings.terminology.admin} creates a definition, such as a "Trial for Not Cleaning Room."</li>
+                        <li><strong>Set Effects:</strong> The {settings.terminology.admin} defines the consequences, which can include deducting rewards, closing a {settings.terminology.store} for a period of time, or automatically assigning a "Redemption {settings.terminology.task}".</li>
+                        <li><strong>Apply to User:</strong> From the same page, the {settings.terminology.admin} can apply this Triumph or Trial to any user, providing a specific reason for the action.</li>
+                        <li><strong>Logged in Chronicles:</strong> Just like manual adjustments, all applied Triumphs and Trials are recorded in the `{settings.terminology.history}`.</li>
+                    </ul>
+
                     <h3>Condition Sets</h3>
                     <p><strong>Purpose:</strong> To create reusable sets of rules that can control the availability of {settings.terminology.tasks} and {settings.terminology.stores}. This allows for dynamic content that unlocks based on a player's progress or other game state factors.</p>
                     <p><strong>How it Works:</strong></p>
@@ -121,19 +154,6 @@ export const HelpPage: React.FC = () => {
                         </li>
                         <li><strong>Final Quiz & Summary:</strong> After the lesson (and any optional timer set by the {settings.terminology.admin}), the user takes a final quiz. Upon passing, the "Complete {settings.terminology.task}" button is enabled, and the AI provides a concise, bulleted summary of the key takeaways to reinforce what was learned.</li>
                     </ol>
-                    <h3>Manual Adjustments</h3>
-                    <p><strong>Purpose:</strong> To give an {settings.terminology.admin} a flexible way to manually grant {settings.terminology.points} or award {settings.terminology.awards} for actions that happen outside the formal {settings.terminology.task} system.</p>
-                    <p><strong>How it Works:</strong></p>
-                    <ul className="list-disc list-inside space-y-2 mt-2">
-                        <li>From the `{settings.terminology.link_manage_users}` page, an {settings.terminology.admin} can click the "Adjust" button for any {settings.terminology.user}.</li>
-                        <li>This opens a unified dialog where the {settings.terminology.admin} can perform multiple actions at once.</li>
-                        <li><strong>Grant Rewards:</strong> Add any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
-                        <li><strong>Apply Setbacks:</strong> Deduct any amount of any {settings.terminology.currency} or {settings.terminology.xp} type.</li>
-                        <li><strong>Award Trophy:</strong> Select and award any manually-awarded {settings.terminology.award}.</li>
-                        <li>All actions are logged in the `{settings.terminology.history}` as a single, consolidated "Manual Adjustment" event for clarity.</li>
-                    </ul>
-                    <h4>New Birthday Trophies</h4>
-                    <p>A set of 16 new, manually-awarded trophies have been added to celebrate user birthdays for ages 5 through 20. These can be awarded using the Manual Adjustment dialog.</p>
                     <h3>Shared / Kiosk Mode (Device-Specific)</h3>
                     <p><strong>Purpose:</strong> To create a persistent, shared access point for the application on a specific device, like a family tablet. This mode provides a fast user-switching interface and can automatically log users out after a period of inactivity.</p>
                     <ul className="list-disc list-inside space-y-2 mt-2">

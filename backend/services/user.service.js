@@ -1,4 +1,5 @@
 
+
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
@@ -93,6 +94,7 @@ const adjust = async (adjustmentData) => {
         const userRepo = manager.getRepository(UserEntity);
         const trophyRepo = manager.getRepository(TrophyEntity);
         const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
+        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
 
         const user = await userRepo.findOneBy({ id: adjustmentData.userId });
         if (!user) return null;
@@ -137,6 +139,34 @@ const adjust = async (adjustmentData) => {
         const updatedUser = await userRepo.save(updateTimestamps(user));
         const newAdjustment = await adminAdjustmentRepository.create({ ...adjustmentData, adjustedAt: new Date().toISOString() });
         
+        // --- Chronicle Logging ---
+        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+        const rewardsText = (adjustmentData.rewards || []).map(r => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+        const setbacksText = (adjustmentData.setbacks || []).map(s => `-${s.amount}${getRewardInfo(s.rewardTypeId).icon}`).join(' ');
+        const trophy = adjustmentData.trophyId ? await trophyRepo.findOneBy({ id: adjustmentData.trophyId }) : null;
+        const trophyText = trophy ? ` 🏆 ${trophy.name}` : '';
+
+        const eventData = {
+            id: `chron-adj-${newAdjustment.id}`,
+            originalId: newAdjustment.id,
+            date: newAdjustment.adjustedAt,
+            type: 'AdminAdjustment',
+            title: `Manual Adjustment`,
+            note: adjustmentData.reason,
+            status: 'Executed',
+            icon: '⚖️',
+            color: '#a855f7', // purple-500
+            userId: user.id,
+            userName: user.gameName,
+            actorId: adjustmentData.adjusterId,
+            actorName: (await userRepo.findOneBy({ id: adjustmentData.adjusterId }))?.gameName || 'Admin',
+            guildId: adjustmentData.guildId || undefined,
+            rewardsText: `${rewardsText} ${setbacksText}${trophyText}`.trim() || undefined,
+        };
+
+        const newEvent = chronicleRepo.create(eventData);
+        await manager.save(updateTimestamps(newEvent, true));
+
         updateEmitter.emit('update');
         return { updatedUser, newAdjustment, newUserTrophy };
     });

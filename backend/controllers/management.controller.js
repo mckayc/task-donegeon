@@ -363,6 +363,41 @@ const browseMedia = async (req, res) => {
     }
 };
 
+const createMediaFolder = async (req, res) => {
+    const { path: relativePath, folderName } = req.body;
+    if (!folderName || typeof folderName !== 'string') {
+        return res.status(400).json({ error: 'Folder name is required.' });
+    }
+    
+    // Sanitize folder name to prevent ../ attacks and weird characters
+    const sanitizedFolderName = folderName.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+    if (!sanitizedFolderName) {
+        return res.status(400).json({ error: 'Invalid folder name provided.' });
+    }
+
+    // --- Security Check (same as in other media functions) ---
+    const resolvedMediaDir = path.resolve(MEDIA_DIR);
+    const requestedBasePath = path.join(resolvedMediaDir, relativePath);
+    const resolvedRequestedBasePath = path.resolve(requestedBasePath);
+
+    if (!resolvedRequestedBasePath.startsWith(resolvedMediaDir)) {
+        console.warn(`[Create Folder] SECURITY: Attempted directory traversal on base path: ${relativePath}`);
+        return res.status(400).json({ error: 'Invalid base path specified.' });
+    }
+    // --- End Security Check ---
+
+    const newFolderPath = path.join(resolvedRequestedBasePath, sanitizedFolderName);
+
+    try {
+        await fsp.mkdir(newFolderPath, { recursive: true });
+        console.log(`[Media Manager] Created folder: ${newFolderPath}`);
+        res.status(201).json({ message: 'Folder created successfully.' });
+    } catch (error) {
+        console.error(`[Media Manager] Error creating folder ${newFolderPath}:`, error);
+        res.status(500).json({ error: 'Failed to create folder on the server.' });
+    }
+};
+
 
 module.exports = {
     // Other exports for different routers
@@ -378,6 +413,7 @@ module.exports = {
     uploadMedia: asyncMiddleware(uploadMedia),
     uploadToMediaLibrary: asyncMiddleware(uploadToMediaLibrary), // New controller for media library
     browseMedia: asyncMiddleware(browseMedia),
+    createMediaFolder: asyncMiddleware(createMediaFolder),
     // Backup exports
     runScheduledBackups,
     runScheduledRotations,

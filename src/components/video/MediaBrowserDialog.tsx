@@ -3,7 +3,7 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import { Folder, Video, ArrowUp, UploadCloud } from 'lucide-react';
+import { Folder, Video, ArrowUp, UploadCloud, FolderPlus } from 'lucide-react';
 
 interface MediaBrowserDialogProps {
     onSelect: (path: string) => void;
@@ -20,6 +20,8 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
     const { addNotification } = useNotificationsDispatch();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
 
     const fetchMedia = useCallback(async () => {
         setIsLoading(true);
@@ -77,6 +79,35 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
         }
     };
 
+    const handleCreateFolder = async () => {
+        if (!newFolderName.trim()) {
+            addNotification({ type: 'error', message: 'Folder name cannot be empty.' });
+            return;
+        }
+
+        setIsUploading(true); // Reuse uploading state to disable buttons
+        try {
+            const response = await fetch('/api/media/create-folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: currentPath, folderName: newFolderName.trim() }),
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Failed to create folder.');
+            }
+            addNotification({ type: 'success', message: `Folder "${newFolderName.trim()}" created.` });
+            await fetchMedia(); // Refresh
+            setIsCreatingFolder(false);
+            setNewFolderName('');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+            addNotification({ type: 'error', message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
 
     const { filteredDirs, filteredFiles } = useMemo(() => {
         if (!debouncedSearchTerm) {
@@ -125,9 +156,27 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                         />
                         <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                             <UploadCloud className="w-5 h-5 mr-2" />
-                            {isUploading ? 'Uploading...' : 'Upload Video'}
+                            {isUploading ? 'Uploading...' : 'Upload'}
+                        </Button>
+                        <Button variant="secondary" onClick={() => setIsCreatingFolder(true)} disabled={isUploading || isCreatingFolder}>
+                            <FolderPlus className="w-5 h-5 mr-2" />
+                            New Folder
                         </Button>
                     </div>
+                     {isCreatingFolder && (
+                        <div className="mt-2 flex gap-2 p-2 bg-stone-900/50 rounded-md">
+                            <Input
+                                placeholder="New folder name..."
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); }}
+                                className="flex-grow !h-9"
+                                autoFocus
+                            />
+                            <Button size="sm" onClick={handleCreateFolder} disabled={isUploading}>Create</Button>
+                            <Button size="sm" variant="secondary" onClick={() => { setIsCreatingFolder(false); setNewFolderName(''); }} disabled={isUploading}>Cancel</Button>
+                        </div>
+                    )}
                     <div className="mt-2 text-sm text-stone-400 font-mono bg-stone-900/50 p-2 rounded-md truncate">
                         Current Path: {`/media${currentPath}`}
                     </div>

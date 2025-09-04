@@ -56,6 +56,19 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                 {set.conditions.map(condition => {
                                     const isMet = checkCondition(condition, user, dependencies, quest.id);
                                     const description = getConditionDescription(condition, dependencies);
+                                    
+                                    let completionNote: React.ReactNode = null;
+                                    if (isMet && condition.type === 'QUEST_COMPLETED') {
+                                        const requiredStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
+                                        const completion = dependencies.questCompletions.find(c => c.userId === user.id && c.questId === condition.questId && requiredStatuses.includes(c.status));
+                                        if (completion) {
+                                            completionNote = (
+                                                <span className="text-xs text-stone-500 ml-2">
+                                                    (Completed: {new Date(completion.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})
+                                                </span>
+                                            );
+                                        }
+                                    }
 
                                     let subList: React.ReactNode = null;
                                     if (condition.type === 'QUEST_GROUP_COMPLETED') {
@@ -65,11 +78,19 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                             subList = (
                                                 <ul className="pl-8 mt-1 space-y-1">
                                                     {questsInGroup.map(q => {
-                                                        const isQuestCompleted = dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved);
+                                                        const completion = dependencies.questCompletions.find(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved);
+                                                        const isQuestCompleted = !!completion;
                                                         return (
-                                                            <li key={q.id} className="flex items-center gap-2 text-xs">
-                                                                {isQuestCompleted ? <CheckCircleIcon className="w-4 h-4 text-green-500" /> : <XCircleIcon className="w-4 h-4 text-red-500" />}
-                                                                <span className={isQuestCompleted ? 'text-stone-500 line-through' : 'text-stone-300'}>{q.title}</span>
+                                                            <li key={q.id} className="flex items-center justify-between text-xs">
+                                                                <div className="flex items-center gap-2">
+                                                                    {isQuestCompleted ? <CheckCircleIcon className="w-4 h-4 text-green-500" /> : <XCircleIcon className="w-4 h-4 text-red-500" />}
+                                                                    <span className={isQuestCompleted ? 'text-stone-500 line-through' : 'text-stone-300'}>{q.title}</span>
+                                                                </div>
+                                                                {isQuestCompleted && (
+                                                                    <span className="text-stone-500">
+                                                                        {new Date(completion.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                )}
                                                             </li>
                                                         )
                                                     })}
@@ -88,6 +109,7 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                                 )}
                                                 <span className={isMet ? 'text-stone-400 line-through' : 'text-stone-200'}>
                                                     {description}
+                                                    {completionNote}
                                                 </span>
                                             </div>
                                             {subList}

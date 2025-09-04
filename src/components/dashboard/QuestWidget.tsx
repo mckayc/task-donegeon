@@ -90,15 +90,17 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
         return { borderClass: bClass, isDimmed: finalDimState };
     }, [quest, now, questCompletions, currentUser.id, isAvailable]);
 
-    const timeStatusText = useMemo(() => {
+    const { timeStatusText, absoluteDueDateString } = useMemo(() => {
         let deadline: Date | null = null;
         let incompleteDeadline: Date | null = null;
-    
+        let absoluteString: string | null = null;
+
         if (quest.type === QuestType.Duty) {
             if (quest.startTime) {
                 const [h, m] = quest.startTime.split(':').map(Number);
                 deadline = new Date(now);
                 deadline.setHours(h, m, 0, 0);
+                absoluteString = `Due daily at ${new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
             }
             if (quest.endTime) {
                 const [h, m] = quest.endTime.split(':').map(Number);
@@ -108,24 +110,31 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
         } else if (quest.type === QuestType.Venture || quest.type === QuestType.Journey) {
             if (quest.endDateTime) {
                 deadline = new Date(quest.endDateTime);
+                absoluteString = `Due: ${deadline.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
             }
         }
-    
+
         if (incompleteDeadline && now > incompleteDeadline) {
-            return 'Incomplete';
+            return { timeStatusText: 'Incomplete', absoluteDueDateString: null };
         }
-    
+
         if (deadline) {
             if (now > deadline) { // Past due
                 if (incompleteDeadline) {
-                    return `Incomplete in: ${formatTimeRemaining(incompleteDeadline, now)}`;
+                    return { 
+                        timeStatusText: `Incomplete in: ${formatTimeRemaining(incompleteDeadline, now)}`,
+                        absoluteDueDateString: `Incomplete at ${new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`
+                    };
                 }
-                return 'Past Due';
+                return { timeStatusText: 'Past Due', absoluteDueDateString: absoluteString };
             }
-            return `Due in: ${formatTimeRemaining(deadline, now)}`;
+            return { 
+                timeStatusText: `Due in: ${formatTimeRemaining(deadline, now)}`,
+                absoluteDueDateString: absoluteString 
+            };
         }
         
-        return 'No due date';
+        return { timeStatusText: 'No due date', absoluteDueDateString: null };
     }, [quest, now]);
 
     const progressText = useMemo(() => {
@@ -183,7 +192,12 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
                     <span className="truncate">{quest.title}</span>
                 </p>
             </div>
-            <p className="text-xs text-stone-400 md:col-span-1 md:text-center truncate">{progressText}</p>
+            <div className="md:col-span-1 md:text-center truncate" title={absoluteDueDateString || progressText}>
+                <p className="text-sm font-semibold text-stone-300">{progressText}</p>
+                {absoluteDueDateString && progressText !== 'Locked' && timeStatusText !== 'No due date' && progressText === timeStatusText && (
+                    <p className="text-xs text-stone-400">{absoluteDueDateString}</p>
+                )}
+            </div>
             {quest.rewards.length > 0 ? (
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold md:col-span-1 md:justify-end">
                     {quest.rewards.map(r => {

@@ -223,8 +223,11 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                     <span title={questGroup ? questGroup.name : 'Uncategorized'}>{questGroup ? questGroup.icon : '📂'}</span>
                     <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
                 </div>
-                <div title={absoluteDueDateString || 'No due date'}>
-                    <span className={`font-semibold ${timeStatusColor}`}>{timeStatusText}</span>
+                <div title={absoluteDueDateString || 'No due date'} className="text-right">
+                    <span className={`font-semibold text-sm ${timeStatusColor}`}>{timeStatusText}</span>
+                     {absoluteDueDateString && !['No due date', 'Locked', 'Incomplete'].includes(timeStatusText) && (
+                        <p className="text-xs text-stone-400">{absoluteDueDateString}</p>
+                    )}
                 </div>
             </div>
         </div>

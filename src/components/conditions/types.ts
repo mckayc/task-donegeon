@@ -1,4 +1,5 @@
 import { Role } from '../users/types';
+import { QuestCompletionStatus } from '../quests/types';
 
 export enum ConditionSetLogic {
     ALL = 'ALL', // All conditions must be met (AND)
@@ -49,11 +50,13 @@ export interface TimeOfDayCondition extends BaseCondition {
 export interface QuestCompletedCondition extends BaseCondition {
     type: ConditionType.QuestCompleted;
     questId: string;
+    requiredStatuses?: QuestCompletionStatus[];
 }
 
 export interface QuestGroupCompletedCondition extends BaseCondition {
     type: ConditionType.QuestGroupCompleted;
     questGroupId: string;
+    requiredStatuses?: QuestCompletionStatus[];
 }
 
 export interface TrophyAwardedCondition extends BaseCondition {

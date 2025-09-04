@@ -45,10 +45,11 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
             if (condition.questId === questIdToExclude) {
                 return true;
             }
+            const requiredQuestStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
             return dependencies.questCompletions.some(c =>
                 c.userId === user.id &&
                 c.questId === condition.questId &&
-                c.status === QuestCompletionStatus.Approved
+                requiredQuestStatuses.includes(c.status)
             );
         
         case ConditionType.QuestGroupCompleted: {
@@ -87,9 +88,10 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 return false;
             }
 
-            // Check if all *available* quests have been completed.
+            const requiredGroupStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
+            // Check if all *available* quests have been completed with one of the required statuses.
             return availableQuestsInGroup.every(q => 
-                dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && c.status === QuestCompletionStatus.Approved)
+                dependencies.questCompletions.some(c => c.userId === user.id && c.questId === q.id && requiredGroupStatuses.includes(c.status))
             );
         }
 

@@ -20,6 +20,13 @@ interface EditConditionSetDialogProps {
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+const STATUS_OPTIONS: { value: QuestCompletionStatus, label: string }[] = [
+    { value: QuestCompletionStatus.Approved, label: 'Completed (Approved)' },
+    { value: QuestCompletionStatus.Pending, label: 'Pending Approval' },
+    { value: QuestCompletionStatus.Rejected, label: 'Incomplete (Rejected)' },
+];
+
+
 const ConditionEditor: React.FC<{
     condition: Condition;
     onUpdate: (updatedCondition: Condition) => void;
@@ -175,15 +182,15 @@ const ConditionEditor: React.FC<{
                 <div className="mt-2 space-y-2">
                     <label className="block text-sm font-medium text-stone-300">Required Status(es)</label>
                     <div className="flex gap-2 flex-wrap">
-                        {Object.values(QuestCompletionStatus).map(status => (
-                            <label key={status} className="flex items-center gap-1.5 text-xs px-2 py-1 bg-stone-700 rounded-md cursor-pointer">
+                        {STATUS_OPTIONS.map(opt => (
+                            <label key={opt.value} className="flex items-center gap-1.5 text-xs px-2 py-1 bg-stone-700 rounded-md cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={condition.requiredStatuses?.includes(status)}
-                                    onChange={() => handleStatusToggle(status)}
+                                    checked={condition.requiredStatuses?.includes(opt.value)}
+                                    onChange={() => handleStatusToggle(opt.value)}
                                     className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
                                 />
-                                {status}
+                                {opt.label}
                             </label>
                         ))}
                     </div>

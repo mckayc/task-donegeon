@@ -27,15 +27,15 @@ const NumberInput: React.FC<NumberInputProps> = ({
   disabled,
 }) => {
   const [inputValue, setInputValue] = useState(String(value));
-  const valueRef = useRef(value);
 
+  // Effect to sync the input value when the `value` prop changes from the parent
+  // This is important for resets or external updates.
   useEffect(() => {
-    valueRef.current = value;
-    const numInputValue = parseFloat(inputValue);
-    if (numInputValue !== value && !(inputValue.endsWith('.') && numInputValue === value)) {
-       setInputValue(String(value));
+    // Only update if the numeric value is different, to avoid interrupting typing
+    if (Number(inputValue) !== value) {
+      setInputValue(String(value));
     }
-  }, [value, inputValue]);
+  }, [value]);
 
   const intervalRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -48,12 +48,14 @@ const NumberInput: React.FC<NumberInputProps> = ({
   }, []);
 
   const handleStep = useCallback((direction: 'up' | 'down') => {
-    const currentValue = valueRef.current;
+    // FIX: The onChange prop is a simple callback that expects a number, not a function like useState's setter.
+    // This calculates the new value based on the current `value` prop and calls `onChange` correctly.
     const precision = String(step).split('.')[1]?.length || 0;
-    const newValue = parseFloat((currentValue + (direction === 'up' ? step : -step)).toFixed(precision));
+    const newValue = parseFloat((value + (direction === 'up' ? step : -step)).toFixed(precision));
     const clampedValue = Math.max(min, Math.min(max, newValue));
+    setInputValue(String(clampedValue)); // Keep local state in sync for immediate feedback
     onChange(clampedValue);
-  }, [min, max, onChange, step]);
+  }, [min, max, onChange, step, value]);
 
   const startStepping = useCallback((direction: 'up' | 'down') => {
     stopStepping();
@@ -72,25 +74,28 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const stringValue = e.target.value;
     setInputValue(stringValue);
-    
-    if (stringValue === '' || stringValue === '-') {
-      onChange(min > 0 ? min : 0);
-      return; 
-    }
 
-    const numValue = parseFloat(stringValue);
-    if (!isNaN(numValue)) {
-      onChange(numValue);
+    // Only allow numeric-like characters that are valid for parsing or are partial
+    if (stringValue === '' || stringValue === '-' || /^-?\d*\.?\d*$/.test(stringValue)) {
+        const numValue = parseFloat(stringValue);
+        // Propagate change to parent if it's a valid number, or 0 if it's empty
+        if (!isNaN(numValue)) {
+            onChange(numValue);
+        } else if (stringValue === '') {
+            onChange(0); // This is the key fix to allow clearing.
+        }
     }
   };
 
   const handleBlur = () => {
     let numValue = parseFloat(inputValue);
     if (isNaN(numValue)) {
-      numValue = min > 0 ? min : 0;
+      numValue = 0; // Treat blank as zero instead of reverting. This is the other key fix.
     }
     const clamped = Math.max(min, Math.min(max, numValue));
+    // Finalize the value in the parent state
     onChange(clamped);
+    // And ensure the input visually reflects the final clamped value
     setInputValue(String(clamped));
   };
   

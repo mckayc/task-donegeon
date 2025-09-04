@@ -40,7 +40,7 @@ const RewardItemRow: React.FC<{
                 onChange={(newAmount) => onChange(originalIndex, 'amount', newAmount)}
                 min={0}
                 step={1}
-                className="w-24 flex-shrink-0"
+                className="w-28 flex-shrink-0"
             />
             <div className="flex-1 text-left min-w-[150px]">
                 {anchorEquivalent && <span className="text-xs text-amber-300">(~{anchorEquivalent})</span>}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
@@ -8,7 +7,7 @@ import { QuestType } from '../../types';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useAuthState } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
-import { useQuestsState } from '../../context/QuestsContext';
+import { useQuestsState } from '../../context/QuestsState';
 import { useEconomyState } from '../../context/EconomyContext';
 
 interface QuestIdea {
@@ -61,7 +60,7 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
             }
         }
 
-        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}.${userContext} The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}". For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}).
+        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}.${userContext} The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}". For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}). IMPORTANT: The suggested reward 'amount' must be a small integer, almost always between 1 and 10.
         
         Here is a list of existing Quest Groups: "${groupNames}". For each idea, suggest the most appropriate group from this list. If none of the existing groups seem appropriate, suggest a suitable new group name and indicate it's a new group by setting the isNewGroup flag to true.`;
 
@@ -140,16 +139,22 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
                 <div className="p-8 border-b border-stone-700/60">
-                    <h2 className="text-3xl font-medieval text-accent flex items-center gap-3">
-                        <SparklesIcon className="w-8 h-8" />
-                        Generate {settings.terminology.task} Ideas
-                    </h2>
-                    <p className="text-stone-400 mt-2">Describe a theme, and the AI will generate some ideas for you.</p>
+                    <h2 className="text-3xl font-medieval text-accent flex items-center gap-3"><SparklesIcon className="w-8 h-8" /> Generate Quest Ideas</h2>
                 </div>
-
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
-                    <div className="flex flex-col gap-4">
-                         <Input
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                            as="select"
+                            label="Quest Type"
+                            value={questType}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setQuestType(e.target.value as QuestType)}
+                            disabled={isLoading}
+                        >
+                            <option value={QuestType.Venture}>{settings.terminology.singleTask}</option>
+                            <option value={QuestType.Duty}>{settings.terminology.recurringTask}</option>
+                            <option value={QuestType.Journey}>{settings.terminology.journey}</option>
+                        </Input>
+                        <Input
                             as="select"
                             label="Generate for User (Optional)"
                             value={selectedUserId}
@@ -161,65 +166,37 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                                 <option key={user.id} value={user.id}>{user.gameName}</option>
                             ))}
                         </Input>
+                    </div>
+                    <div className="flex gap-4">
                         <Input
-                            label="Quest Theme"
-                            placeholder="e.g., 'Weekly kitchen chores for kids'"
+                            label="Quest Theme or Topic"
+                            placeholder="e.g., 'cleaning the kitchen', 'learning javascript'"
                             value={prompt}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
                             onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                             className="flex-grow"
                             disabled={isLoading}
                         />
-                         <div className="flex items-center justify-between p-3 bg-stone-900/40 rounded-lg">
-                            <span className="font-semibold text-stone-300">Quest Type:</span>
-                             <div className="flex items-center gap-4">
-                                <label className="flex items-center cursor-pointer">
-                                    <input type="radio" name="questType" value={QuestType.Venture} checked={questType === QuestType.Venture} onChange={() => setQuestType(QuestType.Venture)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
-                                    <span className="ml-2">{settings.terminology.singleTask} (One-time)</span>
-                                </label>
-                                 <label className="flex items-center cursor-pointer">
-                                    <input type="radio" name="questType" value={QuestType.Duty} checked={questType === QuestType.Duty} onChange={() => setQuestType(QuestType.Duty)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
-                                    <span className="ml-2">{settings.terminology.recurringTask} (Recurring)</span>
-                                </label>
-                            </div>
-                         </div>
                         <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="self-end">
                             {isLoading ? 'Generating...' : 'Generate'}
                         </Button>
                     </div>
-
                     {error && <p className="text-red-400 text-center">{error}</p>}
-                    
-                    {isLoading && (
-                         <div className="text-center py-10">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div>
-                            <p className="mt-4 text-stone-300">The AI is thinking...</p>
-                        </div>
-                    )}
-                    
+                    {isLoading && <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div><p className="mt-4 text-stone-300">The AI is thinking...</p></div>}
                     {generatedQuests.length > 0 && (
                         <div className="space-y-3 pt-4">
                             {generatedQuests.map((quest, index) => (
-                                <div key={index} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-start gap-4">
-                                    <div className="flex-grow">
-                                        <h4 className="font-bold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</h4>
-                                        <p className="text-sm text-stone-400 mt-1">{quest.description}</p>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            {quest.groupName && <span className={`text-xs px-2 py-0.5 rounded-full ${quest.isNewGroup ? 'bg-green-900/50 text-green-300' : 'bg-purple-900/50 text-purple-300'}`}>{quest.isNewGroup ? `New Group: ${quest.groupName}` : quest.groupName}</span>}
-                                            {quest.tags?.map(tag => <span key={tag} className="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded-full">{tag}</span>)}
-                                            {quest.suggestedRewards?.map(r => <span key={r.rewardTypeName} className="text-xs bg-yellow-900/50 text-yellow-300 px-2 py-0.5 rounded-full">+{r.amount} {r.rewardTypeName}</span>)}
-                                        </div>
+                                <div key={index} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-center gap-4">
+                                    <div>
+                                        <p className="font-bold text-stone-200">{quest.icon} {quest.title}</p>
+                                        <p className="text-sm text-stone-400">{quest.description}</p>
                                     </div>
-                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea({...quest, type: questType})}>
-                                        Use Idea
-                                    </Button>
+                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea({ ...quest, type: questType })}>Use Idea</Button>
                                 </div>
                             ))}
                         </div>
                     )}
-
                 </div>
-
                 <div className="p-6 border-t border-stone-700/60 text-right">
                     <Button type="button" variant="secondary" onClick={onClose}>Close</Button>
                 </div>

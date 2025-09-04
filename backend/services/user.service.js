@@ -95,6 +95,7 @@ const adjust = async (adjustmentData) => {
         const trophyRepo = manager.getRepository(TrophyEntity);
         const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const userTrophyRepo = manager.getRepository(UserTrophyEntity);
 
         const user = await userRepo.findOneBy({ id: adjustmentData.userId });
         if (!user) return null;
@@ -116,23 +117,27 @@ const adjust = async (adjustmentData) => {
             const rewardDef = rewardTypes.find(rt => rt.id === setback.rewardTypeId);
              if(rewardDef) {
                 const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                target[setback.rewardTypeId] = Math.max(0, (target[setback.rewardTypeId] || 0) - setback.amount);
+                target[reward.rewardTypeId] = Math.max(0, (target[reward.rewardTypeId] || 0) - setback.amount);
             }
         });
 
-        if (isGuildScope) user.guildBalances[adjustmentData.guildId] = balances;
+        if (isGuildScope) {
+            if (!user.guildBalances) user.guildBalances = {};
+            user.guildBalances[adjustmentData.guildId] = balances;
+        }
 
         let newUserTrophy = null;
         if (adjustmentData.trophyId) {
             const trophy = await trophyRepo.findOneBy({ id: adjustmentData.trophyId });
             if (trophy) {
-                newUserTrophy = {
+                const newTrophyData = {
+                    id: `usertrophy-${Date.now()}-${Math.random()}`,
                     userId: user.id,
                     trophyId: trophy.id,
                     awardedAt: new Date().toISOString(),
-                    guildId: adjustmentData.guildId
+                    guildId: adjustmentData.guildId || undefined
                 };
-                await trophyRepository.createUserTrophy(newUserTrophy);
+                newUserTrophy = await userTrophyRepo.save(updateTimestamps(userTrophyRepo.create(newTrophyData), true));
             }
         }
 
@@ -145,6 +150,8 @@ const adjust = async (adjustmentData) => {
         const setbacksText = (adjustmentData.setbacks || []).map(s => `-${s.amount}${getRewardInfo(s.rewardTypeId).icon}`).join(' ');
         const trophy = adjustmentData.trophyId ? await trophyRepo.findOneBy({ id: adjustmentData.trophyId }) : null;
         const trophyText = trophy ? ` 🏆 ${trophy.name}` : '';
+
+        const actor = await manager.findOneBy(UserEntity, { id: adjustmentData.adjusterId });
 
         const eventData = {
             id: `chron-adj-${newAdjustment.id}`,
@@ -159,7 +166,7 @@ const adjust = async (adjustmentData) => {
             userId: user.id,
             userName: user.gameName,
             actorId: adjustmentData.adjusterId,
-            actorName: (await userRepo.findOneBy({ id: adjustmentData.adjusterId }))?.gameName || 'Admin',
+            actorName: actor?.gameName || 'Admin',
             guildId: adjustmentData.guildId || undefined,
             rewardsText: `${rewardsText} ${setbacksText}${trophyText}`.trim() || undefined,
         };
@@ -171,6 +178,7 @@ const adjust = async (adjustmentData) => {
         return { updatedUser, newAdjustment, newUserTrophy };
     });
 };
+
 
 const getPendingItems = async (userId) => {
     const questCompletions = await dataSource.getRepository(QuestCompletionEntity).find({

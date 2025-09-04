@@ -51,14 +51,38 @@ export const HelpPage: React.FC = () => {
 
             <CollapsibleSection title="Functional Specifications">
                 <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
-                    <h3>The {settings.terminology.history}: Your History</h3>
-                     <p>The {settings.terminology.history} page serves as a complete audit log for all significant events that happen in your game world. It's designed for transparency and to give you a clear history of all activities.</p>
+                    <h3>UI & System Improvements</h3>
+                    <p>
+                        We're always working to make the app smoother and more intuitive to use. Here are some recent quality-of-life updates based on user feedback:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 mt-2">
+                        <li>
+                            <strong>Number Input Fields:</strong> The number input components used for rewards and other quantities have been improved. They are now wider to accommodate four-digit numbers (like 9999) and have been fixed to allow for easier editing on mobile devices. You can now fully clear the input field; an empty or zero value will be treated as removing the associated reward upon saving.
+                        </li>
+                        <li>
+                            <strong>AI Suggestion Engine Tuning:</strong> The AI has been tuned to suggest smaller, more reasonable reward amounts for generated quests, aligning better with typical gameplay balance. Rewards will now more consistently be in the low single digits.
+                        </li>
+                    </ul>
+
+                    <h3>The {settings.terminology.history}: A Complete Audit Trail</h3>
+                    <p>
+                        The {settings.terminology.history} page is designed for complete transparency, providing a full audit log of every important action.
+                        This ensures that all players and administrators have a clear understanding of game progression and resource management.
+                    </p>
                     <h4>What's Logged?</h4>
                     <ul className="list-disc list-inside space-y-2 mt-2">
-                        <li><strong>All Reward Transactions:</strong> Every time {settings.terminology.points} are gained or lost, it's recorded. This includes {settings.terminology.task} completions, item purchases, exchanges, and gifts.</li>
-                        <li><strong>Manual Adjustments:</strong> Any rewards, setbacks, or trophies granted by an {settings.terminology.admin} are logged with the reason provided, ensuring transparency.</li>
-                        <li><strong>Multi-Step Actions:</strong> Actions that require multiple steps, such as a {settings.terminology.task} that needs approval, will now appear as separate, distinct entries. You'll see one entry for "Submitted" and a second entry for when it was "Approved" or "Rejected", providing a clear timeline of events.</li>
-                        <li><strong>Social and System Events:</strong> Trades, gifts, announcements, and system-level events are also recorded.</li>
+                        <li>
+                            <strong>All Reward Transactions:</strong> Every time {settings.terminology.points} are earned or spent, a record is created. This includes rewards from {settings.terminology.tasks}, items purchased from a {settings.terminology.store}, and any gifts or trades between players.
+                        </li>
+                        <li>
+                            <strong>Manual Adjustments by Admins:</strong> When an {settings.terminology.admin} manually grants rewards, applies a setback, or awards a trophy, a detailed entry is made in the {settings.terminology.history}. This log includes the reason for the adjustment, ensuring all administrative actions are transparent.
+                        </li>
+                        <li>
+                            <strong>Discrete Approval Steps:</strong> Actions that require multiple steps, like a {settings.terminology.task} that needs approval, will now generate separate, distinct entries for each stage. For example, you will see one entry when a {settings.terminology.task} is "Submitted" and a second, separate entry when it is "Approved" or "Rejected" by an admin. This provides a clear and unconsolidated timeline of events.
+                        </li>
+                        <li>
+                            <strong>Social & System Events:</strong> All other significant events, such as trades, announcements, and system-level actions (like Triumphs & Trials being applied), are also recorded.
+                        </li>
                     </ul>
 
                     <h3>The Arcade & Minigames</h3>

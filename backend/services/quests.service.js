@@ -233,13 +233,10 @@ const complete = async (completionData) => {
 
 const approveQuestCompletion = async (id, approverId, note) => {
     try {
-        console.log(`[APPROVE_QUEST] Starting approval for completionId: ${id}, approverId: ${approverId}`);
         return await dataSource.transaction(async manager => {
             const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
             
-            console.log('[APPROVE_QUEST] Fetched completion object:', JSON.stringify(completion, null, 2));
             if (!completion || completion.status !== 'Pending') {
-                console.error(`[APPROVE_QUEST] Completion not found or not pending for ID: ${id}`);
                 return null;
             }
 
@@ -260,8 +257,9 @@ const approveQuestCompletion = async (id, approverId, note) => {
             const updatedCompletion = await manager.save(updateTimestamps(completion));
             
             const { user, quest } = completion;
-            
-            console.log('[APPROVE_QUEST] User:', user?.gameName, 'Quest:', quest?.title);
+            let updatedUser = null;
+            const newUserTrophies = [];
+            const newNotifications = [];
 
             if (user && quest) {
                 // Auto-release claim if applicable
@@ -272,8 +270,6 @@ const approveQuestCompletion = async (id, approverId, note) => {
 
                 const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
                 const isGuildScope = !!completion.guildId;
-
-                console.log(`[APPROVE_QUEST] User balances BEFORE applying rewards:`, JSON.stringify({ personal: user.personalPurse, guild: user.guildBalances }, null, 2));
 
                 const balances = (() => {
                     if (isGuildScope) {
@@ -299,18 +295,11 @@ const approveQuestCompletion = async (id, approverId, note) => {
                     });
                 };
 
-                const manuallyAwardedTrophies = [];
-
                 if (quest.type === 'Journey') {
-                    console.log('[APPROVE_QUEST] Handling Journey checkpoint.');
-                    console.log('[APPROVE_QUEST] Completion checkpointId:', completion.checkpointId);
-                    console.log('[APPROVE_QUEST] Quest checkpoints available:', JSON.stringify(quest.checkpoints, null, 2));
-
                     if (completion.checkpointId && Array.isArray(quest.checkpoints)) {
                         const checkpoint = quest.checkpoints.find(cp => cp && typeof cp === 'object' && cp.id === completion.checkpointId);
                         
                         if (checkpoint) {
-                            console.log('[APPROVE_QUEST] Found matching checkpoint:', JSON.stringify(checkpoint, null, 2));
                             applyRewards(checkpoint.rewards);
                             if (checkpoint.trophyId) {
                                 const trophyExists = await manager.countBy(TrophyEntity, { id: checkpoint.trophyId });
@@ -319,84 +308,62 @@ const approveQuestCompletion = async (id, approverId, note) => {
                                         id: `usertrophy-${Date.now()}-${Math.random()}`, userId: user.id, trophyId: checkpoint.trophyId,
                                         awardedAt: new Date().toISOString(), guildId: quest.guildId || undefined
                                     });
-                                    manuallyAwardedTrophies.push(await manager.save(updateTimestamps(newTrophy, true)));
+                                    newUserTrophies.push(await manager.save(updateTimestamps(newTrophy, true)));
                                 }
                             }
                         } else {
-                            console.error(`[APPROVE_QUEST] CRITICAL: Checkpoint with ID "${completion.checkpointId}" NOT FOUND in quest "${quest.title}".`);
+                            console.error(`CRITICAL: Checkpoint with ID "${completion.checkpointId}" NOT FOUND in quest "${quest.title}".`);
                             throw new Error(`Checkpoint not found for ID: ${completion.checkpointId}`);
                         }
-                    } else {
-                         console.warn(`[APPROVE_QUEST] Journey quest approval is missing checkpointId or quest.checkpoints is invalid.`);
                     }
 
                     const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' }});
                     const totalCheckpoints = Array.isArray(quest.checkpoints) ? quest.checkpoints.length : 0;
                     
-                    // The current completion is now approved, so its included in the count.
                     if (totalCheckpoints > 0 && approvedCount === totalCheckpoints) {
-                        console.log(`[APPROVE_QUEST] Final checkpoint approved for Journey "${quest.title}". Applying main quest rewards.`);
                         applyRewards(quest.rewards);
                     }
                 } else {
                     applyRewards(quest.rewards);
                 }
-
+                
+                updatedUser = await manager.save(updateTimestamps(user));
+                const autoAwards = await checkAndAwardTrophies(manager, user.id, completion.guildId);
+                newUserTrophies.push(...autoAwards.newUserTrophies);
+                newNotifications.push(...autoAwards.newNotifications);
+                
+                // Chronicle Logging moved to the end for consistency
                 const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
                 let rewardsText = '';
                 if (quest.rewards.length > 0) {
                     rewardsText = quest.rewards.map(r => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
                 }
                 const approver = await manager.findOneBy(UserEntity, { id: approverId });
-                const chronicleRepo = manager.getRepository(ChronicleEventEntity);
                 
                 const eventData = {
                     id: `chron-approve-${completion.id}`,
-                    originalId: completion.id,
-                    date: completion.actedAt,
-                    type: 'QuestCompletion',
-                    title: `Approved "${quest.title}"`,
-                    note: completion.adminNote || undefined,
-                    status: 'Approved',
-                    color: '#4ade80',
-                    userId: user.id,
-                    userName: user.gameName,
-                    actorId: approverId,
-                    actorName: approver?.gameName || 'System',
-                    questType: quest.type,
-                    guildId: quest.guildId,
-                    rewardsText: rewardsText || undefined,
-                    iconType: quest.iconType,
-                    icon: quest.icon,
-                    imageUrl: quest.imageUrl
+                    originalId: completion.id, date: completion.actedAt, type: 'QuestCompletion',
+                    title: `Approved "${quest.title}"`, note: completion.adminNote || undefined,
+                    status: 'Approved', color: '#4ade80', userId: user.id, userName: user.gameName,
+                    actorId: approverId, actorName: approver?.gameName || 'System',
+                    questType: quest.type, guildId: quest.guildId,
+                    rewardsText: rewardsText || undefined, iconType: quest.iconType, icon: quest.icon, imageUrl: quest.imageUrl
                 };
                 
-                const newEvent = chronicleRepo.create(eventData);
-                await manager.save(updateTimestamps(newEvent, true));
-
-                console.log(`[APPROVE_QUEST] User balances AFTER applying rewards:`, JSON.stringify({ personal: user.personalPurse, guild: user.guildBalances }, null, 2));
-
-                const updatedUser = await manager.save(updateTimestamps(user));
-                const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
+                await manager.save(ChronicleEventEntity, updateTimestamps(manager.create(ChronicleEventEntity, eventData), true));
                 
-                newUserTrophies.push(...manuallyAwardedTrophies);
-
                 const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: ['user', 'quest'] });
 
-                console.log(`[APPROVE_QUEST] Successfully completed approval for completionId: ${id}`);
                 updateEmitter.emit('update');
                 return { updatedUser, updatedCompletion: finalCompletion, newUserTrophies, newNotifications };
             } else {
-                console.error(`[APPROVE_QUEST] User or Quest was missing for completion ID: ${id}`);
                 updateEmitter.emit('update');
                 return { updatedCompletion };
             }
         });
     } catch (error) {
-        console.error(`[APPROVE_QUEST] FATAL ERROR during approval for completionId: ${id}`);
-        console.error('[APPROVE_QUEST] Error Message:', error.message);
-        console.error('[APPROVE_QUEST] Error Stack:', error.stack);
-        throw error; // Re-throw to ensure transaction fails and server returns 500
+        console.error(`[APPROVE_QUEST] FATAL ERROR during approval for completionId: ${id}`, error);
+        throw error;
     }
 };
 
@@ -412,31 +379,17 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
         
         const updatedCompletion = await manager.save(updateTimestamps(completion));
 
+        // Chronicle Logging moved to the end for consistency
         const rejecter = await manager.findOneBy(UserEntity, { id: rejecterId });
-        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
-        
         const eventData = {
-            id: `chron-reject-${completion.id}`,
-            originalId: completion.id,
-            date: completion.actedAt,
-            title: `Rejected "${completion.quest.title}"`,
-            note: completion.adminNote,
-            status: 'Rejected',
-            color: '#f87171',
-            userId: completion.user.id,
-            userName: completion.user.gameName,
-            actorId: rejecterId,
-            actorName: rejecter?.gameName || 'System',
-            rewardsText: '',
-            iconType: completion.quest.iconType,
-            icon: completion.quest.icon,
-            imageUrl: completion.quest.imageUrl,
-            questType: completion.quest.type,
-            guildId: completion.quest.guildId
+            id: `chron-reject-${completion.id}`, originalId: completion.id, date: completion.actedAt,
+            type: 'QuestCompletion', title: `Rejected "${completion.quest.title}"`, note: completion.adminNote,
+            status: 'Rejected', color: '#f87171', userId: completion.user.id, userName: completion.user.gameName,
+            actorId: rejecterId, actorName: rejecter?.gameName || 'System',
+            rewardsText: '', iconType: completion.quest.iconType, icon: completion.quest.icon,
+            imageUrl: completion.quest.imageUrl, questType: completion.quest.type, guildId: completion.quest.guildId
         };
-
-        const newEvent = chronicleRepo.create(eventData);
-        await manager.save(updateTimestamps(newEvent, true));
+        await manager.save(ChronicleEventEntity, updateTimestamps(manager.create(ChronicleEventEntity, eventData), true));
 
         updateEmitter.emit('update');
         return { updatedCompletion };

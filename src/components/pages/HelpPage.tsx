@@ -60,7 +60,7 @@ export const HelpPage: React.FC = () => {
                             <strong>Number Input Fields:</strong> The number input components used for rewards and other quantities have been improved. They are now wider to accommodate four-digit numbers (like 9999) and have been fixed to allow for easier editing on mobile devices. You can now fully clear the input field; an empty or zero value will be treated as removing the associated reward upon saving.
                         </li>
                         <li>
-                            <strong>AI Suggestion Engine Tuning:</strong> The AI has been tuned to suggest smaller, more reasonable reward amounts for generated quests, aligning better with typical gameplay balance. Rewards will now more consistently be in the low single digits.
+                            <strong>AI Suggestion Engine Tuning:</strong> The AI has been further tuned to suggest smaller, more reasonable reward amounts for generated quests. The system now explicitly instructs the AI to keep rewards for a single quest in the 1-5 point range, aligning better with typical gameplay balance.
                         </li>
                     </ul>
 

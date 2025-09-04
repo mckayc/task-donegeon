@@ -153,12 +153,14 @@ const SuggestionEnginePage: React.FC = () => {
         const groupNames = questGroups.map(g => g.name).join(', ');
         
         let specificInstructions = '';
+        const rewardRule = `CRITICAL RULE FOR REWARDS: The 'amount' for any single reward type MUST be a very small integer, between 1 and 5. Most quests should only have one or two reward types. The total value of all rewards for a single quest should almost never exceed 5.`;
+
         if (assetType === 'Duties' || assetType === 'Ventures') {
-            specificInstructions = `For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward for completing the entire quest, based on the task's likely effort (using reward names from this list: ${rewardNames}).
+            specificInstructions = `For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward for completing the entire quest, based on the task's likely effort (using reward names from this list: ${rewardNames}). ${rewardRule}
             
             Here is a list of existing Quest Groups: "${groupNames}". For each idea, suggest the most appropriate group from this list. If none of the existing groups seem appropriate, suggest a suitable new group name and indicate it's a new group by setting the isNewGroup flag to true.`;
         } else if (assetType === 'Journeys') {
-            specificInstructions = `This is a multi-step quest. Create 2-5 sequential "checkpoints". Each checkpoint must have its own description and can optionally have its own suggested rewards from the list: ${rewardNames}. Also provide a final reward for completing the entire Journey.
+            specificInstructions = `This is a multi-step quest. Create 2-5 sequential "checkpoints". Each checkpoint must have its own description and can optionally have its own suggested rewards from the list: ${rewardNames}. Also provide a final reward for completing the entire Journey. ${rewardRule}
             
             Here is a list of existing Quest Groups: "${groupNames}". Suggest the most appropriate group. If none fit, suggest a new group name and set the isNewGroup flag to true.`;
         }

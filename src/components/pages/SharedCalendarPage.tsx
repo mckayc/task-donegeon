@@ -1,10 +1,8 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
-import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, formatTimeRemaining } from '../../utils/quests';
-import { getQuestLockStatus, QuestLockStatus, ConditionDependencies } from '../../utils/conditions';
+import { isQuestAvailableForUser, toYMD, questSorter, formatTimeRemaining } from '../../utils/quests';
+import { getQuestLockStatus, QuestLockStatus, ConditionDependencies, isQuestScheduledForDay, isQuestVisibleToUserInMode } from '../../utils/conditions';
 import Card from '../user-interface/Card';
 import Avatar from '../user-interface/Avatar';
 import Button from '../user-interface/Button';
@@ -13,7 +11,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useSystemState } from '../../context/SystemContext';
+import { useSystemState } from '../../context/SystemState';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';

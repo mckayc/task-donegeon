@@ -170,10 +170,10 @@ export const useDashboardData = () => {
             let userTotalXp = 0;
             if (currentGuildId) {
                 // FIX: Changed `amount: number` to `amount: any` to satisfy TypeScript's strictness which infers `unknown`.
-                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount: any) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount: unknown) => sum + Number(amount), 0);
             } else {
                 // FIX: Changed `amount: number` to `amount: any` to satisfy TypeScript's strictness which infers `unknown`.
-                userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount: any) => sum + Number(amount), 0);
+                userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount: unknown) => sum + Number(amount), 0);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);

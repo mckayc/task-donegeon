@@ -3,7 +3,6 @@ import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-// FIX: Imported `ShrinkIcon` to resolve a missing component reference.
 import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, Maximize, Minimize, ChevronsUpDown, ShrinkIcon } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 
@@ -75,57 +74,54 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     }, [quest.epubUrl]);
     
+     // Effect to create and set up the rendition once
     useEffect(() => {
-        if (book && viewerRef.current) {
-            const newRendition = book.renderTo(viewerRef.current, {
-                width: "100%", height: "100%", flow: "paginated", spread: "auto"
-            });
-            setRendition(newRendition);
+        if (!book || !viewerRef.current) return;
 
-            const applyTheme = (renditionToTheme: any) => {
-                 renditionToTheme.themes.register("custom", {
-                    "body": { "color": theme === 'light' ? "#1c1917" : "#f3f4f6", "font-size": `${fontSize}%` },
-                });
-                renditionToTheme.themes.select("custom");
-            };
+        const renditionInstance = book.renderTo(viewerRef.current, {
+            width: "100%", height: "100%", flow: "paginated", spread: "auto"
+        });
 
-            newRendition.on("displayed", () => {
-                setIsLoading(false);
-                applyTheme(newRendition);
-            });
+        renditionInstance.on("displayed", () => {
+            setIsLoading(false);
+        });
+
+        book.ready.then(() => {
+            return book.locations.generate(1000);
+        }).then(() => {
+            const initialProgress = liveQuest.readingProgress?.[currentUser?.id || ''];
+            const initialBookmarks = initialProgress?.bookmarks || [];
+            setBookmarks(initialBookmarks.map(cfi => ({
+                cfi,
+                progress: book.locations ? Math.round(book.locations.percentageFromCfi(cfi) * 100) : 0
+            })));
             
-            book.ready.then(() => {
-                return book.locations.generate(1000); // Generate locations once
-            }).then(() => {
-                // Now that locations are generated, we can load bookmarks with correct percentages
-                const userBookmarksCfis = userProgress?.bookmarks || [];
-                if (book.locations) {
-                    const loadedBookmarks = userBookmarksCfis.map((cfi: string) => ({
-                        cfi,
-                        progress: Math.round(book.locations.percentageFromCfi(cfi) * 100)
-                    }));
-                    setBookmarks(loadedBookmarks);
+            renditionInstance.on("relocated", (locationData: any) => {
+                setCurrentCfi(locationData.start.cfi);
+                if (book.locations && locationData.start.percentage !== undefined) {
+                    setProgress(Math.round(locationData.start.percentage * 100));
                 }
-
-                // And register the relocated handler
-                newRendition.on("relocated", (locationData: any) => {
-                    const cfi = locationData.start.cfi;
-                    setCurrentCfi(cfi);
-                    if (book.locations && locationData.start.percentage !== undefined) {
-                        const percent = locationData.start.percentage;
-                        setProgress(Math.round(percent * 100));
-                    }
-                });
-
-                // And display the book at the last known location
-                newRendition.display(userProgress?.locationCfi || undefined);
             });
-            
-            return () => {
-                if(newRendition) newRendition.destroy();
-            };
+
+            renditionInstance.display(initialProgress?.locationCfi);
+        });
+
+        setRendition(renditionInstance);
+
+        return () => {
+            if (renditionInstance) renditionInstance.destroy();
+        };
+    }, [book, currentUser?.id]); // Only recreate when book or user changes
+
+    // Separate effect to handle theme and font size changes dynamically
+    useEffect(() => {
+        if (rendition) {
+            rendition.themes.register("custom", {
+                "body": { "color": theme === 'light' ? "#1c1917" : "#f3f4f6", "font-size": `${fontSize}%` },
+            });
+            rendition.themes.select("custom");
         }
-    }, [book, theme, fontSize, userProgress]);
+    }, [rendition, theme, fontSize]);
 
     // --- Time & Progress Syncing ---
     const syncProgress = useCallback(async (secondsToSync: number, cfiToSync: string | null, bookmarksToSync?: string[]) => {

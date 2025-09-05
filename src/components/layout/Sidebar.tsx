@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role, QuestCompletionStatus, PurchaseRequestStatus, Page, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
@@ -26,7 +27,7 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
                         key={item.id}
                         href="#"
                         // FIX: Add a type guard to prevent passing "Chat" to setActivePage which expects a Page type.
-                        onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { setActivePage(item.id); } }}
+                        onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { setActivePage(item.id as Page); } }}
                         className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700"
                         data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
                      >
@@ -60,7 +61,7 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, onNavigate: (page
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           // FIX: Add a type guard to prevent passing "Chat" to onNavigate which expects a Page type.
-          onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { onNavigate(item.id); } }}
+          onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { onNavigate(item.id as Page); } }}
           data-log-id={`sidebar-link-${item.id.toLowerCase().replace(' ', '-')}`}
           className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'pl-12' : 'px-4'} ${ isCollapsed ? 'justify-center' : ''} ${
             isActive

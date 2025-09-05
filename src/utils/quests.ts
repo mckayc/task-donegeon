@@ -1,26 +1,7 @@
-
-
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../types';
-import { checkAllConditionSetsMet, ConditionDependencies, checkGlobalConditionsMet } from './conditions';
-
-/**
- * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
- */
-export const toYMD = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
-
-/**
- * Consistently parses a 'YYYY-MM-DD' string into a local Date object.
- * This avoids timezone issues where `new Date('YYYY-MM-DD')` might be interpreted as UTC.
- */
-export const fromYMD = (ymd: string): Date => {
-  const [year, month, day] = ymd.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
+// FIX: Import functions for internal use and re-export them (and others) for external use to resolve module errors.
+import { isQuestScheduledForDay, toYMD } from './conditions';
+export { isQuestScheduledForDay, isQuestVisibleToUserInMode, toYMD, fromYMD } from './conditions';
 
 /**
  * Checks if a vacation event is active for a given scope on a specific date.
@@ -35,72 +16,6 @@ export const isVacationActiveOnDate = (date: Date, scheduledEvents: ScheduledEve
         // Date match
         return dateKey >= event.startDate && dateKey <= event.endDate;
     });
-};
-
-
-/**
- * Checks if a quest is scheduled to appear on a specific day, based on its type and recurrence rules.
- * This does not check for completion status, only if it's supposed to be on the calendar for that day.
- */
-export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
-    if (quest.type === QuestType.Journey || quest.type === QuestType.Venture) {
-        // A Venture/Journey is "scheduled" for its due date range.
-        if (!quest.startDateTime) return false;
-        const startDate = toYMD(new Date(quest.startDateTime));
-        const endDate = quest.endDateTime ? toYMD(new Date(quest.endDateTime)) : startDate;
-        const checkDate = toYMD(day);
-        return checkDate >= startDate && checkDate <= endDate;
-    }
-    // It's a Duty
-    if (!quest.rrule) return false;
-
-    const rruleParts = quest.rrule.split(';');
-    const freq = rruleParts.find(p => p.startsWith('FREQ='))?.split('=')[1];
-
-    switch (freq) {
-        case 'DAILY': return true;
-        case 'WEEKLY': {
-            const byday = rruleParts.find(p => p.startsWith('BYDAY='))?.split('=')[1];
-            if (!byday) return true; 
-            const weekdays = byday.split(',').map(d => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(d));
-            return weekdays.includes(day.getDay());
-        }
-        case 'MONTHLY': {
-            const bymonthday = rruleParts.find(p => p.startsWith('BYMONTHDAY='))?.split('=')[1];
-            if (!bymonthday) return false;
-            const daysOfMonth = bymonthday.split(',').map(Number);
-            return daysOfMonth.includes(day.getDate());
-        }
-        default: return false;
-    }
-}
-
-/**
- * Checks if a quest should be visible to a user in the current app mode.
- * Verifies active status, guild scope, and user assignment, strictly separating personal and guild contexts.
- */
-export const isQuestVisibleToUserInMode = (
-  quest: Quest,
-  userId: string,
-  appMode: AppMode
-): boolean => {
-  if (!quest.isActive) return false;
-
-  const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-
-  // Scope check first
-  if (quest.guildId) { // Guild quest
-    if (quest.guildId !== currentGuildId) return false;
-  } else { // Personal quest
-    if (appMode.mode !== 'personal') return false;
-  }
-  
-  // Assignment check - An empty list means it's assigned to no one.
-  if (quest.assignedUserIds.length === 0) {
-    return false;
-  }
-  
-  return quest.assignedUserIds.includes(userId);
 };
 
 
@@ -171,12 +86,16 @@ export const isQuestAvailableForUser = (
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {
     const approvedOrPending = questUserCompletions.filter(c => c.status === QuestCompletionStatus.Approved || c.status === QuestCompletionStatus.Pending);
+    // Prevent completing duties for a future date
+    if (toYMD(today) > toYMD(new Date())) {
+        return false;
+    }
       
     if (!onVacation && quest.endTime) {
       if (isQuestScheduledForDay(quest, today)) {
           const [hours, minutes] = quest.endTime.split(':').map(Number);
-          const deadlineForDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
-          if (today > deadlineForDay) {
+          const deadlineToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+          if (today > deadlineToday) {
               return false;
           }
       }

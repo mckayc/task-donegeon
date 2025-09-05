@@ -9,6 +9,7 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { checkCondition, getConditionDescription, ConditionDependencies } from '../../utils/conditions';
+import { useUIState } from '../../context/UIContext';
 
 interface ConditionStatusDialogProps {
   market: Market;
@@ -22,9 +23,10 @@ const ConditionStatusDialog: React.FC<ConditionStatusDialogProps> = ({ market, u
     const { ranks, userTrophies, trophies } = useProgressionState();
     const { gameAssets } = useEconomyState();
     const { guilds } = useCommunityState();
+    const { appMode } = useUIState();
 
     const dependencies: ConditionDependencies = {
-        ranks, questCompletions, quests, questGroups, userTrophies, trophies, gameAssets, guilds
+        ranks, questCompletions, quests, questGroups, userTrophies, trophies, gameAssets, guilds, appMode
     };
 
     const conditionSets = settings.conditionSets.filter(cs => market.status.type === 'conditional' && market.status.conditionSetIds.includes(cs.id));

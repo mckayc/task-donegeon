@@ -9,7 +9,8 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { checkCondition, getConditionDescription, ConditionDependencies } from '../../utils/conditions';
-import { toYMD } from '../../utils/quests';
+import { toYMD, isQuestVisibleToUserInMode } from '../../utils/quests';
+import { useUIState } from '../../context/UIContext';
 
 interface QuestConditionStatusDialogProps {
   quest: Quest;
@@ -23,10 +24,11 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
     const { ranks, userTrophies, trophies } = useProgressionState();
     const { gameAssets } = useEconomyState();
     const { guilds } = useCommunityState();
+    const { appMode } = useUIState();
     const todayYMD = toYMD(new Date());
 
     const dependencies: ConditionDependencies = {
-        ranks, questCompletions, quests, questGroups, userTrophies, trophies, gameAssets, guilds
+        ranks, questCompletions, quests, questGroups, userTrophies, trophies, gameAssets, guilds, appMode
     };
     
     const conditionSets = useMemo(() => {
@@ -62,7 +64,11 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                     if (condition.type === 'QUEST_GROUP_COMPLETED') {
                                         const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
                                         if (group) {
-                                            const questsInGroup = dependencies.quests.filter(q => q.groupIds?.includes(group.id));
+                                            const questsInGroup = dependencies.quests.filter(q => 
+                                                q.groupIds?.includes(group.id) &&
+                                                // FIX: Pass user.id instead of the full user object to isQuestVisibleToUserInMode.
+                                                isQuestVisibleToUserInMode(q, user.id, appMode)
+                                            );
                                             subList = (
                                                 <ul className="pl-8 mt-1 space-y-1">
                                                     {questsInGroup.map(q => {
@@ -73,12 +79,11 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                                                 if (c.userId !== user.id || c.questId !== q.id || c.status !== QuestCompletionStatus.Approved) {
                                                                     return false;
                                                                 }
-                                                                // When displaying status in the dialog, we always check against today's date
-                                                                // to show current progress towards unlocking the asset.
+                                                                // For a recurring quest (Duty), it must be completed today.
                                                                 if (q.type === QuestType.Duty) {
                                                                     return toYMD(new Date(c.completedAt)) === todayYMD;
                                                                 }
-                                                                // For Venture/Journey, any completion is fine
+                                                                // For a one-time quest (Venture/Journey), any completion is sufficient.
                                                                 return true;
                                                             });
 

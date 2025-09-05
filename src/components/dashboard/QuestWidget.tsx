@@ -28,9 +28,10 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
 
     if (!currentUser) return null;
 
+    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
     const conditionDependencies = useMemo(() => ({
-        ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, allConditionSets: settings.conditionSets
-    }), [ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, settings.conditionSets]);
+        ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, allConditionSets: settings.conditionSets, appMode
+    }), [ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, settings.conditionSets, appMode]);
 
     const lockStatus = useMemo(() => getQuestLockStatus(quest, currentUser, conditionDependencies), [quest, currentUser, conditionDependencies]);
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);

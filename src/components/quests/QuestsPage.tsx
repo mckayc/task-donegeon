@@ -222,8 +222,11 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                     <span title={questGroup ? questGroup.name : 'Uncategorized'}>{questGroup ? questGroup.icon : '📂'}</span>
                     <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
                 </div>
-                <div title={absoluteDueDateString || 'No due date'}>
-                    <span className={`font-semibold ${timeStatusColor}`}>{timeStatusText}</span>
+                <div title={absoluteDueDateString || 'No due date'} className="text-right">
+                    <span className={`font-semibold text-sm ${timeStatusColor}`}>{timeStatusText}</span>
+                     {absoluteDueDateString && !['No due date', 'Locked', 'Incomplete'].includes(timeStatusText) && (
+                        <p className="text-xs text-stone-400">{absoluteDueDateString}</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -263,13 +266,15 @@ const QuestsPage: React.FC = () => {
     const dutyQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Duty), [visibleQuests]);
     const ventureQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey), [visibleQuests]);
 
+    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
     const conditionDependencies = useMemo(() => ({
-        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions
-    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions]);
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, appMode, allConditionSets: systemState.settings.conditionSets
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, appMode, systemState.settings.conditionSets]);
 
     const handleQuestSelect = (quest: Quest) => {
         if (!currentUser) return;
-        const lockStatus = getQuestLockStatus(quest, currentUser, { ...conditionDependencies, allConditionSets: settings.conditionSets });
+        // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
+        const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
         if (lockStatus.isLocked) {
             setViewingConditionsForQuest(quest);
         } else {
@@ -303,7 +308,8 @@ const QuestsPage: React.FC = () => {
                     {dutyQuests.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {dutyQuests.map(quest => {
-                                const lockStatus = getQuestLockStatus(quest, currentUser, { ...conditionDependencies, allConditionSets: settings.conditionSets });
+                                // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
+                                const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
                                 return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
                             })}
                         </div>
@@ -316,7 +322,8 @@ const QuestsPage: React.FC = () => {
                      {ventureQuests.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {ventureQuests.map(quest => {
-                                const lockStatus = getQuestLockStatus(quest, currentUser, { ...conditionDependencies, allConditionSets: settings.conditionSets });
+                                // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
+                                const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
                                 return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
                             })}
                         </div>

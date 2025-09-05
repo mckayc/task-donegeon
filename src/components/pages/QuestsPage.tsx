@@ -268,8 +268,8 @@ const QuestsPage: React.FC = () => {
     const ventureQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey), [visibleQuests]);
 
     const conditionDependencies = useMemo(() => ({
-        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions
-    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions]);
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, appMode, allConditionSets: systemState.settings.conditionSets
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, appMode, systemState.settings.conditionSets]);
 
     const handleQuestSelect = (quest: Quest) => {
         if (!currentUser) return;

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
@@ -19,6 +18,8 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
 import { ConditionDependencies } from '../../utils/conditions';
+// FIX: Import useUIState to get appMode for condition checking.
+import { useUIState } from '../../context/UIContext';
 
 const SharedCalendarPage: React.FC = () => {
     const systemState = useSystemState();
@@ -32,6 +33,7 @@ const SharedCalendarPage: React.FC = () => {
     const progressionState = useProgressionState();
     const economyState = useEconomyState();
     const communityState = useCommunityState();
+    const { appMode } = useUIState();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
@@ -143,9 +145,10 @@ const SharedCalendarPage: React.FC = () => {
         setSelectedQuestDetails(null);
     };
     
+    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
     const conditionDependencies = useMemo(() => ({
-        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets
-    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets]);
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets, appMode
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets, appMode]);
 
     const handleDetailView = (quest: Quest, user: User) => {
         const lockStatus = getQuestLockStatus(quest, user, conditionDependencies);

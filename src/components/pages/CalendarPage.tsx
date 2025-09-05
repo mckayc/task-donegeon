@@ -97,9 +97,10 @@ const CalendarPage: React.FC = () => {
         }
     }, [quests, viewingQuest]);
     
+    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
     const conditionDependencies = useMemo(() => ({
-        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets
-    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets]);
+        ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets, appMode
+    }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets, appMode]);
 
     const renderEventContent = (eventInfo: EventContentArg) => {
         const { event } = eventInfo;
@@ -311,6 +312,7 @@ const CalendarPage: React.FC = () => {
         if (props.type === 'scheduled' && props.appEvent) {
             setViewingEvent(props.appEvent);
         } else if (props.type === 'quest' && props.quest) {
+            // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
             const lockStatus = getQuestLockStatus(props.quest, currentUser, conditionDependencies);
             if (lockStatus.isLocked) {
                 setViewingConditionsForQuest(props.quest);

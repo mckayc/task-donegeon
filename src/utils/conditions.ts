@@ -1,6 +1,6 @@
 
-import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role, QuestType } from '../types';
-import { toYMD, isQuestScheduledForDay } from './quests';
+import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role, QuestType, AppMode } from '../types';
+import { toYMD, isQuestScheduledForDay, isQuestVisibleToUserInMode } from './quests';
 
 // The dependencies needed to evaluate conditions.
 export type ConditionDependencies = {
@@ -12,6 +12,7 @@ export type ConditionDependencies = {
     trophies: Trophy[];
     gameAssets: GameAsset[];
     guilds: Guild[];
+    appMode: AppMode;
 };
 
 export const checkCondition = (condition: Condition, user: User, dependencies: ConditionDependencies, questIdToExclude?: string): boolean => {
@@ -70,10 +71,13 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 q.id !== questIdToExclude
             );
 
+            // FIX: Pass user.id instead of the full user object to isQuestVisibleToUserInMode.
+            const visibleQuestsInGroup = questsInGroup.filter(q =>
+                isQuestVisibleToUserInMode(q, user.id, dependencies.appMode)
+            );
+
             // Filter out quests that are definitively unavailable due to time to prevent deadlocks.
-            const availableQuestsInGroup = questsInGroup.filter(q => {
-                if (!q.isActive) return false;
-                
+            const availableQuestsInGroup = visibleQuestsInGroup.filter(q => {
                 if (q.endDateTime && now > new Date(q.endDateTime)) {
                     return false; 
                 }
@@ -87,10 +91,6 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 }
                 return true;
             });
-
-            if (questsInGroup.length > 0 && availableQuestsInGroup.length === 0) {
-                return false;
-            }
 
             const requiredGroupStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
             

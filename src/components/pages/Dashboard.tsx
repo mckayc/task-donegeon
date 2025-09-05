@@ -92,8 +92,9 @@ const Dashboard: React.FC = () => {
 
     const conditionDependencies = useMemo(() => ({
         ranks, trophies, userTrophies, quests, questGroups, questCompletions, 
-        gameAssets: economyState.gameAssets, guilds: communityState.guilds, allConditionSets: systemState.settings.conditionSets
-    }), [ranks, trophies, userTrophies, quests, questGroups, questCompletions, economyState.gameAssets, communityState.guilds, systemState.settings.conditionSets]);
+        gameAssets: economyState.gameAssets, guilds: communityState.guilds, allConditionSets: systemState.settings.conditionSets,
+        appMode
+    }), [ranks, trophies, userTrophies, quests, questGroups, questCompletions, economyState.gameAssets, communityState.guilds, systemState.settings.conditionSets, appMode]);
 
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;

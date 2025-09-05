@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.48 - Fixed Market Broken ePub",
-  "version": "0.4.47",
-  "description": "Updates the in-app help documentation to reflect the latest features, roadmap, and version history.",
+  "name": "Task Donegeon 2.0 - 0.4.48 - Document ePub Issues",
+  "version": "0.4.48",
+  "description": "Updates the in-app help documentation to describe known issues with the EPUB reader and triggers an app update.",
   "requestFramePermissions": [
     "camera"
   ],

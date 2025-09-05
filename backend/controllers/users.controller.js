@@ -21,11 +21,12 @@ const cloneUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-    const result = await userService.update(req.params.id, req.body);
-    if (!result.success) {
-        return res.status(result.status).json({ error: result.message });
+    const updatedUser = await userService.update(req.params.id, req.body);
+    if (!updatedUser) {
+        // This can be a 404 Not Found or a 409 Conflict. The service now returns null for either.
+        return res.status(409).json({ error: 'Update failed. User not found or username/email may be taken.' });
     }
-    res.json(result.user);
+    res.json(updatedUser);
 };
 
 const deleteUsers = async (req, res) => {

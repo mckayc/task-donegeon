@@ -1,5 +1,4 @@
 
-
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
@@ -42,20 +41,17 @@ const create = async (userData, actorId) => {
     return savedUser;
 };
 
-// FIX: Completed the `clone` function implementation in `user.service.js` to correctly clone a user with unique credentials and reset personal data, preventing crashes when the clone feature is used.
 const clone = async (id) => {
     const userToClone = await userRepository.findById(id);
     if (!userToClone) return null;
 
     const { id: oldId, username, email, gameName, profilePictureUrl, ...restOfUser } = userToClone;
     
-    // Create unique credentials for the clone
     const timestamp = Date.now().toString().slice(-5);
     const newUsername = `${username}_clone_${timestamp}`;
     const newEmail = `clone_${timestamp}_${email}`;
     const newGameName = `${gameName} (Clone)`;
 
-    // Prepare new user data, resetting personal progress and ownership
     const newUserData = {
         ...restOfUser,
         username: newUsername,
@@ -65,15 +61,30 @@ const clone = async (id) => {
         personalExperience: {},
         guildBalances: {},
         ownedAssetIds: [],
-        ownedThemes: ['emerald', 'rose', 'sky'], // Default themes
+        ownedThemes: ['emerald', 'rose', 'sky'],
         hasBeenOnboarded: false,
     };
     
-    // Use the existing 'create' service function to handle user creation and default guild assignment
     return create(newUserData, 'system');
 };
 
 const update = async (id, userData) => {
+    // Add conflict check for username/email
+    if (userData.username) {
+        const existing = await userRepository.findByUsername(userData.username);
+        if (existing && existing.id !== id) {
+            console.warn(`[Conflict] Update for user ${id} failed. Username '${userData.username}' is taken.`);
+            return null; // Return null on conflict
+        }
+    }
+    if (userData.email) {
+        const existing = await userRepository.findByEmail(userData.email);
+        if (existing && existing.id !== id) {
+            console.warn(`[Conflict] Update for user ${id} failed. Email '${userData.email}' is taken.`);
+            return null; // Return null on conflict
+        }
+    }
+
     const result = await userRepository.update(id, userData);
     if (result) {
         updateEmitter.emit('update');

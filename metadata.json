@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.48 - Document ePub Issues",
-  "version": "0.4.48",
-  "description": "Updates the in-app help documentation to describe known issues with the EPUB reader and triggers an app update.",
+  "name": "Task Donegeon 2.0 - 0.4.49 - Fix ePub Reader",
+  "version": "0.4.49",
+  "description": "Fixes multiple critical bugs in the EPUB reader, including the blank screen issue, frozen timer, and non-functional progress bar. Also corrects the immersive mode icon and updates the help guide to reflect the fixes.",
   "requestFramePermissions": [
     "camera"
   ],

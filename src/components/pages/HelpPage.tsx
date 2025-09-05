@@ -77,14 +77,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
             <li>
-                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests. Users can open a full-featured, redesigned reader to read books directly within the app. The new interface features permanent top and bottom bars for easy access to controls, and a new immersive mode to hide all UI for distraction-free reading. The bottom bar includes a scrubbable progress slider for quick navigation. Page turns are now accompanied by a subtle blur animation. As before, progress (location, bookmarks, time read) is saved to the database, syncing across all your devices.
-                <ul className="list-disc list-inside pl-6 mt-2 text-amber-300/80">
-                    <li className="font-semibold">Known Issues (Under Investigation):</li>
-                    <li>After loading, the reader often displays a blank grey screen instead of the book content.</li>
-                    <li>The icon for immersive mode is incorrect; it should be chevrons, not another fullscreen icon.</li>
-                    <li>The "Session Time" tracker in the footer is currently not functioning and remains at zero.</li>
-                    <li>The horizontal progress slider in the footer is not functional for navigation.</li>
-                </ul>
+                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and time read, is saved and synced across your devices.
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>

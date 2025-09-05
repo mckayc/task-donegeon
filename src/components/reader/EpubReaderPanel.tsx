@@ -3,7 +3,8 @@ import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, Maximize, Minimize } from '../user-interface/Icons';
+// FIX: Import Minimize and Maximize icons.
+import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, ChevronsUpDown, Minimize, Maximize } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
@@ -30,6 +31,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const [book, setBook] = useState<any>(null);
     const [rendition, setRendition] = useState<any>(null);
+    const [locations, setLocations] = useState<any>(null);
     const [currentCfi, setCurrentCfi] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -69,86 +71,83 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     // --- Book Initialization and Setup ---
     useEffect(() => {
         if (!quest.epubUrl) return;
-
-        const newBook = ePub(quest.epubUrl);
-        setBook(newBook);
-        
-        newBook.loaded.metadata.then((meta: any) => {
+        const epubBook = ePub(quest.epubUrl);
+        setBook(epubBook);
+        epubBook.loaded.metadata.then((meta: any) => {
             setBookTitle(meta.title);
         });
-
     }, [quest.epubUrl]);
+
+    useEffect(() => {
+        if (!book) return;
+        let isMounted = true;
+        book.ready.then(() => {
+            return book.locations.generate(1650); // Standard value for better accuracy
+        }).then((generatedLocations: any) => {
+            if (isMounted) {
+                setLocations(generatedLocations);
+            }
+        });
+        return () => { isMounted = false; };
+    }, [book]);
     
     useEffect(() => {
-        if (!book || !viewerRef.current) return;
+        if (!book || !locations || !viewerRef.current) return;
 
         const renditionInstance = book.renderTo(viewerRef.current, {
             width: "100%", height: "100%", flow: "paginated", spread: "auto"
         });
 
+        const initialCfi = userProgress?.locationCfi;
+        renditionInstance.display(initialCfi);
+        
         renditionInstance.on("displayed", () => setIsLoading(false));
-
-        book.ready.then(() => {
-            return book.locations.generate(1000);
-        }).then(() => {
-            const initialProgress = userProgress;
-            const cfiStrings: string[] = initialProgress?.bookmarks || [];
-            
-            const bookmarkPromises = cfiStrings.map(cfi => 
-                book.getRange(cfi).then((range: any) => ({
-                    cfi,
-                    progress: book.locations ? Math.round(book.locations.percentageFromCfi(cfi) * 100) : 0,
-                    text: range.toString().trim().substring(0, 40) + '...'
-                }))
-            );
-            
-            Promise.all(bookmarkPromises).then(resolvedBookmarks => setBookmarks(resolvedBookmarks));
-            
-            renditionInstance.on("relocated", (locationData: any) => {
-                setCurrentCfi(locationData.start.cfi);
-                if (book.locations && locationData.start.percentage !== undefined) {
-                    setProgress(Math.round(locationData.start.percentage * 100));
-                }
-            });
-
-            renditionInstance.display(initialProgress?.locationCfi);
+        
+        renditionInstance.on("relocated", (locationData: any) => {
+            setCurrentCfi(locationData.start.cfi);
+            setProgress(Math.round(locationData.start.percentage * 100));
         });
+        
+        const cfiStrings: string[] = userProgress?.bookmarks || [];
+        const bookmarkPromises = cfiStrings.map(cfi => 
+            book.getRange(cfi).then((range: any) => ({
+                cfi,
+                progress: Math.round(book.locations.percentageFromCfi(cfi) * 100),
+                text: range.toString().trim().substring(0, 40) + '...'
+            }))
+        );
+        Promise.all(bookmarkPromises).then(setBookmarks);
 
         setRendition(renditionInstance);
 
         return () => {
-            if (renditionInstance) renditionInstance.destroy();
+            if(renditionInstance) renditionInstance.destroy();
         };
-    }, [book, userProgress]);
+    }, [book, locations]);
 
     // Effect for dynamic style changes (Theme, Font Size)
     useEffect(() => {
         if (rendition) {
             rendition.themes.fontSize(`${fontSize}%`);
             rendition.themes.override("color", theme === 'light' ? "#1c1917" : "#f3f4f6");
-            // After changing styles that affect layout, we must resize.
-            // A small timeout allows the browser to apply styles before epub.js recalculates.
-            setTimeout(() => rendition.resize(), 10);
+            setTimeout(() => rendition.resize(), 50);
         }
     }, [rendition, theme, fontSize]);
     
-    // Effect for container size changes (Fullscreen, Immersive Mode)
+    // Effect for container size changes (Immersive Mode)
     useEffect(() => {
         if (rendition) {
-            setTimeout(() => rendition.resize(), 50);
+            const debouncedResize = setTimeout(() => rendition.resize(), 100);
+            return () => clearTimeout(debouncedResize);
         }
     }, [isImmersive, isFullScreen, rendition]);
 
     // --- Time & Progress Syncing ---
-    
-    // This effect resets the session timer whenever the total time from the database changes.
-    // This is the key to preventing double-counting time after a sync.
     useEffect(() => {
         sessionStartTimeRef.current = Date.now();
         setSessionSeconds(0);
     }, [userProgress?.totalSeconds]);
 
-    // This effect runs the UI timer. It restarts if the base time from the DB changes.
     useEffect(() => {
         const timer = setInterval(() => {
             setSessionSeconds(Math.round((Date.now() - sessionStartTimeRef.current) / 1000));
@@ -156,28 +155,24 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         return () => clearInterval(timer);
     }, [userProgress?.totalSeconds]);
 
-    // Syncing logic, decoupled from UI updates.
     const syncProgress = useCallback(async (forceSync = false, bookmarksToSync?: string[]) => {
         if (!currentUser) return;
         const elapsedSeconds = Math.round((Date.now() - sessionStartTimeRef.current) / 1000);
         
-        const dataToSync: any = {
-            locationCfi: currentCfi || undefined,
-        };
+        const dataToSync: any = { locationCfi: currentCfi || undefined };
         if (elapsedSeconds > 0) dataToSync.secondsToAdd = elapsedSeconds;
         if (bookmarksToSync) dataToSync.bookmarks = bookmarksToSync;
         
-        if (Object.keys(dataToSync).length > 1 || forceSync) { // Always sync location on force
+        if (Object.keys(dataToSync).length > 1 || forceSync) {
             await updateReadingProgress(quest.id, currentUser.id, dataToSync);
         }
     }, [currentUser, quest.id, updateReadingProgress, currentCfi]);
 
-    // Effect for periodic and final sync.
     useEffect(() => {
-        const intervalId = setInterval(() => syncProgress(false), 30000); // Sync every 30s
+        const intervalId = setInterval(() => syncProgress(false), 30000);
         return () => {
             clearInterval(intervalId);
-            syncProgress(true); // Final sync on unmount
+            syncProgress(true);
         };
     }, [syncProgress]);
     
@@ -246,7 +241,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     };
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (book && rendition) {
+        if (book?.locations && rendition) {
             const percentage = parseInt(e.target.value) / 100;
             const cfi = book.locations.cfiFromPercentage(percentage);
             rendition.display(cfi);
@@ -285,7 +280,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             <div className="w-full h-full bg-stone-800 shadow-2xl relative flex flex-col">
                 {isImmersive && (
                      <Button variant="ghost" size="icon" onClick={() => setIsImmersive(false)} title="Show Controls" className="absolute top-2 right-2 z-30 !bg-stone-800/50 hover:!bg-stone-700/80 text-white">
-                        <Minimize className="w-5 h-5"/>
+                        <ChevronsUpDown className="w-5 h-5 rotate-180"/>
                     </Button>
                 )}
                 <header className="epub-reader-header p-3 flex justify-between items-center z-20 text-white flex-shrink-0">
@@ -299,7 +294,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => { setShowBookmarks(p => !p); setShowSettings(false); }} title="View Bookmarks"><BookmarkSolidIcon className="w-5 h-5"/></Button>
                         <Button variant="ghost" size="icon" onClick={() => { setShowSettings(p => !p); setShowBookmarks(false); }} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setIsImmersive(true)} title="Immersive Mode"><Maximize className="w-5 h-5"/></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setIsImmersive(p => !p)} title="Toggle Immersive Mode"><ChevronsUpDown className="w-5 h-5"/></Button>
                         <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
                         <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
                     </div>
@@ -364,7 +359,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
                      </div>
                      <div className="flex-grow flex items-center gap-3 px-4">
-                        <input type="range" min="0" max="100" value={progress} onChange={handleSliderChange} className="epub-progress-slider w-full" />
+                        <input type="range" min="0" max="100" value={progress} onChange={handleSliderChange} className="epub-progress-slider w-full" disabled={!locations} />
                         <span className="font-semibold w-12 text-right">{progress}%</span>
                      </div>
                      <div className="w-1/4" />

@@ -3,8 +3,7 @@ import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-// FIX: Import Minimize and Maximize icons.
-import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, ChevronsUpDown, Minimize, Maximize } from '../user-interface/Icons';
+import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, Minimize, Maximize } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
@@ -46,7 +45,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         return savedSize ? parseInt(savedSize, 10) : 100;
     });
     const [isFullScreen, setIsFullScreen] = useState(false);
-    const [isImmersive, setIsImmersive] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showBookmarks, setShowBookmarks] = useState(false);
     
@@ -135,13 +133,13 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         }
     }, [rendition, theme, fontSize]);
     
-    // Effect for container size changes (Immersive Mode)
+    // Effect for container size changes (Fullscreen Mode)
     useEffect(() => {
         if (rendition) {
             const debouncedResize = setTimeout(() => rendition.resize(), 100);
             return () => clearTimeout(debouncedResize);
         }
-    }, [isImmersive, isFullScreen, rendition]);
+    }, [isFullScreen, rendition]);
 
     // --- Time & Progress Syncing ---
     useEffect(() => {
@@ -292,28 +290,21 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     return (
         <div ref={containerRef} className="fixed inset-0 bg-black/80 z-[80] flex items-center justify-center epub-container">
             <div className="w-full h-full bg-stone-800 shadow-2xl relative flex flex-col">
-                {isImmersive ? (
-                     <Button variant="ghost" size="icon" onClick={() => setIsImmersive(false)} title="Show Controls" className="absolute top-2 right-2 z-30 !bg-stone-800/50 hover:!bg-stone-700/80 text-white">
-                        <ChevronsUpDown className="w-5 h-5 rotate-180"/>
-                    </Button>
-                ) : (
-                    <header className="epub-reader-header p-3 flex justify-between items-center z-20 text-white flex-shrink-0">
-                        <div className="overflow-hidden">
-                            <h3 className="font-bold text-lg truncate">{quest.title}</h3>
-                            <p className="text-sm text-stone-300 truncate">{bookTitle}</p>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                            <Button variant="ghost" size="icon" onClick={addBookmark} title={isBookmarked ? "Already Bookmarked" : "Add Bookmark"} disabled={isBookmarked}>
-                                {isBookmarked ? <BookmarkSolidIcon className="w-5 h-5 text-emerald-400" /> : <BookmarkPlusIcon className="w-5 h-5" />}
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => { setShowBookmarks(p => !p); setShowSettings(false); }} title="View Bookmarks"><BookmarkSolidIcon className="w-5 h-5"/></Button>
-                            <Button variant="ghost" size="icon" onClick={() => { setShowSettings(p => !p); setShowBookmarks(false); }} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
-                            <Button variant="ghost" size="icon" onClick={() => setIsImmersive(p => !p)} title="Toggle Immersive Mode"><ChevronsUpDown className="w-5 h-5"/></Button>
-                            <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
-                            <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
-                        </div>
-                    </header>
-                )}
+                <header className="epub-reader-header p-3 flex justify-between items-center z-20 text-white flex-shrink-0">
+                    <div className="overflow-hidden">
+                        <h3 className="font-bold text-lg truncate">{quest.title}</h3>
+                        <p className="text-sm text-stone-300 truncate">{bookTitle}</p>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button variant="ghost" size="icon" onClick={addBookmark} title={isBookmarked ? "Already Bookmarked" : "Add Bookmark"} disabled={isBookmarked}>
+                            {isBookmarked ? <BookmarkSolidIcon className="w-5 h-5 text-emerald-400" /> : <BookmarkPlusIcon className="w-5 h-5" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setShowBookmarks(p => !p); setShowSettings(false); }} title="View Bookmarks"><BookmarkSolidIcon className="w-5 h-5"/></Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setShowSettings(p => !p); setShowBookmarks(false); }} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
+                        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
+                        <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
+                    </div>
+                </header>
 
                 <div id="viewer-wrapper" className="flex-grow relative" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                     {isLoading && (
@@ -368,19 +359,17 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     </div>
                 )}
 
-                {isImmersive ? null : (
-                    <footer className="epub-reader-footer p-3 flex justify-between items-center z-20 text-white text-sm flex-shrink-0">
-                         <div className="flex gap-4 w-1/4">
-                            <div title="Session Time"><span className="font-semibold">Session:</span> {formatTime(sessionSeconds)}</div>
-                            <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
-                         </div>
-                         <div className="flex-grow flex items-center gap-3 px-4">
-                            <input type="range" min="0" max="100" value={progress} onChange={handleSliderChange} className="epub-progress-slider w-full" disabled={!locations} />
-                            <span className="font-semibold w-12 text-right">{progress}%</span>
-                         </div>
-                         <div className="w-1/4" />
-                    </footer>
-                )}
+                <footer className="epub-reader-footer p-3 flex justify-between items-center z-20 text-white text-sm flex-shrink-0">
+                     <div className="flex gap-4 w-1/4">
+                        <div title="Session Time"><span className="font-semibold">Session:</span> {formatTime(sessionSeconds)}</div>
+                        <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
+                     </div>
+                     <div className="flex-grow flex items-center gap-3 px-4">
+                        <input type="range" min="0" max="100" value={progress} onChange={handleSliderChange} className="epub-progress-slider w-full" disabled={!locations} />
+                        <span className="font-semibold w-12 text-right">{progress}%</span>
+                     </div>
+                     <div className="w-1/4" />
+                </footer>
             </div>
         </div>
     );

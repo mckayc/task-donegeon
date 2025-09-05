@@ -5,7 +5,7 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
-import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet } from '../../types';
+import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet, QuestGroup } from '../../types';
 import { isQuestAvailableForUser, questSorter, getAvailabilityText, formatTimeRemaining } from '../../utils/quests';
 import { getQuestLockStatus, QuestLockStatus, ConditionDependencies, isQuestVisibleToUserInMode, toYMD } from '../../utils/conditions';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -232,6 +232,23 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     );
 };
 
+interface QuestGroupItemProps {
+    group: QuestGroup | { id: string; name: string; icon: string; description: string; };
+    questCount: number;
+    onSelect: () => void;
+}
+
+const QuestGroupItem: React.FC<QuestGroupItemProps> = ({ group, questCount, onSelect }) => (
+    <button
+        onClick={onSelect}
+        className="text-left w-full h-full bg-stone-800/60 border-2 border-stone-700 rounded-xl shadow-lg p-6 flex flex-col items-center justify-center text-center hover:border-amber-500 hover:bg-stone-800 transition-all duration-200"
+    >
+        <div className="text-6xl mb-3">{group.icon}</div>
+        <h4 className="font-bold text-lg text-amber-300">{group.name}</h4>
+        <p className="text-sm text-stone-400 mt-1">{questCount} {questCount === 1 ? 'quest' : 'quests'} available</p>
+    </button>
+);
+
 const QuestsPage: React.FC = () => {
     const systemState = useSystemState();
     const { settings, scheduledEvents } = systemState;
@@ -249,6 +266,7 @@ const QuestsPage: React.FC = () => {
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
     const [now, setNow] = useState(new Date());
+    const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 60000); // Update 'now' every minute
@@ -263,7 +281,52 @@ const QuestsPage: React.FC = () => {
     }, [quests, currentUser, appMode, questCompletions, scheduledEvents, now]);
 
     const dutyQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Duty), [visibleQuests]);
+    
     const ventureQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey), [visibleQuests]);
+
+    const groupedVentureQuests = useMemo(() => {
+        const groups: Record<string, { group: QuestGroup | {id: string; name: string; icon: string; description: string;}; quests: Quest[] }> = {};
+
+        questGroups.forEach(group => {
+            groups[group.id] = { group, quests: [] };
+        });
+
+        groups['uncategorized'] = {
+            group: { id: 'uncategorized', name: `Uncategorized ${settings.terminology.tasks}`, icon: '📂', description: `${settings.terminology.tasks} that have not been assigned to a group.` },
+            quests: []
+        };
+
+        ventureQuests.forEach(quest => {
+            if (quest.groupIds && quest.groupIds.length > 0) {
+                let assigned = false;
+                quest.groupIds.forEach(gid => {
+                    if (groups[gid]) {
+                        groups[gid].quests.push(quest);
+                        assigned = true;
+                    }
+                });
+                if (!assigned) {
+                     groups['uncategorized'].quests.push(quest);
+                }
+            } else {
+                groups['uncategorized'].quests.push(quest);
+            }
+        });
+
+        return Object.values(groups)
+            .filter(g => g.quests.length > 0)
+            .sort((a, b) => {
+                if (a.group.id === 'uncategorized') return 1;
+                if (b.group.id === 'uncategorized') return -1;
+                return a.group.name.localeCompare(b.group.name);
+            });
+    }, [ventureQuests, questGroups, settings.terminology.tasks]);
+
+    const activeGroup = useMemo(() => {
+        if (!activeGroupId) return null;
+        return groupedVentureQuests.find(g => g.group.id === activeGroupId);
+    }, [activeGroupId, groupedVentureQuests]);
+
 
     const conditionDependencies = useMemo<ConditionDependencies & { allConditionSets: ConditionSet[] }>(() => ({
         ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, appMode, allConditionSets: systemState.settings.conditionSets
@@ -315,15 +378,34 @@ const QuestsPage: React.FC = () => {
                 </Card>
 
                 <Card title={`${settings.terminology.singleTasks} & ${settings.terminology.journeys}`}>
-                     {ventureQuests.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {ventureQuests.map(quest => {
-                                const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
-                                return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
-                            })}
+                     {activeGroup ? (
+                        <div>
+                            <Button variant="secondary" onClick={() => setActiveGroupId(null)} className="mb-4">
+                                &larr; Back to Groups
+                            </Button>
+                            <h3 className="text-2xl font-medieval text-accent mb-4">{activeGroup.group.icon} {activeGroup.group.name}</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {activeGroup.quests.map(quest => {
+                                    const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
+                                    return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
+                                })}
+                            </div>
                         </div>
                     ) : (
-                        <p className="text-stone-400">No {settings.terminology.singleTasks.toLowerCase()} available right now.</p>
+                         groupedVentureQuests.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {groupedVentureQuests.map(({ group, quests }) => (
+                                    <QuestGroupItem
+                                        key={group.id}
+                                        group={group}
+                                        questCount={quests.length}
+                                        onSelect={() => setActiveGroupId(group.id)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-stone-400">No {settings.terminology.singleTasks.toLowerCase()} available right now.</p>
+                        )
                     )}
                 </Card>
             </div>

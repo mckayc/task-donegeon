@@ -37,24 +37,32 @@
         -moz-appearance: textfield;
       }
       
-      #viewer.light {
-        background-color: #f3f4f6; /* stone-100 */
-        color: #111827; /* stone-900 */
+      /* EPUB Reader Styles */
+      .epub-container:fullscreen #viewer {
+          font-size: 1.25rem; /* Increase font size in fullscreen */
       }
-      #viewer.dark {
-        background-color: #1c1917; /* stone-900 */
-        color: #f3f4f6; /* stone-100 */
+      #viewer.light .epub-view > iframe {
+          background-color: #f3f4f6 !important; /* stone-100 */
+          color: #1c1917 !important;
       }
+      #viewer.dark .epub-view > iframe {
+          background-color: #1c1917 !important; /* stone-900 */
+          color: #f3f4f6 !important;
+      }
+       /* Ensure iframe content adopts theme */
+      #viewer.light .epub-view > iframe body { color: #1c1917 !important; }
+      #viewer.dark .epub-view > iframe body { color: #f3f4f6 !important; }
       
       .epub-reader-header, .epub-reader-footer {
         opacity: 0;
         transition: opacity 0.3s ease-in-out;
+        background: rgba(0,0,0,0.2);
+        backdrop-filter: blur(4px);
       }
       .epub-container:hover .epub-reader-header,
       .epub-container:hover .epub-reader-footer {
         opacity: 1;
       }
-
 
       /* THEME VARIABLES */
       :root {

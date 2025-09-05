@@ -3,10 +3,10 @@ import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon, BookmarkIcon as BookmarkOutlineIcon } from 'lucide-react';
-import { BookmarkIcon as BookmarkSolidIcon } from '../user-interface/Icons';
-// FIX: Corrected API import from 'logReadingTimeAPI' to the existing 'updateReadingProgressAPI' to resolve the module export error.
-import { updateReadingProgressAPI } from '../../api';
+import { XCircleIcon, BookmarkIcon as BookmarkOutlineIcon, SettingsIcon, SunIcon, MoonIcon, MaximizeIcon, MinimizeIcon } from 'lucide-react';
+// FIX: Import `TrashIcon` to resolve missing name error.
+import { BookmarkSolidIcon, TrashIcon } from '../user-interface/Icons';
+import { useQuestsDispatch } from '../../context/QuestsContext';
 
 declare var ePub: any;
 
@@ -17,221 +17,265 @@ interface EpubReaderPanelProps {
 const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const { setReadingQuest } = useUIDispatch();
     const { currentUser } = useAuthState();
+    const { updateReadingProgress } = useQuestsDispatch();
 
     const [book, setBook] = useState<any>(null);
     const [rendition, setRendition] = useState<any>(null);
-    const [location, setLocation] = useState<string | null>(null);
+    const [currentCfi, setCurrentCfi] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [bookmarks, setBookmarks] = useState<string[]>([]);
-    const [showBookmarks, setShowBookmarks] = useState(false);
-    const viewerRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(true);
-
-    const [sessionSeconds, setSessionSeconds] = useState(0);
     const [isPanelActive, setIsPanelActive] = useState(true);
-    const sessionSyncIntervalRef = useRef<number | null>(null);
+    
+    // UI State
+    const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('epubTheme') as 'light' | 'dark' || 'dark');
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [showBookmarks, setShowBookmarks] = useState(false);
+    
+    // Time Tracking
+    const [sessionSeconds, setSessionSeconds] = useState(0);
+    const lastSyncTimeRef = useRef(Date.now());
+    
+    const containerRef = useRef<HTMLDivElement>(null);
+    const viewerRef = useRef<HTMLDivElement>(null);
+    const touchStartX = useRef<number | null>(null);
 
-    const bookKey = currentUser ? `epub-loc-${currentUser.id}-${quest.id}` : null;
-    const bookmarksKey = currentUser ? `epub-bookmarks-${currentUser.id}-${quest.id}` : null;
+    const userProgress = useMemo(() => {
+        if (!currentUser) return null;
+        return quest.readingProgress?.[currentUser.id];
+    }, [quest.readingProgress, currentUser]);
 
     const totalSecondsRead = useMemo(() => {
-        if (!currentUser) return 0;
-        // FIX: Accessed the `totalSeconds` property on the `readingProgress` object to correctly calculate the total time read.
-        const storedSeconds = quest.readingProgress?.[currentUser.id]?.totalSeconds || 0;
+        const storedSeconds = userProgress?.totalSeconds || 0;
         return storedSeconds + sessionSeconds;
-    }, [quest.readingProgress, currentUser, sessionSeconds]);
+    }, [userProgress, sessionSeconds]);
 
-    useEffect(() => {
-        let interval: number;
-        if (isPanelActive) {
-            interval = window.setInterval(() => {
-                setSessionSeconds(prev => prev + 1);
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [isPanelActive]);
-
-    const syncReadingTime = useCallback(async (secondsToSync: number) => {
-        if (!currentUser || secondsToSync <= 0) return;
-        try {
-            // This is a fire-and-forget call; we don't need to wait for the response
-            // as the state will be updated via the main data provider sync.
-            // FIX: Corrected the API call to match the expected signature of `updateReadingProgressAPI`, passing `secondsToAdd` in an object.
-            updateReadingProgressAPI(quest.id, currentUser.id, { secondsToAdd: secondsToSync });
-        } catch (error) {
-            console.error("Failed to sync reading time:", error);
-        }
-    }, [currentUser, quest.id]);
-
-    useEffect(() => {
-        // Sync every 20 seconds
-        sessionSyncIntervalRef.current = window.setInterval(() => {
-            setSessionSeconds(prevSeconds => {
-                if (prevSeconds > 0) {
-                    syncReadingTime(prevSeconds);
-                }
-                return 0; // Reset session timer after syncing
-            });
-        }, 20000);
-
-        return () => {
-            if (sessionSyncIntervalRef.current) {
-                clearInterval(sessionSyncIntervalRef.current);
-            }
-            // Final sync on unmount
-            syncReadingTime(sessionSeconds);
-        };
-    }, [syncReadingTime, sessionSeconds]);
-
-
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            setIsPanelActive(document.visibilityState === 'visible');
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, []);
-
+    // --- Book Initialization and Setup ---
     useEffect(() => {
         if (!quest.epubUrl) return;
 
         const newBook = ePub(quest.epubUrl);
         setBook(newBook);
 
-        const storedBookmarks = bookmarksKey ? localStorage.getItem(bookmarksKey) : null;
-        if (storedBookmarks) {
-            setBookmarks(JSON.parse(storedBookmarks));
+        // Load bookmarks from quest data
+        if (userProgress?.bookmarks) {
+            setBookmarks(userProgress.bookmarks);
         }
-    }, [quest.epubUrl, quest.id, currentUser, bookmarksKey]);
+    }, [quest.epubUrl, userProgress]);
     
     useEffect(() => {
         if (book && viewerRef.current) {
             const newRendition = book.renderTo(viewerRef.current, {
-                width: "100%",
-                height: "100%",
-                flow: "paginated",
-                spread: "auto"
+                width: "100%", height: "100%", flow: "paginated", spread: "auto"
             });
+            
+            const applyTheme = (renditionToTheme: any) => {
+                 renditionToTheme.themes.register("custom", {
+                    "body": { "color": theme === 'light' ? "#1c1917" : "#f3f4f6" },
+                });
+                renditionToTheme.themes.select("custom");
+            };
 
             newRendition.on("displayed", () => {
                 setIsLoading(false);
+                applyTheme(newRendition);
             });
-
+            
             newRendition.on("relocated", (locationData: any) => {
                 const cfi = locationData.start.cfi;
-                if (bookKey) localStorage.setItem(bookKey, cfi);
-                setLocation(cfi);
-                
-                book.locations.generate(1000).then(() => {
+                setCurrentCfi(cfi);
+                book.ready.then(() => book.locations.generate(1000)).then(() => {
                     const percent = book.locations.percentageFromCfi(cfi);
                     setProgress(Math.round(percent * 100));
                 });
             });
 
-            const savedLocation = bookKey ? localStorage.getItem(bookKey) : null;
-            newRendition.display(savedLocation || undefined);
+            newRendition.ready.then(() => {
+                newRendition.display(userProgress?.locationCfi || undefined);
+            });
+            
             setRendition(newRendition);
 
-            return () => {
-                newRendition.destroy();
-            };
+            return () => newRendition.destroy();
         }
-    }, [book, bookKey]);
+    }, [book, theme, userProgress]);
 
-    const prevPage = () => rendition?.prev();
-    const nextPage = () => rendition?.next();
+    // --- Time & Progress Syncing ---
+    const syncProgress = useCallback(async (secondsToSync: number, cfiToSync: string | null, bookmarksToSync: string[]) => {
+        if (!currentUser || (secondsToSync <= 0 && !cfiToSync && !bookmarksToSync)) return;
+        
+        const dataToSync: any = {};
+        if (secondsToSync > 0) dataToSync.secondsToAdd = secondsToSync;
+        if (cfiToSync) dataToSync.locationCfi = cfiToSync;
+        if (bookmarksToSync) dataToSync.bookmarks = bookmarksToSync;
+
+        await updateReadingProgress(quest.id, currentUser.id, dataToSync);
+
+    }, [currentUser, quest.id, updateReadingProgress]);
 
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "ArrowLeft") prevPage();
-            if (e.key === "ArrowRight") nextPage();
-            if (e.key === "Escape") setReadingQuest(null);
+        const syncInterval = window.setInterval(() => {
+            if (isPanelActive) {
+                const now = Date.now();
+                const elapsedSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
+                setSessionSeconds(s => s + elapsedSeconds);
+                syncProgress(elapsedSeconds, currentCfi, bookmarks);
+                lastSyncTimeRef.current = now;
+            }
+        }, 20000); // Sync every 20 seconds
+
+        return () => clearInterval(syncInterval);
+    }, [isPanelActive, currentCfi, bookmarks, syncProgress]);
+
+    // Final sync on unmount
+    useEffect(() => {
+        return () => {
+            const elapsedSeconds = Math.round((Date.now() - lastSyncTimeRef.current) / 1000);
+            syncProgress(elapsedSeconds, currentCfi, bookmarks);
         };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [rendition, setReadingQuest]);
+    }, [syncProgress, currentCfi, bookmarks]);
+    
 
-    const addBookmark = () => {
-        if (location && !bookmarks.includes(location) && bookmarksKey) {
-            const newBookmarks = [...bookmarks, location];
-            setBookmarks(newBookmarks);
-            localStorage.setItem(bookmarksKey, JSON.stringify(newBookmarks));
-        }
-    };
-
-    const removeBookmark = (cfi: string) => {
-        if (bookmarksKey) {
-            const newBookmarks = bookmarks.filter(bm => bm !== cfi);
-            setBookmarks(newBookmarks);
-            localStorage.setItem(bookmarksKey, JSON.stringify(newBookmarks));
+    // --- UI Interactions and Event Handlers ---
+    const handleClose = () => setReadingQuest(null);
+    const prevPage = () => rendition?.prev();
+    const nextPage = () => rendition?.next();
+    
+    const handleThemeChange = (newTheme: 'light' | 'dark') => {
+        setTheme(newTheme);
+        localStorage.setItem('epubTheme', newTheme);
+    }
+    
+    const toggleFullscreen = () => {
+        const elem = containerRef.current;
+        if (!elem) return;
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
         }
     };
     
+    useEffect(() => {
+        const onFullscreenChange = () => setIsFullScreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+    }, []);
+
+    const addOrRemoveBookmark = () => {
+        if (currentCfi) {
+            const newBookmarks = bookmarks.includes(currentCfi)
+                ? bookmarks.filter(bm => bm !== currentCfi)
+                : [...bookmarks, currentCfi];
+            setBookmarks(newBookmarks);
+            syncProgress(0, null, newBookmarks);
+        }
+    };
+
     const goToBookmark = (cfi: string) => {
         rendition?.display(cfi);
         setShowBookmarks(false);
     };
+    
+    // --- Keyboard and Touch Controls ---
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "ArrowLeft") prevPage();
+            if (e.key === "ArrowRight") nextPage();
+            if (e.key === "Escape") handleClose();
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [rendition]);
 
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+        touchStartX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+        if (touchStartX.current === null) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const diff = touchStartX.current - touchEndX;
+        if (Math.abs(diff) > 50) { // Swipe threshold
+            if (diff > 0) nextPage();
+            else prevPage();
+        }
+        touchStartX.current = null;
+    };
+    
+    // --- Utility Functions ---
     const formatTime = (totalSeconds: number) => {
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        const parts = [];
-        if (hours > 0) parts.push(hours.toString().padStart(2, '0'));
-        parts.push(minutes.toString().padStart(2, '0'));
-        parts.push(seconds.toString().padStart(2, '0'));
-        return parts.join(':');
+        return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-            <div className="w-full max-w-5xl h-[90vh] bg-stone-100 text-stone-900 shadow-2xl rounded-lg relative flex flex-col">
-                <div className="p-3 border-b border-stone-300 flex justify-between items-center flex-shrink-0">
+        <div ref={containerRef} className="fixed inset-0 bg-black/80 z-[80] flex items-center justify-center epub-container">
+            <div className="w-full h-full bg-stone-800 shadow-2xl relative flex flex-col">
+                {/* --- Header --- */}
+                <div className="epub-reader-header absolute top-0 left-0 right-0 p-3 flex justify-between items-center z-20 text-white">
                     <h3 className="font-bold text-lg truncate">{quest.title}</h3>
                     <div className="flex items-center gap-2">
-                        <Button variant="secondary" onClick={addBookmark} className="h-9 w-9 p-0" title="Add Bookmark">
-                           <BookmarkOutlineIcon className="w-5 h-5"/>
-                        </Button>
-                         <Button variant="secondary" onClick={() => setShowBookmarks(p => !p)} className="h-9 w-9 p-0" title="View Bookmarks">
-                           <BookmarkSolidIcon className="w-5 h-5"/>
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setReadingQuest(null)} className="h-9 w-9 p-0">
-                            <XCircleIcon className="w-6 h-6"/>
-                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setShowSettings(p => !p)} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setShowBookmarks(p => !p)} title="View Bookmarks"><BookmarkSolidIcon className="w-5 h-5"/></Button>
+                        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <MinimizeIcon className="w-5 h-5"/> : <MaximizeIcon className="w-5 h-5"/>}</Button>
+                        <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
                     </div>
                 </div>
 
-                <div className="flex-grow relative">
+                {/* --- Main Viewer --- */}
+                <div className="flex-grow relative" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                     {isLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-stone-100 z-20">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-stone-800 z-20">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
                         </div>
                     )}
-                    <div id="viewer" ref={viewerRef} className="h-full w-full" />
-                    <div id="prev" className="absolute top-0 bottom-0 left-0 w-[15%] cursor-pointer" onClick={prevPage}></div>
-                    <div id="next" className="absolute top-0 bottom-0 right-0 w-[15%] cursor-pointer" onClick={nextPage}></div>
+                    <div id="viewer" ref={viewerRef} className={`h-full w-full ${theme}`} />
+                    <div id="prev" className="absolute top-0 bottom-0 left-0 w-[15%] cursor-pointer z-10" onClick={prevPage}></div>
+                    <div id="next" className="absolute top-0 bottom-0 right-0 w-[15%] cursor-pointer z-10" onClick={nextPage}></div>
                 </div>
 
+                {/* --- Popups --- */}
+                {showSettings && (
+                     <div className="absolute top-16 right-4 bg-stone-800/90 border border-stone-600 shadow-lg rounded-md p-4 w-48 z-30 text-white">
+                        <h3 className="font-bold mb-2">Theme</h3>
+                        <div className="flex justify-around">
+                            <Button variant={theme === 'light' ? 'default' : 'secondary'} onClick={() => handleThemeChange('light')}><SunIcon className="w-5 h-5"/></Button>
+                            <Button variant={theme === 'dark' ? 'default' : 'secondary'} onClick={() => handleThemeChange('dark')}><MoonIcon className="w-5 h-5"/></Button>
+                        </div>
+                    </div>
+                )}
                 {showBookmarks && (
-                    <div className="absolute top-16 right-4 bg-white shadow-lg rounded-md p-4 w-64 border z-20">
-                        <h3 className="font-bold text-stone-800 mb-2">Bookmarks</h3>
-                        <ul className="max-h-64 overflow-y-auto">
+                    <div className="absolute top-16 right-4 bg-stone-800/90 border border-stone-600 shadow-lg rounded-md p-4 w-72 z-30 text-white">
+                        <h3 className="font-bold mb-2">Bookmarks</h3>
+                        <ul className="max-h-64 overflow-y-auto pr-2">
                             {bookmarks.length > 0 ? bookmarks.map((bm, i) => (
-                                <li key={bm} className="text-sm text-stone-600 hover:bg-stone-100 p-2 rounded-md flex justify-between items-center">
-                                    <button onClick={() => goToBookmark(bm)} className="text-left flex-grow">
+                                <li key={bm} className="text-sm hover:bg-stone-700/50 p-2 rounded-md flex justify-between items-center">
+                                    <button onClick={() => goToBookmark(bm)} className="text-left flex-grow text-stone-300">
                                         Bookmark {i + 1}
+                                        <span className="text-xs text-stone-400 ml-2">({book.locations.percentageFromCfi(bm).toFixed(1)}%)</span>
                                     </button>
-                                    <button onClick={() => removeBookmark(bm)} className="text-red-500 hover:text-red-700 ml-2 font-bold">&times;</button>
+                                    <Button variant="ghost" size="icon" onClick={() => addOrRemoveBookmark()} className="h-6 w-6 text-red-400 hover:text-red-300"><TrashIcon className="w-4 h-4"/></Button>
                                 </li>
-                            )) : <p className="text-xs text-stone-500">No bookmarks yet.</p>}
+                            )) : <p className="text-xs text-stone-500">No bookmarks yet. Click the bookmark icon in the header to add one.</p>}
                         </ul>
                     </div>
                 )}
-                <div className="absolute bottom-4 left-4 bg-stone-800 text-white px-3 py-1.5 rounded-full text-sm font-mono" title="Total Time Read">
-                    {formatTime(totalSecondsRead)}
-                </div>
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-4 py-1.5 rounded-full text-sm font-semibold">
-                    {progress}%
+
+                {/* --- Footer --- */}
+                <div className="epub-reader-footer absolute bottom-0 left-0 right-0 p-3 flex justify-between items-center z-20 text-white text-sm">
+                     <div className="flex gap-4">
+                        <div title="Session Time"><span className="font-semibold">Session:</span> {formatTime(sessionSeconds)}</div>
+                        <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
+                     </div>
+                     <Button variant="ghost" size="icon" onClick={addOrRemoveBookmark} title="Add/Remove Bookmark">
+                        {currentCfi && bookmarks.includes(currentCfi) ? <BookmarkSolidIcon className="w-5 h-5 text-emerald-400"/> : <BookmarkOutlineIcon className="w-5 h-5"/>}
+                     </Button>
+                     <div className="font-semibold">{progress}%</div>
                 </div>
             </div>
         </div>

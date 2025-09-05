@@ -69,7 +69,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             const newRendition = book.renderTo(viewerRef.current, {
                 width: "100%", height: "100%", flow: "paginated", spread: "auto"
             });
-            
+            setRendition(newRendition);
+
             const applyTheme = (renditionToTheme: any) => {
                  renditionToTheme.themes.register("custom", {
                     "body": { "color": theme === 'light' ? "#1c1917" : "#f3f4f6" },
@@ -82,22 +83,29 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 applyTheme(newRendition);
             });
             
-            newRendition.on("relocated", (locationData: any) => {
-                const cfi = locationData.start.cfi;
-                setCurrentCfi(cfi);
-                book.ready.then(() => book.locations.generate(1000)).then(() => {
-                    const percent = book.locations.percentageFromCfi(cfi);
-                    setProgress(Math.round(percent * 100));
+            book.ready.then(() => {
+                return book.locations.generate(1000); // Generate locations once
+            }).then(() => {
+                // Now that locations are generated, we can register the relocated handler
+                newRendition.on("relocated", (locationData: any) => {
+                    const cfi = locationData.start.cfi;
+                    setCurrentCfi(cfi);
+                    // Now we can safely use percentageFromCfi
+                    if (book.locations) {
+                        const percent = book.locations.percentageFromCfi(cfi);
+                        setProgress(Math.round(percent * 100));
+                    }
                 });
-            });
 
-            newRendition.ready.then(() => {
+                // And display the book at the last known location
                 newRendition.display(userProgress?.locationCfi || undefined);
             });
             
-            setRendition(newRendition);
-
-            return () => newRendition.destroy();
+            return () => {
+                if(newRendition) {
+                    newRendition.destroy();
+                }
+            };
         }
     }, [book, theme, userProgress]);
 

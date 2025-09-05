@@ -219,7 +219,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, []);
     
-    const isBookmarked = useMemo(() => currentCfi && bookmarks.some(b => b.cfi === currentCfi), [currentCfi, bookmarks]);
+    const isBookmarked = useMemo(() => !!(currentCfi && bookmarks.some(b => b.cfi === currentCfi)), [currentCfi, bookmarks]);
 
     const addBookmark = () => {
         if (currentCfi && !isBookmarked) {

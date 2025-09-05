@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -10,7 +8,6 @@ import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet } from '../../types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining, toYMD } from '../../utils/quests';
-// FIX: Corrected import paths for quest lock status functions and types to resolve circular dependency issues.
 import { getQuestLockStatus, QuestLockStatus, ConditionDependencies } from '../../utils/conditions';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';

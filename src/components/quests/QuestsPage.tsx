@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -7,7 +8,9 @@ import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet } from '../../types';
-import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining, toYMD, getQuestLockStatus, QuestLockStatus } from '../../utils/quests';
+// FIX: Split imports to correct module paths for quest and condition utilities.
+import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode, getAvailabilityText, formatTimeRemaining, toYMD } from '../../utils/quests';
+import { getQuestLockStatus, QuestLockStatus, ConditionDependencies } from '../../utils/conditions';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -17,7 +20,6 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
-import { ConditionDependencies } from '../../utils/conditions';
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; lockStatus: QuestLockStatus; }> = ({ quest, now, onSelect, onImagePreview, lockStatus }) => {
     const { settings, scheduledEvents } = useSystemState();
@@ -266,14 +268,12 @@ const QuestsPage: React.FC = () => {
     const dutyQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Duty), [visibleQuests]);
     const ventureQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey), [visibleQuests]);
 
-    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
-    const conditionDependencies = useMemo(() => ({
+    const conditionDependencies = useMemo<ConditionDependencies & { allConditionSets: ConditionSet[] }>(() => ({
         ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, appMode, allConditionSets: systemState.settings.conditionSets
     }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, appMode, systemState.settings.conditionSets]);
 
     const handleQuestSelect = (quest: Quest) => {
         if (!currentUser) return;
-        // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
         const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
         if (lockStatus.isLocked) {
             setViewingConditionsForQuest(quest);
@@ -308,7 +308,6 @@ const QuestsPage: React.FC = () => {
                     {dutyQuests.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {dutyQuests.map(quest => {
-                                // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
                                 const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
                                 return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
                             })}
@@ -322,7 +321,6 @@ const QuestsPage: React.FC = () => {
                      {ventureQuests.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {ventureQuests.map(quest => {
-                                // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
                                 const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
                                 return <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleQuestSelect} onImagePreview={handleImagePreview} lockStatus={lockStatus} />;
                             })}

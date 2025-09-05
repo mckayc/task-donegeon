@@ -55,6 +55,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         mediaType: undefined,
         aiTutorSessionMinutes: undefined,
         videoUrl: '',
+        epubUrl: '',
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
@@ -269,6 +270,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         mediaType: formData.mediaType || undefined,
         aiTutorSessionMinutes: formData.mediaType === QuestMediaType.AITeacher ? formData.aiTutorSessionMinutes : undefined,
         videoUrl: formData.mediaType === QuestMediaType.Video ? formData.videoUrl : undefined,
+        epubUrl: formData.mediaType === QuestMediaType.EPUB ? formData.epubUrl : undefined,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -332,7 +334,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   };
 
   const handleMediaSelect = (path: string) => {
-      setFormData(p => ({...p, videoUrl: path}));
+      if (formData.mediaType === QuestMediaType.Video) {
+          setFormData(p => ({...p, videoUrl: path}));
+      } else if (formData.mediaType === QuestMediaType.EPUB) {
+          setFormData(p => ({...p, epubUrl: path}));
+      }
       setIsMediaBrowserOpen(false);
   };
 
@@ -432,6 +438,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                   <option value={QuestMediaType.AITeacher}>AI Teacher</option>
                   <option value={QuestMediaType.AIStory}>AI Story</option>
                   <option value={QuestMediaType.Video}>Video</option>
+                  <option value={QuestMediaType.EPUB}>EPUB</option>
               </Input>
               {formData.mediaType === QuestMediaType.AITeacher && (
                 <NumberInput 
@@ -456,6 +463,22 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                          <Button type="button" variant="secondary" onClick={() => setIsMediaBrowserOpen(true)}>Browse Library</Button>
                     </div>
                      <p className="text-xs text-stone-400">Enter a URL for a YouTube video or a local path to a video file in your media library (e.g., <code>/media/filename.mp4</code>).</p>
+                </div>
+            )}
+            {formData.mediaType === QuestMediaType.EPUB && (
+                <div className="p-4 bg-stone-900/50 rounded-lg space-y-2">
+                    <div className="flex items-end gap-2">
+                        <Input 
+                            label="EPUB File Path" 
+                            name="epubUrl" 
+                            value={formData.epubUrl || ''} 
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, epubUrl: e.target.value}))} 
+                            placeholder="e.g., /media/my-book.epub"
+                            className="flex-grow"
+                        />
+                         <Button type="button" variant="secondary" onClick={() => setIsMediaBrowserOpen(true)}>Browse Library</Button>
+                    </div>
+                     <p className="text-xs text-stone-400">Select an EPUB file from your media library.</p>
                 </div>
             )}
            <div>

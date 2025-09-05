@@ -3,7 +3,8 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import { Folder, Video, ArrowUp, UploadCloud, FolderPlus, BookOpen } from 'lucide-react';
+import { Folder, Video, ArrowUp, UploadCloud, FolderPlus, BookOpen, Trash } from 'lucide-react';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 
 interface MediaBrowserDialogProps {
     onSelect: (path: string) => void;
@@ -23,6 +24,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
     const [isCreatingFolder, setIsCreatingFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [dragOverDir, setDragOverDir] = useState<string | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<{ name: string; type: 'folder' | 'file' } | null>(null);
 
     const fetchMedia = useCallback(async () => {
         setIsLoading(true);
@@ -104,6 +106,39 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
             addNotification({ type: 'error', message });
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    const handleDeleteRequest = (name: string, type: 'folder' | 'file') => {
+        setItemToDelete({ name, type });
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!itemToDelete) return;
+
+        try {
+            const response = await fetch('/api/media/delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sourcePath: currentPath,
+                    sourceName: itemToDelete.name,
+                    sourceType: itemToDelete.type,
+                }),
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Failed to delete item.');
+            }
+
+            addNotification({ type: 'success', message: `Successfully deleted "${itemToDelete.name}".` });
+            fetchMedia(); // Refresh the view
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+            addNotification({ type: 'error', message });
+        } finally {
+            setItemToDelete(null);
         }
     };
 
@@ -253,7 +288,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                                     onDragEnter={(e) => handleDragEnter(e, '..')}
                                     onDragLeave={handleDragLeave}
                                     onDrop={(e) => handleDrop(e, '..')}
-                                    className={`p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${dragOverDir === '..' ? 'border-emerald-500' : 'border-transparent'}`}
+                                    className={`relative group p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${dragOverDir === '..' ? 'border-emerald-500' : 'border-transparent'}`}
                                 >
                                     <div className="aspect-video w-full bg-stone-700 rounded-md flex items-center justify-center overflow-hidden">
                                         <ArrowUp className="w-10 h-10 text-stone-400" />
@@ -271,8 +306,13 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                                     onDragEnter={(e) => handleDragEnter(e, dir)}
                                     onDragLeave={handleDragLeave}
                                     onDrop={(e) => handleDrop(e, dir)}
-                                    className={`p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${dragOverDir === dir ? 'border-emerald-500' : 'border-transparent'}`}
+                                    className={`relative group p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${dragOverDir === dir ? 'border-emerald-500' : 'border-transparent'}`}
                                 >
+                                     <div className="absolute top-1 right-1 z-10">
+                                        <Button variant="destructive" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); handleDeleteRequest(dir, 'folder'); }}>
+                                            <Trash className="w-3 h-3" />
+                                        </Button>
+                                    </div>
                                     <div className="aspect-video w-full bg-stone-700 rounded-md flex items-center justify-center overflow-hidden">
                                         <Folder className="w-12 h-12 text-amber-400" />
                                     </div>
@@ -290,8 +330,13 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                                     draggable="true"
                                     onDragStart={(e) => handleDragStart(e, file, 'file')}
                                     onClick={() => onSelect(fullPath)} 
-                                    className="p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    className="relative group p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 >
+                                    <div className="absolute top-1 right-1 z-10">
+                                        <Button variant="destructive" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); handleDeleteRequest(file, 'file'); }}>
+                                            <Trash className="w-3 h-3" />
+                                        </Button>
+                                    </div>
                                     <div className="aspect-video w-full bg-black rounded-md flex items-center justify-center overflow-hidden">
                                         <Icon className={`w-12 h-12 ${iconColor}`} />
                                     </div>
@@ -311,6 +356,14 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                     <Button variant="secondary" onClick={onClose}>Cancel</Button>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={!!itemToDelete}
+                onClose={() => setItemToDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title={`Delete ${itemToDelete?.type}`}
+                message={`Are you sure you want to permanently delete "${itemToDelete?.name}"? This action cannot be undone.`}
+            />
         </div>
     );
 };

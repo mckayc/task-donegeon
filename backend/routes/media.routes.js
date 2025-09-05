@@ -8,6 +8,7 @@ const {
     mediaUpload,
     createMediaFolder,
     moveMediaItem,
+    deleteMediaItem,
 } = require('../controllers/management.controller');
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.post('/upload/library', mediaUpload, uploadToMediaLibrary); // New route 
 router.post('/create-folder', createMediaFolder);
 router.post('/move', moveMediaItem);
 router.get('/browse', browseMedia);
+router.delete('/delete', deleteMediaItem);
 
 module.exports = router;

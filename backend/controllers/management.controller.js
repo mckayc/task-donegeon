@@ -425,6 +425,32 @@ const moveMediaItem = async (req, res) => {
     }
 };
 
+const deleteMediaItem = async (req, res) => {
+    const { sourcePath, sourceName } = req.body;
+    if (!sourceName || typeof sourcePath === 'undefined') {
+        return res.status(400).json({ error: 'Missing required parameters for delete operation.' });
+    }
+
+    const resolvedMediaDir = path.resolve(MEDIA_DIR);
+
+    // Security check: ensure path is within MEDIA_DIR
+    const resolvedItemDir = path.resolve(path.join(resolvedMediaDir, sourcePath));
+    if (!resolvedItemDir.startsWith(resolvedMediaDir)) {
+        return res.status(400).json({ error: 'Invalid path specified.' });
+    }
+
+    const itemPath = path.join(resolvedItemDir, sourceName);
+
+    try {
+        await fsp.rm(itemPath, { recursive: true, force: true });
+        console.log(`[Media Manager] Deleted: ${itemPath}`);
+        res.status(200).json({ message: 'Item deleted successfully.' });
+    } catch (error) {
+        console.error(`[Media Manager] Error deleting item:`, error);
+        res.status(500).json({ error: 'Failed to delete item on the server.' });
+    }
+};
+
 module.exports = {
     upload,
     mediaUpload,
@@ -440,6 +466,7 @@ module.exports = {
     browseMedia: asyncMiddleware(browseMedia),
     createMediaFolder: asyncMiddleware(createMediaFolder),
     moveMediaItem: asyncMiddleware(moveMediaItem),
+    deleteMediaItem: asyncMiddleware(deleteMediaItem),
     runScheduledBackups,
     runScheduledRotations,
     getBackups: asyncMiddleware(getBackups),

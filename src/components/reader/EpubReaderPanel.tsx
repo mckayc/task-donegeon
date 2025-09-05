@@ -3,9 +3,9 @@ import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, ExpandIcon, ShrinkIcon } from '../user-interface/Icons';
-import { BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon } from '../user-interface/Icons';
-import { useQuestsDispatch } from '../../context/QuestsContext';
+// FIX: Imported `ShrinkIcon` to resolve a missing component reference.
+import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, Maximize, Minimize, ChevronsUpDown, ShrinkIcon } from '../user-interface/Icons';
+import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 
 declare var ePub: any;
 
@@ -13,16 +13,24 @@ interface EpubReaderPanelProps {
   quest: Quest;
 }
 
+interface Bookmark {
+    cfi: string;
+    progress: number;
+}
+
 const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const { setReadingQuest } = useUIDispatch();
     const { currentUser } = useAuthState();
     const { updateReadingProgress } = useQuestsDispatch();
+    const { quests } = useQuestsState();
+
+    const liveQuest = useMemo(() => quests.find(q => q.id === quest.id) || quest, [quests, quest]);
 
     const [book, setBook] = useState<any>(null);
     const [rendition, setRendition] = useState<any>(null);
     const [currentCfi, setCurrentCfi] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
-    const [bookmarks, setBookmarks] = useState<string[]>([]);
+    const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [bookTitle, setBookTitle] = useState('');
     const [pageTurnClass, setPageTurnClass] = useState('');
@@ -46,8 +54,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const userProgress = useMemo(() => {
         if (!currentUser) return null;
-        return quest.readingProgress?.[currentUser.id];
-    }, [quest.readingProgress, currentUser]);
+        return liveQuest.readingProgress?.[currentUser.id];
+    }, [liveQuest.readingProgress, currentUser]);
 
     const totalSecondsRead = useMemo(() => {
         const storedSeconds = userProgress?.totalSeconds || 0;
@@ -65,11 +73,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             setBookTitle(meta.title);
         });
 
-        // Load bookmarks from quest data
-        if (userProgress?.bookmarks) {
-            setBookmarks(userProgress.bookmarks);
-        }
-    }, [quest.epubUrl, userProgress]);
+    }, [quest.epubUrl]);
     
     useEffect(() => {
         if (book && viewerRef.current) {
@@ -93,13 +97,22 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             book.ready.then(() => {
                 return book.locations.generate(1000); // Generate locations once
             }).then(() => {
-                // Now that locations are generated, we can register the relocated handler
+                // Now that locations are generated, we can load bookmarks with correct percentages
+                const userBookmarksCfis = userProgress?.bookmarks || [];
+                if (book.locations) {
+                    const loadedBookmarks = userBookmarksCfis.map((cfi: string) => ({
+                        cfi,
+                        progress: Math.round(book.locations.percentageFromCfi(cfi) * 100)
+                    }));
+                    setBookmarks(loadedBookmarks);
+                }
+
+                // And register the relocated handler
                 newRendition.on("relocated", (locationData: any) => {
                     const cfi = locationData.start.cfi;
                     setCurrentCfi(cfi);
-                    // Now we can safely use percentageFromCfi
-                    if (book.locations) {
-                        const percent = book.locations.percentageFromCfi(cfi);
+                    if (book.locations && locationData.start.percentage !== undefined) {
+                        const percent = locationData.start.percentage;
                         setProgress(Math.round(percent * 100));
                     }
                 });
@@ -191,17 +204,17 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     }, []);
 
     const addBookmark = () => {
-        if (currentCfi && !bookmarks.includes(currentCfi)) {
-            const newBookmarks = [...bookmarks, currentCfi];
+        if (currentCfi && !bookmarks.some(b => b.cfi === currentCfi)) {
+            const newBookmarks = [...bookmarks, { cfi: currentCfi, progress: progress }];
             setBookmarks(newBookmarks);
-            syncProgress(0, null, newBookmarks);
+            syncProgress(0, null, newBookmarks.map(b => b.cfi));
         }
     };
     
     const removeBookmark = (cfi: string) => {
-        const newBookmarks = bookmarks.filter(bm => bm !== cfi);
+        const newBookmarks = bookmarks.filter(bm => bm.cfi !== cfi);
         setBookmarks(newBookmarks);
-        syncProgress(0, null, newBookmarks);
+        syncProgress(0, null, newBookmarks.map(b => b.cfi));
     };
 
     const goToBookmark = (cfi: string) => {
@@ -263,8 +276,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <Button variant="ghost" size="icon" onClick={addBookmark} title="Add Bookmark"><BookmarkPlusIcon className="w-5 h-5"/></Button>
                         <Button variant="ghost" size="icon" onClick={() => setShowBookmarks(p => !p)} title="View Bookmarks"><BookmarkSolidIcon className="w-5 h-5"/></Button>
                         <Button variant="ghost" size="icon" onClick={() => setShowSettings(p => !p)} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setIsImmersive(true)} title="Immersive Mode"><ExpandIcon className="w-5 h-5"/></Button>
-                        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <ShrinkIcon className="w-5 h-5"/> : <ExpandIcon className="w-5 h-5"/>}</Button>
+                        <Button variant="ghost" size="icon" onClick={() => setIsImmersive(true)} title="Immersive Mode"><ChevronsUpDown className="w-5 h-5"/></Button>
+                        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
                         <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
                     </div>
                 </header>
@@ -300,9 +313,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                          <div>
                             <h3 className="font-semibold mb-2">Font Size</h3>
                             <div className="flex justify-around items-center">
-                                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.max(80, s - 10))}>A-</Button>
+                                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.max(80, s - 10))}><ZoomOut className="w-4 h-4" /></Button>
                                 <span className="font-mono">{fontSize}%</span>
-                                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.min(200, s + 10))}>A+</Button>
+                                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setFontSize(s => Math.min(200, s + 10))}><ZoomIn className="w-4 h-4" /></Button>
                             </div>
                         </div>
                     </div>
@@ -312,12 +325,12 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <h3 className="font-bold mb-2">Bookmarks</h3>
                         <ul className="max-h-64 overflow-y-auto pr-2">
                             {bookmarks.length > 0 ? bookmarks.map((bm, i) => (
-                                <li key={bm} className="text-sm hover:bg-stone-700/50 p-2 rounded-md flex justify-between items-center">
-                                    <button onClick={() => goToBookmark(bm)} className="text-left flex-grow text-stone-300">
+                                <li key={bm.cfi} className="text-sm hover:bg-stone-700/50 p-2 rounded-md flex justify-between items-center">
+                                    <button onClick={() => goToBookmark(bm.cfi)} className="text-left flex-grow text-stone-300">
                                         Bookmark {i + 1}
-                                        <span className="text-xs text-stone-400 ml-2">({Math.round(book.locations.percentageFromCfi(bm) * 100)}%)</span>
+                                        <span className="text-xs text-stone-400 ml-2">({bm.progress}%)</span>
                                     </button>
-                                    <Button variant="ghost" size="icon" onClick={() => removeBookmark(bm)} className="h-6 w-6 text-red-400 hover:text-red-300"><TrashIcon className="w-4 h-4"/></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => removeBookmark(bm.cfi)} className="h-6 w-6 text-red-400 hover:text-red-300"><TrashIcon className="w-4 h-4"/></Button>
                                 </li>
                             )) : <p className="text-xs text-stone-500">No bookmarks yet. Click the '+' icon in the header to add one.</p>}
                         </ul>

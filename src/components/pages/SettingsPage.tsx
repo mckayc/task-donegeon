@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
-import { AppSettings, Terminology, BackupSchedule } from '../../types/app';
+import { AppSettings, Terminology, BackupSchedule, ThemeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import Input from '../user-interface/Input';
@@ -213,6 +213,15 @@ export const SettingsPage: React.FC = () => {
 
     const [deletingSchedule, setDeletingSchedule] = useState<BackupSchedule | null>(null);
 
+    const getPreviewStyle = (theme: ThemeDefinition) => ({
+        fontFamily: theme.styles['--font-display'],
+        backgroundColor: `hsl(${theme.styles['--color-bg-primary-hsl']})`,
+        color: `hsl(${theme.styles['--color-text-primary-hsl']})`,
+    });
+    
+    const getAccentStyle = (theme: ThemeDefinition) => ({
+        backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
+    });
 
     return (
         <div className="space-y-8 relative">
@@ -234,9 +243,28 @@ export const SettingsPage: React.FC = () => {
                                 </button>
                                 {isEmojiPickerOpen.general && <EmojiPicker onSelect={(emoji: string) => { handleSimpleChange('favicon', emoji); setIsEmojiPickerOpen(p => ({...p, general: false})); }} onClose={() => setIsEmojiPickerOpen(p => ({...p, general: false}))} />}
                              </div>
-                             <Input label="Default Theme" as="select" value={formState.theme} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSimpleChange('theme', e.target.value)}>
-                                 {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </Input>
+                              <div>
+                                <label className="block text-sm font-medium text-stone-300 mb-1">Default Theme</label>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                    {themes.map(theme => {
+                                        const isActive = formState.theme === theme.id;
+                                        return (
+                                            <button
+                                                key={theme.id}
+                                                type="button"
+                                                title={theme.name}
+                                                onClick={() => handleSimpleChange('theme', theme.id)}
+                                                className={`w-20 h-14 rounded-lg transition-all duration-200 border-4 ${isActive ? 'border-white shadow-lg scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                                style={getPreviewStyle(theme)}
+                                            >
+                                                <div className="w-full h-full flex items-end justify-end p-1.5">
+                                                    <div className="w-5 h-5 rounded-full" style={getAccentStyle(theme)}></div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                          <div className="pt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val: boolean) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI Features" />

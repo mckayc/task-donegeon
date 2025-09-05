@@ -252,8 +252,8 @@ const MarketplacePage: React.FC = () => {
     
     const marketDependencies = useMemo(() => ({
         appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, allConditionSets: settings.conditionSets,
-        userTrophies, trophies, gameAssets, guilds, questGroups,
-    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, settings.conditionSets, userTrophies, trophies, gameAssets, guilds, questGroups]);
+        userTrophies, trophies, gameAssets, guilds, questGroups, appMode
+    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, settings.conditionSets, userTrophies, trophies, gameAssets, guilds, questGroups, appMode]);
 
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];

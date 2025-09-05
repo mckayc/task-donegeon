@@ -5,7 +5,8 @@ import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { XCircleIcon, BookmarkIcon as BookmarkOutlineIcon } from 'lucide-react';
 import { BookmarkIcon as BookmarkSolidIcon } from '../user-interface/Icons';
-import { logReadingTimeAPI } from '../../api';
+// FIX: Corrected API import from 'logReadingTimeAPI' to the existing 'updateReadingProgressAPI' to resolve the module export error.
+import { updateReadingProgressAPI } from '../../api';
 
 declare var ePub: any;
 
@@ -35,7 +36,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const totalSecondsRead = useMemo(() => {
         if (!currentUser) return 0;
-        const storedSeconds = quest.readingProgress?.[currentUser.id] || 0;
+        // FIX: Accessed the `totalSeconds` property on the `readingProgress` object to correctly calculate the total time read.
+        const storedSeconds = quest.readingProgress?.[currentUser.id]?.totalSeconds || 0;
         return storedSeconds + sessionSeconds;
     }, [quest.readingProgress, currentUser, sessionSeconds]);
 
@@ -54,7 +56,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         try {
             // This is a fire-and-forget call; we don't need to wait for the response
             // as the state will be updated via the main data provider sync.
-            logReadingTimeAPI(quest.id, currentUser.id, secondsToSync);
+            // FIX: Corrected the API call to match the expected signature of `updateReadingProgressAPI`, passing `secondsToAdd` in an object.
+            updateReadingProgressAPI(quest.id, currentUser.id, { secondsToAdd: secondsToSync });
         } catch (error) {
             console.error("Failed to sync reading time:", error);
         }
@@ -99,7 +102,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         if (storedBookmarks) {
             setBookmarks(JSON.parse(storedBookmarks));
         }
-    }, [quest.epubUrl, quest.id, currentUser]);
+    }, [quest.epubUrl, quest.id, currentUser, bookmarksKey]);
     
     useEffect(() => {
         if (book && viewerRef.current) {

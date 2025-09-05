@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
@@ -679,24 +680,41 @@ const rejectClaim = async (questId, userId, adminId) => {
     });
 }
 
-const logReadingTime = async (questId, userId, seconds) => {
+const updateReadingProgress = async (questId, userId, progressData) => {
     const quest = await questRepo.findOneBy({ id: questId });
     if (!quest) return null;
 
     if (!quest.readingProgress) {
         quest.readingProgress = {};
     }
+    if (!quest.readingProgress[userId] || typeof quest.readingProgress[userId] !== 'object') {
+        const oldSeconds = typeof quest.readingProgress[userId] === 'number' ? quest.readingProgress[userId] : 0;
+        quest.readingProgress[userId] = { totalSeconds: oldSeconds };
+    }
 
-    quest.readingProgress[userId] = (quest.readingProgress[userId] || 0) + seconds;
+    const userProgress = quest.readingProgress[userId];
+
+    if (progressData.secondsToAdd) {
+        userProgress.totalSeconds = (userProgress.totalSeconds || 0) + progressData.secondsToAdd;
+    }
+    if (progressData.locationCfi) {
+        userProgress.locationCfi = progressData.locationCfi;
+    }
+    if (progressData.bookmarks) {
+        userProgress.bookmarks = progressData.bookmarks;
+    }
+
+    quest.readingProgress[userId] = userProgress;
+    quest.readingProgress = { ...quest.readingProgress };
 
     const saved = await questRepo.save(updateTimestamps(quest));
     updateEmitter.emit('update');
-    return saved;
+    return { success: true };
 };
 
 
 module.exports = {
     getAll, create, clone, update, deleteMany, bulkUpdateStatus, bulkUpdate, complete,
     approveQuestCompletion, rejectQuestCompletion, markAsTodo, unmarkAsTodo, completeCheckpoint,
-    claimQuest, unclaimQuest, approveClaim, rejectClaim, logReadingTime,
+    claimQuest, unclaimQuest, approveClaim, rejectClaim, updateReadingProgress,
 };

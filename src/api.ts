@@ -92,7 +92,7 @@ export const claimQuestAPI = (questId: string, userId: string) => apiRequest('PO
 export const unclaimQuestAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/unclaim', { questId, userId });
 export const approveClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/approve-claim', { questId, userId, adminId });
 export const rejectClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/reject-claim', { questId, userId, adminId });
-export const logReadingTimeAPI = (questId: string, userId: string, seconds: number) => apiRequest('POST', `/api/quests/${questId}/log-reading`, { userId, seconds });
+export const updateReadingProgressAPI = (questId: string, userId: string, data: { secondsToAdd?: number, locationCfi?: string, bookmarks?: string[] }) => apiRequest('POST', `/api/quests/${questId}/reading-progress`, { userId, data });
 
 // --- Minigames API ---
 export const getMinigamesAPI = () => apiRequest('GET', '/api/minigames');

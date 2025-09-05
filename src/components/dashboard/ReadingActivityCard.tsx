@@ -24,10 +24,11 @@ const ReadingActivityCard: React.FC = () => {
         const activities: { user: any, quest: any, time: number }[] = [];
         quests.forEach(quest => {
             if (quest.readingProgress) {
-                Object.entries(quest.readingProgress).forEach(([userId, time]) => {
+                // FIX: Destructured the `progress` object and used `totalSeconds` to correctly check the reading time and assign it to the `time` property.
+                Object.entries(quest.readingProgress).forEach(([userId, progress]) => {
                     const user = users.find(u => u.id === userId);
-                    if (user && time > 0) {
-                        activities.push({ user, quest, time });
+                    if (user && progress.totalSeconds && progress.totalSeconds > 0) {
+                        activities.push({ user, quest, time: progress.totalSeconds });
                     }
                 });
             }

@@ -133,7 +133,7 @@ const VersionHistoryContent: React.FC = () => (
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of November 10, 2025 (v0.4.45)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>EPUB Reader:</strong> Implemented a full-featured EPUB reader. Quests can now have <code>.epub</code> files attached, allowing users to read books directly in the app with progress and bookmark saving.</li>
+                <li><strong>EPUB Reader Overhaul:</strong> The eBook reader has been significantly upgraded with fullscreen mode, swipe controls, light/dark themes, improved bookmark display (with progress percentage), and database-backed progress syncing for a seamless experience across devices. Session and total time read are now also tracked and displayed.</li>
                 <li><strong>Media Library Enhancements:</strong> Added the ability to create folders, fixed upload paths, and implemented drag-and-drop for files and folders in the media library.</li>
                 <li><strong>Bug Fixes:</strong> Resolved an issue allowing users to complete daily duties multiple times and fixed a syntax error on the server.</li>
                 <li><strong>Quality of Life:</strong> Added timestamps to the approvals page for better tracking.</li>
@@ -144,7 +144,7 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>The Arcade Expansion:</strong> Five new minigames have been added: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.</li>
                 <li><strong>Arcade Leaderboard:</strong> A new "All-Time Arcade Legends" leaderboard now appears in the Arcade, showing top players based on cumulative scores across all games.</li>
-                <li><strong>High Score Display:</strong> Each minigame card now displays the name of the current global high score holder.</li>
+                <li><strong>High Score Display:</strong> Each minigame card now proudly displays the name of the current global high score holder.</li>
             </ul>
         </div>
         <div>

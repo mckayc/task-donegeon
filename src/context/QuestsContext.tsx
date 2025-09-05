@@ -9,7 +9,8 @@ import {
     completeCheckpointAPI,
     claimQuestAPI, unclaimQuestAPI,
     approveClaimAPI, rejectClaimAPI,
-    deleteSelectedAssetsAPI
+    deleteSelectedAssetsAPI,
+    updateReadingProgressAPI
 } from '../api';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
@@ -54,6 +55,7 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; locationCfi?: string; bookmarks?: string[] }) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);
@@ -239,6 +241,9 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (result) {
                 dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
             }
+        },
+        updateReadingProgress: async (questId, userId, data) => {
+            await apiAction(() => updateReadingProgressAPI(questId, userId, data));
         },
         addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data), 'Quest group created!'),
         updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data), 'Quest group updated!'),

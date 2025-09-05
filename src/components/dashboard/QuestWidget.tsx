@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import { Quest, QuestKind, QuestType, QuestCompletionStatus } from '../../../types';
 import { useSystemState } from '../../context/SystemContext';
@@ -7,8 +5,8 @@ import { useUIState } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
-import { isQuestAvailableForUser, formatTimeRemaining, toYMD } from '../../utils/quests';
-import { getQuestLockStatus } from '../../utils/conditions';
+import { isQuestAvailableForUser, formatTimeRemaining } from '../../utils/quests';
+import { getQuestLockStatus, toYMD } from '../../utils/conditions';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 

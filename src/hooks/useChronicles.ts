@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import {
   ChronicleEvent,
 } from '../types';
-import { toYMD } from '../utils/quests';
+import { toYMD } from '../utils/conditions';
 import { useAuthState } from '../context/AuthContext';
 import { useUIState } from '../context/UIContext';
 

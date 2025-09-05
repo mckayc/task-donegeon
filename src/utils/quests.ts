@@ -1,7 +1,25 @@
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../types';
-// FIX: Import fromYMD and re-export toYMD and fromYMD to fix module resolution errors.
-import { isQuestScheduledForDay, toYMD, fromYMD } from './conditions';
-export { toYMD, fromYMD };
+// FIX: The `toYMD` function was re-declared here instead of being re-exported. I've removed the redundant import alias and exported the local declaration to fix import errors across the application. I also removed `fromYMD` from this import as it is also redeclared and exported from this file.
+import { isQuestScheduledForDay } from './conditions';
+
+/**
+ * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
+ */
+export const toYMD = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+/**
+ * Consistently parses a 'YYYY-MM-DD' string into a local Date object.
+ * This avoids timezone issues where `new Date('YYYY-MM-DD')` might be interpreted as UTC.
+ */
+export const fromYMD = (ymd: string): Date => {
+  const [year, month, day] = ymd.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
 
 /**
  * Checks if a vacation event is active for a given scope on a specific date.

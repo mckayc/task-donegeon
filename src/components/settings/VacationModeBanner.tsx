@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
-import { toYMD } from '../../utils/quests';
+import { toYMD } from '../../utils/conditions';
 
 const VacationModeBanner: React.FC = () => {
   const { scheduledEvents } = useSystemState();

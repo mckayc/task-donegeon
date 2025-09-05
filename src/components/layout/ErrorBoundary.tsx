@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import Button from '../user-interface/Button';
+import { bugLogger } from '../../utils/bugLogger';
 
 interface Props {
   children: ReactNode;
@@ -8,6 +9,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  errorInfo?: ErrorInfo;
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -21,8 +23,16 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // You can also log the error to an error reporting service
+    this.setState({ errorInfo });
+    // Log the error to the console
     console.error("Uncaught error:", error, errorInfo);
+    // Also log it to our internal bug reporter if it's active
+    if (bugLogger.isRecording()) {
+        bugLogger.add({
+            type: 'ACTION', // Using ACTION as a proxy for ERROR type
+            message: `CRASH: ${error.toString()}\nComponent Stack:\n${errorInfo.componentStack}`
+        });
+    }
   }
 
   private handleReload = () => {
@@ -47,6 +57,7 @@ class ErrorBoundary extends Component<Props, State> {
                         <summary className="cursor-pointer text-stone-400">Error Details</summary>
                         <pre className="mt-2 text-xs text-red-300 whitespace-pre-wrap">
                             {this.state.error.toString()}
+                            {this.state.errorInfo?.componentStack}
                         </pre>
                     </details>
                 )}

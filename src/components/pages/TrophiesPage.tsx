@@ -1,11 +1,9 @@
-
-
 import React, { useMemo, useState } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, User } from '../../types';
 import Card from '../user-interface/Card';
-import { fromYMD } from '../../utils/quests';
+import { fromYMD } from '../../utils/conditions';
 import EmptyState from '../user-interface/EmptyState';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
@@ -31,7 +29,7 @@ const TrophiesPage: React.FC = () => {
         }
 
         const userCompletedQuests = questCompletions.filter(c => c.userId === currentUser.id && c.guildId == null && c.status === QuestCompletionStatus.Approved);
-        const totalXp = Object.values(currentUser.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const totalXp = Object.values(currentUser.personalExperience).reduce<number>((sum: number, amount: number) => sum + amount, 0);
         const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
 
         return (

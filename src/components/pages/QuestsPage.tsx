@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
-import { useSystemState } from '../../context/SystemState';
+import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet } from '../../types';

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
@@ -11,7 +12,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useSystemState } from '../../context/SystemState';
+import { useSystemState } from '../../context/SystemContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
@@ -52,16 +53,16 @@ const SharedCalendarPage: React.FC = () => {
 
 
     const sharedUsers = useMemo(() => {
-        const userMap = new Map(users.map(u => [u.id, u]));
+        const userMap = new Map(users.map((u: User) => [u.id, u]));
         const userIdsToShow = settings.sharedMode.userIds;
-        return userIdsToShow.map(id => userMap.get(id)).filter((u): u is User => !!u);
+        return userIdsToShow.map((id: string) => userMap.get(id)).filter((u: User | undefined): u is User => !!u);
     }, [users, settings.sharedMode.userIds]);
 
     const questsByUser = useMemo(() => {
         const dateKey = toYMD(currentDate);
         const questsMap = new Map<string, { duties: Quest[], ventures: Quest[] }>();
 
-        sharedUsers.forEach(user => {
+        sharedUsers.forEach((user: User) => {
             if (!user) return;
             const userQuests: Quest[] = [];
             const userCompletions = questCompletions.filter(c => c.userId === user.id);

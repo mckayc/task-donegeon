@@ -102,7 +102,7 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  readingProgress?: { [userId: string]: { totalSeconds?: number; locationCfi?: string; bookmarks?: string[] } };
+  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; locationCfi?: string; bookmarks?: string[] } };
   createdAt?: string;
   updatedAt?: string;
 }

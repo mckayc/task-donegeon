@@ -697,6 +697,9 @@ const updateReadingProgress = async (questId, userId, progressData) => {
     if (progressData.secondsToAdd) {
         userProgress.totalSeconds = (userProgress.totalSeconds || 0) + progressData.secondsToAdd;
     }
+    if (typeof progressData.sessionSeconds === 'number') {
+        userProgress.sessionSeconds = progressData.sessionSeconds;
+    }
     if (progressData.locationCfi) {
         userProgress.locationCfi = progressData.locationCfi;
     }

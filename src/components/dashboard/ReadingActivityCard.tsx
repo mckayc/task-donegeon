@@ -21,14 +21,18 @@ const ReadingActivityCard: React.FC = () => {
     const { users } = useAuthState();
 
     const readingActivities = useMemo(() => {
-        const activities: { user: any, quest: any, time: number }[] = [];
+        const activities: { user: any, quest: any, time: number, sessionTime?: number }[] = [];
         quests.forEach(quest => {
             if (quest.readingProgress) {
-                // FIX: Destructured the `progress` object and used `totalSeconds` to correctly check the reading time and assign it to the `time` property.
                 Object.entries(quest.readingProgress).forEach(([userId, progress]) => {
                     const user = users.find(u => u.id === userId);
                     if (user && progress.totalSeconds && progress.totalSeconds > 0) {
-                        activities.push({ user, quest, time: progress.totalSeconds });
+                        activities.push({ 
+                            user, 
+                            quest, 
+                            time: progress.totalSeconds,
+                            sessionTime: progress.sessionSeconds
+                        });
                     }
                 });
             }
@@ -43,7 +47,7 @@ const ReadingActivityCard: React.FC = () => {
     return (
         <Card title="Live Reading Activity">
             <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                {readingActivities.map(({ user, quest, time }) => (
+                {readingActivities.map(({ user, quest, time, sessionTime }) => (
                     <div key={`${user.id}-${quest.id}`} className="flex items-center gap-3 p-2 bg-stone-900/50 rounded-md">
                         <Avatar user={user} className="w-10 h-10 rounded-full flex-shrink-0" />
                         <div className="flex-grow overflow-hidden">
@@ -53,8 +57,9 @@ const ReadingActivityCard: React.FC = () => {
                                 <span className="truncate">Reading: {quest.title}</span>
                             </p>
                         </div>
-                        <div className="font-mono font-bold text-lg text-emerald-300 flex-shrink-0">
-                            {formatTime(time)}
+                         <div className="font-mono text-right flex-shrink-0">
+                            <p className="font-bold text-lg text-emerald-300" title="Total Time">{formatTime(time)}</p>
+                            {sessionTime && sessionTime > 0 && <p className="text-xs text-stone-400" title="Current Session">({formatTime(sessionTime)})</p>}
                         </div>
                     </div>
                 ))}

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.51 - Quest Groups",
-  "version": "0.4.51",
-  "description": "Updates the Help & About page with the latest feature specifications, version history, and development roadmap. Also increments the app version.",
+  "name": "Task Donegeon 2.0 - 0.4.52 - Customizable Dashboard",
+  "version": "0.4.52",
+  "description": "Introduces a customizable dashboard where users can collapse and reorder cards. The layout is saved per user.",
   "requestFramePermissions": [
     "camera"
   ],

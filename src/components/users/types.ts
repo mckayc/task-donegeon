@@ -1,4 +1,3 @@
-
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
@@ -15,6 +14,17 @@ export enum RewardCategory {
 export interface RewardItem {
   rewardTypeId: string;
   amount: number;
+}
+
+export interface DashboardLayout {
+  left: {
+    order: string[];
+    collapsed: string[];
+  };
+  right: {
+    order: string[];
+    collapsed: string[];
+  };
 }
 
 export interface User {
@@ -43,6 +53,7 @@ export interface User {
   hasBeenOnboarded?: boolean;
   aboutMe?: string;
   adminNotes?: string;
+  dashboardLayout?: DashboardLayout;
   createdAt?: string;
   updatedAt?: string;
 }

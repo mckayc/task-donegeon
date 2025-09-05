@@ -306,7 +306,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     </div>
                 </header>
 
-                <div id="viewer-wrapper" className="flex-grow relative" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+                <div id="viewer-wrapper" className="flex-grow relative min-h-0" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                     {isLoading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-stone-800 z-30">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>

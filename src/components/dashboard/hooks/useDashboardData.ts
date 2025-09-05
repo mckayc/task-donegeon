@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment, ChronicleEvent } from '../../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment, ChronicleEvent, QuestType } from '../../../types';
 import { isQuestAvailableForUser, questSorter } from '../../../utils/quests';
 import { isQuestVisibleToUserInMode, toYMD } from '../../../utils/conditions';
 import { useQuestsState } from '../../../context/QuestsContext';
@@ -189,6 +189,7 @@ export const useDashboardData = () => {
     const quickActionQuests = useMemo(() => {
         const today = new Date();
         const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
+
         const completableQuests = quests.filter(quest => {
             if (!isQuestVisibleToUserInMode(quest, currentUser.id, appMode)) return false;
             
@@ -200,7 +201,38 @@ export const useDashboardData = () => {
 
             return isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode)
         });
-        const uniqueQuests = Array.from(new Map(completableQuests.map(q => [q.id, q])).values());
+
+        // Separate Duties from Ventures/Journeys
+        const duties = completableQuests.filter(q => q.type === QuestType.Duty);
+        const venturesAndJourneys = completableQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey);
+
+        // Prioritize Ventures & Journeys
+        venturesAndJourneys.sort((a, b) => {
+            const aIsTodo = a.todoUserIds?.includes(currentUser.id) ?? false;
+            const bIsTodo = b.todoUserIds?.includes(currentUser.id) ?? false;
+            if (aIsTodo !== bIsTodo) return aIsTodo ? -1 : 1; // To-Dos first
+
+            const aHasDeadline = !!a.endDateTime;
+            const bHasDeadline = !!b.endDateTime;
+            if (aHasDeadline !== bHasDeadline) return aHasDeadline ? -1 : 1; // Quests with deadlines first
+
+            if (aHasDeadline && bHasDeadline && a.endDateTime && b.endDateTime) {
+                const aDueDate = new Date(a.endDateTime).getTime();
+                const bDueDate = new Date(b.endDateTime).getTime();
+                if (aDueDate !== bDueDate) return aDueDate - bDueDate; // Earlier deadline first
+            }
+
+            // Fallback sort by title
+            return a.title.localeCompare(b.title);
+        });
+        
+        // Take the top 5 Ventures/Journeys
+        const curatedVentures = venturesAndJourneys.slice(0, 5);
+
+        // Combine and sort everything with the main sorter for final display order
+        const combinedQuests = [...duties, ...curatedVentures];
+        const uniqueQuests = Array.from(new Map(combinedQuests.map(q => [q.id, q])).values());
+        
         return uniqueQuests.sort(questSorter(currentUser, userCompletions, scheduledEvents, today));
     }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
     

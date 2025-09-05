@@ -98,6 +98,7 @@ const UserEntity = new EntitySchema({
         hasBeenOnboarded: { type: "boolean", nullable: true, default: false },
         aboutMe: { type: "text", nullable: true },
         adminNotes: { type: "text", nullable: true },
+        dashboardLayout: { type: "simple-json", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     },

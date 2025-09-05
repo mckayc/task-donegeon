@@ -33,6 +33,7 @@ const FeaturesContent: React.FC = () => {
             <div>
                 <h4 className="text-lg font-bold text-stone-100">For Players ({settings.terminology.users})</h4>
                 <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>Customizable Dashboard:</strong> Collapse cards you don't use often and drag-and-drop your most important widgets to the top. Your layout is saved automatically.</li>
                     <li><strong>Gamified Experience:</strong> Complete {settings.terminology.tasks} to earn {settings.terminology.points} and {settings.terminology.xp}.</li>
                     <li><strong>Character Progression:</strong> Level up through a series of configurable {settings.terminology.levels}.</li>
                     <li><strong>Virtual Economy:</strong> Spend {settings.terminology.currency} in {settings.terminology.stores} to buy virtual goods.</li>
@@ -45,6 +46,7 @@ const FeaturesContent: React.FC = () => {
              <div>
                 <h4 className="text-lg font-bold text-stone-100">For Admins ({settings.terminology.admin}s)</h4>
                 <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>Customizable Dashboard:</strong> Collapse cards you don't use often and drag-and-drop your most important widgets to the top. Your layout is saved automatically.</li>
                     <li><strong>Powerful Content Management:</strong> Create and manage every aspect of the game world, including {settings.terminology.tasks}, items, {settings.terminology.stores}, {settings.terminology.levels}, and {settings.terminology.awards}.</li>
                     <li><strong>AI Suggestion Engine:</strong> Use Google's Gemini AI to generate creative ideas for any game asset, from {settings.terminology.tasks} to items to {settings.terminology.awards}.</li>
                     <li><strong>Asset Library:</strong> Kickstart your world with pre-made content packs that can be imported with a single click.</li>
@@ -130,6 +132,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of November 24, 2025 (v0.4.52)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Customizable Dashboard:</strong> All cards on the Dashboard are now collapsible and can be reordered via drag-and-drop. Your preferred layout and collapsed states are saved automatically to your profile, allowing for a personalized view of your most important information.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of November 17, 2025 (v0.4.46)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

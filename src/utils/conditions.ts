@@ -1,3 +1,4 @@
+
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role, QuestType } from '../types';
 import { toYMD, isQuestScheduledForDay } from './quests';
 
@@ -98,9 +99,12 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                     if (c.userId !== user.id || c.questId !== q.id || !requiredGroupStatuses.includes(c.status)) {
                         return false;
                     }
-                    // For a group completion check, we always care about "today".
-                    // This applies to both duties and ventures within the group.
-                    return toYMD(new Date(c.completedAt)) === todayYMD;
+                    // For a recurring quest (Duty), it must be completed today.
+                    if (q.type === QuestType.Duty) {
+                        return toYMD(new Date(c.completedAt)) === todayYMD;
+                    }
+                    // For a one-time quest (Venture/Journey), any completion is sufficient.
+                    return true;
                 })
             );
         }

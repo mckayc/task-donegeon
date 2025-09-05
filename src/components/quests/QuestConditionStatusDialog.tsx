@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Quest, User, ConditionSet, QuestCompletionStatus, QuestType } from '../../types';
 import Button from '../user-interface/Button';
@@ -74,7 +75,11 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                                                 }
                                                                 // When displaying status in the dialog, we always check against today's date
                                                                 // to show current progress towards unlocking the asset.
-                                                                return toYMD(new Date(c.completedAt)) === todayYMD;
+                                                                if (q.type === QuestType.Duty) {
+                                                                    return toYMD(new Date(c.completedAt)) === todayYMD;
+                                                                }
+                                                                // For Venture/Journey, any completion is fine
+                                                                return true;
                                                             });
 
                                                         const isQuestCompleted = !!completion;

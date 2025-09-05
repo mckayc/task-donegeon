@@ -1,3 +1,4 @@
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
@@ -175,8 +176,8 @@ const complete = async (completionData) => {
         // Validation for duty quests to prevent multiple completions on the same day.
         if (quest.type === 'Duty') {
             const today = new Date(completionData.completedAt);
-            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+            const startOfDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0));
+            const endOfDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999));
             
             const existingCompletionTodayCount = await manager.getRepository(QuestCompletionEntity).count({
                 where: {

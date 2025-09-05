@@ -77,7 +77,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
             <li>
-                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests. Users can open a full-featured reader to read books directly within the app. Progress and bookmarks are saved automatically for each user and quest, making it perfect for reading-based assignments.
+                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests. Users can open a full-featured reader to read books directly within the app. Progress (location, bookmarks, time read) is now saved to the database, syncing across devices. The reader now supports fullscreen mode, light/dark themes, and swipe gestures for turning pages.
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>

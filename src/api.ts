@@ -111,7 +111,7 @@ export const deleteSelectedAssetsAPI = (assets: { [key in ShareableAssetType]?: 
 };
 export const applyManualAdjustmentAPI = (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => apiRequest('POST', '/api/users/adjust', adjustment);
 export const uploadFileAPI = (file: File, category?: string) => {
-    const uploadPath = category ? `/api/media/upload/${encodeURIComponent(category)}` : '/api/media/upload';
+    const uploadPath = category ? `/api/media/upload/asset-gallery/${encodeURIComponent(category)}` : '/api/media/upload/asset-gallery';
     return apiUpload(uploadPath, file);
 };
 export const addThemeAPI = (data: Omit<ThemeDefinition, 'id'>) => apiRequest('POST', '/api/themes', data);

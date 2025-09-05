@@ -20,14 +20,23 @@ const cloneUser = async (req, res) => {
     res.status(201).json(clonedUser);
 };
 
-const updateUser = async (req, res) => {
-    const updatedUser = await userService.update(req.params.id, req.body);
-    if (!updatedUser) {
-        // This can be a 404 Not Found or a 409 Conflict. The service now returns null for either.
-        return res.status(409).json({ error: 'Update failed. User not found or username/email may be taken.' });
+const updateUser = async (req, res, next) => {
+    try {
+        const updatedUser = await userService.update(req.params.id, req.body);
+        if (!updatedUser) {
+            // This can be a 404 Not Found or a 409 Conflict. The service now returns null for either.
+            return res.status(409).json({ error: 'Update failed. User not found or username/email may be taken.' });
+        }
+        // Explicitly setting status 200 to prevent any potential middleware issues
+        // causing an undefined status code before this point.
+        return res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error(`[CONTROLLER_ERROR] updateUser failed for user ${req.params.id}:`, error);
+        // Pass the error to the next middleware (Express's default error handler)
+        next(error);
     }
-    res.json(updatedUser);
 };
+
 
 const deleteUsers = async (req, res) => {
     const { ids, actorId } = req.body;

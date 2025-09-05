@@ -58,6 +58,7 @@ const Card: React.FC<CardProps> = ({ children, className, title, titleIcon, head
             initial="collapsed"
             animate="open"
             exit="collapsed"
+            style={{ overflow: 'hidden' }}
             variants={{
               open: { opacity: 1, height: 'auto' },
               collapsed: { opacity: 0, height: 0 },

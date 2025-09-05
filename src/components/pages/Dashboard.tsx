@@ -155,7 +155,15 @@ const Dashboard: React.FC = () => {
             dragHandleProps: { onPointerDown: (e: React.PointerEvent) => dragControls.start(e) }
         };
         return (
-            <Reorder.Item key={cardId} value={cardId} dragListener={false} dragControls={dragControls}>
+            <Reorder.Item 
+                key={cardId} 
+                value={cardId} 
+                dragListener={false} 
+                dragControls={dragControls}
+                layout
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                whileDrag={{ scale: 1.03, zIndex: 50, boxShadow: '0px 10px 20px rgba(0,0,0,0.2)' }}
+            >
                 {React.cloneElement(children, propsToInject)}
             </Reorder.Item>
         );
@@ -220,7 +228,29 @@ const Dashboard: React.FC = () => {
                    ))}
                 </Reorder.Group>
             </div>
-            {/* Dialogs remain unchanged */}
+            {selectedQuest && (
+                <QuestDetailDialog
+                    quest={selectedQuest}
+                    onClose={() => setSelectedQuest(null)}
+                    onComplete={() => {
+                        setCompletingQuest(selectedQuest);
+                        setSelectedQuest(null);
+                    }}
+                />
+            )}
+            {completingQuest && (
+                <CompleteQuestDialog quest={completingQuest} onClose={() => setCompletingQuest(null)} />
+            )}
+            {contributingQuest && (
+                <ContributeToQuestDialog quest={contributingQuest} onClose={() => setContributingQuest(null)} />
+            )}
+             {viewingConditionsForQuest && (
+                <QuestConditionStatusDialog
+                    quest={viewingConditionsForQuest}
+                    user={currentUser}
+                    onClose={() => setViewingConditionsForQuest(null)}
+                />
+            )}
         </div>
     );
 };

@@ -1,11 +1,10 @@
-
-
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy, RewardItem, AdminAdjustment, ChronicleEvent } from '../../../types';
-import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter, toYMD } from '../../../utils/quests';
+import { isQuestAvailableForUser, questSorter } from '../../../utils/quests';
+import { isQuestVisibleToUserInMode, toYMD } from '../../../utils/conditions';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useProgressionState } from '../../../context/ProgressionContext';
 import { useEconomyState } from '../../../context/EconomyContext';

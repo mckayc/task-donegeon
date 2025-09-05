@@ -1,7 +1,7 @@
 import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../types';
-// FIX: Import functions for internal use and re-export them (and others) for external use to resolve module errors.
-import { isQuestScheduledForDay, toYMD } from './conditions';
-export { isQuestScheduledForDay, isQuestVisibleToUserInMode, toYMD, fromYMD } from './conditions';
+// FIX: Import fromYMD and re-export toYMD and fromYMD to fix module resolution errors.
+import { isQuestScheduledForDay, toYMD, fromYMD } from './conditions';
+export { toYMD, fromYMD };
 
 /**
  * Checks if a vacation event is active for a given scope on a specific date.

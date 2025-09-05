@@ -145,20 +145,20 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             setSessionSeconds(Math.round((Date.now() - startTimeRef.current) / 1000));
         }, 1000);
 
-        // Interval for syncing progress with the backend
-        const syncInterval = setInterval(() => {
-            const now = Date.now();
-            const elapsedSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
-            if (elapsedSeconds > 0) {
-                syncProgress(elapsedSeconds, currentCfi);
-                lastSyncTimeRef.current = now; // Update sync time after successful sync call
-            }
-        }, 20000); // Sync every 20 seconds
+        // // Interval for syncing progress with the backend
+        // const syncInterval = setInterval(() => {
+        //     const now = Date.now();
+        //     const elapsedSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
+        //     if (elapsedSeconds > 0) {
+        //         syncProgress(elapsedSeconds, currentCfi);
+        //         lastSyncTimeRef.current = now; // Update sync time after successful sync call
+        //     }
+        // }, 20000); // Sync every 20 seconds
 
         // Cleanup function for when the component unmounts
         return () => {
             clearInterval(sessionTimer);
-            clearInterval(syncInterval);
+            // clearInterval(syncInterval);
             // Perform one final sync on close
             const elapsedSeconds = Math.round((Date.now() - lastSyncTimeRef.current) / 1000);
             if (elapsedSeconds > 0) {

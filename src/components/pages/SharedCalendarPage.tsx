@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
@@ -11,7 +12,7 @@ import PinEntryDialog from '../auth/PinEntryDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useAuthState } from '../../context/AuthContext';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useNotificationsDispatch } from '../../context/NotificationsDispatch';
 import { useSystemState } from '../../context/SystemContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';

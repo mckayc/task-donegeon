@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import { Quest, User, ConditionSet, QuestCompletionStatus, QuestType } from '../../types';
 import Button from '../user-interface/Button';
@@ -10,7 +8,8 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { checkCondition, getConditionDescription, ConditionDependencies } from '../../utils/conditions';
-import { toYMD, isQuestVisibleToUserInMode } from '../../utils/quests';
+import { toYMD } from '../../utils/quests';
+import { isQuestVisibleToUserInMode } from '../../utils/conditions';
 import { useUIState } from '../../context/UIContext';
 
 interface QuestConditionStatusDialogProps {

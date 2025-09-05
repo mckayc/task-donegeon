@@ -154,7 +154,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [quest.id]);
+    }, []);
 
     const syncProgress = useCallback(async (forceSync = false, bookmarksToSync?: string[]) => {
         if (!currentUser) return;
@@ -368,7 +368,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     </div>
                 )}
 
-                {!isImmersive && (
+                {isImmersive ? null : (
                     <footer className="epub-reader-footer p-3 flex justify-between items-center z-20 text-white text-sm flex-shrink-0">
                          <div className="flex gap-4 w-1/4">
                             <div title="Session Time"><span className="font-semibold">Session:</span> {formatTime(sessionSeconds)}</div>

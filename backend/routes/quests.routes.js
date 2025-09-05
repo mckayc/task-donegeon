@@ -1,4 +1,3 @@
-
 const express = require('express');
 const { asyncMiddleware } = require('../utils/helpers');
 const {
@@ -19,6 +18,7 @@ const {
     unclaimQuest,
     approveClaim,
     rejectClaim,
+    logReadingTime,
 } = require('../controllers/quests.controller');
 
 const router = express.Router();
@@ -42,6 +42,7 @@ router.post('/claim', asyncMiddleware(claimQuest));
 router.post('/unclaim', asyncMiddleware(unclaimQuest));
 router.post('/approve-claim', asyncMiddleware(approveClaim));
 router.post('/reject-claim', asyncMiddleware(rejectClaim));
+router.post('/:id/log-reading', asyncMiddleware(logReadingTime));
 
 
 module.exports = router;

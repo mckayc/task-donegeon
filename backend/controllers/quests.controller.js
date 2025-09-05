@@ -1,4 +1,3 @@
-
 const questService = require('../services/quests.service');
 
 const getAllQuests = async (req, res) => {
@@ -130,6 +129,14 @@ const rejectClaim = async (req, res) => {
     res.json(result);
 }
 
+const logReadingTime = async (req, res) => {
+    const { id: questId } = req.params;
+    const { userId, seconds } = req.body;
+    const result = await questService.logReadingTime(questId, userId, seconds);
+    if (!result) return res.status(404).json({ error: 'Quest not found.' });
+    res.status(200).json(result);
+};
+
 module.exports = {
     getAllQuests,
     createQuest,
@@ -148,4 +155,5 @@ module.exports = {
     unclaimQuest,
     approveClaim,
     rejectClaim,
+    logReadingTime,
 };

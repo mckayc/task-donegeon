@@ -1,8 +1,6 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
-import { Quest, QuestType, QuestKind, User } from '../../types';
+import { Quest, QuestType, QuestKind, User, Role } from '../../types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
@@ -24,6 +22,7 @@ import PendingApprovalsCard from '../dashboard/PendingApprovalsCard';
 import { getQuestLockStatus } from '../../utils/quests';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
 import { useEconomyState } from '../../context/EconomyContext';
+import ReadingActivityCard from '../dashboard/ReadingActivityCard';
 
 const Dashboard: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
@@ -99,6 +98,8 @@ const Dashboard: React.FC = () => {
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
+    const isAdmin = currentUser.role === Role.DonegeonMaster;
+
     const handleQuestSelect = (quest: Quest) => {
         const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
         if (lockStatus.isLocked) {
@@ -147,6 +148,7 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="lg:col-span-2 space-y-6">
+                    {isAdmin && <ReadingActivityCard />}
                     {hasPending && <PendingApprovalsCard pendingData={pendingApprovals} onQuestSelect={handleQuestSelect} />}
                     <QuickActionsCard quests={quickActionQuests} onQuestSelect={handleQuestSelect} />
                     <RecentActivityCard activities={recentActivities} terminology={terminology} />

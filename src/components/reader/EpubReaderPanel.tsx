@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { XCircleIcon, BookmarkIcon as BookmarkOutlineIcon } from 'lucide-react';
 import { BookmarkIcon as BookmarkSolidIcon } from '../user-interface/Icons';
+import { logReadingTimeAPI } from '../../api';
 
 declare var ePub: any;
 
@@ -25,8 +26,68 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const viewerRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const [sessionSeconds, setSessionSeconds] = useState(0);
+    const [isPanelActive, setIsPanelActive] = useState(true);
+    const sessionSyncIntervalRef = useRef<number | null>(null);
+
     const bookKey = currentUser ? `epub-loc-${currentUser.id}-${quest.id}` : null;
     const bookmarksKey = currentUser ? `epub-bookmarks-${currentUser.id}-${quest.id}` : null;
+
+    const totalSecondsRead = useMemo(() => {
+        if (!currentUser) return 0;
+        const storedSeconds = quest.readingProgress?.[currentUser.id] || 0;
+        return storedSeconds + sessionSeconds;
+    }, [quest.readingProgress, currentUser, sessionSeconds]);
+
+    useEffect(() => {
+        let interval: number;
+        if (isPanelActive) {
+            interval = window.setInterval(() => {
+                setSessionSeconds(prev => prev + 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isPanelActive]);
+
+    const syncReadingTime = useCallback(async (secondsToSync: number) => {
+        if (!currentUser || secondsToSync <= 0) return;
+        try {
+            // This is a fire-and-forget call; we don't need to wait for the response
+            // as the state will be updated via the main data provider sync.
+            logReadingTimeAPI(quest.id, currentUser.id, secondsToSync);
+        } catch (error) {
+            console.error("Failed to sync reading time:", error);
+        }
+    }, [currentUser, quest.id]);
+
+    useEffect(() => {
+        // Sync every 20 seconds
+        sessionSyncIntervalRef.current = window.setInterval(() => {
+            setSessionSeconds(prevSeconds => {
+                if (prevSeconds > 0) {
+                    syncReadingTime(prevSeconds);
+                }
+                return 0; // Reset session timer after syncing
+            });
+        }, 20000);
+
+        return () => {
+            if (sessionSyncIntervalRef.current) {
+                clearInterval(sessionSyncIntervalRef.current);
+            }
+            // Final sync on unmount
+            syncReadingTime(sessionSeconds);
+        };
+    }, [syncReadingTime, sessionSeconds]);
+
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            setIsPanelActive(document.visibilityState === 'visible');
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
 
     useEffect(() => {
         if (!quest.epubUrl) return;
@@ -108,6 +169,17 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         setShowBookmarks(false);
     };
 
+    const formatTime = (totalSeconds: number) => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const parts = [];
+        if (hours > 0) parts.push(hours.toString().padStart(2, '0'));
+        parts.push(minutes.toString().padStart(2, '0'));
+        parts.push(seconds.toString().padStart(2, '0'));
+        return parts.join(':');
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
             <div className="w-full max-w-5xl h-[90vh] bg-stone-100 text-stone-900 shadow-2xl rounded-lg relative flex flex-col">
@@ -152,6 +224,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         </ul>
                     </div>
                 )}
+                <div className="absolute bottom-4 left-4 bg-stone-800 text-white px-3 py-1.5 rounded-full text-sm font-mono" title="Total Time Read">
+                    {formatTime(totalSecondsRead)}
+                </div>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-4 py-1.5 rounded-full text-sm font-semibold">
                     {progress}%
                 </div>

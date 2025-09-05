@@ -1,8 +1,10 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
-import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, formatTimeRemaining, getQuestLockStatus, QuestLockStatus } from '../../utils/quests';
+import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter, formatTimeRemaining } from '../../utils/quests';
+import { getQuestLockStatus, QuestLockStatus, ConditionDependencies } from '../../utils/conditions';
 import Card from '../user-interface/Card';
 import Avatar from '../user-interface/Avatar';
 import Button from '../user-interface/Button';
@@ -17,7 +19,6 @@ import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
-import { ConditionDependencies } from '../../utils/conditions';
 // FIX: Import useUIState to get appMode for condition checking.
 import { useUIState } from '../../context/UIContext';
 
@@ -145,8 +146,7 @@ const SharedCalendarPage: React.FC = () => {
         setSelectedQuestDetails(null);
     };
     
-    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
-    const conditionDependencies = useMemo(() => ({
+    const conditionDependencies = useMemo<ConditionDependencies & { allConditionSets: ConditionSet[] }>(() => ({
         ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets, appMode
     }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets, appMode]);
 

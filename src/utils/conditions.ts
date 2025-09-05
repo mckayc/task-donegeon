@@ -1,4 +1,5 @@
 
+
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role, QuestType, AppMode } from '../types';
 import { toYMD, isQuestScheduledForDay, isQuestVisibleToUserInMode } from './quests';
 
@@ -247,4 +248,39 @@ export const getConditionDescription = (condition: Condition, dependencies: Cond
         default:
             return 'Unknown condition';
     }
+};
+
+export interface QuestLockStatus {
+    isLocked: boolean;
+    reason?: 'CONDITIONAL';
+    message?: string;
+}
+
+export const getQuestLockStatus = (
+    quest: Quest, 
+    user: User, 
+    dependencies: ConditionDependencies & { allConditionSets: ConditionSet[] }
+): QuestLockStatus => {
+    // 1. Check global conditions first.
+    const globalCheck = checkGlobalConditionsMet(user, dependencies, { questId: quest.id });
+    if (!globalCheck.allMet) {
+        return {
+            isLocked: true,
+            reason: 'CONDITIONAL',
+            message: `Globally locked by: ${globalCheck.failingSetName || 'a global rule'}.`
+        };
+    }
+
+    // 2. If global conditions pass, check quest-specific conditions.
+    if (quest.conditionSetIds && quest.conditionSetIds.length > 0) {
+        const { allMet, failingSetName } = checkAllConditionSetsMet(quest.conditionSetIds, user, dependencies, quest.id);
+        if (!allMet) {
+            return {
+                isLocked: true,
+                reason: 'CONDITIONAL',
+                message: `You do not meet the requirements for: ${failingSetName || quest.title}`
+            };
+        }
+    }
+    return { isLocked: false };
 };

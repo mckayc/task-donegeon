@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem, ConditionSet } from '../../types';
 import Card from '../user-interface/Card';
@@ -17,7 +18,8 @@ import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput,
 import { useChronicles } from '../chronicles/hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode, getQuestLockStatus } from '../../utils/quests';
+import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../../utils/quests';
+import { getQuestLockStatus } from '../../utils/conditions';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
@@ -97,7 +99,6 @@ const CalendarPage: React.FC = () => {
         }
     }, [quests, viewingQuest]);
     
-    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
     const conditionDependencies = useMemo(() => ({
         ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets, appMode
     }), [progressionState, economyState, communityState, quests, questGroups, questCompletions, systemState.settings.conditionSets, appMode]);
@@ -312,7 +313,6 @@ const CalendarPage: React.FC = () => {
         if (props.type === 'scheduled' && props.appEvent) {
             setViewingEvent(props.appEvent);
         } else if (props.type === 'quest' && props.quest) {
-            // FIX: Pass the complete conditionDependencies object to getQuestLockStatus.
             const lockStatus = getQuestLockStatus(props.quest, currentUser, conditionDependencies);
             if (lockStatus.isLocked) {
                 setViewingConditionsForQuest(props.quest);

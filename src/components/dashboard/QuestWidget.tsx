@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { Quest, QuestKind, QuestType, QuestCompletionStatus } from '../../../types';
 import { useSystemState } from '../../context/SystemContext';
@@ -6,7 +7,8 @@ import { useUIState } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
-import { isQuestAvailableForUser, formatTimeRemaining, toYMD, getQuestLockStatus } from '../../utils/quests';
+import { isQuestAvailableForUser, formatTimeRemaining, toYMD } from '../../utils/quests';
+import { getQuestLockStatus } from '../../utils/conditions';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 
@@ -28,7 +30,6 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
 
     if (!currentUser) return null;
 
-    // FIX: Add appMode to conditionDependencies to satisfy the type requirements of getQuestLockStatus.
     const conditionDependencies = useMemo(() => ({
         ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, allConditionSets: settings.conditionSets, appMode
     }), [ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, settings.conditionSets, appMode]);

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.45 - EPUB Documentation",
-  "version": "0.4.45",
-  "description": "A gamified task and chore tracker for families and groups. Updated help page and added EPUB reader functionality. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
+  "name": "Task Donegeon 2.0 - 0.4.47 - Help Documentation Update",
+  "version": "0.4.47",
+  "description": "Updates the in-app help documentation to reflect the latest features, roadmap, and version history.",
   "requestFramePermissions": [
     "camera"
   ],

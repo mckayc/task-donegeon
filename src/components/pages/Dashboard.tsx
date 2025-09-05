@@ -19,7 +19,7 @@ import { useAuthState } from '../../context/AuthContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import PendingApprovalsCard from '../dashboard/PendingApprovalsCard';
-import { getQuestLockStatus } from '../../utils/quests';
+import { getQuestLockStatus } from '../../utils/conditions';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
 import { useEconomyState } from '../../context/EconomyContext';
 import ReadingActivityCard from '../dashboard/ReadingActivityCard';

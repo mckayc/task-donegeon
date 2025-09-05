@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Card from '../user-interface/Card';
 import QuestWidget from './QuestWidget';
@@ -7,11 +6,15 @@ import { Quest } from '../../../types';
 interface QuickActionsCardProps {
     quests: Quest[];
     onQuestSelect: (quest: Quest) => void;
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
 }
 
-const QuickActionsCard: React.FC<QuickActionsCardProps> = ({ quests, onQuestSelect }) => {
+const QuickActionsCard: React.FC<QuickActionsCardProps> = ({ quests, onQuestSelect, ...cardProps }) => {
     return (
-        <Card title="Quick Actions">
+        <Card title="Quick Actions" {...cardProps}>
             {quests.length > 0 ? (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                     {quests.map(quest => (

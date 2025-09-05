@@ -7,9 +7,13 @@ import { Terminology } from '../../types/app';
 interface TrophyCardProps {
     mostRecentTrophy: Trophy | null;
     terminology: Terminology;
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
 }
 
-const TrophyCard: React.FC<TrophyCardProps> = ({ mostRecentTrophy, terminology }) => {
+const TrophyCard: React.FC<TrophyCardProps> = ({ mostRecentTrophy, terminology, ...cardProps }) => {
     const { setActivePage } = useUIDispatch();
 
     if (!mostRecentTrophy) {
@@ -17,7 +21,7 @@ const TrophyCard: React.FC<TrophyCardProps> = ({ mostRecentTrophy, terminology }
     }
 
     return (
-        <Card title={`Latest ${terminology.award}`}>
+        <Card title={`Latest ${terminology.award}`} {...cardProps}>
             <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActivePage('Trophies')}>
                 <div className="text-5xl">{mostRecentTrophy.icon}</div>
                 <div>

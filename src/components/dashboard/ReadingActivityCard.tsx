@@ -5,6 +5,13 @@ import Card from '../user-interface/Card';
 import Avatar from '../user-interface/Avatar';
 import { BookOpen } from 'lucide-react';
 
+interface ReadingActivityCardProps {
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
+}
+
 const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -16,7 +23,7 @@ const formatTime = (totalSeconds: number) => {
     return parts.join(':');
 };
 
-const ReadingActivityCard: React.FC = () => {
+const ReadingActivityCard: React.FC<ReadingActivityCardProps> = (props) => {
     const { quests } = useQuestsState();
     const { users } = useAuthState();
 
@@ -45,7 +52,7 @@ const ReadingActivityCard: React.FC = () => {
     }
 
     return (
-        <Card title="Live Reading Activity">
+        <Card title="Live Reading Activity" {...props}>
             <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                 {readingActivities.map(({ user, quest, time, sessionTime }) => (
                     <div key={`${user.id}-${quest.id}`} className="flex items-center gap-3 p-2 bg-stone-900/50 rounded-md">

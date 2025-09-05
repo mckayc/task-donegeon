@@ -11,6 +11,10 @@ interface InventoryCardProps {
     userCurrencies: Currency[];
     userExperience: Experience[];
     terminology: Terminology;
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
 }
 
 const CurrencyDisplay: React.FC<{currency: Currency}> = ({ currency }) => {
@@ -28,9 +32,9 @@ const CurrencyDisplay: React.FC<{currency: Currency}> = ({ currency }) => {
     );
 }
 
-const InventoryCard: React.FC<InventoryCardProps> = ({ userCurrencies, userExperience, terminology }) => {
+const InventoryCard: React.FC<InventoryCardProps> = ({ userCurrencies, userExperience, terminology, ...cardProps }) => {
     return (
-        <Card title="Inventory">
+        <Card title="Inventory" {...cardProps}>
             <div className="grid grid-cols-2 gap-x-6">
                 <div>
                     <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.currency}</h4>

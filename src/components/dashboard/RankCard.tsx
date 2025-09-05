@@ -15,17 +15,21 @@ interface RankCardProps {
         totalXp: number;
     };
     terminology: Terminology;
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
 }
 
-const RankCard: React.FC<RankCardProps> = ({ rankData, terminology }) => {
+const RankCard: React.FC<RankCardProps> = ({ rankData, terminology, ...cardProps }) => {
     const { setActivePage } = useUIDispatch();
 
     if (!rankData.currentRank) {
-        return <Card title="Loading..."><p>Calculating your rank...</p></Card>;
+        return <Card title="Loading..." {...cardProps}><p>Calculating your rank...</p></Card>;
     }
 
     return (
-        <Card title={terminology.level}>
+        <Card title={terminology.level} {...cardProps}>
             <div className="cursor-pointer text-center" onClick={() => setActivePage('Ranks')}>
                 <div className="w-32 h-32 mx-auto mb-4 bg-stone-700 rounded-full flex items-center justify-center text-6xl border-4 border-accent">
                     {rankData.currentRank.icon}

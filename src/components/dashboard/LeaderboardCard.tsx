@@ -1,14 +1,17 @@
-
 import React from 'react';
 import Card from '../user-interface/Card';
 
 interface LeaderboardCardProps {
     leaderboard: { name: string; xp: number; }[];
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
 }
 
-const LeaderboardCard: React.FC<LeaderboardCardProps> = ({ leaderboard }) => {
+const LeaderboardCard: React.FC<LeaderboardCardProps> = ({ leaderboard, ...cardProps }) => {
     return (
-        <Card title="Leaderboard">
+        <Card title="Leaderboard" {...cardProps}>
              {leaderboard.length > 0 ? (
                 <ul className="space-y-2">
                     {leaderboard.map((player, index) => (

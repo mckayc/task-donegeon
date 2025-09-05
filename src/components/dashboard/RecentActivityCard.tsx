@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Card from '../user-interface/Card';
 import { Terminology } from '../../types/app';
@@ -9,6 +8,10 @@ import { useAuthState } from '../../context/AuthContext';
 interface RecentActivityCardProps {
     activities: ChronicleEvent[];
     terminology: Terminology;
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
 }
 
 const statusColorClass = (status: string) => {
@@ -36,13 +39,13 @@ const formatTimestamp = (dateString: string): string => {
     return date.toLocaleString('default', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ activities, terminology }) => {
+const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ activities, terminology, ...cardProps }) => {
     const { currentUser } = useAuthState();
 
     if (!currentUser) return null;
 
     return (
-        <Card title={`Recent ${terminology.history}`}>
+        <Card title={`Recent ${terminology.history}`} {...cardProps}>
             {activities.length > 0 ? (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                     {activities.map(activity => (

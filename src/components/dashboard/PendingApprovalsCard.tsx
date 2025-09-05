@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Card from '../user-interface/Card';
 import { Quest } from '../../types';
@@ -12,9 +11,13 @@ interface PendingApprovals {
 interface PendingApprovalsCardProps {
     pendingData: PendingApprovals;
     onQuestSelect: (quest: Quest) => void;
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
 }
 
-const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingData, onQuestSelect }) => {
+const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingData, onQuestSelect, ...cardProps }) => {
     const { quests } = useQuestsState();
 
     const handleQuestClick = (questId: string) => {
@@ -25,7 +28,7 @@ const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingData
     };
 
     return (
-        <Card title="My Pending Items">
+        <Card title="My Pending Items" {...cardProps}>
             <div className="space-y-4">
                 {pendingData.quests.length > 0 && (
                     <div>

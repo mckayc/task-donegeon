@@ -77,7 +77,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
             <li>
-                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests. Users can open a full-featured, redesigned reader to read books directly within the app. The new interface features permanent top and bottom bars for easy access to controls, and a new immersive mode to hide all UI for distraction-free reading. The bottom bar includes a scrubbable progress slider for quick navigation. Page turns are now accompanied by a subtle blur animation. As before, progress (location, bookmarks, time read) is saved to the database, syncing across all your devices.
+                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests. Users can open a full-featured reader to read books directly within the app. Progress (location, bookmarks, time read) is now saved to the database, syncing across devices. The reader now supports fullscreen mode, light/dark themes, and swipe gestures for turning pages.
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
@@ -131,12 +131,6 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of November 17, 2025 (v0.4.46)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>eBook Reader Redesign:</strong> The EPUB reader has been completely overhauled with a new UI. It now features permanent, opaque top and bottom bars for controls, an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a dedicated "add bookmark" button, and a subtle page-turn animation.</li>
-            </ul>
-        </div>
-        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of November 10, 2025 (v0.4.45)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>EPUB Reader Overhaul:</strong> The eBook reader has been significantly upgraded with fullscreen mode, swipe controls, light/dark themes, improved bookmark display (with progress percentage), and database-backed progress syncing for a seamless experience across devices. Session and total time read are now also tracked and displayed.</li>
@@ -180,7 +174,7 @@ const VersionHistoryContent: React.FC = () => (
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of October 6, 2025 (v0.1.96 - v0.4.04)</h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 6, 2025 (v0.3.01 - v0.4.04)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li>Developed and launched the full AI Teacher feature, moving from a backend foundation to a full-screen UI with an interactive "Teach, Check, Feedback" loop and robust tool-calling for quizzes.</li>
                 <li>Fixed issues with AI Teacher button responsiveness and made minor improvements to Kiosk Mode and item approval defaults.</li>

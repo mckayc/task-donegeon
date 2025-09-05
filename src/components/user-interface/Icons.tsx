@@ -11,13 +11,13 @@ const iconProps = {
 
 export const ExpandIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-6 h-6"}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75L8.25 8.25M20.25 3.75L15.75 8.25M3.75 20.25L8.25 15.75M20.25 20.25L15.75 15.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25-6-5.25 5.25m5.25-5.25v4.5m0-4.5h-4.5m4.5 0l-5.25 5.25M3.75 9h4.5m-4.5 0v-4.5m0 4.5L9 3.75" />
     </svg>
 );
 
 export const ShrinkIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-6 h-6"}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 8.25L3.75 3.75M8.25 8.25L12 12m-3.75-3.75L12 12m0 0L8.25 15.75M12 12l3.75 3.75M15.75 8.25L20.25 3.75M15.75 8.25L12 12m3.75-3.75L12 12m0 0L15.75 15.75M8.25 15.75L3.75 20.25M15.75 15.75L20.25 20.25" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25" />
     </svg>
 );
 

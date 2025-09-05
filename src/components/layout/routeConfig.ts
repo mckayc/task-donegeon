@@ -9,7 +9,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Themes': lazy(() => import('../pages/ThemesPage')),
     'Quests': lazy(() => import('../pages/QuestsPage')),
     // FIX: Corrected the lazy import for MarketplacePage to handle a default export.
-    'Marketplace': lazy(() => import('../pages/MarketplacePage').then(module => ({ default: module.default }))),
+    'Marketplace': lazy(() => import('../pages/MarketplacePage')),
     'Calendar': lazy(() => import('../pages/CalendarPage')),
     'Progress': lazy(() => import('../pages/ProgressPage')),
     'Trophies': lazy(() => import('../pages/TrophiesPage')),

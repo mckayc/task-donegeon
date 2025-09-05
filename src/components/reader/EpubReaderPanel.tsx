@@ -3,7 +3,7 @@ import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, MaximizeIcon, MinimizeIcon, ExpandIcon, ShrinkIcon } from '../user-interface/Icons';
+import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, ExpandIcon, ShrinkIcon } from '../user-interface/Icons';
 import { BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon } from '../user-interface/Icons';
 import { useQuestsDispatch } from '../../context/QuestsContext';
 
@@ -129,34 +129,34 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     }, [currentUser, quest.id, updateReadingProgress]);
 
+    // Refactored time tracking into a single robust effect
     useEffect(() => {
+        // Timer for updating the session display every second
         const sessionTimer = setInterval(() => {
             setSessionSeconds(Math.round((Date.now() - startTimeRef.current) / 1000));
         }, 1000);
 
-        const syncInterval = window.setInterval(() => {
+        // Interval for syncing progress with the backend
+        const syncInterval = setInterval(() => {
             const now = Date.now();
             const elapsedSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
-            if(elapsedSeconds > 0) {
+            if (elapsedSeconds > 0) {
                 syncProgress(elapsedSeconds, currentCfi);
-                lastSyncTimeRef.current = now;
+                lastSyncTimeRef.current = now; // Update sync time after successful sync call
             }
-        }, 20000);
+        }, 20000); // Sync every 20 seconds
 
+        // Cleanup function for when the component unmounts
         return () => {
             clearInterval(sessionTimer);
             clearInterval(syncInterval);
-        };
-    }, [currentCfi, syncProgress]);
-
-    useEffect(() => {
-        return () => {
+            // Perform one final sync on close
             const elapsedSeconds = Math.round((Date.now() - lastSyncTimeRef.current) / 1000);
             if (elapsedSeconds > 0) {
-              syncProgress(elapsedSeconds, currentCfi);
+                syncProgress(elapsedSeconds, currentCfi);
             }
         };
-    }, [syncProgress, currentCfi]);
+    }, [currentCfi, syncProgress]);
     
     // --- UI Interactions and Event Handlers ---
     const handleClose = () => setReadingQuest(null);
@@ -264,7 +264,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <Button variant="ghost" size="icon" onClick={() => setShowBookmarks(p => !p)} title="View Bookmarks"><BookmarkSolidIcon className="w-5 h-5"/></Button>
                         <Button variant="ghost" size="icon" onClick={() => setShowSettings(p => !p)} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
                         <Button variant="ghost" size="icon" onClick={() => setIsImmersive(true)} title="Immersive Mode"><ExpandIcon className="w-5 h-5"/></Button>
-                        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <MinimizeIcon className="w-5 h-5"/> : <MaximizeIcon className="w-5 h-5"/>}</Button>
+                        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <ShrinkIcon className="w-5 h-5"/> : <ExpandIcon className="w-5 h-5"/>}</Button>
                         <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
                     </div>
                 </header>
@@ -287,12 +287,12 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <div>
                             <h3 className="font-semibold mb-2">Theme</h3>
                             <div className="flex justify-around">
-                                <button onClick={() => handleThemeChange('light')} className={`p-2 rounded-md w-24 text-center ${theme === 'light' ? 'bg-emerald-600' : 'bg-stone-700'}`}>
-                                    <div className="w-8 h-8 mx-auto rounded-full bg-stone-100 flex items-center justify-center mb-1"><SunIcon className="w-5 h-5 text-stone-900"/></div>
+                                <button onClick={() => handleThemeChange('light')} className={`p-2 rounded-md w-24 text-center border-2 ${theme === 'light' ? 'border-emerald-400' : 'border-transparent'}`}>
+                                    <div className="w-full h-12 mx-auto rounded bg-stone-100 flex items-center justify-center mb-1"><SunIcon className="w-5 h-5 text-stone-900"/></div>
                                     <span className="text-xs">Light</span>
                                 </button>
-                                <button onClick={() => handleThemeChange('dark')} className={`p-2 rounded-md w-24 text-center ${theme === 'dark' ? 'bg-emerald-600' : 'bg-stone-700'}`}>
-                                    <div className="w-8 h-8 mx-auto rounded-full bg-stone-900 flex items-center justify-center mb-1"><MoonIcon className="w-5 h-5 text-stone-100"/></div>
+                                <button onClick={() => handleThemeChange('dark')} className={`p-2 rounded-md w-24 text-center border-2 ${theme === 'dark' ? 'border-emerald-400' : 'border-transparent'}`}>
+                                    <div className="w-full h-12 mx-auto rounded bg-stone-900 flex items-center justify-center mb-1"><MoonIcon className="w-5 h-5 text-stone-100"/></div>
                                      <span className="text-xs">Dark</span>
                                 </button>
                             </div>
@@ -315,7 +315,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                                 <li key={bm} className="text-sm hover:bg-stone-700/50 p-2 rounded-md flex justify-between items-center">
                                     <button onClick={() => goToBookmark(bm)} className="text-left flex-grow text-stone-300">
                                         Bookmark {i + 1}
-                                        <span className="text-xs text-stone-400 ml-2">({(book.locations.percentageFromCfi(bm) * 100).toFixed(0)}%)</span>
+                                        <span className="text-xs text-stone-400 ml-2">({Math.round(book.locations.percentageFromCfi(bm) * 100)}%)</span>
                                     </button>
                                     <Button variant="ghost" size="icon" onClick={() => removeBookmark(bm)} className="h-6 w-6 text-red-400 hover:text-red-300"><TrashIcon className="w-4 h-4"/></Button>
                                 </li>

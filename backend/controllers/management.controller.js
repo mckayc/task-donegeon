@@ -37,7 +37,7 @@ const upload = multer({ storage, limits: { fileSize: 25 * 1024 * 1024 } }).singl
 // === Multer Configuration for MEDIA LIBRARY ===
 const mediaStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const relativePath = req.body.path || '/';
+        const relativePath = req.query.path || '/';
 
         // --- Security Validation ---
         const resolvedMediaDir = path.resolve(MEDIA_DIR);
@@ -62,7 +62,7 @@ const mediaStorage = multer.diskStorage({
     }
 });
 
-const mediaUpload = multer({ storage: mediaStorage, limits: { fileSize: 1 * 1024 * 1024 * 1024 } }).single('videoFile'); // 1 GB limit for video files
+const mediaUpload = multer({ storage: mediaStorage, limits: { fileSize: 1 * 1024 * 1024 * 1024 } }).single('mediaFile'); // 1 GB limit for media files
 
 
 // --- Scheduled Backups ---
@@ -306,18 +306,16 @@ const uploadToMediaLibrary = (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded.' });
     }
-    // Multer has already handled saving and validation. We just send success.
     res.status(201).json({ message: 'File uploaded successfully to media library.' });
 };
 
 
 const browseMedia = async (req, res) => {
-    const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg'];
+    const ALLOWED_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg', '.epub'];
     const { path: relativePath = '/' } = req.query;
 
     console.log(`[Media Browser] Browsing path: ${relativePath}`);
 
-    // --- Security Check ---
     const resolvedMediaDir = path.resolve(MEDIA_DIR);
     const requestedPath = path.join(resolvedMediaDir, relativePath);
     const resolvedRequestedPath = path.resolve(requestedPath);
@@ -326,7 +324,6 @@ const browseMedia = async (req, res) => {
         console.warn(`[Media Browser] SECURITY: Attempted directory traversal: ${relativePath}`);
         return res.status(400).json({ error: 'Invalid path specified.' });
     }
-    // --- End Security Check ---
 
     const directories = [];
     const files = [];
@@ -340,15 +337,13 @@ const browseMedia = async (req, res) => {
             }
             if (entry.isDirectory()) {
                 directories.push(entry.name);
-            } else if (VIDEO_EXTENSIONS.includes(path.extname(entry.name).toLowerCase())) {
+            } else if (ALLOWED_EXTENSIONS.includes(path.extname(entry.name).toLowerCase())) {
                 files.push(entry.name);
             }
         }
         
         directories.sort();
         files.sort();
-
-        console.log(`[Media Browser] Found ${directories.length} directories and ${files.length} files.`);
 
         res.json({ directories, files });
 
@@ -369,13 +364,11 @@ const createMediaFolder = async (req, res) => {
         return res.status(400).json({ error: 'Folder name is required.' });
     }
     
-    // Sanitize folder name to prevent ../ attacks and weird characters
     const sanitizedFolderName = folderName.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
     if (!sanitizedFolderName) {
         return res.status(400).json({ error: 'Invalid folder name provided.' });
     }
 
-    // --- Security Check (same as in other media functions) ---
     const resolvedMediaDir = path.resolve(MEDIA_DIR);
     const requestedBasePath = path.join(resolvedMediaDir, relativePath);
     const resolvedRequestedBasePath = path.resolve(requestedBasePath);
@@ -384,7 +377,6 @@ const createMediaFolder = async (req, res) => {
         console.warn(`[Create Folder] SECURITY: Attempted directory traversal on base path: ${relativePath}`);
         return res.status(400).json({ error: 'Invalid base path specified.' });
     }
-    // --- End Security Check ---
 
     const newFolderPath = path.join(resolvedRequestedBasePath, sanitizedFolderName);
 
@@ -398,11 +390,44 @@ const createMediaFolder = async (req, res) => {
     }
 };
 
+const moveMediaItem = async (req, res) => {
+    const { sourceType, sourceName, sourcePath, destinationPath } = req.body;
+    if (!sourceType || !sourceName || !sourcePath || !destinationPath) {
+        return res.status(400).json({ error: 'Missing required parameters for move operation.' });
+    }
+
+    const resolvedMediaDir = path.resolve(MEDIA_DIR);
+    
+    const resolvedSourceDir = path.resolve(path.join(resolvedMediaDir, sourcePath));
+    if (!resolvedSourceDir.startsWith(resolvedMediaDir)) {
+        return res.status(400).json({ error: 'Invalid source path.' });
+    }
+
+    const resolvedDestDir = path.resolve(path.join(resolvedMediaDir, destinationPath));
+    if (!resolvedDestDir.startsWith(resolvedMediaDir)) {
+        return res.status(400).json({ error: 'Invalid destination path.' });
+    }
+    
+    const finalSourcePath = path.join(resolvedSourceDir, sourceName);
+    const finalDestPath = path.join(resolvedDestDir, sourceName);
+
+    if (finalDestPath.startsWith(finalSourcePath)) {
+        return res.status(400).json({ error: 'Cannot move a directory into itself or one of its subdirectories.' });
+    }
+    
+    try {
+        await fsp.rename(finalSourcePath, finalDestPath);
+        console.log(`[Media Manager] Moved '${finalSourcePath}' to '${finalDestPath}'`);
+        res.status(200).json({ message: 'Item moved successfully.' });
+    } catch (error) {
+        console.error(`[Media Manager] Error moving item:`, error);
+        res.status(500).json({ error: 'Failed to move item on the server.' });
+    }
+};
 
 module.exports = {
-    // Other exports for different routers
     upload,
-    mediaUpload, // New multer instance for media library
+    mediaUpload,
     discoverAssetPacks: asyncMiddleware(discoverAssetPacks),
     getAssetPack: asyncMiddleware(getAssetPack),
     fetchRemoteAssetPack: asyncMiddleware(fetchRemoteAssetPack),
@@ -411,10 +436,10 @@ module.exports = {
     importImagePack: asyncMiddleware(importImagePack),
     getLocalGallery: asyncMiddleware(getLocalGallery),
     uploadMedia: asyncMiddleware(uploadMedia),
-    uploadToMediaLibrary: asyncMiddleware(uploadToMediaLibrary), // New controller for media library
+    uploadToMediaLibrary: asyncMiddleware(uploadToMediaLibrary),
     browseMedia: asyncMiddleware(browseMedia),
     createMediaFolder: asyncMiddleware(createMediaFolder),
-    // Backup exports
+    moveMediaItem: asyncMiddleware(moveMediaItem),
     runScheduledBackups,
     runScheduledRotations,
     getBackups: asyncMiddleware(getBackups),

@@ -28,6 +28,7 @@ export enum QuestMediaType {
   AITeacher = 'AI_TEACHER',
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
+  EPUB = 'EPUB',
 }
 
 export interface Checkpoint {
@@ -60,6 +61,7 @@ export interface Quest {
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
   videoUrl?: string;
+  epubUrl?: string;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;

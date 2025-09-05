@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { Role, Page, SystemNotification } from '../../types';
+import { Role, Page, SystemNotification, Quest } from '../../types';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -11,10 +11,11 @@ import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
+import EpubReaderPanel from '../reader/EpubReaderPanel';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingQuest } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
@@ -170,6 +171,7 @@ const MainLayout: React.FC = () => {
       </div>
       <ChatController />
       {isChatOpen && <ChatPanel />}
+      {readingQuest && <EpubReaderPanel quest={readingQuest} />}
     </>
   );
 };

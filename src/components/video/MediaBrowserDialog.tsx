@@ -3,7 +3,7 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import { Folder, Video, ArrowUp, UploadCloud, FolderPlus } from 'lucide-react';
+import { Folder, Video, ArrowUp, UploadCloud, FolderPlus, BookOpen } from 'lucide-react';
 
 interface MediaBrowserDialogProps {
     onSelect: (path: string) => void;
@@ -22,6 +22,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [isCreatingFolder, setIsCreatingFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
+    const [dragOverDir, setDragOverDir] = useState<string | null>(null);
 
     const fetchMedia = useCallback(async () => {
         setIsLoading(true);
@@ -53,11 +54,10 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
 
         setIsUploading(true);
         const formData = new FormData();
-        formData.append('videoFile', file);
-        formData.append('path', currentPath);
+        formData.append('mediaFile', file);
 
         try {
-            const response = await fetch('/api/media/upload/library', {
+            const response = await fetch(`/api/media/upload/library?path=${encodeURIComponent(currentPath)}`, {
                 method: 'POST',
                 body: formData,
             });
@@ -72,7 +72,6 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
             addNotification({ type: 'error', message });
         } finally {
             setIsUploading(false);
-            // Reset file input to allow uploading the same file again
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
@@ -85,7 +84,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
             return;
         }
 
-        setIsUploading(true); // Reuse uploading state to disable buttons
+        setIsUploading(true);
         try {
             const response = await fetch('/api/media/create-folder', {
                 method: 'POST',
@@ -97,7 +96,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                 throw new Error(errData.error || 'Failed to create folder.');
             }
             addNotification({ type: 'success', message: `Folder "${newFolderName.trim()}" created.` });
-            await fetchMedia(); // Refresh
+            await fetchMedia();
             setIsCreatingFolder(false);
             setNewFolderName('');
         } catch (err) {
@@ -107,7 +106,6 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
             setIsUploading(false);
         }
     };
-
 
     const { filteredDirs, filteredFiles } = useMemo(() => {
         if (!debouncedSearchTerm) {
@@ -133,6 +131,66 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
         setCurrentPath(newPath);
     };
 
+    // --- Drag and Drop Handlers ---
+    const handleDragStart = (e: React.DragEvent, name: string, type: 'folder' | 'file') => {
+        e.dataTransfer.setData('application/json', JSON.stringify({ name, type, sourcePath: currentPath }));
+        e.dataTransfer.effectAllowed = 'move';
+    };
+    
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+    
+    const handleDragEnter = (e: React.DragEvent, dirName: string) => {
+        e.preventDefault();
+        setDragOverDir(dirName);
+    };
+    
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOverDir(null);
+    };
+
+    const handleDrop = async (e: React.DragEvent, destinationDirName: string) => {
+        e.preventDefault();
+        setDragOverDir(null);
+
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            const { name: sourceName, type: sourceType, sourcePath } = data;
+
+            let destinationPath;
+            if (destinationDirName === '..') {
+                if (currentPath === '/') return;
+                const parts = currentPath.split('/').filter(p => p);
+                parts.pop();
+                destinationPath = '/' + parts.join('/');
+            } else {
+                destinationPath = (currentPath + (currentPath.endsWith('/') ? '' : '/') + destinationDirName).replace(/\/+/g, '/');
+            }
+
+            if (sourcePath === destinationPath) return;
+
+            const response = await fetch('/api/media/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sourceType, sourceName, sourcePath, destinationPath })
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Move operation failed.');
+            }
+            addNotification({ type: 'success', message: `Moved "${sourceName}" successfully.` });
+            fetchMedia();
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+            addNotification({ type: 'error', message });
+        }
+    };
+
+
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70] p-4" onClick={onClose}>
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
@@ -151,7 +209,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             ref={fileInputRef}
                             className="hidden"
                             onChange={handleFileUpload}
-                            accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                            accept="video/*,.epub"
                             disabled={isUploading}
                         />
                         <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
@@ -189,7 +247,14 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {currentPath !== '/' && (
-                                <button onClick={navigateUp} className="p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <button 
+                                    onClick={navigateUp} 
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={(e) => handleDragEnter(e, '..')}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, '..')}
+                                    className={`p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${dragOverDir === '..' ? 'border-emerald-500' : 'border-transparent'}`}
+                                >
                                     <div className="aspect-video w-full bg-stone-700 rounded-md flex items-center justify-center overflow-hidden">
                                         <ArrowUp className="w-10 h-10 text-stone-400" />
                                     </div>
@@ -197,7 +262,17 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                                 </button>
                             )}
                             {filteredDirs.map((dir) => (
-                                <button key={dir} onClick={() => navigateTo(dir)} className="p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <button 
+                                    key={dir} 
+                                    draggable="true"
+                                    onDragStart={(e) => handleDragStart(e, dir, 'folder')}
+                                    onClick={() => navigateTo(dir)} 
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={(e) => handleDragEnter(e, dir)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, dir)}
+                                    className={`p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${dragOverDir === dir ? 'border-emerald-500' : 'border-transparent'}`}
+                                >
                                     <div className="aspect-video w-full bg-stone-700 rounded-md flex items-center justify-center overflow-hidden">
                                         <Folder className="w-12 h-12 text-amber-400" />
                                     </div>
@@ -206,10 +281,19 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             ))}
                             {filteredFiles.map((file) => {
                                 const fullPath = (`/media` + currentPath + (currentPath.endsWith('/') ? '' : '/') + file).replace(/\/+/g, '/');
+                                const isEpub = file.toLowerCase().endsWith('.epub');
+                                const Icon = isEpub ? BookOpen : Video;
+                                const iconColor = isEpub ? 'text-purple-400' : 'text-sky-400';
                                 return (
-                                <button key={file} onClick={() => onSelect(fullPath)} className="p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <button 
+                                    key={file} 
+                                    draggable="true"
+                                    onDragStart={(e) => handleDragStart(e, file, 'file')}
+                                    onClick={() => onSelect(fullPath)} 
+                                    className="p-2 rounded-lg text-left space-y-1 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                >
                                     <div className="aspect-video w-full bg-black rounded-md flex items-center justify-center overflow-hidden">
-                                        <Video className="w-12 h-12 text-sky-400" />
+                                        <Icon className={`w-12 h-12 ${iconColor}`} />
                                     </div>
                                     <p className="text-xs text-stone-300 font-semibold break-all" title={file}>{file}</p>
                                 </button>

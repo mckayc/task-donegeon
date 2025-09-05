@@ -12,6 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Almendra+Display&family=Almendra+SC&family=Almendra&family=Butcherman&family=Cinzel+Decorative&family=Cinzel&family=Comic+Neue:wght@400;700&family=Cormorant+Garamond&family=Creepster&family=Crimson+Pro&family=EB+Garamond&family=Eater&family=Fondamento&family=Fruktur&family=Griffy&family=Henny+Penny&family=IM+Fell+English+SC&family=Lora&family=MedievalSharp&family=Metamorphous&family=New+Rocker&family=Nosifer&family=Pirata+One&family=Press+Start+2P&family=Roboto:wght@400;500;700&family=Rye&family=Sancreek&family=Smokum&family=Special+Elite&family=Uncial+Antiqua&family=Vollkorn&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://esm.sh/react-image-crop@11.0.5/dist/ReactCrop.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
     <style>
       .font-medieval {
         font-family: var(--font-family-heading);
@@ -33,6 +35,32 @@
       }
       .no-spinner {
         -moz-appearance: textfield;
+      }
+      
+      #viewer {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background-color: #f3f4f6;
+        color: #111827;
+      }
+
+      #prev {
+        left: 0;
+      }
+      #next {
+        right: 0;
+      }
+      .arrow {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 15%;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .arrow:hover {
+        background: rgba(0,0,0,0.05);
       }
 
       /* THEME VARIABLES */

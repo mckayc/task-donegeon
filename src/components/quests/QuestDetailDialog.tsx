@@ -12,6 +12,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import AiTeacherPanel from '../chat/AiTeacherPanel';
 import AiStoryPanel from '../chat/AiStoryPanel';
 import VideoPlayerOverlay from '../video/VideoPlayerOverlay';
+import { useUIDispatch } from '../../context/UIContext';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -30,6 +31,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { currentUser: loggedInUser } = useAuthState();
     const { completeCheckpoint, claimQuest, unclaimQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
+    const { setReadingQuest } = useUIDispatch();
     
     const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
@@ -130,6 +132,11 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         if (!currentUser) return;
         unclaimQuest(quest.id, currentUser.id);
         addNotification({ type: 'info', message: 'Claim request cancelled.' });
+        onClose();
+    };
+
+    const handleOpenReader = () => {
+        setReadingQuest(quest);
         onClose();
     };
 
@@ -293,6 +300,11 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             {quest.mediaType === QuestMediaType.Video && quest.videoUrl && (
                                 <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>
                                     ▶️ Watch Video
+                                </Button>
+                            )}
+                            {quest.mediaType === QuestMediaType.EPUB && quest.epubUrl && (
+                                <Button variant="secondary" onClick={handleOpenReader}>
+                                    📖 Read Book
                                 </Button>
                             )}
                             {onToggleTodo && quest.type === QuestType.Venture && (

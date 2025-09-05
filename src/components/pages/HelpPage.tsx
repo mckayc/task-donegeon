@@ -76,6 +76,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li>
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
+            <li>
+                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests. Users can open a full-featured reader to read books directly within the app. Progress and bookmarks are saved automatically for each user and quest, making it perfect for reading-based assignments.
+            </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
         <p>The "Arcade" is a special market where users can spend "Game Tokens" to play minigames.</p>
@@ -127,6 +130,15 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of November 10, 2025 (v0.4.45)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>EPUB Reader:</strong> Implemented a full-featured EPUB reader. Quests can now have <code>.epub</code> files attached, allowing users to read books directly in the app with progress and bookmark saving.</li>
+                <li><strong>Media Library Enhancements:</strong> Added the ability to create folders, fixed upload paths, and implemented drag-and-drop for files and folders in the media library.</li>
+                <li><strong>Bug Fixes:</strong> Resolved an issue allowing users to complete daily duties multiple times and fixed a syntax error on the server.</li>
+                <li><strong>Quality of Life:</strong> Added timestamps to the approvals page for better tracking.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">November 3, 2025 (v0.4.28)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

@@ -2,7 +2,7 @@
 
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity } = require('../entities');
-const { In } = require("typeorm");
+const { In, Between } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps, checkAndAwardTrophies, logGeneralAdminAction } = require('../utils/helpers');
 const { INITIAL_SETTINGS } = require('../initialData');
@@ -173,6 +173,27 @@ const complete = async (completionData) => {
         const user = await manager.findOneBy(UserEntity, { id: completionData.userId });
         const quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
         if (!user || !quest) throw new Error('User or Quest not found');
+
+        // Validation for duty quests to prevent multiple completions on the same day.
+        if (quest.type === 'Duty') {
+            const today = new Date();
+            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+            
+            const existingCompletionTodayCount = await manager.getRepository(QuestCompletionEntity).count({
+                where: {
+                    user: { id: user.id },
+                    quest: { id: quest.id },
+                    status: In(['Approved', 'Pending']),
+                    completedAt: Between(startOfDay.toISOString(), endOfDay.toISOString())
+                }
+            });
+
+            if (existingCompletionTodayCount > 0) {
+                console.warn(`User ${user.id} attempted to complete duty ${quest.id} again today.`);
+                throw new Error('This duty has already been completed or is pending approval for today.');
+            }
+        }
 
         const newCompletionData = { ...completionData, user, quest };
         delete newCompletionData.userId;

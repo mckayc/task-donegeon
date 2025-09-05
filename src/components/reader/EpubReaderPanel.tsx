@@ -5,7 +5,7 @@ import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, MaximizeIcon, MinimizeIcon, ExpandIcon, ShrinkIcon } from '../user-interface/Icons';
 import { BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon } from '../user-interface/Icons';
-import { useQuestsDispatch } from '../../context/QuestsDispatch';
+import { useQuestsDispatch } from '../../context/QuestsContext';
 
 declare var ePub: any;
 

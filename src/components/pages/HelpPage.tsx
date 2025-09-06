@@ -121,6 +121,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li>
                 <strong>Log Templates:</strong> Admins can create text templates that can be automatically appended to the clipboard when copying bug logs, standardizing communication with external tools or developers.
             </li>
+            <li>
+                <strong>Consolidated UI:</strong> The bug recording bar has been consolidated into a more compact and responsive layout to ensure all controls are accessible, even on smaller screens with long report titles.
+            </li>
         </ul>
     </div>
 );

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.63 - Bug Reporter UI Fix",
-  "version": "0.4.63",
-  "description": "Fixes an issue where action buttons on bug report comments were not visible due to a layout bug.",
+  "name": "Task Donegeon 2.0 - 0.4.64 - Bug Bar Consolidation",
+  "version": "0.4.64",
+  "description": "Consolidates the bug reporter bar into a responsive, multi-row layout to prevent controls from overflowing on smaller screens.",
   "requestFramePermissions": [
     "camera"
   ],

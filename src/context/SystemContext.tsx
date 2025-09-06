@@ -1,8 +1,7 @@
-
 // Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
 // FIX: Fix import path for types to resolve module not found error.
-import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent, Minigame, GameScore } from '../types';
+import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent, Minigame, GameScore, BugReportNote } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
@@ -77,6 +76,10 @@ export interface SystemDispatch {
   setUpdateAvailable: (worker: ServiceWorker | null) => void;
   installUpdate: () => void;
   checkForUpdate: () => Promise<void>;
+  // FIX: Added missing method declarations for bug report notes.
+  addBugReportNote: (note: Omit<BugReportNote, 'id'>) => Promise<void>;
+  updateBugReportNote: (note: BugReportNote) => Promise<void>;
+  deleteBugReportNote: (noteId: string) => Promise<void>;
 }
 
 const SystemStateContext = createContext<SystemState | undefined>(undefined);
@@ -376,7 +379,23 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         installUpdate,
         checkForUpdate,
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate, setUpdateAvailable, state.gameScores]);
+        addBugReportNote: async (note) => {
+            const newNote = { ...note, id: `note-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
+            const newNotes = [...(state.settings.bugReportNotes || []), newNote];
+            const newSettings = { ...state.settings, bugReportNotes: newNotes };
+            await apiAction(() => updateSettingsAPI(newSettings), 'Note created!');
+        },
+        updateBugReportNote: async (note) => {
+            const newNotes = (state.settings.bugReportNotes || []).map(n => n.id === note.id ? note : n);
+            const newSettings = { ...state.settings, bugReportNotes: newNotes };
+            await apiAction(() => updateSettingsAPI(newSettings), 'Note updated!');
+        },
+        deleteBugReportNote: async (noteId) => {
+            const newNotes = (state.settings.bugReportNotes || []).filter(n => n.id !== noteId);
+            const newSettings = { ...state.settings, bugReportNotes: newNotes };
+            await apiAction(() => updateSettingsAPI(newSettings), 'Note deleted!');
+        },
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate, setUpdateAvailable, state.gameScores, state.settings]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

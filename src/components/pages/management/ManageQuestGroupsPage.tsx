@@ -1,6 +1,4 @@
-
-
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useContext } from 'react';
 import { QuestGroup } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -9,7 +7,7 @@ import { useCommunityDispatch, useCommunityState } from '../../../context/Commun
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import AssignQuestGroupDialog from '../../quests/AssignQuestGroupDialog';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
-import { useQuestsState } from '../../../context/QuestsContext';
+import { useQuestsState, QuestsDispatchContext } from '../../../context/QuestsContext';
 import QuestGroupTable from '../../quest-groups/QuestGroupTable';
 import { useUIState } from '../../../context/UIContext';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
@@ -72,6 +70,7 @@ const ManageQuestGroupsPage: React.FC = () => {
     const { questGroups } = useQuestsState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { isMobileView } = useUIState();
+    const { dispatch: questsDispatch } = useContext(QuestsDispatchContext)!;
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);
@@ -98,10 +97,14 @@ const ManageQuestGroupsPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
-            deleteSelectedAssets({ questGroups: deletingIds });
+            deleteSelectedAssets({ questGroups: deletingIds }, () => {
+                questsDispatch({ type: 'REMOVE_QUESTS_DATA', payload: { questGroups: deletingIds } });
+                setDeletingIds([]);
+                setSelectedGroups([]);
+            });
+        } else {
+            setDeletingIds([]);
         }
-        setDeletingIds([]);
-        setSelectedGroups(prev => prev.filter(id => !deletingIds.includes(id)));
     };
 
     return (

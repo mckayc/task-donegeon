@@ -189,78 +189,77 @@ const BugReporter: React.FC = () => {
                         ))}
                     </div>
                 )}
-                <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="font-bold text-white">Recording: {activeReportTitle}</span>
-                         <Button variant="secondary" size="sm" className="!text-xs !py-1 !px-2 !h-auto" onClick={() => {
-                            if (isRecording) {
-                                addLogEntry({ type: 'ACTION', message: isLogVisible ? 'Hid bug reporter log.' : 'Showed bug reporter log.' });
-                            }
-                            setIsLogVisible(p => !p)
-                         }}>
-                            {isLogVisible ? 'Hide Log' : 'Show Log'}
-                        </Button>
+                <div className="p-3 flex flex-col gap-3">
+                    {/* --- Top Row: Title and Main Actions --- */}
+                    <div className="flex items-center justify-between gap-4 w-full">
+                        <div className="flex items-center gap-3 flex-shrink min-w-0">
+                            <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse flex-shrink-0"></div>
+                            <span className="font-bold text-white truncate max-w-xs md:max-w-sm lg:max-w-md" title={activeReportTitle}>Recording: {activeReportTitle}</span>
+                            <Button variant="secondary" size="sm" className="!text-xs !py-1 !px-2 !h-auto" onClick={() => { setIsLogVisible(p => !p); }}>
+                                {isLogVisible ? 'Hide Log' : 'Show Log'}
+                            </Button>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                             <Button variant="secondary" onClick={handleCancel} className="h-9">Cancel</Button>
+                            <Button onClick={handleStop} className="!bg-red-600 hover:!bg-red-500 text-white h-9">Stop Recording</Button>
+                            <Button variant="ghost" size="icon" onClick={handleMinimizeToggle} className="h-9 w-9 !rounded-full !bg-white/10 hover:!bg-white/20">
+                                <ChevronDownIcon className="w-6 h-6 text-white" />
+                            </Button>
+                        </div>
                     </div>
-
-                    <div className="flex-grow flex items-center gap-4">
-                        <form onSubmit={handleAddNote} className="flex-grow flex items-center gap-2">
+                    {/* --- Bottom Row: Tools --- */}
+                    <div className="flex items-end justify-between gap-4 flex-wrap w-full">
+                        <form onSubmit={handleAddNote} className="flex-grow flex items-end gap-2 min-w-[250px] sm:min-w-[350px]">
                             <Input 
                                 value={note} 
                                 onChange={(e) => setNote(e.target.value)}
                                 placeholder="Add a note to the log..."
-                                className="h-10"
+                                className="h-9 flex-grow"
                             />
-                            <Button type="submit" variant="secondary" className="h-10">Add Note</Button>
+                            <Button type="submit" variant="secondary" className="h-9">Add Note</Button>
                         </form>
-                         <Button type="button" variant="secondary" onClick={handleElementPick} className={`h-10 ${isPickingElement ? '!bg-blue-600 text-white' : ''} flex-shrink-0`}>
-                            {isPickingElement ? 'Cancel Pick' : 'Pick Element'}
-                        </Button>
-                        <div className="flex items-center gap-3 pl-4 border-l border-red-700/60 flex-shrink-0">
-                            <ToggleSwitch
-                                label="Track Clicks"
-                                enabled={trackClicks}
-                                setEnabled={(enabled) => {
-                                    setTrackClicks(enabled);
-                                    addLogEntry({ type: 'STATE_CHANGE', message: `Click tracking ${enabled ? 'enabled' : 'disabled'}.` });
-                                }}
-                            />
-                            <div className={!trackClicks ? 'opacity-50' : ''}>
+
+                        <div className="flex items-center gap-4 flex-wrap justify-end">
+                             <Button type="button" variant="secondary" onClick={handleElementPick} className={`h-9 ${isPickingElement ? '!bg-blue-600 text-white' : ''}`}>
+                                {isPickingElement ? 'Cancel Pick' : 'Pick Element'}
+                            </Button>
+                            <div className="flex items-center gap-3 pl-3 border-l border-red-700/60 h-9">
                                 <ToggleSwitch
-                                    label="Log Details"
-                                    enabled={trackElementDetails && trackClicks}
+                                    label="Track Clicks"
+                                    enabled={trackClicks}
                                     setEnabled={(enabled) => {
-                                        if (!trackClicks) return;
-                                        setTrackElementDetails(enabled);
-                                        addLogEntry({ type: 'STATE_CHANGE', message: `Element detail logging ${enabled ? 'enabled' : 'disabled'}.` });
+                                        setTrackClicks(enabled);
+                                        addLogEntry({ type: 'STATE_CHANGE', message: `Click tracking ${enabled ? 'enabled' : 'disabled'}.` });
                                     }}
                                 />
+                                <div className={!trackClicks ? 'opacity-50' : ''}>
+                                    <ToggleSwitch
+                                        label="Log Details"
+                                        enabled={trackElementDetails && trackClicks}
+                                        setEnabled={(enabled) => {
+                                            if (!trackClicks) return;
+                                            setTrackElementDetails(enabled);
+                                            addLogEntry({ type: 'STATE_CHANGE', message: `Element detail logging ${enabled ? 'enabled' : 'disabled'}.` });
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                             <div className="pl-3 border-l border-red-700/60">
+                                <p className="text-xs font-semibold text-white/80 mb-1">Server-Side Logging</p>
+                                {isServerLogging ? (
+                                    <div className="flex items-center gap-2 h-7">
+                                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                                        <span className="text-white font-mono font-semibold text-sm">Active: {serverLogCountdown}s</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1 h-7">
+                                        <Button type="button" variant="secondary" onClick={() => handleStartServerLog(15)} className="!text-xs !py-1 !px-2 !h-auto">15s</Button>
+                                        <Button type="button" variant="secondary" onClick={() => handleStartServerLog(30)} className="!text-xs !py-1 !px-2 !h-auto">30s</Button>
+                                        <Button type="button" variant="secondary" onClick={() => handleStartServerLog(60)} className="!text-xs !py-1 !px-2 !h-auto">60s</Button>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>
-                    
-                    <div className="border-l border-red-700/60 pl-4 flex-shrink-0">
-                        <p className="text-xs font-semibold text-white/80 mb-1">Server-Side Logging</p>
-                        {isServerLogging ? (
-                            <div className="flex items-center gap-2 h-10">
-                                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                                <span className="text-white font-mono font-semibold">Active: {serverLogCountdown}s</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2 h-10">
-                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(15)} className="!text-xs !py-1 !px-2 !h-auto">15s</Button>
-                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(30)} className="!text-xs !py-1 !px-2 !h-auto">30s</Button>
-                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(60)} className="!text-xs !py-1 !px-2 !h-auto">60s</Button>
-                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(120)} className="!text-xs !py-1 !px-2 !h-auto">120s</Button>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        <Button variant="secondary" onClick={handleCancel} className="h-10">Cancel</Button>
-                        <Button onClick={handleStop} className="!bg-red-600 hover:!bg-red-500 text-white h-10">Stop Recording</Button>
-                        <Button variant="ghost" size="icon" onClick={handleMinimizeToggle} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
-                            <ChevronDownIcon className="w-6 h-6 text-white" />
-                        </Button>
                     </div>
                 </div>
             </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Market, MarketStatus, Condition, ConditionType } from '../../types';
@@ -91,7 +90,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
   };
 
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { 
         title: formData.title,
@@ -106,9 +105,9 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
     if (onSave) {
         onSave(payload);
     } else if (market && mode === 'edit') {
-      updateMarket({ ...market, ...payload });
+      await updateMarket({ ...market, ...payload });
     } else {
-      addMarket(payload);
+      await addMarket(payload);
     }
     onClose();
   };

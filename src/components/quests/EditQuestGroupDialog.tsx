@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { QuestGroup, Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -67,13 +66,13 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const finalPayload = { ...formData, questIds: assignedQuestIds };
         if (groupToEdit) {
-            updateQuestGroup({ ...groupToEdit, ...finalPayload });
+            await updateQuestGroup({ ...groupToEdit, ...finalPayload });
         } else {
-            addQuestGroup(finalPayload);
+            await addQuestGroup(finalPayload);
         }
         onClose();
     };

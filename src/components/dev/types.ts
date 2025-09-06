@@ -32,3 +32,9 @@ export interface BugReport {
   tags: string[];
   logs: BugReportLogEntry[];
 }
+
+export interface BugReportNote {
+  id: string;
+  title: string;
+  content: string;
+}

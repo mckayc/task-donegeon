@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { GameAsset } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -13,7 +13,7 @@ import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import ItemTable from '../../items/ItemTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
-import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useEconomyState, useEconomyDispatch, EconomyDispatchContext } from '../../../context/EconomyContext';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -21,6 +21,7 @@ const ManageItemsPage: React.FC = () => {
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
+    const { dispatch: economyDispatch } = useContext(EconomyDispatchContext)!;
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -146,11 +147,11 @@ const ManageItemsPage: React.FC = () => {
 
     const handleConfirmAction = async () => {
         if (!confirmation || confirmation.action !== 'delete') return;
-        try {
-            await deleteSelectedAssets({ gameAssets: confirmation.ids });
-            addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
+        deleteSelectedAssets({ gameAssets: confirmation.ids }, () => {
+            economyDispatch({ type: 'REMOVE_ECONOMY_DATA', payload: { gameAssets: confirmation.ids } });
             setSelectedAssets([]);
-        } catch (e) { /* error handled in context */ }
+        });
+        addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
         setConfirmation(null);
     };
 

@@ -120,17 +120,41 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     }, [addNotification]);
     
     const actions = useMemo<EconomyDispatch>(() => ({
-        addMarket: (data) => apiAction(() => addMarketAPI(data), 'Market created!'),
-        updateMarket: (data) => apiAction(() => updateMarketAPI(data), 'Market updated!'),
-        cloneMarket: (id) => apiAction(() => cloneMarketAPI(id), 'Market cloned!'),
+        addMarket: async (data) => {
+            const result = await apiAction(() => addMarketAPI(data), 'Market created!');
+            if (result) {
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { markets: [result] } });
+            }
+            return result;
+        },
+        updateMarket: async (data) => {
+            const result = await apiAction(() => updateMarketAPI(data), 'Market updated!');
+            if (result) {
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { markets: [result] } });
+            }
+            return result;
+        },
         updateMarketsStatus: (ids, statusType) => apiAction(() => updateMarketsStatusAPI(ids, statusType)),
+        cloneMarket: (id) => apiAction(() => cloneMarketAPI(id), 'Market cloned!'),
         
         addRewardType: (data) => apiAction(() => addRewardTypeAPI(data), 'Reward type created!'),
         updateRewardType: (data) => apiAction(() => updateRewardTypeAPI(data), 'Reward type updated!'),
         cloneRewardType: (id) => apiAction(() => cloneRewardTypeAPI(id), 'Reward type cloned!'),
         
-        addGameAsset: (data) => apiAction(() => addGameAssetAPI(data), 'Asset created!'),
-        updateGameAsset: (data) => apiAction(() => updateGameAssetAPI(data), 'Asset updated!'),
+        addGameAsset: async (data) => {
+            const result = await apiAction(() => addGameAssetAPI(data), 'Asset created!');
+            if (result) {
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { gameAssets: [result] } });
+            }
+            return result;
+        },
+        updateGameAsset: async (data) => {
+            const result = await apiAction(() => updateGameAssetAPI(data), 'Asset updated!');
+            if (result) {
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { gameAssets: [result] } });
+            }
+            return result;
+        },
         cloneGameAsset: (id) => apiAction(() => cloneGameAssetAPI(id), 'Asset cloned!'),
 
         purchaseMarketItem: async (assetId, marketId, user, costGroupIndex) => {

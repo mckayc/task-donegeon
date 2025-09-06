@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { Market } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -9,7 +8,7 @@ import { useSystemState, useSystemDispatch } from '../../../context/SystemContex
 import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
-import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useEconomyState, useEconomyDispatch, EconomyDispatchContext } from '../../../context/EconomyContext';
 import MarketTable from '../../markets/MarketTable';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useUIState } from '../../../context/UIContext';
@@ -79,6 +78,7 @@ export const ManageMarketsPage: React.FC = () => {
     const { markets } = useEconomyState();
     const { updateMarketsStatus, cloneMarket } = useEconomyDispatch();
     const { isMobileView } = useUIState();
+    const { dispatch: economyDispatch } = useContext(EconomyDispatchContext)!;
 
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
@@ -118,7 +118,10 @@ export const ManageMarketsPage: React.FC = () => {
         
         switch(confirmation.action) {
             case 'delete':
-                deleteSelectedAssets({ markets: confirmation.ids });
+                deleteSelectedAssets({ markets: confirmation.ids }, () => {
+                    economyDispatch({ type: 'REMOVE_ECONOMY_DATA', payload: { markets: confirmation.ids } });
+                    setSelectedMarkets([]);
+                });
                 break;
             case 'open':
                 updateMarketsStatus(confirmation.ids, 'open');

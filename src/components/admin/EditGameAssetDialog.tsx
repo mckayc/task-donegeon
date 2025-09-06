@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
@@ -182,7 +181,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       }));
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       setError('A name is required for the asset.');
@@ -222,11 +221,11 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     if (onSave) {
         onSave(finalPayload);
     } else if (assetToEdit) {
-      updateGameAsset({ ...assetToEdit, ...finalPayload });
+      await updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
       // FIX: The backend handles timestamp generation. Do not include `createdAt` in the payload for a new asset.
       const { createdAt, ...createPayload } = finalPayload as any;
-      addGameAsset(createPayload);
+      await addGameAsset(createPayload);
     }
     onClose();
   };

@@ -6,6 +6,7 @@ import { AuthState } from '../context/AuthContext';
 import { EconomyState } from '../context/EconomyContext';
 import { ProgressionState } from '../context/ProgressionContext';
 import { CommunityState } from '../context/CommunityContext';
+import { BugReportNote } from '../components/dev/types';
 
 export type Page =
   | 'Dashboard' | 'Quests' | 'Calendar' | 'Marketplace' | 'Avatar' | 'Collection'
@@ -159,6 +160,7 @@ export interface AppSettings {
     developerMode: {
         enabled: boolean;
     };
+    bugReportNotes?: BugReportNote[];
     conditionSets: ConditionSet[];
 }
 

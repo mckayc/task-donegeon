@@ -285,6 +285,14 @@ const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
   styles: styles,
 }));
 
+// This function is for creating mock data, but is not used on initial load.
+// It remains here in case it's needed for testing or blueprints.
+const createInitialQuestCompletions = (users, quests) => {
+    // This function can be used to populate some initial "completed" quests for demonstration
+    return [];
+};
+
+
 const INITIAL_TROPHIES = [
     { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },

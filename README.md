@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.65
+**Version:** 0.4.67
 
 ---
 
@@ -14,6 +14,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of September 20, 2025 (v0.4.67):**
+    -   **Arcade UX & Gameplay Improvements:** Made several enhancements to the Arcade. The "Play" button on game cards is now a primary, full-width button for better visibility. The Snake game's on-screen controls are now always visible on tablets, improving playability on touch devices. Archer's Folly has been updated with a new aiming guide showing power and trajectory, and its difficulty now progressively increases as the player's score rises.
+
+-   **Week of September 13, 2025 (v0.4.66):**
+    -   **Dashboard Customization UX Improvements:** Overhauled the "Customize Dashboard" dialog for better usability. The layout editor columns now have equal heights for a cleaner look. Cards can now be moved between main, side, and hidden columns using new arrow icons, providing an alternative to drag-and-drop. Fixed a bug where cards in the side column would disappear when switching to the "single-column" layout.
 
 -   **Week of September 6, 2025 (v0.4.65):**
     -   **EPUB Reader Fix:** Fixed a critical bug in the EPUB reader where the progress bar would incorrectly display 100% and not update upon navigation. The progress calculation is now more robust and accurately reflects the user's position within the book.

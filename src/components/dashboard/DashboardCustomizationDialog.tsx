@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { DashboardLayout } from '../../types';
 import Button from '../user-interface/Button';
 import { Reorder, motion } from 'framer-motion';
 import { allCardComponents } from '../pages/Dashboard';
-import { LayoutIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, ArrowDownIcon, ArrowUpIcon } from '../user-interface/Icons';
 
 interface DashboardCustomizationDialogProps {
   userLayout: DashboardLayout;
@@ -18,56 +18,92 @@ const LayoutOption: React.FC<{ type: DashboardLayout['layoutType'], selected: bo
     </button>
 );
 
-const CardItem: React.FC<{ cardId: string, children: React.ReactNode }> = ({ cardId, children }) => (
-    <div className="p-2 bg-stone-700 rounded-md text-stone-200 text-sm font-semibold cursor-grab active:cursor-grabbing">
-        {allCardComponents[cardId]?.name || cardId}
-    </div>
-);
+const CardItem: React.FC<{
+    cardId: string;
+    column: 'main' | 'side' | 'hidden';
+    layoutType: DashboardLayout['layoutType'];
+    onMove: (cardId: string, from: 'main' | 'side' | 'hidden', to: 'main' | 'side' | 'hidden') => void;
+}> = ({ cardId, column, layoutType, onMove }) => {
+    const hasSideColumn = layoutType !== 'single-column';
+
+    return (
+        <div className="group p-2 bg-stone-700 rounded-md text-stone-200 text-sm font-semibold flex items-center justify-between">
+            <span>{allCardComponents[cardId]?.name || cardId}</span>
+            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {column === 'main' && hasSideColumn && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onMove(cardId, 'main', 'side')} title="Move to Side Column">
+                        <ArrowRightIcon className="w-4 h-4" />
+                    </Button>
+                )}
+                {column === 'side' && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onMove(cardId, 'side', 'main')} title="Move to Main Column">
+                        <ArrowLeftIcon className="w-4 h-4" />
+                    </Button>
+                )}
+                {column !== 'hidden' && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onMove(cardId, column, 'hidden')} title="Hide Card">
+                        <ArrowDownIcon className="w-4 h-4" />
+                    </Button>
+                )}
+                {column === 'hidden' && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onMove(cardId, 'hidden', 'main')} title="Show in Main Column">
+                        <ArrowUpIcon className="w-4 h-4" />
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+};
 
 
 const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> = ({ userLayout, onClose, onSave }) => {
     const [tempLayout, setTempLayout] = useState<DashboardLayout>(JSON.parse(JSON.stringify(userLayout)));
-    const [draggedItem, setDraggedItem] = useState<{ id: string; source: 'main' | 'side' | 'hidden' } | null>(null);
-    const [dropTarget, setDropTarget] = useState<'main' | 'side' | 'hidden' | null>(null);
 
     const handleSave = () => {
         onSave(tempLayout);
         onClose();
     };
     
-    const handleReorder = (column: 'main' | 'side' | 'hidden', newOrder: string[]) => {
+    const handleReorder = useCallback((column: 'main' | 'side' | 'hidden', newOrder: string[]) => {
         const newLayout = JSON.parse(JSON.stringify(tempLayout));
         if (column === 'hidden') {
             newLayout.hidden = newOrder;
         } else {
             newLayout.columns[column].order = newOrder;
+            if (newLayout.layoutType === 'single-column') {
+                newLayout.columns.side.order = [];
+            }
         }
         setTempLayout(newLayout);
-    };
+    }, [tempLayout]);
+    
+    const handleMoveItem = useCallback((cardId: string, from: 'main' | 'side' | 'hidden', to: 'main' | 'side' | 'hidden') => {
+        if (from === to) return;
 
-    const handleDragEnd = () => {
-        if (draggedItem && dropTarget && draggedItem.source !== dropTarget) {
-            const newLayout = JSON.parse(JSON.stringify(tempLayout));
+        const newLayout = JSON.parse(JSON.stringify(tempLayout));
 
-            // Remove from source
-            if (draggedItem.source === 'hidden') {
-                newLayout.hidden = newLayout.hidden.filter((id: string) => id !== draggedItem.id);
+        // Remove from source
+        if (from === 'hidden') {
+            newLayout.hidden = newLayout.hidden.filter((id: string) => id !== cardId);
+        } else {
+            const wasInMain = newLayout.columns.main.order.includes(cardId);
+            if (wasInMain) {
+                newLayout.columns.main.order = newLayout.columns.main.order.filter((id: string) => id !== cardId);
             } else {
-                newLayout.columns[draggedItem.source].order = newLayout.columns[draggedItem.source].order.filter((id: string) => id !== draggedItem.id);
+                newLayout.columns.side.order = newLayout.columns.side.order.filter((id: string) => id !== cardId);
             }
-
-            // Add to destination
-            if (dropTarget === 'hidden') {
-                newLayout.hidden.push(draggedItem.id);
-            } else {
-                newLayout.columns[dropTarget].order.push(draggedItem.id);
-            }
-
-            setTempLayout(newLayout);
         }
-        setDraggedItem(null);
-        setDropTarget(null);
-    };
+
+        // Add to destination
+        if (to === 'hidden') {
+            newLayout.hidden.push(cardId);
+        } else {
+            newLayout.columns[to].order.push(cardId);
+        }
+
+        setTempLayout(newLayout);
+
+    }, [tempLayout]);
 
     const ColumnDropZone: React.FC<{
         column: 'main' | 'side' | 'hidden';
@@ -76,14 +112,54 @@ const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> 
         className?: string;
     }> = ({ column, title, children, className }) => (
         <motion.div
-            onMouseEnter={() => draggedItem && setDropTarget(column)}
-            onMouseLeave={() => setDropTarget(null)}
-            className={`p-4 bg-stone-900/50 rounded-lg transition-all duration-200 ${className} ${dropTarget === column ? 'border-2 border-emerald-500' : ''}`}
+            className={`p-4 bg-stone-900/50 rounded-lg transition-all duration-200 h-full flex flex-col ${className}`}
         >
-            <h4 className="font-semibold text-stone-300 mb-2">{title}</h4>
+            <h4 className="font-semibold text-stone-300 mb-2 flex-shrink-0">{title}</h4>
             {children}
         </motion.div>
     );
+
+    const renderVisibleCards = () => {
+        if (tempLayout.layoutType === 'single-column') {
+            const combinedOrder = [...tempLayout.columns.main.order, ...tempLayout.columns.side.order];
+            return (
+                <ColumnDropZone column="main" title="Visible Cards">
+                    <Reorder.Group axis="y" values={combinedOrder} onReorder={(newOrder) => handleReorder('main', newOrder)} className="space-y-2 min-h-[100px] flex-grow">
+                        {combinedOrder.map(cardId => {
+                            const sourceColumn = tempLayout.columns.main.order.includes(cardId) ? 'main' : 'side';
+                            return (
+                                <Reorder.Item key={cardId} value={cardId}>
+                                    <CardItem cardId={cardId} onMove={handleMoveItem} column={sourceColumn} layoutType={tempLayout.layoutType} />
+                                </Reorder.Item>
+                            );
+                        })}
+                    </Reorder.Group>
+                </ColumnDropZone>
+            );
+        }
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                <ColumnDropZone column="main" title="Main Column" className={tempLayout.layoutType === 'two-column-main-right' ? 'order-2' : ''}>
+                    <Reorder.Group axis="y" values={tempLayout.columns.main.order} onReorder={(newOrder) => handleReorder('main', newOrder)} className="space-y-2 min-h-[100px] flex-grow">
+                        {tempLayout.columns.main.order.map(cardId => (
+                            <Reorder.Item key={cardId} value={cardId}>
+                                <CardItem cardId={cardId} onMove={handleMoveItem} column='main' layoutType={tempLayout.layoutType} />
+                            </Reorder.Item>
+                        ))}
+                    </Reorder.Group>
+                </ColumnDropZone>
+                <ColumnDropZone column="side" title="Side Column" className={tempLayout.layoutType === 'two-column-main-right' ? 'order-1' : ''}>
+                    <Reorder.Group axis="y" values={tempLayout.columns.side.order} onReorder={(newOrder) => handleReorder('side', newOrder)} className="space-y-2 min-h-[100px] flex-grow">
+                        {tempLayout.columns.side.order.map(cardId => (
+                            <Reorder.Item key={cardId} value={cardId}>
+                                <CardItem cardId={cardId} onMove={handleMoveItem} column='side' layoutType={tempLayout.layoutType} />
+                            </Reorder.Item>
+                        ))}
+                    </Reorder.Group>
+                </ColumnDropZone>
+            </div>
+        );
+    };
 
     return (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4 backdrop-blur-sm" onClick={onClose}>
@@ -108,37 +184,16 @@ const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> 
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className={`space-y-4 ${tempLayout.layoutType === 'single-column' ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
+                        <div className="space-y-4 lg:col-span-2">
                             <h3 className="font-bold text-lg text-stone-200">Visible Cards</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <ColumnDropZone column="main" title="Main Column" className={tempLayout.layoutType === 'two-column-main-right' ? 'order-2' : ''}>
-                                    <Reorder.Group axis="y" values={tempLayout.columns.main.order} onReorder={(newOrder) => handleReorder('main', newOrder as string[])} className="space-y-2 min-h-[100px]">
-                                        {tempLayout.columns.main.order.map(cardId => (
-                                            <Reorder.Item key={cardId} value={cardId} onDragStart={() => setDraggedItem({ id: cardId, source: 'main' })} onDragEnd={handleDragEnd}>
-                                                <CardItem cardId={cardId}>{cardId}</CardItem>
-                                            </Reorder.Item>
-                                        ))}
-                                    </Reorder.Group>
-                                </ColumnDropZone>
-                                {tempLayout.layoutType !== 'single-column' && (
-                                    <ColumnDropZone column="side" title="Side Column" className={tempLayout.layoutType === 'two-column-main-right' ? 'order-1' : ''}>
-                                        <Reorder.Group axis="y" values={tempLayout.columns.side.order} onReorder={(newOrder) => handleReorder('side', newOrder as string[])} className="space-y-2 min-h-[100px]">
-                                            {tempLayout.columns.side.order.map(cardId => (
-                                                <Reorder.Item key={cardId} value={cardId} onDragStart={() => setDraggedItem({ id: cardId, source: 'side' })} onDragEnd={handleDragEnd}>
-                                                    <CardItem cardId={cardId}>{cardId}</CardItem>
-                                                </Reorder.Item>
-                                            ))}
-                                        </Reorder.Group>
-                                    </ColumnDropZone>
-                                )}
-                            </div>
+                            {renderVisibleCards()}
                         </div>
 
                          <ColumnDropZone column="hidden" title="Hidden Cards" className="lg:col-span-1">
-                            <Reorder.Group axis="y" values={tempLayout.hidden} onReorder={(newOrder) => handleReorder('hidden', newOrder as string[])} className="space-y-2 min-h-[100px]">
+                             <Reorder.Group axis="y" values={tempLayout.hidden} onReorder={(newOrder) => handleReorder('hidden', newOrder)} className="space-y-2 min-h-[100px] flex-grow">
                                 {tempLayout.hidden.map(cardId => (
-                                    <Reorder.Item key={cardId} value={cardId} onDragStart={() => setDraggedItem({ id: cardId, source: 'hidden' })} onDragEnd={handleDragEnd}>
-                                        <CardItem cardId={cardId}>{cardId}</CardItem>
+                                    <Reorder.Item key={cardId} value={cardId}>
+                                        <CardItem cardId={cardId} onMove={handleMoveItem} column='hidden' layoutType={tempLayout.layoutType} />
                                     </Reorder.Item>
                                 ))}
                             </Reorder.Group>

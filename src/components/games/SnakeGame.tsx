@@ -1,5 +1,3 @@
-
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
@@ -195,7 +193,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
                     </div>
                 )}
             </div>
-             <div className="mt-8 grid grid-cols-3 gap-2 w-52 md:hidden">
+             <div className="mt-8 grid grid-cols-3 gap-2 w-52">
                 <div />
                 <DPadButton dir="up">↑</DPadButton>
                 <div />

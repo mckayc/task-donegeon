@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.65 - EPUB Reader Fix",
-  "version": "0.4.65",
-  "description": "Fixed a bug in the EPUB reader where the progress bar was stuck at 100%. The progress calculation is now more robust.",
+  "name": "Task Donegeon 2.0 - 0.4.67 - Arcade Improvements",
+  "version": "0.4.67",
+  "description": "Improved the Arcade with UI fixes, better controls for Snake on tablets, and enhanced gameplay for Archer's Folly including aiming guides and progressive difficulty.",
   "requestFramePermissions": [
     "camera"
   ],

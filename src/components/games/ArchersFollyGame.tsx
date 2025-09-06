@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
@@ -47,10 +46,10 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
     const bowPosition = { x: 80, y: GAME_HEIGHT / 2 };
 
     const spawnTarget = useCallback(() => {
-        const height = 50 + Math.random() * 50; // 50 to 100
+        const speed = 1.5 + (score / 500) + Math.random() * 1.5; // Starts at 1.5-3, gets faster
+        const height = Math.max(30, 120 - (score / 100)); // Starts at 120, gets smaller
         const y = Math.random() * (GAME_HEIGHT - height - 20) + 10;
-        const speed = 1.5 + Math.random() * 2;
-        const points = Math.floor(100 - height); // Smaller targets are worth more
+        const points = Math.floor(150 - height); // Smaller targets worth more
 
         targetsRef.current.push({
             x: GAME_WIDTH,
@@ -60,7 +59,7 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
             speed,
             points
         });
-    }, []);
+    }, [score]);
 
     const resetGame = useCallback(() => {
         setScore(0);
@@ -92,13 +91,14 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
         ctx.arc(bowPosition.x, bowPosition.y, 50, -Math.PI / 2, Math.PI / 2);
         ctx.stroke();
 
-        // Draw aiming line
+        // Draw aiming line and power meter
         if (isDrawingRef.current && drawStartPosRef.current && currentMousePosRef.current) {
             const start = drawStartPosRef.current;
             const end = currentMousePosRef.current;
             const dx = start.x - end.x;
             const dy = start.y - end.y;
-            const power = Math.min(Math.sqrt(dx * dx + dy * dy), 100) / 100;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const power = Math.min(distance, 100) / 100;
 
             // Draw Bowstring
             ctx.beginPath();
@@ -112,6 +112,27 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
             ctx.fillRect(20, GAME_HEIGHT - 120, 20, 100);
             ctx.fillStyle = `hsl(${(1-power)*120}, 100%, 50%)`; // Green to Red
             ctx.fillRect(20, GAME_HEIGHT - 20 - (100 * power), 20, 100 * power);
+
+            // Draw Trajectory line
+            const angle = Math.atan2(dy, dx);
+            const velocity = power * 100 * 0.2;
+            let arrowX = bowPosition.x;
+            let arrowY = bowPosition.y;
+            let vx = velocity * Math.cos(angle);
+            let vy = velocity * Math.sin(angle);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            for (let t = 0; t < 60; t++) { // Simulate 60 frames
+                vy += GRAVITY;
+                arrowX += vx;
+                arrowY += vy;
+                if (t % 4 === 0) {
+                     ctx.beginPath();
+                     ctx.arc(arrowX, arrowY, 2, 0, Math.PI * 2);
+                     ctx.fill();
+                }
+            }
+
         } else {
              // Draw resting bowstring
             ctx.beginPath();

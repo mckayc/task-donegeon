@@ -64,6 +64,13 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+        <h3>Dashboard Customization</h3>
+        <p>The dashboard customization experience has been enhanced for better usability:</p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Layout Editor:</strong> In the "Customize Dashboard" popup, the columns for "Main", "Side", and "Hidden" cards are now equal height for a cleaner visual layout.</li>
+            <li><strong>Card Movement:</strong> In addition to drag-and-drop, each card in the editor now features arrow icons, allowing for quick movement between columns with a single click.</li>
+            <li><strong>Single-Column Mode:</strong> A bug was fixed where cards from the "Side" column would become hidden when switching to the "single-column" layout. Now, all visible cards from both columns are correctly consolidated into one list, and can be moved to and from the "Hidden" section.</li>
+        </ul>
         <h3>Quest Logic & Availability</h3>
         <p>To ensure fairness and clarity, the system now enforces stricter availability rules for quests:</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -105,8 +112,8 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li><strong>Rune Breaker:</strong> A fantasy-themed version of the classic *Breakout*. Control a magical shield and bounce an orb to break rows of enchanted runes.</li>
             <li><strong>Dungeon Dash:</strong> A simple side-scrolling "endless runner." An adventurer runs automatically, and the player taps to make them jump over pits and slide under obstacles.</li>
             <li><strong>Forge Master:</strong> A rhythm and timing game. The player must click at the right moment to strike a piece of hot metal with a hammer to forge a powerful weapon.</li>
-            <li><strong>Archer's Folly:</strong> An archery game where the player clicks and drags to aim their bow, hitting a series of moving targets.</li>
-            <li><strong>Snake:</strong> The classic game of snake. The game now features a larger play area, a slower starting speed, and a "3, 2, 1, GO!" countdown. You can also press any arrow key on the "Game Over" screen to instantly start a new game.</li>
+            <li><strong>Archer's Folly:</strong> An archery game where the player clicks and drags to aim their bow, hitting a series of moving targets. The game now includes a power meter and a trajectory line to help players aim. The difficulty also gradually increases, with targets getting smaller and faster as the score increases.</li>
+            <li><strong>Snake:</strong> The classic game of snake. The game now features a larger play area, a slower starting speed, and a "3, 2, 1, GO!" countdown. You can also press any arrow key on the "Game Over" screen to instantly start a new game. On-screen controls are now always visible on tablet-sized devices to ensure playability.</li>
         </ul>
         <h4>Arcade Leaderboard</h4>
         <p>The Arcade now features an "All-Time Arcade Legends" leaderboard. It shows the top 5 players based on their <strong>cumulative scores</strong> across <strong>all</strong> minigames. Additionally, each individual game card now proudly displays the name of the current high score holder for that game.</p>
@@ -159,6 +166,18 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 20, 2025 (v0.4.67)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Arcade UX & Gameplay Improvements:</strong> Made several enhancements to the Arcade. The "Play" button on game cards is now a primary, full-width button for better visibility. The Snake game's on-screen controls are now always visible on tablets, improving playability on touch devices. Archer's Folly has been updated with a new aiming guide showing power and trajectory, and its difficulty now progressively increases as the player's score rises.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 13, 2025 (v0.4.66)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Dashboard Customization UX Improvements:</strong> Overhauled the "Customize Dashboard" dialog for better usability. The layout editor columns now have equal heights for a cleaner look. Cards can now be moved between main, side, and hidden columns using new arrow icons, providing an alternative to drag-and-drop. Fixed a bug where cards in the side column would disappear when switching to the "single-column" layout.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 6, 2025 (v0.4.65)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
@@ -239,7 +258,7 @@ const VersionHistoryContent: React.FC = () => (
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of October 6, 2025 (v0.1.96 - v0.4.04)</h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 6, 2025 (v0.3.01 - v0.4.04)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li>Developed and launched the full AI Teacher feature, moving from a backend foundation to a full-screen UI with an interactive "Teach, Check, Feedback" loop and robust tool-calling for quizzes.</li>
                 <li>Fixed issues with AI Teacher button responsiveness and made minor improvements to Kiosk Mode and item approval defaults.</li>

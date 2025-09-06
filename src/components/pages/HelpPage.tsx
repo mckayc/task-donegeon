@@ -160,6 +160,18 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 6, 2025 (v0.4.65)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>EPUB Reader Fix:</strong> Fixed a bug in the EPUB reader where the progress bar would incorrectly display 100% and not update. The progress calculation is now more robust, ensuring the slider accurately reflects the user's position in the book.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 6, 2025 (v0.4.64)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Bug Bar Consolidation:</strong> The bug recording bar has been consolidated into a more compact and responsive two-row layout to prevent controls from overflowing on smaller screens.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 1, 2025 (v0.4.61)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Rank & Leaderboard Logic Overhaul:</strong> Ranks and the main Leaderboard are now calculated based on a user's *total lifetime XP earned from quests*, rather than their current XP balance. This provides a more accurate and fair representation of a user's overall progress that isn't affected by spending rewards. The Rank Card on the dashboard has been updated to display both current balances and total earned values for clarity.</li>

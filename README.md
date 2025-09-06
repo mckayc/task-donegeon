@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.64
+**Version:** 0.4.65
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of September 6, 2025 (v0.4.65):**
+    -   **EPUB Reader Fix:** Fixed a critical bug in the EPUB reader where the progress bar would incorrectly display 100% and not update upon navigation. The progress calculation is now more robust and accurately reflects the user's position within the book.
 
 -   **Week of September 6, 2025 (v0.4.64):**
     -   **Bug Bar Consolidation:** The bug recording bar has been consolidated into a more compact and responsive two-row layout. This prevents controls from overflowing on smaller screens and ensures the note input field and primary actions (Stop, Cancel) are always accessible, regardless of the report's title length.

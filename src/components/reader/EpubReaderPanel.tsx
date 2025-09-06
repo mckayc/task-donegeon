@@ -104,7 +104,11 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         
         renditionInstance.on("relocated", (locationData: any) => {
             setCurrentCfi(locationData.start.cfi);
-            setProgress(Math.round(locationData.start.percentage * 100));
+            // FIX: Use the more reliable percentageFromCfi method instead of the direct percentage.
+            if (book && book.locations) {
+                const percentage = book.locations.percentageFromCfi(locationData.start.cfi);
+                setProgress(Math.round(percentage * 100));
+            }
         });
         
         const cfiStrings: string[] = userProgress?.bookmarks || [];

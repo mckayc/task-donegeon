@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.64 - Bug Bar Consolidation",
-  "version": "0.4.64",
-  "description": "Consolidates the bug reporter bar into a responsive, multi-row layout to prevent controls from overflowing on smaller screens.",
+  "name": "Task Donegeon 2.0 - 0.4.65 - EPUB Reader Fix",
+  "version": "0.4.65",
+  "description": "Fixed a bug in the EPUB reader where the progress bar was stuck at 100%. The progress calculation is now more robust.",
   "requestFramePermissions": [
     "camera"
   ],

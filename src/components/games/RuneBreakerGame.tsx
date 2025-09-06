@@ -232,7 +232,7 @@ const RuneBreakerGame: React.FC<RuneBreakerGameProps> = ({ onClose }) => {
     }, [gameState, gameLoop]);
     
     return (
-        <div className="flex flex-col items-center justify-center p-4">
+        <div className="w-full h-full flex flex-col items-center justify-center p-4">
              <div className="w-full max-w-[600px] flex justify-between items-center mb-4 text-white font-bold text-lg">
                 <span>Score: {score}</span>
                 <span className="text-2xl font-medieval text-amber-300">Rune Breaker - Level {level}</span>

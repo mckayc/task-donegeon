@@ -329,15 +329,15 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
     }, [bankedRoundScores]);
 
     return (
-        <div className="bg-stone-900 bg-opacity-80 backdrop-blur-sm rounded-2xl border-2 border-stone-700 p-6 flex flex-col items-center justify-center text-white w-full max-w-3xl mx-auto relative">
+        <div className="w-full h-full p-6 flex flex-col items-center justify-center text-white relative">
             {isRulesOpen && <Rules onClose={() => setIsRulesOpen(false)} />}
-            <div className="w-full flex justify-between items-center mb-4 font-bold text-lg">
+            <div className="w-full max-w-3xl flex justify-between items-center mb-4 font-bold text-lg">
                 <span>Total Score: {totalScore}</span>
                 <span className="text-2xl font-medieval text-amber-300">Round {currentRound} / 5</span>
                 <span>High Score: {highScore}</span>
             </div>
             
-            <div className="w-full p-6 bg-stone-800/70 border-2 border-stone-700/60 rounded-xl mb-4 text-center">
+            <div className="w-full max-w-3xl p-6 bg-stone-800/70 border-2 border-stone-700/60 rounded-xl mb-4 text-center">
                 <p className="font-semibold text-xl text-emerald-300 min-h-[28px]">{message}</p>
                 <div className="flex justify-center items-baseline gap-8 mt-2">
                     <p className="text-lg">Banked this Round: <span className="font-bold text-2xl text-amber-300">{currentRoundScore}</span></p>
@@ -372,7 +372,7 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                 {gameState === 'game-over' && <Button onClick={resetGame}>Play Again</Button>}
             </div>
 
-            <div className="w-full flex justify-between items-center mt-8 pt-4 border-t border-stone-700/60">
+            <div className="w-full max-w-3xl flex justify-between items-center mt-8 pt-4 border-t border-stone-700/60">
                  <Button variant="secondary" onClick={() => setIsRulesOpen(true)}>Rules</Button>
                  <Button variant="secondary" onClick={onClose}>Exit Game</Button>
             </div>

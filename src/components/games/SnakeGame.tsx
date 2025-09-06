@@ -176,7 +176,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center p-4">
+        <div className="w-full h-full flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-lg flex justify-between items-center mb-4 text-white font-bold text-lg">
                 <span>Score: {score}</span>
                 <span>High Score: {highScore}</span>

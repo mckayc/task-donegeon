@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import SnakeGame from './SnakeGame';
 import DragonsDiceGame from './DragonsDiceGame';
@@ -54,7 +52,7 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100]"
+        className="fixed inset-0 bg-stone-900 z-[100]"
         data-bug-reporter-ignore
     >
       {renderGame()}

@@ -176,10 +176,8 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
     const gameLoop = useCallback(() => {
         if (gameState !== 'playing') return;
 
-        const ball = arrowsRef.current; // Rename for clarity
-        
         // Update arrows
-        ball.forEach((arrow, arrowIndex) => {
+        arrowsRef.current.forEach((arrow, arrowIndex) => {
             arrow.vy += GRAVITY;
             arrow.x += arrow.vx;
             arrow.y += arrow.vy;
@@ -193,6 +191,7 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
                     arrow.y >= target.y && arrow.y <= target.y + target.height
                 ) {
                     setScore(s => s + target.points);
+                    setArrowsLeft(prev => prev + 1); // Give an arrow back
                     // Remove both arrow and target
                     arrowsRef.current.splice(arrowIndex, 1);
                     targetsRef.current.splice(targetIndex, 1);
@@ -290,7 +289,7 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
     }, [gameState, bowPosition, arrowsLeft]);
     
     return (
-        <div className="flex flex-col items-center justify-center p-4">
+        <div className="w-full h-full flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-[800px] flex justify-between items-center mb-4 text-white font-bold text-lg">
                 <span>Score: {score}</span>
                 <span className="text-2xl font-medieval text-amber-300">Archer's Folly</span>

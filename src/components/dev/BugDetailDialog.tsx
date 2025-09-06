@@ -288,7 +288,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                                 {isComment ? (
                                                     <div className={`flex-grow transition-opacity duration-300 ${log.isDimmed ? 'opacity-40' : 'opacity-100'}`}>
                                                         <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="flex items-center gap-2 min-w-0">
                                                                 {authorUser ? (
                                                                     <Avatar user={authorUser} className="w-6 h-6 rounded-full flex-shrink-0" />
                                                                 ) : (
@@ -296,12 +296,12 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                                                         {log.author ? log.author.charAt(0) : '?'}
                                                                     </div>
                                                                 )}
-                                                                <p className="text-sm">
+                                                                <p className="text-sm truncate">
                                                                     <span className="font-bold text-stone-100">{log.author}</span>
                                                                     <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
                                                                 </p>
                                                             </div>
-                                                            <div className="flex items-center gap-1 transition-opacity">
+                                                            <div className="flex items-center gap-1 flex-shrink-0">
                                                                 <Button size="sm" variant="ghost" className="!text-xs !py-0 !px-2 !h-auto" onClick={() => handleToggleDim(log.timestamp)} aria-label={log.isDimmed ? 'Undim comment' : 'Dim comment'}>
                                                                     {log.isDimmed ? 'Undim' : 'Dim'}
                                                                 </Button>

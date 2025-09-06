@@ -22,7 +22,7 @@ interface PendingApprovals {
 
 export const useDashboardData = () => {
     const { 
-        settings, scheduledEvents
+        settings, scheduledEvents, adminAdjustments
     } = useSystemState();
     const { rewardTypes } = useEconomyState();
     const { guilds } = useCommunityState();
@@ -101,7 +101,7 @@ export const useDashboardData = () => {
 
     const totalEarnedStatsByUser = useMemo(() => {
         const statsMap = new Map<string, { totalEarnedXp: number; totalEarnedCurrencies: { [key: string]: number } }>();
-        if (!users || !quests || !questCompletions || !rewardTypes) {
+        if (!users || !quests || !questCompletions || !rewardTypes || !adminAdjustments) {
             return statsMap;
         }
 
@@ -111,24 +111,24 @@ export const useDashboardData = () => {
             let totalEarnedXp = 0;
             const totalEarnedCurrencies: { [key: string]: number } = {};
 
+            const processRewards = (rewards: RewardItem[]) => {
+                (rewards || []).forEach(reward => {
+                    const rewardDef = rewardTypeMap.get(reward.rewardTypeId);
+                    if (rewardDef) {
+                        if (rewardDef.category === RewardCategory.XP) {
+                            totalEarnedXp += reward.amount;
+                        } else if (rewardDef.category === RewardCategory.Currency) {
+                            totalEarnedCurrencies[reward.rewardTypeId] = (totalEarnedCurrencies[reward.rewardTypeId] || 0) + reward.amount;
+                        }
+                    }
+                });
+            };
+
             const userCompletions = questCompletions.filter(c => c.userId === user.id && c.status === QuestCompletionStatus.Approved);
 
             userCompletions.forEach(completion => {
                 const quest = quests.find(q => q.id === completion.questId);
                 if (quest) {
-                    const processRewards = (rewards: RewardItem[]) => {
-                        (rewards || []).forEach(reward => {
-                            const rewardDef = rewardTypeMap.get(reward.rewardTypeId);
-                            if (rewardDef) {
-                                if (rewardDef.category === RewardCategory.XP) {
-                                    totalEarnedXp += reward.amount;
-                                } else if (rewardDef.category === RewardCategory.Currency) {
-                                    totalEarnedCurrencies[reward.rewardTypeId] = (totalEarnedCurrencies[reward.rewardTypeId] || 0) + reward.amount;
-                                }
-                            }
-                        });
-                    };
-                    
                     processRewards(quest.rewards);
                     
                     if (quest.type === QuestType.Journey && completion.checkpointId) {
@@ -139,12 +139,17 @@ export const useDashboardData = () => {
                     }
                 }
             });
+
+            const userAdjustments = adminAdjustments.filter(adj => adj.userId === user.id);
+            userAdjustments.forEach(adjustment => {
+                processRewards(adjustment.rewards);
+            });
             
             statsMap.set(user.id, { totalEarnedXp, totalEarnedCurrencies });
         });
 
         return statsMap;
-    }, [users, quests, questCompletions, rewardTypes]);
+    }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
     
     if (!currentUser) {
         return {

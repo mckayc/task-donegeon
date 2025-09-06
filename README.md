@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.62
+**Version:** 0.4.63
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of September 6, 2025 (v0.4.63):**
+    -   **Bug Reporter UI Fix:** Fixed a flexbox layout issue in the Bug Detail popup where long commenter names could push the action buttons (dim, mark good/bad) out of view. The buttons are now consistently visible on all comments.
 
 -   **Week of September 6, 2025 (v0.4.62):**
     -   **Bug Reporter UX Fix:** Restored the visibility of action buttons (Dim, Mark Good/Review) on bug report comments. These controls are now always visible instead of only appearing on hover, improving usability.

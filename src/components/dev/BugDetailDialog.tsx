@@ -11,7 +11,6 @@ import { useAuthState } from '../../context/AuthContext';
 import Avatar from '../user-interface/Avatar';
 import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon, CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
-import CopyAppendNoteMenu from './CopyAppendNoteMenu';
 
 interface BugDetailDialogProps {
   report: BugReport;
@@ -42,8 +41,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
     const [comment, setComment] = useState('');
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
-    const [isAppendMenuOpen, setIsAppendMenuOpen] = useState(false);
-    const appendButtonRef = useRef<HTMLButtonElement>(null);
+    const [noteToAppendId, setNoteToAppendId] = useState<string>('');
     const logContainerRef = useRef<HTMLDivElement>(null);
 
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
@@ -137,6 +135,14 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         });
     };
     
+    const handleCopyAndAppend = () => {
+        if (!noteToAppendId || selectedLogs.length === 0) return;
+        const note = (settings.bugReportNotes || []).find(n => n.id === noteToAppendId);
+        if (note) {
+            handleCopy(selectedLogs, true, note);
+        }
+    };
+
     const handleTurnToQuest = () => {
         setQuestFromBug(report);
     };
@@ -224,7 +230,6 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
     const handleScroll = () => {
         const container = logContainerRef.current;
         if (container) {
-            // FIX: Correctly reference scrollTop property of the container element.
             const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
             setUserHasScrolledUp(!atBottom);
             if (atBottom) {
@@ -248,25 +253,37 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                     <div className="flex-grow p-6 flex flex-col md:flex-row gap-6 overflow-hidden min-h-0">
                         
                         <div className="w-full md:w-2/3 flex flex-col space-y-4 overflow-hidden min-h-0">
-                             <div className="flex items-center gap-4 flex-shrink-0">
-                                <label className="flex items-center gap-2 text-sm text-stone-300">
-                                    <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                    <span>Select All</span>
-                                </label>
-                                <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs, true)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
-                                <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
-                                 <div className="relative">
-                                    <Button ref={appendButtonRef} size="sm" variant="secondary" onClick={() => setIsAppendMenuOpen(p => !p)} disabled={selectedLogs.length === 0}>Copy & Append...</Button>
-                                    {isAppendMenuOpen && (
-                                        <CopyAppendNoteMenu
-                                            notes={settings.bugReportNotes || []}
-                                            onSelectNote={(note) => {
-                                                handleCopy(selectedLogs, true, note);
-                                                setIsAppendMenuOpen(false);
-                                            }}
-                                            onClose={() => setIsAppendMenuOpen(false)}
-                                        />
-                                    )}
+                             <div className="flex-shrink-0 space-y-3">
+                                <div className="flex items-center gap-4">
+                                    <label className="flex items-center gap-2 text-sm text-stone-300">
+                                        <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                        <span>Select All</span>
+                                    </label>
+                                    <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs, true)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
+                                    <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
+                                </div>
+                                <div className="flex items-end gap-2 p-2 bg-stone-900/40 rounded-md">
+                                    <Input
+                                        as="select"
+                                        label="Append Note"
+                                        value={noteToAppendId}
+                                        onChange={e => setNoteToAppendId(e.target.value)}
+                                        className="h-9 text-sm flex-grow"
+                                    >
+                                        <option value="">Select a note...</option>
+                                        {(settings.bugReportNotes || []).map(note => (
+                                            <option key={note.id} value={note.id}>{note.title}</option>
+                                        ))}
+                                    </Input>
+                                    <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={handleCopyAndAppend}
+                                        disabled={selectedLogs.length === 0 || !noteToAppendId}
+                                        className="flex-shrink-0 h-9"
+                                    >
+                                        Copy Selected & Append
+                                    </Button>
                                 </div>
                             </div>
                             <div className="relative flex-grow min-h-0">

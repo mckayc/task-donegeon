@@ -55,14 +55,6 @@ export interface User {
       experience: { [rewardTypeId: string]: number };
     }
   };
-  totalEarnedPurse?: { [rewardTypeId: string]: number; };
-  totalEarnedExperience?: { [rewardTypeId: string]: number; };
-  totalEarnedGuildBalances?: {
-    [guildId: string]: {
-      purse: { [rewardTypeId: string]: number };
-      experience: { [rewardTypeId: string]: number };
-    }
-  };
   theme?: string; // Theme ID
   ownedThemes: string[]; // Array of Theme IDs
   hasBeenOnboarded?: boolean;

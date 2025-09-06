@@ -10,6 +10,7 @@ interface EditBugReportNoteDialogProps {
 }
 
 const EditBugReportNoteDialog: React.FC<EditBugReportNoteDialogProps> = ({ noteToEdit, onClose }) => {
+    // FIX: Replaced direct calls to missing SystemDispatch methods with a single call to the `updateSettings` action, which correctly handles saving the `bugReportNotes` array to the settings object.
     const { updateSettings } = useSystemDispatch();
     const { settings } = useSystemState();
     const [title, setTitle] = useState(noteToEdit?.title || '');
@@ -34,11 +35,9 @@ const EditBugReportNoteDialog: React.FC<EditBugReportNoteDialogProps> = ({ noteT
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-                <div className="p-8 border-b border-stone-700/60 flex-shrink-0">
-                    <h2 className="text-2xl font-medieval text-emerald-400">{noteToEdit ? 'Edit Note' : 'Create New Note'}</h2>
-                </div>
-                <form id="bug-note-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto">
+            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
+                <h2 className="text-2xl font-medieval text-emerald-400 mb-6">{noteToEdit ? 'Edit Note' : 'Create New Note'}</h2>
+                <form id="bug-note-form" onSubmit={handleSubmit} className="space-y-4">
                     <Input
                         label="Title"
                         value={title}
@@ -51,11 +50,11 @@ const EditBugReportNoteDialog: React.FC<EditBugReportNoteDialogProps> = ({ noteT
                         label="Content / AI Instructions"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        rows={15}
+                        rows={10}
                         placeholder="Enter the reusable text or prompt instructions here."
                     />
                 </form>
-                <div className="p-6 mt-auto border-t border-stone-700/60 flex justify-end space-x-4 flex-shrink-0">
+                <div className="flex justify-end space-x-4 pt-4 mt-4 border-t border-stone-700/60">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
                     <Button type="submit" form="bug-note-form">{noteToEdit ? 'Save Changes' : 'Create Note'}</Button>
                 </div>

@@ -87,12 +87,11 @@ const Dashboard: React.FC = () => {
     }, [currentUser, updateUser]);
 
     const handleToggleCollapse = useCallback((column: 'left' | 'right', cardId: string) => {
-        const newLayout = { ...layout };
-        newLayout[column] = { ...newLayout[column] };
+        const newLayout = JSON.parse(JSON.stringify(layout));
         const collapsed = newLayout[column].collapsed;
         
         if (collapsed.includes(cardId)) {
-            newLayout[column].collapsed = collapsed.filter(id => id !== cardId);
+            newLayout[column].collapsed = collapsed.filter((id: string) => id !== cardId);
         } else {
             newLayout[column].collapsed.push(cardId);
         }
@@ -122,6 +121,10 @@ const Dashboard: React.FC = () => {
         const CardComponent = cardComponents[cardId];
         if (!CardComponent) return null;
 
+        // Hide certain cards if they have no content
+        if (cardId === 'trophy' && !mostRecentTrophy) return null;
+        if (cardId === 'pendingApprovals' && pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) return null;
+
         const cardProps: any = {
             isCollapsible: true,
             isCollapsed: layout[column].collapsed.includes(cardId),
@@ -137,7 +140,7 @@ const Dashboard: React.FC = () => {
             case 'inventory': cardProps.userCurrencies = userCurrencies; cardProps.userExperience = userExperience; cardProps.terminology = terminology; break;
             case 'leaderboard': cardProps.leaderboard = leaderboard; break;
             case 'pendingApprovals': cardProps.pendingData = pendingApprovals; cardProps.onQuestSelect = handleQuestSelect; break;
-            case 'readingActivity': break; // No specific props needed
+            case 'readingActivity': break;
         }
 
         return <CardComponent {...cardProps} />;
@@ -154,9 +157,11 @@ const Dashboard: React.FC = () => {
                 >
                     {layout.left.order.map(cardId => {
                          const controls = useDragControls();
+                         const card = renderCard(cardId, 'left', controls);
+                         if (!card) return null;
                          return (
                             <Reorder.Item key={cardId} value={cardId} dragListener={false} dragControls={controls}>
-                                {renderCard(cardId, 'left', controls)}
+                                {card}
                             </Reorder.Item>
                          );
                     })}
@@ -170,9 +175,11 @@ const Dashboard: React.FC = () => {
                 >
                     {layout.right.order.map(cardId => {
                          const controls = useDragControls();
+                         const card = renderCard(cardId, 'right', controls);
+                         if (!card) return null;
                          return (
                             <Reorder.Item key={cardId} value={cardId} dragListener={false} dragControls={controls}>
-                                {renderCard(cardId, 'right', controls)}
+                                {card}
                             </Reorder.Item>
                          );
                     })}

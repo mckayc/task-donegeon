@@ -53,11 +53,14 @@ const App: React.FC = () => {
     const renderContent = () => {
         if (isFirstRun) return <FirstRunWizard />;
 
+        // Kiosk Mode Logic
         if (isKioskDevice) {
-            if (isSwitchingUser || !currentUser) return <SwitchUser />;
+            if (isSwitchingUser) return <SwitchUser />;
+            if (currentUser) return <MainLayout />;
             return <SharedLayout />;
         }
         
+        // Standard Mode Logic
         if (!isAppUnlocked && users.length > 0) return <AppLockScreen />;
         if (!currentUser || isSwitchingUser) return <SwitchUser />;
         return <MainLayout />;

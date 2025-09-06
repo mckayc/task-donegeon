@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { BugReport, BugReportStatus, BugReportLogEntry, BugReportNote } from '../../types';
-import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
+import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
+import { useSystemDispatch } from '../../context/SystemContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -11,7 +11,6 @@ import { useAuthState } from '../../context/AuthContext';
 import Avatar from '../user-interface/Avatar';
 import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon, CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
-import CopyAppendNoteMenu from './CopyAppendNoteMenu';
 
 interface BugDetailDialogProps {
   report: BugReport;
@@ -36,14 +35,11 @@ const LogIcon: React.FC<{type: BugReportLogEntry['type']}> = ({ type }) => {
 export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initialReport, onClose, allTags, getTagColor }) => {
     const { updateBugReport } = useSystemDispatch();
     const { currentUser, users } = useAuthState();
-    const { settings } = useSystemState();
     const { addNotification } = useNotificationsDispatch();
     const [report, setReport] = useState(initialReport);
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
     const [comment, setComment] = useState('');
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
-    const [isAppendMenuOpen, setIsAppendMenuOpen] = useState(false);
-    const appendButtonRef = useRef<HTMLButtonElement>(null);
     const logContainerRef = useRef<HTMLDivElement>(null);
 
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
@@ -88,25 +84,22 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         addNotification({ type: 'info', message: `Report status updated to ${newStatus}.` });
     };
     
-    const handleCopy = (logTimestampsToCopy: string[], clearSelection = false, noteToAppend?: BugReportNote) => {
+    const handleCopy = (logTimestampsToCopy: string[], clearSelection = false) => {
         if (logTimestampsToCopy.length === 0) return;
 
         const logsToCopy = sortedLogs.filter(log => logTimestampsToCopy.includes(log.timestamp));
 
-        let textToCopy = `Report ID: #${shortId}\nTitle: ${report.title}\n\n--- LOGS ---\n`;
-        
-        textToCopy += logsToCopy.map((log: BugReportLogEntry) => {
+        const titleLine = `Report ID: #${shortId}\nTitle: ${report.title}\n\n--- LOGS ---\n`;
+        const logText = logsToCopy.map((log: BugReportLogEntry) => {
             const authorText = log.type === 'COMMENT' && log.author ? `${log.author}: ` : '';
             return `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${authorText}${log.message}` +
             (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
         }).join('\n');
         
-        if (noteToAppend) {
-            textToCopy += `\n\n--- Appended Note: ${noteToAppend.title} ---\n${noteToAppend.content}`;
-        }
+        const fullTextToCopy = titleLine + logText;
 
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            addNotification({ type: 'success', message: 'Content copied to clipboard!' });
+        navigator.clipboard.writeText(fullTextToCopy).then(() => {
+            addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
 
             const timestampsToUpdate = new Set(logTimestampsToCopy);
             const newLogs = report.logs.map((log: BugReportLogEntry) => {
@@ -224,7 +217,6 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
     const handleScroll = () => {
         const container = logContainerRef.current;
         if (container) {
-            // FIX: Correctly reference scrollTop property of the container element.
             const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
             setUserHasScrolledUp(!atBottom);
             if (atBottom) {
@@ -255,19 +247,6 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                 </label>
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs, true)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
-                                 <div className="relative">
-                                    <Button ref={appendButtonRef} size="sm" variant="secondary" onClick={() => setIsAppendMenuOpen(p => !p)} disabled={selectedLogs.length === 0}>Copy & Append...</Button>
-                                    {isAppendMenuOpen && (
-                                        <CopyAppendNoteMenu
-                                            notes={settings.bugReportNotes || []}
-                                            onSelectNote={(note) => {
-                                                handleCopy(selectedLogs, true, note);
-                                                setIsAppendMenuOpen(false);
-                                            }}
-                                            onClose={() => setIsAppendMenuOpen(false)}
-                                        />
-                                    )}
-                                </div>
                             </div>
                             <div className="relative flex-grow min-h-0">
                                 <div ref={logContainerRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto pr-4 space-y-4">

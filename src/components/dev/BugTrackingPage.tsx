@@ -11,7 +11,6 @@ import { EllipsisVerticalIcon, PencilIcon, TrashIcon, PlayIcon, CheckCircleIcon,
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 import CreateBugReportDialog from './CreateBugReportDialog';
 import { useDebounce } from '../../hooks/useDebounce';
-import BugReportNoteManager from './BugReportNoteManager';
 
 const BugTrackingPage: React.FC = () => {
     const { bugReports } = useSystemState();
@@ -27,7 +26,7 @@ const BugTrackingPage: React.FC = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
-    const [activeTab, setActiveTab] = useState<BugReportStatus | 'All' | 'Notes'>('All');
+    const [activeTab, setActiveTab] = useState<BugReportStatus | 'All'>('All');
 
 
     const detailedReport = useMemo(() => {
@@ -35,14 +34,13 @@ const BugTrackingPage: React.FC = () => {
         return bugReports.find(r => r.id === detailedReportId) || null;
     }, [detailedReportId, bugReports]);
     
-    const statuses: (BugReportStatus | 'All' | 'Notes')[] = ['All', 'Open', 'In Progress', 'Resolved', 'Closed', 'Notes'];
+    const statuses: (BugReportStatus | 'All')[] = ['All', 'Open', 'In Progress', 'Resolved', 'Closed'];
 
     useEffect(() => {
         setSelectedReports([]);
     }, [activeTab, debouncedSearchTerm]);
 
     const filteredReports = useMemo(() => {
-        if (activeTab === 'Notes') return [];
         return bugReports.filter(r => {
             const statusMatch = activeTab === 'All' || r.status === activeTab;
             if (!statusMatch) return false;
@@ -183,9 +181,7 @@ const BugTrackingPage: React.FC = () => {
                                     : 'border-transparent text-stone-400 hover:text-stone-200'
                                 }`}
                             >
-                                {status === 'Notes' 
-                                    ? 'Notes & AI Instructions' 
-                                    : `${status} (${status === 'All' ? bugReports.length : bugReports.filter(r => r.status === status).length})`}
+                                {status} ({status === 'All' ? bugReports.length : bugReports.filter(r => r.status === status).length})
                             </button>
                         ))}
                     </nav>
@@ -196,101 +192,95 @@ const BugTrackingPage: React.FC = () => {
                         className="max-w-xs mb-2"
                     />
                 </div>
-                
-                {activeTab === 'Notes' ? (
-                    <BugReportNoteManager />
-                ) : (
-                    <>
-                        {selectedReports.length > 0 && (
-                            <div className="p-3 bg-stone-900/50 rounded-lg flex justify-start items-center gap-4 mb-4">
-                                <span className="font-semibold text-stone-300">{selectedReports.length} selected</span>
-                                <Input as="select" label="" value="" onChange={e => handleBulkStatusChange(e.target.value as BugReportStatus)} className="h-9 text-sm w-48">
-                                    <option value="" disabled>Change status to...</option>
-                                    {statuses.filter(s => s !== 'All' && s !== 'Notes').map(s => <option key={s} value={s}>{s}</option>)}
-                                </Input>
-                                <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedReports)}>Delete</Button>
-                            </div>
-                        )}
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="border-b border-stone-700/60">
-                                    <tr>
-                                        <th className="p-4 w-12">
-                                            <input type="checkbox" onChange={handleSelectAll} checked={filteredReports.length > 0 && selectedReports.length === filteredReports.length} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                        </th>
-                                        <th className="p-4 font-semibold">Title</th>
-                                        <th className="p-4 font-semibold">Tags</th>
-                                        <th className="p-4 font-semibold">Created At</th>
-                                        <th className="p-4 font-semibold">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredReports.map(report => {
-                                        const allLogsCopied = report.logs?.length > 0 && report.logs.every((log: BugReportLogEntry) => log.lastCopiedAt);
 
-                                        return (
-                                            <tr 
-                                                key={report.id} 
-                                                className={`border-b border-stone-700/40 last:border-b-0 ${allLogsCopied ? 'border-l-4 border-green-500' : ''}`}
-                                                title={allLogsCopied ? "All log entries for this report have been processed." : ""}
-                                            >
-                                                <td className={`p-4 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
-                                                    <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={e => handleCheckboxClick(e, report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                                </td>
-                                                <td className={`p-4 font-bold transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
-                                                    <button onClick={() => setDetailedReportId(report.id)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>
-                                                </td>
-                                                <td className={`p-4 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {(report.tags || []).map((tag: string) => (
-                                                            <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
-                                                        ))}
-                                                    </div>
-                                                </td>
-                                                <td className={`p-4 text-stone-400 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>{new Date(report.createdAt).toLocaleDateString()}</td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center gap-1">
-                                                        <Button variant="ghost" size="icon" title="View Details" onClick={() => setDetailedReportId(report.id)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                            <PencilIcon className="w-4 h-4" />
-                                                        </Button>
-                                                        
-                                                        {report.status === 'Open' && (
-                                                            <Button variant="ghost" size="icon" title="Mark as In Progress" onClick={() => handleStatusChange(report.id, 'In Progress')} className="h-8 w-8 text-yellow-400 hover:text-yellow-300">
-                                                                <PlayIcon className="w-4 h-4" />
-                                                            </Button>
-                                                        )}
-                                                        {report.status === 'In Progress' && (
-                                                            <Button variant="ghost" size="icon" title="Mark as Resolved" onClick={() => handleStatusChange(report.id, 'Resolved')} className="h-8 w-8 text-green-400 hover:text-green-300">
-                                                                <CheckCircleIcon className="w-4 h-4" />
-                                                            </Button>
-                                                        )}
-                                                        {report.status === 'Resolved' && (
-                                                            <Button variant="ghost" size="icon" title="Close Report" onClick={() => handleStatusChange(report.id, 'Closed')} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                                <ArchiveBoxIcon className="w-4 h-4" />
-                                                            </Button>
-                                                        )}
-                                                        {report.status === 'Closed' && (
-                                                            <Button variant="ghost" size="icon" title="Re-open Report" onClick={() => handleStatusChange(report.id, 'Open')} className="h-8 w-8 text-sky-400 hover:text-sky-300">
-                                                                <FolderOpenIcon className="w-4 h-4" />
-                                                            </Button>
-                                                        )}
-
-                                                        <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingIds([report.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
-                                                            <TrashIcon className="w-4 h-4" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                            {filteredReports.length === 0 && (
-                                <p className="text-center text-stone-400 py-8">{debouncedSearchTerm ? 'No reports match your search.' : `No reports with status "${activeTab}".`}</p>
-                            )}
-                        </div>
-                    </>
+                 {selectedReports.length > 0 && (
+                    <div className="p-3 bg-stone-900/50 rounded-lg flex justify-start items-center gap-4 mb-4">
+                        <span className="font-semibold text-stone-300">{selectedReports.length} selected</span>
+                        <Input as="select" label="" value="" onChange={e => handleBulkStatusChange(e.target.value as BugReportStatus)} className="h-9 text-sm w-48">
+                            <option value="" disabled>Change status to...</option>
+                             {statuses.filter(s => s !== 'All').map(s => <option key={s} value={s}>{s}</option>)}
+                        </Input>
+                         <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedReports)}>Delete</Button>
+                    </div>
                 )}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="border-b border-stone-700/60">
+                            <tr>
+                                <th className="p-4 w-12">
+                                    <input type="checkbox" onChange={handleSelectAll} checked={filteredReports.length > 0 && selectedReports.length === filteredReports.length} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                </th>
+                                <th className="p-4 font-semibold">Title</th>
+                                <th className="p-4 font-semibold">Tags</th>
+                                <th className="p-4 font-semibold">Created At</th>
+                                <th className="p-4 font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredReports.map(report => {
+                                const allLogsCopied = report.logs?.length > 0 && report.logs.every((log: BugReportLogEntry) => log.lastCopiedAt);
+
+                                return (
+                                    <tr 
+                                        key={report.id} 
+                                        className={`border-b border-stone-700/40 last:border-b-0 ${allLogsCopied ? 'border-l-4 border-green-500' : ''}`}
+                                        title={allLogsCopied ? "All log entries for this report have been processed." : ""}
+                                    >
+                                        <td className={`p-4 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
+                                            <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={e => handleCheckboxClick(e, report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                        </td>
+                                        <td className={`p-4 font-bold transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
+                                            <button onClick={() => setDetailedReportId(report.id)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>
+                                        </td>
+                                        <td className={`p-4 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
+                                            <div className="flex flex-wrap gap-1">
+                                                {(report.tags || []).map((tag: string) => (
+                                                    <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className={`p-4 text-stone-400 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>{new Date(report.createdAt).toLocaleDateString()}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="View Details" onClick={() => setDetailedReportId(report.id)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                
+                                                {report.status === 'Open' && (
+                                                    <Button variant="ghost" size="icon" title="Mark as In Progress" onClick={() => handleStatusChange(report.id, 'In Progress')} className="h-8 w-8 text-yellow-400 hover:text-yellow-300">
+                                                        <PlayIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                                {report.status === 'In Progress' && (
+                                                    <Button variant="ghost" size="icon" title="Mark as Resolved" onClick={() => handleStatusChange(report.id, 'Resolved')} className="h-8 w-8 text-green-400 hover:text-green-300">
+                                                        <CheckCircleIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                                {report.status === 'Resolved' && (
+                                                    <Button variant="ghost" size="icon" title="Close Report" onClick={() => handleStatusChange(report.id, 'Closed')} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                        <ArchiveBoxIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                                {report.status === 'Closed' && (
+                                                    <Button variant="ghost" size="icon" title="Re-open Report" onClick={() => handleStatusChange(report.id, 'Open')} className="h-8 w-8 text-sky-400 hover:text-sky-300">
+                                                        <FolderOpenIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingIds([report.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                    {filteredReports.length === 0 && (
+                        <p className="text-center text-stone-400 py-8">{debouncedSearchTerm ? 'No reports match your search.' : `No reports with status "${activeTab}".`}</p>
+                    )}
+                </div>
             </Card>
             
             {detailedReport && (

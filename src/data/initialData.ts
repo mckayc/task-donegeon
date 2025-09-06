@@ -1,3 +1,4 @@
+
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -302,7 +303,6 @@ export const INITIAL_SETTINGS: AppSettings = {
     developerMode: {
       enabled: false,
     },
-    bugReportNotes: [],
     conditionSets: [],
 };
 

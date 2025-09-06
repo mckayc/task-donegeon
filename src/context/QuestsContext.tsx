@@ -206,31 +206,6 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
-        addQuestGroup: async (data) => {
-            const result = await apiAction(() => addQuestGroupAPI(data), 'Quest group created!');
-            if (result) {
-                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questGroups: [result] } });
-            }
-            return result;
-        },
-        updateQuestGroup: async (data) => {
-            const result = await apiAction(() => updateQuestGroupAPI(data), 'Quest group updated!');
-            if (result) {
-                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questGroups: [result] } });
-            }
-            return result;
-        },
-        assignQuestGroupToUsers: (groupId, userIds) => {
-            if (!currentUser) return Promise.resolve();
-            return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds, currentUser.id));
-        },
-        addRotation: (data) => apiAction(() => addRotationAPI(data)),
-        updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
-        cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
-        runRotation: async (id) => {
-            const result = await apiAction(() => runRotationAPI(id));
-            if (result) addNotification({ type: 'success', message: (result as any).message });
-        },
         completeCheckpoint: async (questId, userId) => {
             const result = await apiAction(() => completeCheckpointAPI(questId, userId));
             if (result) {
@@ -269,6 +244,19 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         updateReadingProgress: async (questId, userId, data) => {
             await apiAction(() => updateReadingProgressAPI(questId, userId, data));
+        },
+        addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data), 'Quest group created!'),
+        updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data), 'Quest group updated!'),
+        assignQuestGroupToUsers: (groupId, userIds) => {
+            if (!currentUser) return Promise.resolve();
+            return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds, currentUser.id));
+        },
+        addRotation: (data) => apiAction(() => addRotationAPI(data)),
+        updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
+        cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
+        runRotation: async (id) => {
+            const result = await apiAction(() => runRotationAPI(id));
+            if (result) addNotification({ type: 'success', message: (result as any).message });
         },
     }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch]);
     

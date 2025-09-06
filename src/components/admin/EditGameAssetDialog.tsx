@@ -224,8 +224,9 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     } else if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
-      // FIX: The destructuring here was incorrect, creating an empty payload. Pass the `finalPayload` object directly.
-      addGameAsset(finalPayload);
+      // FIX: The backend handles timestamp generation. Do not include `createdAt` in the payload for a new asset.
+      const { createdAt, ...createPayload } = finalPayload as any;
+      addGameAsset(createPayload);
     }
     onClose();
   };

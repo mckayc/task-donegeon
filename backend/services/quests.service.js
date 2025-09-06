@@ -152,7 +152,7 @@ const bulkUpdate = async (ids, updates) => {
         if (typeof updates.isActive === 'boolean') quest.isActive = updates.isActive;
         if (typeof updates.isOptional === 'boolean') quest.isOptional = updates.isOptional;
         if (typeof updates.requiresApproval === 'boolean') quest.requiresApproval = updates.requiresApproval;
-        if (updates.groupId !== undefined) quest.groupId = updates.groupId;
+        if (updates.groupId !== undefined) quest.groupIds = updates.groupId ? [updates.groupId] : [];
         if (updates.addTags) quest.tags = [...new Set([...quest.tags, ...updates.addTags])];
         if (updates.removeTags) quest.tags = quest.tags.filter(t => !updates.removeTags.includes(t));
         if (updates.assignUsers) {

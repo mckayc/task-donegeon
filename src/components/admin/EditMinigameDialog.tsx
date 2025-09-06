@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Minigame, User, RewardCategory, RewardItem, PrizeThreshold } from '../../../types';
 import Button from '../user-interface/Button';
@@ -98,7 +99,7 @@ const EditMinigameDialog: React.FC<EditMinigameDialogProps> = ({ game, onClose }
     const handleRemoveReward = (thresholdIndex: number) => (itemIndex: number) => {
         setFormData(p => {
             const newThresholds = [...p.prizeThresholds];
-            const newRewards = newThresholds[thresholdIndex].rewards.filter((_, i) => i !== itemIndex);
+            const newRewards = newThresholds[thresholdIndex].rewards.filter((_: any, i: number) => i !== itemIndex);
             newThresholds[thresholdIndex] = { ...newThresholds[thresholdIndex], rewards: newRewards };
             return { ...p, prizeThresholds: newThresholds };
         });
@@ -130,7 +131,7 @@ const EditMinigameDialog: React.FC<EditMinigameDialogProps> = ({ game, onClose }
                             <ToggleSwitch enabled={formData.prizesEnabled} setEnabled={val => setFormData(p => ({...p, prizesEnabled: val}))} label="Enable Prize Thresholds" />
                             {formData.prizesEnabled && (
                                 <div className="space-y-3">
-                                    {formData.prizeThresholds.map((threshold, index) => (
+                                    {formData.prizeThresholds.map((threshold: PrizeThreshold, index: number) => (
                                         <div key={index} className="p-3 bg-stone-900/50 rounded-lg space-y-3">
                                             <div className="flex justify-between items-end gap-2">
                                                 <NumberInput label={`Threshold ${index + 1} Score`} value={threshold.score} onChange={val => handleThresholdChange(index, 'score', val)} min={1} />

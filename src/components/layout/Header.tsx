@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Page, AppMode } from '../../types/app';
 import { Quest } from '../quests/types';
 import { Role } from '../users/types';
@@ -69,7 +69,6 @@ const Header: React.FC = () => {
   const { settings, isUpdateAvailable } = useSystemState();
   const { installUpdate } = useSystemDispatch();
   const { guilds } = useCommunityState();
-  // FIX: setActivePage is a dispatch function, not a state property.
   const { appMode, isMobileView, isKioskDevice } = useUIState();
   const { setAppMode, toggleSidebar, setActivePage } = useUIDispatch();
   const { currentUser } = useAuthState();
@@ -82,6 +81,23 @@ const Header: React.FC = () => {
   const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
   
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
+  
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const guildDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+            setProfileDropdownOpen(false);
+        }
+        if (guildDropdownRef.current && !guildDropdownRef.current.contains(event.target as Node)) {
+            setGuildDropdownOpen(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   useEffect(() => {
     if (!currentUser) return;
@@ -163,7 +179,7 @@ const Header: React.FC = () => {
             <button data-log-id="header-mode-personal" onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
                 Personal
             </button>
-            <div className="relative">
+            <div className="relative" ref={guildDropdownRef}>
                 <button
                     data-log-id="header-mode-guild-dropdown"
                     onClick={() => {
@@ -255,7 +271,7 @@ const Header: React.FC = () => {
             )}
         </div>
         {!isMobileView && <Clock />}
-        <div className="relative">
+        <div className="relative" ref={profileDropdownRef}>
             <button 
                 onClick={() => setProfileDropdownOpen(p => !p)} 
                 data-log-id="header-profile-dropdown" 

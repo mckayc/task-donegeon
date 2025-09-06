@@ -1,9 +1,7 @@
-
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { Quest, DashboardLayout } from '../../types';
+import { Quest, DashboardLayout, ConditionSet } from '../../types';
 import RankCard from '../dashboard/RankCard';
 import InventoryCard from '../dashboard/InventoryCard';
 import LeaderboardCard from '../dashboard/LeaderboardCard';
@@ -17,6 +15,13 @@ import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Reorder, useDragControls } from 'framer-motion';
 import { useUIState } from '../../context/UIContext';
 import DashboardCustomizationDialog from '../dashboard/DashboardCustomizationDialog';
+import { getQuestLockStatus, ConditionDependencies } from '../../utils/conditions';
+import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
+import { useProgressionState } from '../../context/ProgressionContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useSystemState } from '../../context/SystemContext';
 
 export const allCardComponents: { [key: string]: { name: string, component: React.FC<any> } } = {
     quickActions: { name: 'Quick Actions', component: QuickActionsCard },
@@ -48,10 +53,23 @@ const Dashboard: React.FC = () => {
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [isCustomizeDialogOpen, setIsCustomizeDialogOpen] = useState(false);
+    const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
     
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
-    const { activePageMeta } = useUIState();
+    const { activePageMeta, appMode } = useUIState();
+
+    // Dependencies for condition checking
+    const progressionState = useProgressionState();
+    const economyState = useEconomyState();
+    const communityState = useCommunityState();
+    const questsState = useQuestsState();
+    const systemState = useSystemState();
+
+    const conditionDependencies = useMemo<ConditionDependencies & { allConditionSets: ConditionSet[] }>(() => ({
+        ...progressionState, ...economyState, ...communityState, ...questsState, allConditionSets: systemState.settings.conditionSets, appMode
+    }), [progressionState, economyState, communityState, questsState, systemState.settings.conditionSets, appMode]);
+
 
     useEffect(() => {
         if (activePageMeta?.from === 'header-customize-dashboard') {
@@ -75,7 +93,6 @@ const Dashboard: React.FC = () => {
         const userLayout = currentUser?.dashboardLayout;
         if (!userLayout) return defaultLayout;
 
-        // Deep merge to ensure new cards from defaultLayout are included if not in user's saved layout
         const mergedLayout = JSON.parse(JSON.stringify(defaultLayout));
         mergedLayout.layoutType = userLayout.layoutType || defaultLayout.layoutType;
 
@@ -101,7 +118,6 @@ const Dashboard: React.FC = () => {
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {
         if (currentUser) {
-            // No local state update needed, will re-memoize on currentUser update
             updateUser(currentUser.id, { dashboardLayout: newLayout });
         }
     }, [currentUser, updateUser]);
@@ -124,11 +140,18 @@ const Dashboard: React.FC = () => {
         saveLayout(newLayout);
     }, [layout, saveLayout]);
     
-    if (!rankData.currentRank) {
+    if (!rankData.currentRank || !currentUser) {
         return <div className="text-center text-stone-400">Loading dashboard...</div>;
     }
     
-    const handleQuestSelect = (quest: Quest) => setSelectedQuest(quest);
+    const handleQuestSelect = (quest: Quest) => {
+        const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
+        if (lockStatus.isLocked) {
+            setViewingConditionsForQuest(quest);
+        } else {
+            setSelectedQuest(quest);
+        }
+    };
 
     const handleStartCompletion = () => {
         if (selectedQuest) {
@@ -142,8 +165,6 @@ const Dashboard: React.FC = () => {
         if (!CardComponent) return null;
 
         if (cardId === 'trophy' && !mostRecentTrophy) return null;
-        if (cardId === 'pendingApprovals' && pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) return null;
-        if (cardId === 'readingActivity' && !recentActivities.some(activity => activity.type.toLowerCase().includes('reading'))) return null;
         
         const cardProps: any = {
             isCollapsible: true,
@@ -160,7 +181,7 @@ const Dashboard: React.FC = () => {
             case 'inventory': cardProps.userCurrencies = userCurrencies; cardProps.userExperience = userExperience; cardProps.terminology = terminology; break;
             case 'leaderboard': cardProps.leaderboard = leaderboard; break;
             case 'pendingApprovals': cardProps.pendingData = pendingApprovals; cardProps.onQuestSelect = handleQuestSelect; break;
-            case 'readingActivity': break;
+            case 'readingActivity': break; // No extra props needed
         }
 
         return <CardComponent {...cardProps} />;
@@ -190,7 +211,6 @@ const Dashboard: React.FC = () => {
                 <Reorder.Group
                     axis="y"
                     values={layout.columns.main.order}
-                    // FIX: Cast `newOrder` to string[] to match the expected type.
                     onReorder={(newOrder) => handleReorder('main', newOrder as string[])}
                     className={`${mainColClasses} space-y-6`}
                 >
@@ -210,7 +230,6 @@ const Dashboard: React.FC = () => {
                     <Reorder.Group
                         axis="y"
                         values={layout.columns.side.order}
-                        // FIX: Cast `newOrder` to string[] to match the expected type.
                         onReorder={(newOrder) => handleReorder('side', newOrder as string[])}
                         className={`${sideColClasses} space-y-6`}
                     >
@@ -239,6 +258,13 @@ const Dashboard: React.FC = () => {
                     userLayout={layout}
                     onClose={() => setIsCustomizeDialogOpen(false)}
                     onSave={saveLayout}
+                />
+            )}
+            {viewingConditionsForQuest && (
+                <QuestConditionStatusDialog
+                    quest={viewingConditionsForQuest}
+                    user={currentUser}
+                    onClose={() => setViewingConditionsForQuest(null)}
                 />
             )}
         </>

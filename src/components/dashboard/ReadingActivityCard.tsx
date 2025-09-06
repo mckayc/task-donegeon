@@ -47,30 +47,30 @@ const ReadingActivityCard: React.FC<ReadingActivityCardProps> = (props) => {
         return activities.sort((a, b) => b.time - a.time); // Show longest readers first
     }, [quests, users]);
 
-    if (readingActivities.length === 0) {
-        return null; // Don't show the card if no one is reading
-    }
-
     return (
         <Card title="Live Reading Activity" {...props}>
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                {readingActivities.map(({ user, quest, time, sessionTime }) => (
-                    <div key={`${user.id}-${quest.id}`} className="flex items-center gap-3 p-2 bg-stone-900/50 rounded-md">
-                        <Avatar user={user} className="w-10 h-10 rounded-full flex-shrink-0" />
-                        <div className="flex-grow overflow-hidden">
-                            <p className="font-semibold text-stone-200 truncate">{user.gameName}</p>
-                            <p className="text-xs text-stone-400 truncate flex items-center gap-1.5">
-                                <BookOpen className="w-3 h-3 flex-shrink-0"/>
-                                <span className="truncate">Reading: {quest.title}</span>
-                            </p>
+            {readingActivities.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                    {readingActivities.map(({ user, quest, time, sessionTime }) => (
+                        <div key={`${user.id}-${quest.id}`} className="flex items-center gap-3 p-2 bg-stone-900/50 rounded-md">
+                            <Avatar user={user} className="w-10 h-10 rounded-full flex-shrink-0" />
+                            <div className="flex-grow overflow-hidden">
+                                <p className="font-semibold text-stone-200 truncate">{user.gameName}</p>
+                                <p className="text-xs text-stone-400 truncate flex items-center gap-1.5">
+                                    <BookOpen className="w-3 h-3 flex-shrink-0"/>
+                                    <span className="truncate">Reading: {quest.title}</span>
+                                </p>
+                            </div>
+                             <div className="font-mono text-right flex-shrink-0">
+                                <p className="font-bold text-lg text-emerald-300" title="Total Time">{formatTime(time)}</p>
+                                {sessionTime && sessionTime > 0 && <p className="text-xs text-stone-400" title="Current Session">({formatTime(sessionTime)})</p>}
+                            </div>
                         </div>
-                         <div className="font-mono text-right flex-shrink-0">
-                            <p className="font-bold text-lg text-emerald-300" title="Total Time">{formatTime(time)}</p>
-                            {sessionTime && sessionTime > 0 && <p className="text-xs text-stone-400" title="Current Session">({formatTime(sessionTime)})</p>}
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-stone-400 text-center text-sm">No active reading sessions.</p>
+            )}
         </Card>
     );
 };

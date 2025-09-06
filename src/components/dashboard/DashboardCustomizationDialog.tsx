@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { DashboardLayout } from '../../types';
 import Button from '../user-interface/Button';
-import { Reorder } from 'framer-motion';
+import { Reorder, motion } from 'framer-motion';
 import { allCardComponents } from '../pages/Dashboard';
 import { LayoutIcon } from 'lucide-react';
 
@@ -27,6 +27,8 @@ const CardItem: React.FC<{ cardId: string, children: React.ReactNode }> = ({ car
 
 const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> = ({ userLayout, onClose, onSave }) => {
     const [tempLayout, setTempLayout] = useState<DashboardLayout>(JSON.parse(JSON.stringify(userLayout)));
+    const [draggedItem, setDraggedItem] = useState<{ id: string; source: 'main' | 'side' | 'hidden' } | null>(null);
+    const [dropTarget, setDropTarget] = useState<'main' | 'side' | 'hidden' | null>(null);
 
     const handleSave = () => {
         onSave(tempLayout);
@@ -34,7 +36,7 @@ const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> 
     };
     
     const handleReorder = (column: 'main' | 'side' | 'hidden', newOrder: string[]) => {
-        const newLayout = { ...tempLayout };
+        const newLayout = JSON.parse(JSON.stringify(tempLayout));
         if (column === 'hidden') {
             newLayout.hidden = newOrder;
         } else {
@@ -42,6 +44,46 @@ const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> 
         }
         setTempLayout(newLayout);
     };
+
+    const handleDragEnd = () => {
+        if (draggedItem && dropTarget && draggedItem.source !== dropTarget) {
+            const newLayout = JSON.parse(JSON.stringify(tempLayout));
+
+            // Remove from source
+            if (draggedItem.source === 'hidden') {
+                newLayout.hidden = newLayout.hidden.filter((id: string) => id !== draggedItem.id);
+            } else {
+                newLayout.columns[draggedItem.source].order = newLayout.columns[draggedItem.source].order.filter((id: string) => id !== draggedItem.id);
+            }
+
+            // Add to destination
+            if (dropTarget === 'hidden') {
+                newLayout.hidden.push(draggedItem.id);
+            } else {
+                newLayout.columns[dropTarget].order.push(draggedItem.id);
+            }
+
+            setTempLayout(newLayout);
+        }
+        setDraggedItem(null);
+        setDropTarget(null);
+    };
+
+    const ColumnDropZone: React.FC<{
+        column: 'main' | 'side' | 'hidden';
+        title: string;
+        children: React.ReactNode;
+        className?: string;
+    }> = ({ column, title, children, className }) => (
+        <motion.div
+            onMouseEnter={() => draggedItem && setDropTarget(column)}
+            onMouseLeave={() => setDropTarget(null)}
+            className={`p-4 bg-stone-900/50 rounded-lg transition-all duration-200 ${className} ${dropTarget === column ? 'border-2 border-emerald-500' : ''}`}
+        >
+            <h4 className="font-semibold text-stone-300 mb-2">{title}</h4>
+            {children}
+        </motion.div>
+    );
 
     return (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4 backdrop-blur-sm" onClick={onClose}>
@@ -69,44 +111,38 @@ const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> 
                         <div className={`space-y-4 ${tempLayout.layoutType === 'single-column' ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
                             <h3 className="font-bold text-lg text-stone-200">Visible Cards</h3>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className={`p-4 bg-stone-900/50 rounded-lg ${tempLayout.layoutType === 'two-column-main-right' ? 'order-2' : ''}`}>
-                                    <h4 className="font-semibold text-stone-300 mb-2">Main Column</h4>
-                                    {/* FIX: Cast `newOrder` to string[] to match the expected type. */}
+                                <ColumnDropZone column="main" title="Main Column" className={tempLayout.layoutType === 'two-column-main-right' ? 'order-2' : ''}>
                                     <Reorder.Group axis="y" values={tempLayout.columns.main.order} onReorder={(newOrder) => handleReorder('main', newOrder as string[])} className="space-y-2 min-h-[100px]">
                                         {tempLayout.columns.main.order.map(cardId => (
-                                            <Reorder.Item key={cardId} value={cardId}>
+                                            <Reorder.Item key={cardId} value={cardId} onDragStart={() => setDraggedItem({ id: cardId, source: 'main' })} onDragEnd={handleDragEnd}>
                                                 <CardItem cardId={cardId}>{cardId}</CardItem>
                                             </Reorder.Item>
                                         ))}
                                     </Reorder.Group>
-                                </div>
+                                </ColumnDropZone>
                                 {tempLayout.layoutType !== 'single-column' && (
-                                    <div className={`p-4 bg-stone-900/50 rounded-lg ${tempLayout.layoutType === 'two-column-main-right' ? 'order-1' : ''}`}>
-                                        <h4 className="font-semibold text-stone-300 mb-2">Side Column</h4>
-                                        {/* FIX: Cast `newOrder` to string[] to match the expected type. */}
+                                    <ColumnDropZone column="side" title="Side Column" className={tempLayout.layoutType === 'two-column-main-right' ? 'order-1' : ''}>
                                         <Reorder.Group axis="y" values={tempLayout.columns.side.order} onReorder={(newOrder) => handleReorder('side', newOrder as string[])} className="space-y-2 min-h-[100px]">
                                             {tempLayout.columns.side.order.map(cardId => (
-                                                <Reorder.Item key={cardId} value={cardId}>
+                                                <Reorder.Item key={cardId} value={cardId} onDragStart={() => setDraggedItem({ id: cardId, source: 'side' })} onDragEnd={handleDragEnd}>
                                                     <CardItem cardId={cardId}>{cardId}</CardItem>
                                                 </Reorder.Item>
                                             ))}
                                         </Reorder.Group>
-                                    </div>
+                                    </ColumnDropZone>
                                 )}
                             </div>
                         </div>
 
-                        <div className="lg:col-span-1 p-4 bg-stone-900/50 rounded-lg">
-                            <h4 className="font-semibold text-stone-300 mb-2">Hidden Cards</h4>
-                            {/* FIX: Cast `newOrder` to string[] to match the expected type. */}
+                         <ColumnDropZone column="hidden" title="Hidden Cards" className="lg:col-span-1">
                             <Reorder.Group axis="y" values={tempLayout.hidden} onReorder={(newOrder) => handleReorder('hidden', newOrder as string[])} className="space-y-2 min-h-[100px]">
                                 {tempLayout.hidden.map(cardId => (
-                                    <Reorder.Item key={cardId} value={cardId}>
+                                    <Reorder.Item key={cardId} value={cardId} onDragStart={() => setDraggedItem({ id: cardId, source: 'hidden' })} onDragEnd={handleDragEnd}>
                                         <CardItem cardId={cardId}>{cardId}</CardItem>
                                     </Reorder.Item>
                                 ))}
                             </Reorder.Group>
-                        </div>
+                        </ColumnDropZone>
                     </div>
                 </div>
                 <div className="p-4 bg-black/20 mt-auto flex justify-end space-x-4">

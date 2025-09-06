@@ -1,9 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-// FIX: Fix import path for types.
-import { Market, MarketStatus } from '../items/types';
-import { Condition, ConditionType } from '../conditions/types';
+import { Market, MarketStatus, Condition, ConditionType } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';

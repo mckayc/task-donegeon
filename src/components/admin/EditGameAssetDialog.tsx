@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-// FIX: Corrected the import path for types.
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -226,7 +225,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
       // FIX: The destructuring here was incorrect, creating an empty payload. Pass the `finalPayload` object directly.
-      addGameAsset({ ...finalPayload, createdAt: new Date().toISOString() });
+      addGameAsset(finalPayload);
     }
     onClose();
   };

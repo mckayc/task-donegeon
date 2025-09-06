@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
-import { useSystemDispatch } from '../../context/SystemContext';
+import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -11,6 +12,7 @@ import { useAuthState } from '../../context/AuthContext';
 import Avatar from '../user-interface/Avatar';
 import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon, CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface BugDetailDialogProps {
   report: BugReport;
@@ -34,6 +36,7 @@ const LogIcon: React.FC<{type: BugReportLogEntry['type']}> = ({ type }) => {
 
 export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initialReport, onClose, allTags, getTagColor }) => {
     const { updateBugReport } = useSystemDispatch();
+    const { settings } = useSystemState();
     const { currentUser, users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
     const [report, setReport] = useState(initialReport);
@@ -44,6 +47,15 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
 
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
     const [showNewCommentIndicator, setShowNewCommentIndicator] = useState(false);
+    
+    const [appendTemplate, setAppendTemplate] = useState(false);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+    useEffect(() => {
+        if ((settings.bugReportTemplates || []).length > 0) {
+            setSelectedTemplateId(settings.bugReportTemplates![0].id);
+        }
+    }, [settings.bugReportTemplates]);
 
     useEffect(() => {
         setReport(initialReport);
@@ -96,7 +108,14 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
             (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
         }).join('\n');
         
-        const fullTextToCopy = titleLine + logText;
+        let fullTextToCopy = titleLine + logText;
+
+        if (appendTemplate && selectedTemplateId) {
+            const template = (settings.bugReportTemplates || []).find(t => t.id === selectedTemplateId);
+            if (template) {
+                fullTextToCopy += `\n\n--- TEMPLATE: ${template.title} ---\n${template.text}`;
+            }
+        }
 
         navigator.clipboard.writeText(fullTextToCopy).then(() => {
             addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
@@ -358,6 +377,32 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                 />
                                 <div className="text-right mt-2">
                                     <Button onClick={handleAddComment} disabled={!comment.trim()}>Add Comment</Button>
+                                </div>
+                            </div>
+                             <div>
+                                <h4 className="text-lg font-semibold text-stone-200 mb-2">Append Template</h4>
+                                <div className="space-y-2">
+                                    <ToggleSwitch
+                                        enabled={appendTemplate}
+                                        setEnabled={setAppendTemplate}
+                                        label="Append to Copied Log"
+                                    />
+                                    {appendTemplate && (
+                                        <Input
+                                            as="select"
+                                            label=""
+                                            value={selectedTemplateId}
+                                            onChange={(e) => setSelectedTemplateId(e.target.value)}
+                                            disabled={!settings.bugReportTemplates || settings.bugReportTemplates.length === 0}
+                                        >
+                                            {(settings.bugReportTemplates || []).map(template => (
+                                                <option key={template.id} value={template.id}>{template.title}</option>
+                                            ))}
+                                            {(!settings.bugReportTemplates || settings.bugReportTemplates.length === 0) && (
+                                                <option disabled>No templates available</option>
+                                            )}
+                                        </Input>
+                                    )}
                                 </div>
                             </div>
                         </div>

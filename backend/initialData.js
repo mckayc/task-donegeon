@@ -1,3 +1,4 @@
+
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -128,7 +129,7 @@ const INITIAL_SETTINGS = {
       awards: 'Trophies',
       point: 'Reward',
       points: 'Rewards',
-      xp: 'XP',
+      xp: 'Experience Points',
       currency: 'Currency',
       negativePoint: 'Setback',
       negativePoints: 'Setbacks',
@@ -201,6 +202,7 @@ const INITIAL_SETTINGS = {
       enabled: false,
     },
     conditionSets: [],
+    bugReportTemplates: [],
 };
 
 const INITIAL_QUEST_GROUPS = [
@@ -397,13 +399,3 @@ const INITIAL_TROPHIES = [
     { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] },
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
-
-module.exports = {
-  INITIAL_MAIN_SIDEBAR_CONFIG,
-  INITIAL_SETTINGS,
-  INITIAL_QUEST_GROUPS,
-  INITIAL_REWARD_TYPES,
-  INITIAL_RANKS,
-  INITIAL_TROPHIES,
-  INITIAL_THEMES,
-};

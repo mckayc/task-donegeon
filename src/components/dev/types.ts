@@ -1,3 +1,4 @@
+
 export type BugReportStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
 
 export enum BugReportType {
@@ -31,4 +32,10 @@ export interface BugReport {
   status: BugReportStatus;
   tags: string[];
   logs: BugReportLogEntry[];
+}
+
+export interface BugReportTemplate {
+  id: string;
+  title: string;
+  text: string;
 }

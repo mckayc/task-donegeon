@@ -304,6 +304,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       enabled: false,
     },
     conditionSets: [],
+    bugReportTemplates: [],
 };
 
 const rawThemes: { [key in string]: ThemeStyle } = {

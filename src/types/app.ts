@@ -1,3 +1,4 @@
+
 import { Role } from '../components/users/types';
 import { ConditionSet } from '../components/conditions/types';
 import { SystemState } from '../context/SystemContext';
@@ -6,6 +7,7 @@ import { AuthState } from '../context/AuthContext';
 import { EconomyState } from '../context/EconomyContext';
 import { ProgressionState } from '../context/ProgressionContext';
 import { CommunityState } from '../context/CommunityContext';
+import { BugReportTemplate } from '../components/dev/types';
 
 export type Page =
   | 'Dashboard' | 'Quests' | 'Calendar' | 'Marketplace' | 'Avatar' | 'Collection'
@@ -160,6 +162,7 @@ export interface AppSettings {
         enabled: boolean;
     };
     conditionSets: ConditionSet[];
+    bugReportTemplates?: BugReportTemplate[];
 }
 
 export interface BackupSchedule {

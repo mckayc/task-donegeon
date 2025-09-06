@@ -64,6 +64,11 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+        <h3>Quest Logic & Availability</h3>
+        <p>To ensure fairness and clarity, the system now enforces stricter availability rules for quests:</p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Scheduled Duties:</strong> Duties (recurring quests) that are not scheduled to be active on the current day will now be fully disabled. While they may still appear dimmed on the Quest Page for informational purposes, they cannot be selected or completed until their scheduled day. This prevents accidental completions on non-active days and clarifies user expectations.</li>
+        </ul>
         <h3>Interactive Media</h3>
         <p>
             Certain quests can now include interactive elements to make them more engaging or educational.
@@ -132,6 +137,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 1, 2025 (v0.4.60)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quest Scheduling Fix:</strong> Implemented a new rule preventing users from completing "Duty" quests on days they are not scheduled to be active. Users now receive a notification explaining why the quest is unavailable, improving clarity and preventing incorrect completions.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of November 24, 2025 (v0.4.52)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

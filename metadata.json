@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.60 - Quest condition set bug",
-  "version": "0.4.54",
-  "description": "Updates the Help & About page with comprehensive feature lists, functional specifications, roadmap, and version history.",
+  "name": "Task Donegeon 2.0 - 0.4.60 - Quest scheduling fix",
+  "version": "0.4.60",
+  "description": "Prevents users from completing Duty quests that are not scheduled for the current day and provides an explanatory notification.",
   "requestFramePermissions": [
     "camera"
   ],

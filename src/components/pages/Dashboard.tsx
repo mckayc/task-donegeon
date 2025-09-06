@@ -15,13 +15,17 @@ import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Reorder, useDragControls } from 'framer-motion';
 import { useUIState } from '../../context/UIContext';
 import DashboardCustomizationDialog from '../dashboard/DashboardCustomizationDialog';
+// FIX: Moved isQuestAvailableForUser to its correct import from quests utils.
 import { getQuestLockStatus, ConditionDependencies } from '../../utils/conditions';
+import { isQuestAvailableForUser } from '../../utils/quests';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useSystemState } from '../../context/SystemContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { QuestType } from '../quests/types';
 
 export const allCardComponents: { [key: string]: { name: string, component: React.FC<any> } } = {
     quickActions: { name: 'Quick Actions', component: QuickActionsCard },
@@ -54,9 +58,11 @@ const Dashboard: React.FC = () => {
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [isCustomizeDialogOpen, setIsCustomizeDialogOpen] = useState(false);
     const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
+    const [now, setNow] = useState(new Date());
     
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const { activePageMeta, appMode } = useUIState();
 
     // Dependencies for condition checking
@@ -76,6 +82,11 @@ const Dashboard: React.FC = () => {
             setIsCustomizeDialogOpen(true);
         }
     }, [activePageMeta]);
+    
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
 
     const { 
         rankData, 
@@ -145,6 +156,22 @@ const Dashboard: React.FC = () => {
     }
     
     const handleQuestSelect = (quest: Quest) => {
+        const isAvailable = isQuestAvailableForUser(
+            quest,
+            questsState.questCompletions.filter(c => c.userId === currentUser.id),
+            now,
+            systemState.scheduledEvents,
+            appMode
+        );
+
+        if (!isAvailable && quest.type === QuestType.Duty) {
+            addNotification({
+                type: 'info',
+                message: `This duty is not scheduled for today and cannot be completed.`
+            });
+            return;
+        }
+
         const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
         if (lockStatus.isLocked) {
             setViewingConditionsForQuest(quest);

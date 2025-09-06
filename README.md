@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.29
+**Version:** 0.4.60
 
 ---
 
@@ -13,16 +13,31 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
 
-### What's New in Version 0.4.28 (November 3, 2025)
--   **The Arcade Expansion:** Five new minigames have been added: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.
--   **Arcade Leaderboard:** A new "All-Time Arcade Legends" leaderboard now appears in the Arcade, showing top players based on cumulative scores across all games.
--   **High Score Display:** Each minigame card now displays the name of the current global high score holder.
-
-### What's New in Version 0.4.27 (October 27, 2025)
--   **Snake Minigame Overhaul:** The Snake minigame in the Arcade has been significantly improved for better playability. The game window is now larger, the initial speed is slower, a "3, 2, 1, GO!" countdown has been added, and players can now restart the game by pressing any arrow key on the "Game Over" screen.
--   **Global Condition Fix:** Resolved a critical logic bug where a quest that was part of a quest group used in a *globally applied* condition set would lock itself, making it impossible to complete. The global condition check now correctly excludes the quest being evaluated from its own group's completion requirements.
-
 ### Weekly Summaries
+
+-   **Week of September 1, 2025 (v0.4.60):**
+    -   **Quest Scheduling Fix:** Implemented a new rule preventing users from completing "Duty" quests on days they are not scheduled to be active. Users now receive a notification explaining why the quest is unavailable, improving clarity and preventing incorrect completions.
+
+-   **Week of November 24, 2025 (v0.4.52):**
+    -   **Customizable Dashboard:** All cards on the Dashboard are now collapsible and can be reordered via drag-and-drop. Your preferred layout and collapsed states are saved automatically to your profile, allowing for a personalized view of your most important information.
+
+-   **Week of November 17, 2025 (v0.4.46):**
+    -   **eBook Reader Redesign:** The EPUB reader has been completely overhauled with a new UI. It now features permanent, opaque top and bottom bars for controls, an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a dedicated "add bookmark" button, and a subtle page-turn animation.
+
+-   **Week of November 10, 2025 (v0.4.45):**
+    -   **EPUB Reader Overhaul:** The eBook reader has been significantly upgraded with fullscreen mode, swipe controls, light/dark themes, improved bookmark display (with progress percentage), and database-backed progress syncing for a seamless experience across devices. Session and total time read are now also tracked and displayed.
+    -   **Media Library Enhancements:** Added the ability to create folders, fixed upload paths, and implemented drag-and-drop for files and folders in the media library.
+    -   **Bug Fixes:** Resolved an issue allowing users to complete daily duties multiple times and fixed a syntax error on the server.
+    -   **Quality of Life:** Added timestamps to the approvals page for better tracking.
+
+-   **November 3, 2025 (v0.4.28):**
+    -   **The Arcade Expansion:** Five new minigames have been added: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.
+    -   **Arcade Leaderboard:** A new "All-Time Arcade Legends" leaderboard now appears in the Arcade, showing top players based on cumulative scores across all games.
+    -   **High Score Display:** Each minigame card now proudly displays the name of the current global high score holder.
+
+-   **Week of October 27, 2025 (v0.4.27):**
+    -   **Snake Minigame Overhaul:** The Snake minigame in the Arcade has been significantly improved for better playability. The game window is now larger, the initial speed is slower, a "3, 2, 1, GO!" countdown has been added, and players can now restart the game by pressing any arrow key on the "Game Over" screen.
+    -   **Global Condition Fix:** Resolved a critical logic bug where a quest that was part of a quest group used in a *globally applied* condition set would lock itself, making it impossible to complete. The global condition check now correctly excludes the quest being evaluated from its own group's completion requirements.
 
 -   **Week of October 20, 2025 (v0.4.25):**
     -   **Conditional Market Unlocks:** Locked markets now show a dialog detailing the specific conditions a user must meet to gain access, mirroring the functionality of locked quests.
@@ -87,21 +102,10 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
 -   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
 -   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
--   **Showcase Page:**/g, '')}</p>
-          </div>
-        </div>
-      </CollapsibleSection>
+-   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
+-   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.
+-   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
 
-      <CollapsibleSection title="Roadmap">
-        <RoadmapContent />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Appendix: Version History">
-        <VersionHistoryContent />
-      </CollapsibleSection>
-    </div>
-  );
-};
-
-export default AboutPage;
-```
+### Phase 2: Core Gameplay & Personalization
+-   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
+-   **Reward Rework:** Overhaul the reward system to allow for more complex and interesting rewards, such as items that grant temporary bonuses or unlock special abilities.

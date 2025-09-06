@@ -17,6 +17,7 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; lockStatus: QuestLockStatus; }> = ({ quest, now, onSelect, onImagePreview, lockStatus }) => {
     const { settings, scheduledEvents } = useSystemState();
@@ -256,6 +257,7 @@ const QuestsPage: React.FC = () => {
     const { quests, questCompletions, questGroups } = useQuestsState();
     const { addQuest, updateQuest } = useQuestsDispatch();
     const { currentUser } = useAuthState();
+    const { addNotification } = useNotificationsDispatch();
     const economyState = useEconomyState();
     const progressionState = useProgressionState();
     const communityState = useCommunityState();
@@ -334,6 +336,23 @@ const QuestsPage: React.FC = () => {
 
     const handleQuestSelect = (quest: Quest) => {
         if (!currentUser) return;
+
+        const isAvailable = isQuestAvailableForUser(
+            quest,
+            questCompletions.filter(c => c.userId === currentUser.id),
+            now,
+            scheduledEvents,
+            appMode
+        );
+
+        if (!isAvailable && quest.type === QuestType.Duty) {
+            addNotification({
+                type: 'info',
+                message: `This duty is not scheduled for today and cannot be completed.`
+            });
+            return;
+        }
+
         const lockStatus = getQuestLockStatus(quest, currentUser, conditionDependencies);
         if (lockStatus.isLocked) {
             setViewingConditionsForQuest(quest);

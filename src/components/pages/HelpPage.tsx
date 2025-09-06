@@ -69,6 +69,13 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Scheduled Duties:</strong> Duties (recurring quests) that are not scheduled to be active on the current day will now be fully disabled. While they may still appear dimmed on the Quest Page for informational purposes, they cannot be selected or completed until their scheduled day. This prevents accidental completions on non-active days and clarifies user expectations.</li>
         </ul>
+        <h3>Rank & Leaderboard Calculations</h3>
+        <p>
+            To provide a more accurate measure of a user's overall progress, Ranks and the Leaderboard are now calculated based on the <strong>total lifetime Experience Points (XP) earned from completing quests</strong>. This is different from the <em>current XP balance</em>, which can change as rewards are spent. This change ensures that a user's rank reflects their total effort, not just their current wallet.
+        </p>
+        <p>
+            The Rank Card on the Dashboard has been updated to display both your current balance and your total earned values for XP and currencies, offering a complete picture of your in-game economy.
+        </p>
         <h3>Interactive Media</h3>
         <p>
             Certain quests can now include interactive elements to make them more engaging or educational.
@@ -137,6 +144,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 1, 2025 (v0.4.61)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Rank & Leaderboard Logic Overhaul:</strong> Ranks and the main Leaderboard are now calculated based on a user's *total lifetime XP earned from quests*, rather than their current XP balance. This provides a more accurate and fair representation of a user's overall progress that isn't affected by spending rewards. The Rank Card on the dashboard has been updated to display both current balances and total earned values for clarity.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 1, 2025 (v0.4.60)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

@@ -10,7 +10,7 @@ import RecentActivityCard from '../dashboard/RecentActivityCard';
 import PendingApprovalsCard from '../dashboard/PendingApprovalsCard';
 import TrophyCard from '../dashboard/TrophyCard';
 import ReadingActivityCard from '../dashboard/ReadingActivityCard';
-import { useDashboardData } from './dashboard/hooks/useDashboardData';
+import { useDashboardData } from '../dashboard/hooks/useDashboardData';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Reorder, useDragControls } from 'framer-motion';
 import { useUIState } from '../../context/UIContext';
@@ -92,6 +92,8 @@ const Dashboard: React.FC = () => {
         rankData, 
         userCurrencies, 
         userExperience,
+        totalEarnedXp,
+        totalEarnedCurrencies,
         recentActivities,
         pendingApprovals,
         leaderboard, 
@@ -203,7 +205,14 @@ const Dashboard: React.FC = () => {
         switch (cardId) {
             case 'quickActions': cardProps.quests = quickActionQuests; cardProps.onQuestSelect = handleQuestSelect; break;
             case 'recentActivity': cardProps.activities = recentActivities; cardProps.terminology = terminology; break;
-            case 'rank': cardProps.rankData = rankData; cardProps.terminology = terminology; break;
+            case 'rank':
+                cardProps.rankData = rankData;
+                cardProps.terminology = terminology;
+                cardProps.currentXp = userExperience.reduce((sum, xp) => sum + xp.amount, 0);
+                cardProps.totalEarnedXp = totalEarnedXp;
+                cardProps.currentUserCurrencies = userCurrencies;
+                cardProps.totalEarnedCurrencies = totalEarnedCurrencies;
+                break;
             case 'trophy': cardProps.mostRecentTrophy = mostRecentTrophy; cardProps.terminology = terminology; break;
             case 'inventory': cardProps.userCurrencies = userCurrencies; cardProps.userExperience = userExperience; cardProps.terminology = terminology; break;
             case 'leaderboard': cardProps.leaderboard = leaderboard; break;

@@ -1,4 +1,3 @@
-
 export type BugReportStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
 
 export enum BugReportType {

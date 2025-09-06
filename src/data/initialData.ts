@@ -1,4 +1,3 @@
-
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';

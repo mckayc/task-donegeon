@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { BugReport, BugReportStatus, BugReportLogEntry, BugReportTemplate } from '../../types';

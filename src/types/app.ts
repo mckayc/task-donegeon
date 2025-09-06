@@ -1,4 +1,3 @@
-
 import { Role } from '../components/users/types';
 import { ConditionSet } from '../components/conditions/types';
 import { SystemState } from '../context/SystemContext';
@@ -162,7 +161,7 @@ export interface AppSettings {
         enabled: boolean;
     };
     conditionSets: ConditionSet[];
-    bugReportTemplates?: BugReportTemplate[];
+    bugReportTemplates: BugReportTemplate[];
 }
 
 export interface BackupSchedule {

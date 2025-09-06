@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
+
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { Quest, DashboardLayout } from '../../types';
@@ -14,35 +15,49 @@ import ReadingActivityCard from '../dashboard/ReadingActivityCard';
 import { useDashboardData } from './dashboard/hooks/useDashboardData';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Reorder, useDragControls } from 'framer-motion';
+import { useUIState } from '../../context/UIContext';
+import DashboardCustomizationDialog from '../dashboard/DashboardCustomizationDialog';
 
-const cardComponents: { [key: string]: React.FC<any> } = {
-    quickActions: QuickActionsCard,
-    recentActivity: RecentActivityCard,
-    rank: RankCard,
-    trophy: TrophyCard,
-    inventory: InventoryCard,
-    leaderboard: LeaderboardCard,
-    pendingApprovals: PendingApprovalsCard,
-    readingActivity: ReadingActivityCard,
+export const allCardComponents: { [key: string]: { name: string, component: React.FC<any> } } = {
+    quickActions: { name: 'Quick Actions', component: QuickActionsCard },
+    recentActivity: { name: 'Recent Activity', component: RecentActivityCard },
+    rank: { name: 'Rank', component: RankCard },
+    trophy: { name: 'Latest Trophy', component: TrophyCard },
+    inventory: { name: 'Inventory', component: InventoryCard },
+    leaderboard: { name: 'Leaderboard', component: LeaderboardCard },
+    pendingApprovals: { name: 'My Pending Items', component: PendingApprovalsCard },
+    readingActivity: { name: 'Live Reading Activity', component: ReadingActivityCard },
 };
 
 const defaultLayout: DashboardLayout = {
-    left: {
-        order: ['quickActions', 'recentActivity'],
-        collapsed: []
+    layoutType: 'two-column-main-left',
+    columns: {
+        main: {
+            order: ['quickActions', 'recentActivity'],
+            collapsed: []
+        },
+        side: {
+            order: ['rank', 'trophy', 'inventory', 'leaderboard', 'pendingApprovals', 'readingActivity'],
+            collapsed: []
+        }
     },
-    right: {
-        order: ['rank', 'trophy', 'inventory', 'leaderboard', 'pendingApprovals', 'readingActivity'],
-        collapsed: []
-    }
+    hidden: [],
 };
-
 
 const Dashboard: React.FC = () => {
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
+    const [isCustomizeDialogOpen, setIsCustomizeDialogOpen] = useState(false);
+    
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
+    const { activePageMeta } = useUIState();
+
+    useEffect(() => {
+        if (activePageMeta?.from === 'header-customize-dashboard') {
+            setIsCustomizeDialogOpen(true);
+        }
+    }, [activePageMeta]);
 
     const { 
         rankData, 
@@ -56,51 +71,56 @@ const Dashboard: React.FC = () => {
         terminology
     } = useDashboardData();
 
-    const [layout, setLayout] = useState<DashboardLayout>(() => {
-        // Deep merge to ensure new cards from defaultLayout are included if not in user's saved layout
+    const layout = useMemo<DashboardLayout>(() => {
         const userLayout = currentUser?.dashboardLayout;
         if (!userLayout) return defaultLayout;
-        
+
+        // Deep merge to ensure new cards from defaultLayout are included if not in user's saved layout
         const mergedLayout = JSON.parse(JSON.stringify(defaultLayout));
-        
-        const mergeColumn = (column: 'left' | 'right') => {
-            if (userLayout[column]) {
-                const userOrder = userLayout[column].order || [];
-                const defaultOrder = defaultLayout[column].order;
+        mergedLayout.layoutType = userLayout.layoutType || defaultLayout.layoutType;
+
+        const allKnownCardIds = new Set(Object.keys(allCardComponents));
+
+        const mergeColumn = (column: 'main' | 'side') => {
+            if (userLayout.columns && userLayout.columns[column]) {
+                const userOrder = userLayout.columns[column].order || [];
+                const defaultOrder = defaultLayout.columns[column].order;
                 const combinedOrder = [...new Set([...userOrder, ...defaultOrder])];
-                mergedLayout[column].order = combinedOrder.filter(id => cardComponents[id]);
-                mergedLayout[column].collapsed = userLayout[column].collapsed || [];
+                mergedLayout.columns[column].order = combinedOrder.filter(id => allKnownCardIds.has(id) && !(userLayout.hidden || []).includes(id));
+                mergedLayout.columns[column].collapsed = userLayout.columns[column].collapsed || [];
             }
         };
 
-        mergeColumn('left');
-        mergeColumn('right');
+        mergeColumn('main');
+        mergeColumn('side');
+        
+        mergedLayout.hidden = userLayout.hidden?.filter(id => allKnownCardIds.has(id)) || [];
+
         return mergedLayout;
-    });
+    }, [currentUser?.dashboardLayout]);
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {
         if (currentUser) {
-            setLayout(newLayout);
-            // Debounce this in a real app if it becomes too chatty
+            // No local state update needed, will re-memoize on currentUser update
             updateUser(currentUser.id, { dashboardLayout: newLayout });
         }
     }, [currentUser, updateUser]);
 
-    const handleToggleCollapse = useCallback((column: 'left' | 'right', cardId: string) => {
+    const handleToggleCollapse = useCallback((column: 'main' | 'side', cardId: string) => {
         const newLayout = JSON.parse(JSON.stringify(layout));
-        const collapsed = newLayout[column].collapsed;
+        const collapsed = newLayout.columns[column].collapsed;
         
         if (collapsed.includes(cardId)) {
-            newLayout[column].collapsed = collapsed.filter((id: string) => id !== cardId);
+            newLayout.columns[column].collapsed = collapsed.filter((id: string) => id !== cardId);
         } else {
-            newLayout[column].collapsed.push(cardId);
+            newLayout.columns[column].collapsed.push(cardId);
         }
         saveLayout(newLayout);
     }, [layout, saveLayout]);
 
-    const handleReorder = useCallback((column: 'left' | 'right', newOrder: string[]) => {
-        const newLayout = { ...layout };
-        newLayout[column] = { ...newLayout[column], order: newOrder };
+    const handleReorder = useCallback((column: 'main' | 'side', newOrder: string[]) => {
+        const newLayout = JSON.parse(JSON.stringify(layout));
+        newLayout.columns[column].order = newOrder;
         saveLayout(newLayout);
     }, [layout, saveLayout]);
     
@@ -117,17 +137,17 @@ const Dashboard: React.FC = () => {
         }
     };
     
-    const renderCard = (cardId: string, column: 'left' | 'right', dragControls: ReturnType<typeof useDragControls>) => {
-        const CardComponent = cardComponents[cardId];
+    const renderCard = (cardId: string, column: 'main' | 'side', dragControls: ReturnType<typeof useDragControls>) => {
+        const CardComponent = allCardComponents[cardId]?.component;
         if (!CardComponent) return null;
 
-        // Hide certain cards if they have no content
         if (cardId === 'trophy' && !mostRecentTrophy) return null;
         if (cardId === 'pendingApprovals' && pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) return null;
-
+        if (cardId === 'readingActivity' && !recentActivities.some(activity => activity.type.toLowerCase().includes('reading'))) return null;
+        
         const cardProps: any = {
             isCollapsible: true,
-            isCollapsed: layout[column].collapsed.includes(cardId),
+            isCollapsed: layout.columns[column].collapsed.includes(cardId),
             onToggleCollapse: () => handleToggleCollapse(column, cardId),
             dragHandleProps: { onPointerDown: (event: React.PointerEvent) => dragControls.start(event) },
         };
@@ -145,19 +165,38 @@ const Dashboard: React.FC = () => {
 
         return <CardComponent {...cardProps} />;
     };
+    
+    const gridClasses = {
+        'single-column': 'grid-cols-1',
+        'two-column-main-left': 'grid-cols-1 lg:grid-cols-3 gap-6',
+        'two-column-main-right': 'grid-cols-1 lg:grid-cols-3 gap-6',
+    }[layout.layoutType] || 'grid-cols-1 lg:grid-cols-3 gap-6';
+
+    const mainColClasses = {
+        'single-column': 'col-span-1',
+        'two-column-main-left': 'lg:col-span-2',
+        'two-column-main-right': 'lg:col-span-2 lg:order-2',
+    }[layout.layoutType] || 'lg:col-span-2';
+
+    const sideColClasses = {
+        'single-column': 'col-span-1',
+        'two-column-main-left': 'lg:col-span-1',
+        'two-column-main-right': 'lg:col-span-1 lg:order-1',
+    }[layout.layoutType] || 'lg:col-span-1';
 
     return (
         <>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`grid ${gridClasses}`}>
                 <Reorder.Group
                     axis="y"
-                    values={layout.left.order}
-                    onReorder={(newOrder) => handleReorder('left', newOrder)}
-                    className="lg:col-span-2 space-y-6"
+                    values={layout.columns.main.order}
+                    // FIX: Cast `newOrder` to string[] to match the expected type.
+                    onReorder={(newOrder) => handleReorder('main', newOrder as string[])}
+                    className={`${mainColClasses} space-y-6`}
                 >
-                    {layout.left.order.map(cardId => {
+                    {layout.columns.main.order.map(cardId => {
                          const controls = useDragControls();
-                         const card = renderCard(cardId, 'left', controls);
+                         const card = renderCard(cardId, 'main', controls);
                          if (!card) return null;
                          return (
                             <Reorder.Item key={cardId} value={cardId} dragListener={false} dragControls={controls}>
@@ -167,29 +206,40 @@ const Dashboard: React.FC = () => {
                     })}
                 </Reorder.Group>
 
-                <Reorder.Group
-                    axis="y"
-                    values={layout.right.order}
-                    onReorder={(newOrder) => handleReorder('right', newOrder)}
-                    className="lg:col-span-1 space-y-6"
-                >
-                    {layout.right.order.map(cardId => {
-                         const controls = useDragControls();
-                         const card = renderCard(cardId, 'right', controls);
-                         if (!card) return null;
-                         return (
-                            <Reorder.Item key={cardId} value={cardId} dragListener={false} dragControls={controls}>
-                                {card}
-                            </Reorder.Item>
-                         );
-                    })}
-                </Reorder.Group>
+                {layout.layoutType !== 'single-column' && (
+                    <Reorder.Group
+                        axis="y"
+                        values={layout.columns.side.order}
+                        // FIX: Cast `newOrder` to string[] to match the expected type.
+                        onReorder={(newOrder) => handleReorder('side', newOrder as string[])}
+                        className={`${sideColClasses} space-y-6`}
+                    >
+                        {layout.columns.side.order.map(cardId => {
+                            const controls = useDragControls();
+                            const card = renderCard(cardId, 'side', controls);
+                            if (!card) return null;
+                            return (
+                                <Reorder.Item key={cardId} value={cardId} dragListener={false} dragControls={controls}>
+                                    {card}
+                                </Reorder.Item>
+                            );
+                        })}
+                    </Reorder.Group>
+                )}
             </div>
+            
             {selectedQuest && (
                 <QuestDetailDialog quest={selectedQuest} onClose={() => setSelectedQuest(null)} onComplete={handleStartCompletion} />
             )}
             {completingQuest && (
                 <CompleteQuestDialog quest={completingQuest} onClose={() => setCompletingQuest(null)} />
+            )}
+            {isCustomizeDialogOpen && currentUser && (
+                <DashboardCustomizationDialog
+                    userLayout={layout}
+                    onClose={() => setIsCustomizeDialogOpen(false)}
+                    onSave={saveLayout}
+                />
             )}
         </>
     );

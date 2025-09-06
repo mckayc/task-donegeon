@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.54 - Dashboard Retry",
-  "version": "0.4.53",
-  "description": "Introduces a customizable dashboard where users can collapse and reorder cards. The layout is saved per user.",
+  "name": "Task Donegeon 2.0 - 0.4.54 - Help Page Update",
+  "version": "0.4.54",
+  "description": "Updates the Help & About page with comprehensive feature lists, functional specifications, roadmap, and version history.",
   "requestFramePermissions": [
     "camera"
   ],

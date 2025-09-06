@@ -1,31 +1,37 @@
 
+
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
   Explorer = 'Explorer',
 }
 
-// Moved from items/types.ts to break circular dependency
+// Moved from items/types.ts to break a circular dependency
 export enum RewardCategory {
   Currency = 'Currency',
   XP = 'XP',
 }
 
-// Moved from items/types.ts to break circular dependency
+// Moved from items/types.ts to break a circular dependency
 export interface RewardItem {
   rewardTypeId: string;
   amount: number;
 }
 
+// FIX: Updated DashboardLayout to reflect the current data structure with columns, layoutType, and hidden cards.
 export interface DashboardLayout {
-  left: {
-    order: string[];
-    collapsed: string[];
+  layoutType: 'single-column' | 'two-column-main-left' | 'two-column-main-right';
+  columns: {
+    main: {
+      order: string[];
+      collapsed: string[];
+    };
+    side: {
+      order: string[];
+      collapsed: string[];
+    };
   };
-  right: {
-    order: string[];
-    collapsed: string[];
-  };
+  hidden: string[];
 }
 
 export interface User {

@@ -5,6 +5,7 @@ import { bugLogger } from '../utils/bugLogger';
 
 export interface UIState {
   activePage: Page;
+  activePageMeta: any;
   isSidebarCollapsed: boolean;
   isChatOpen: boolean;
   isMobileView: boolean;
@@ -16,7 +17,7 @@ export interface UIState {
 }
 
 export interface UIDispatch {
-  setActivePage: (page: Page) => void;
+  setActivePage: (page: Page, meta?: any) => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
   setIsMobileView: (isMobile: boolean) => void;
@@ -31,6 +32,7 @@ const UIDispatchContext = createContext<UIDispatch | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activePage, _setActivePage] = useState<Page>('Dashboard');
+  const [activePageMeta, setActivePageMeta] = useState<any>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     // Default to collapsed on mobile, respect storage on desktop
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -51,9 +53,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   });
   const [readingQuest, _setReadingQuest] = useState<Quest | null>(null);
 
-  const setActivePage = (page: Page) => {
+  const setActivePage = (page: Page, meta?: any) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
     _setActivePage(page);
+    setActivePageMeta(meta || null);
   };
 
   const toggleSidebar = () => {
@@ -104,6 +107,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const state = useMemo(() => ({
     activePage,
+    activePageMeta,
     isSidebarCollapsed,
     isChatOpen,
     isMobileView,
@@ -112,7 +116,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     isKioskDevice,
     activeGame,
     readingQuest,
-  }), [activePage, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest]);
+  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest]);
 
   const dispatch: UIDispatch = {
     setActivePage,

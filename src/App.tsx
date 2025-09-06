@@ -52,7 +52,12 @@ const App: React.FC = () => {
 
     const renderContent = () => {
         if (isFirstRun) return <FirstRunWizard />;
-        if (isKioskDevice) return <SharedLayout />;
+
+        if (isKioskDevice) {
+            if (isSwitchingUser || !currentUser) return <SwitchUser />;
+            return <SharedLayout />;
+        }
+        
         if (!isAppUnlocked && users.length > 0) return <AppLockScreen />;
         if (!currentUser || isSwitchingUser) return <SwitchUser />;
         return <MainLayout />;

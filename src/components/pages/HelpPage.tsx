@@ -110,6 +110,18 @@ const FunctionalSpecificationsContent: React.FC = () => (
         </ul>
         <h4>Arcade Leaderboard</h4>
         <p>The Arcade now features an "All-Time Arcade Legends" leaderboard. It shows the top 5 players based on their <strong>cumulative scores</strong> across <strong>all</strong> minigames. Additionally, each individual game card now proudly displays the name of the current high score holder for that game.</p>
+        <h3>Bug Tracker & Reporting</h3>
+        <p>
+            The built-in Bug Tracker includes features to help admins triage and process feedback efficiently.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Comment Actions:</strong> In the Bug Detail popup, comments added to a report have quick actions to help with review. You can dim comments that have been processed, and mark comments with a green (good/implemented) or red (for review/invalid) background. These controls are always visible on each comment.
+            </li>
+            <li>
+                <strong>Log Templates:</strong> Admins can create text templates that can be automatically appended to the clipboard when copying bug logs, standardizing communication with external tools or developers.
+            </li>
+        </ul>
     </div>
 );
 

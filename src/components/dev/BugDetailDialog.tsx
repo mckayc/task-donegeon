@@ -301,7 +301,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                                                     <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
                                                                 </p>
                                                             </div>
-                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                                                            <div className="flex items-center gap-1 transition-opacity">
                                                                 <Button size="sm" variant="ghost" className="!text-xs !py-0 !px-2 !h-auto" onClick={() => handleToggleDim(log.timestamp)} aria-label={log.isDimmed ? 'Undim comment' : 'Dim comment'}>
                                                                     {log.isDimmed ? 'Undim' : 'Dim'}
                                                                 </Button>

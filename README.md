@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.61
+**Version:** 0.4.62
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of September 6, 2025 (v0.4.62):**
+    -   **Bug Reporter UX Fix:** Restored the visibility of action buttons (Dim, Mark Good/Review) on bug report comments. These controls are now always visible instead of only appearing on hover, improving usability.
 
 -   **Week of September 1, 2025 (v0.4.61):**
     -   **Rank & Leaderboard Logic Overhaul:** Ranks and the main Leaderboard are now calculated based on a user's *total lifetime XP earned from quests*, rather than their current XP balance. This provides a more accurate and fair representation of a user's overall progress that isn't affected by spending rewards. The Rank Card on the dashboard has been updated to display both current balances and total earned values for clarity.

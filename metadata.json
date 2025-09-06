@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.61 - Rank/Leaderboard Totals Fix",
-  "version": "0.4.61",
-  "description": "Updates the Leaderboard and Rank cards to be based on total lifetime earned XP from quests, providing a more accurate measure of progress. The Rank card now displays both current and total earned balances.",
+  "name": "Task Donegeon 2.0 - 0.4.62 - Restore Bug Comment Actions",
+  "version": "0.4.62",
+  "description": "Restores the visibility of action buttons (dim, mark good/bad) on bug report comments, making them always accessible instead of hover-only.",
   "requestFramePermissions": [
     "camera"
   ],

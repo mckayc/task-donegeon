@@ -1,3 +1,4 @@
+
 import { User, Role } from '../components/users/types';
 import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
 import { Rank } from '../components/ranks/types';
@@ -234,7 +235,6 @@ export const INITIAL_SETTINGS: AppSettings = {
       awards: 'Trophies',
       points: 'Rewards',
       negativePoints: 'Setbacks',
-      // FIX: Added the missing 'users' property to the terminology object.
       users: 'Explorers',
       // Roles
       admin: 'Donegeon Master',

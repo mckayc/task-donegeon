@@ -1,3 +1,5 @@
+
+
 import React, { useMemo } from 'react';
 import { AssetPack, GameAsset, Market, Quest, Trophy, Rank, RewardTypeDefinition, QuestGroup, TrophyRequirementType } from '../../types';
 
@@ -119,7 +121,6 @@ const buildDependencyGraph = (pack: AssetPack): Node[] => {
             name: qg.name,
             type: 'Quest Group',
             icon: qg.icon,
-            // FIX: Property 'groupId' does not exist on type 'Quest'. Changed to 'groupIds' to correctly filter quests by group.
             contains: quests
                 .filter(q => q.groupIds?.includes(qg.id))
                 .map(q => ({ id: q.id, name: q.title, type: 'Quest', icon: q.icon })),

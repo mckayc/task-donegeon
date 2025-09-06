@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BugReport, BugReportType, BugReportStatus } from '../../../types';
+import { BugReport, BugReportType, BugReportStatus } from '../../types';
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';

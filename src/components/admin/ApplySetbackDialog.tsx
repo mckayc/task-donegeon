@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
-import { User, ModifierDefinition, Role, ModifierEffect, ModifierEffectType, RewardItem, RewardCategory, QuestKind } from '../../../types';
+import { User, ModifierDefinition, Role, ModifierEffect, ModifierEffectType, RewardItem, RewardCategory, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';

@@ -1,6 +1,9 @@
-
 import React, { useMemo } from 'react';
-import { Guild, Rank, User, Trophy, RewardTypeDefinition, GameAsset } from '../../types';
+import { Guild } from '../guilds/types';
+import { Rank } from '../ranks/types';
+import { User } from '../users/types';
+import { Trophy } from '../trophies/types';
+import { RewardTypeDefinition, GameAsset } from '../items/types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import Avatar from '../user-interface/Avatar';

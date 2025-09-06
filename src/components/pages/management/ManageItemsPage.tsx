@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { GameAsset } from '../../../types';
+import { GameAsset } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';

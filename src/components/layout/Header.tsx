@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Page, AppMode, Quest, Role } from '../../types';
+import { Page, AppMode } from '../../types/app';
+import { Quest } from '../quests/types';
+import { Role } from '../users/types';
 import Avatar from '../user-interface/Avatar';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';

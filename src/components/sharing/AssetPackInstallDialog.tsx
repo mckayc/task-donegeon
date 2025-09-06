@@ -1,7 +1,5 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { AssetPack, ImportResolution, ShareableAssetType, Quest, RewardItem, GameAsset, User } from '../../../types';
+import { AssetPack, ImportResolution, ShareableAssetType, Quest, RewardItem, GameAsset, User } from '../../types';
 import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -121,11 +119,13 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
         
         finalResolutions.forEach(res => {
             if (!packWithSelectedAssets.assets[res.type]) {
-                packWithSelectedAssets.assets[res.type] = [];
+                (packWithSelectedAssets.assets as any)[res.type] = [];
             }
-            const originalAsset = (assetPack.assets[res.type] as any[]).find(a => a.id === res.id);
+            // FIX: Ensure the asset list exists before trying to find an item in it.
+            const assetList = assetPack.assets[res.type] as any[];
+            const originalAsset = assetList ? assetList.find(a => a.id === res.id) : undefined;
             if (originalAsset) {
-                (packWithSelectedAssets.assets[res.type] as any[]).push(originalAsset);
+                ((packWithSelectedAssets.assets as any)[res.type] as any[]).push(originalAsset);
             }
         });
         

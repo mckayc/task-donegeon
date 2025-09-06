@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { RewardCategory, RewardTypeDefinition } from '../../types';
+import { RewardTypeDefinition } from '../items/types';
+import { RewardCategory } from '../users/types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';

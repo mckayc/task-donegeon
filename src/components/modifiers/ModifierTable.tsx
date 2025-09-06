@@ -1,5 +1,5 @@
 import React from 'react';
-import { ModifierDefinition } from '../../types';
+import { ModifierDefinition } from './types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { CheckBadgeIcon, PencilIcon, TrashIcon } from '../user-interface/Icons';

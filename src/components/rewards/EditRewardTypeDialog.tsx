@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { RewardCategory, RewardTypeDefinition } from '../../types';
+import { RewardTypeDefinition } from '../items/types';
+import { RewardCategory } from '../users/types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';

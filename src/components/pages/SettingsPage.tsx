@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -85,7 +86,6 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   awards: 'Awards (Plural)',
   points: 'Points (Plural)',
   negativePoints: 'Negative Points (Plural)',
-  // FIX: Added label for 'users' plural terminology.
   users: 'Users (Plural)',
   // Roles
   admin: 'Admin (e.g., Donegeon Master)',
@@ -193,8 +193,6 @@ export const SettingsPage: React.FC = () => {
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);
             if (index !== -1) {
-                // IMPORTANT FIX: Merge with the existing schedule object from settings
-                // to preserve the `lastBackupTimestamp` which is not present in `scheduleData`.
                 updatedSchedules[index] = { ...updatedSchedules[index], ...scheduleData };
             }
         } else {
@@ -269,262 +267,99 @@ export const SettingsPage: React.FC = () => {
                          <div className="pt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val: boolean) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI Features" />
                             <ToggleSwitch enabled={formState.developerMode.enabled} setEnabled={(val: boolean) => handleSettingChange('developerMode', 'enabled', val)} label="Enable Developer Mode" />
-                            <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val: boolean) => handleSettingChange('loginNotifications', 'enabled', val)} label="Show Login Notifications" />
                             <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val: boolean) => handleSettingChange('chat', 'enabled', val)} label="Enable Chat" />
-                        </div>
-                        {formState.chat.enabled && (
-                             <div className="relative w-max">
-                                <label className="block text-sm font-medium text-stone-300 mb-1">Chat Icon</label>
-                                <button type="button" onClick={() => setIsEmojiPickerOpen(p => ({...p, chat: !p.chat}))} className="w-20 h-14 text-4xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
-                                    {formState.chat.chatEmoji}
-                                </button>
-                                {isEmojiPickerOpen.chat && <EmojiPicker onSelect={(emoji) => { handleSettingChange('chat', 'chatEmoji', emoji); setIsEmojiPickerOpen(p => ({...p, chat: false})); }} onClose={() => setIsEmojiPickerOpen(p => ({...p, chat: false}))} />}
-                             </div>
-                        )}
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection title="Security">
-                    <div className="p-6 space-y-4">
-                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
-                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
-                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val: boolean) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
-                         <div className="pt-4 border-t border-stone-700/60">
-                            <ToggleSwitch enabled={formState.security.allowAdminSelfApproval} setEnabled={(val: boolean) => handleSettingChange('security', 'allowAdminSelfApproval', val)} label="Allow Admins to approve their own requests" />
-                            <p className="text-xs text-stone-400 mt-1 ml-12">Applies only when more than one admin exists. If there is only one admin, they can always self-approve.</p>
                          </div>
                     </div>
                 </CollapsibleSection>
-                
-                <CollapsibleSection title="Shared / Kiosk Mode">
-                    <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'enabled', val)} label="Enable Shared Mode" />
-                        {formState.sharedMode.enabled && (
-                            <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(val) => handleSettingChange('sharedMode', 'userIds', val)} label="Users in Shared View" />
-                                <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'allowCompletion', val)} label="Allow quest completion from shared view" />
-                                {formState.sharedMode.allowCompletion && (
-                                    <div className="pl-6 mt-2">
-                                        <ToggleSwitch 
-                                            enabled={formState.sharedMode.requirePinForCompletion} 
-                                            setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'requirePinForCompletion', val)} 
-                                            label="Require PIN for quest completion" 
-                                        />
-                                    </div>
-                                )}
-                                <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'autoExit', val)} label="Auto-exit user session after inactivity" />
-                                {formState.sharedMode.autoExit && (
-                                    <Input label="Auto-exit after (minutes)" type="number" min="1" value={formState.sharedMode.autoExitMinutes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoExitMinutes', parseInt(e.target.value) || 2)} />
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </CollapsibleSection>
-
-                 <CollapsibleSection title="Game Rules">
-                    <div className="p-6 space-y-6">
-                        {/* --- SETBACKS --- */}
-                        <div className="flex justify-between items-start gap-4">
-                            <div className="flex-grow">
-                                <label className="font-medium text-stone-200">Enable Setbacks</label>
-                                <p className="text-sm text-stone-400 mt-1 max-w-md">Globally enable or disable all negative points (Setbacks) for late or incomplete quests.</p>
-                            </div>
-                            <div className="flex-shrink-0 pt-1">
-                                <ToggleSwitch
-                                    enabled={formState.setbacks.enabled}
-                                    setEnabled={(val: boolean) => handleSettingChange('setbacks', 'enabled', val)}
-                                    label="Enable Setbacks"
-                                />
-                            </div>
-                        </div>
-                        
-                        <div className={`pl-6 border-l-2 border-stone-700/60 transition-opacity duration-300 ${!formState.setbacks.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                            <div className="flex justify-between items-start gap-4">
-                                <div className="flex-grow">
-                                    <label className={`font-medium ${!formState.setbacks.enabled ? 'text-stone-400' : 'text-stone-200'}`}>Forgive Late Setbacks</label>
-                                    <p className="text-sm text-stone-400 mt-1 max-w-md">If ON, late setbacks are only applied if a quest is still incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
-                                </div>
-                                <div className="flex-shrink-0 pt-1">
-                                    <ToggleSwitch
-                                        enabled={formState.setbacks.forgiveLate}
-                                        setEnabled={(val: boolean) => handleSettingChange('setbacks', 'forgiveLate', val)}
-                                        label="Forgive Late Setbacks"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* --- QUEST DEFAULTS --- */}
-                        <div className="pt-6 border-t border-stone-700/60">
-                            <h4 className="font-semibold text-stone-200 mb-4">Quest Defaults</h4>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <span className="font-medium text-stone-200">Active by default</span>
-                                    <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="font-medium text-stone-200">Optional by default</span>
-                                    <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="font-medium text-stone-200">Requires Approval by default</span>
-                                    <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </CollapsibleSection>
-
-                 <CollapsibleSection title="Economy & Valuation">
-                    <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val: boolean) => handleRewardValuationChange('enabled', val)} label="Enable Reward Valuation & Exchange" />
-                        {formState.rewardValuation.enabled && (
-                             <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                <p className="text-sm text-stone-300">Assign real-world monetary value to your virtual rewards and set transaction fees for exchanges.</p>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-stone-700/60">
-                                    <Input as="select" label="Real-World Currency" value={formState.rewardValuation.realWorldCurrency} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRewardValuationChange('realWorldCurrency', e.target.value)}>
-                                        {REAL_WORLD_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </Input>
-                                    <Input label="Currency Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
-                                    <Input label="XP Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />
-                                </div>
-                             </div>
-                        )}
-                    </div>
-                </CollapsibleSection>
-                
-                <CollapsibleSection title="Integrations">
-                     <div className="p-6 space-y-4">
-                         <ToggleSwitch enabled={formState.googleCalendar.enabled} setEnabled={(val: boolean) => handleSettingChange('googleCalendar', 'enabled', val)} label="Enable Google Calendar Integration" />
-                          {formState.googleCalendar.enabled && (
-                            <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                <Input label="Google Calendar API Key" value={formState.googleCalendar.apiKey} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('googleCalendar', 'apiKey', e.target.value)} />
-                                <Input label="Google Calendar ID" value={formState.googleCalendar.calendarId} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('googleCalendar', 'calendarId', e.target.value)} />
-                                <div className="mt-4 pt-4 border-t border-stone-700/60 prose prose-invert prose-sm text-stone-400 max-w-none">
-                                    <h4 className="text-stone-300">How to set up Google Calendar integration:</h4>
-                                    <ol>
-                                        <li>
-                                            Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a>, create a new project, search for and enable the "Google Calendar API", then go to "Credentials" and create a new API Key.
-                                        </li>
-                                        <li>
-                                            Go to your <a href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer">Google Calendar</a> and select the calendar you want to share. Open its settings.
-                                        </li>
-                                        <li>
-                                            Under "Access permissions for events", you <strong>must</strong> check the box for "Make available to public".
-                                        </li>
-                                        <li>
-                                            Under the "Integrate calendar" section, find and copy the <strong>Calendar ID</strong> (it often looks like an email address).
-                                        </li>
-                                        <li>
-                                            Paste the API Key and Calendar ID into the fields above and save your settings.
-                                        </li>
-                                    </ol>
-                                </div>
-                            </div>
-                          )}
-                    </div>
-                </CollapsibleSection>
-
                 <CollapsibleSection title="Terminology">
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {Object.entries(terminologyLabels).map(([key, label]) => (
-                            <Input key={key} label={label} name={key} value={formState.terminology[key as keyof Terminology]} onChange={handleTerminologyChange} />
+                            <Input
+                                key={key}
+                                label={label}
+                                name={key}
+                                value={formState.terminology[key as keyof Terminology]}
+                                onChange={handleTerminologyChange}
+                            />
                         ))}
                     </div>
                 </CollapsibleSection>
-                <CollapsibleSection title="Maintenance">
+                 <CollapsibleSection title="Security">
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for all users" />
+                        <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Admins" />
+                        <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val: boolean) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit profiles" />
+                        <ToggleSwitch enabled={formState.security.allowAdminSelfApproval} setEnabled={(val: boolean) => handleSettingChange('security', 'allowAdminSelfApproval', val)} label="Allow Admins to self-approve quests" />
+                    </div>
+                </CollapsibleSection>
+                <CollapsibleSection title="Shared (Kiosk) Mode">
                      <div className="p-6 space-y-4">
-                        {isUpdateAvailable && (
-                            <Card className="!border-emerald-500 !bg-emerald-900/30 mb-4">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div>
-                                        <h4 className="font-bold text-lg text-emerald-300">Update Available!</h4>
-                                        <p className="text-sm text-stone-200 mt-1">A new version of the application is ready to be installed.</p>
-                                    </div>
-                                    <Button onClick={installUpdate} className="flex-shrink-0">
-                                        Install Update Now
-                                    </Button>
-                                </div>
-                            </Card>
+                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'enabled', val)} label="Enable Shared Mode" />
+                        {formState.sharedMode.enabled && (
+                            <div className="pl-6 border-l-2 border-stone-700/60 space-y-4">
+                                <UserMultiSelect
+                                    allUsers={users}
+                                    selectedUserIds={formState.sharedMode.userIds}
+                                    onSelectionChange={(ids) => handleSettingChange('sharedMode', 'userIds', ids)}
+                                    label="Users Visible in Shared Mode"
+                                />
+                                <ToggleSwitch enabled={formState.sharedMode.requirePinForCompletion} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'requirePinForCompletion', val)} label="Require PIN to complete a quest" />
+                                <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'autoExit', val)} label="Auto-exit after inactivity" />
+                                {formState.sharedMode.autoExit && (
+                                    <Input label="Auto-exit timer (minutes)" type="number" value={formState.sharedMode.autoExitMinutes} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoExitMinutes', Number(e.target.value))} />
+                                )}
+                            </div>
                         )}
-                        <div className="p-4 border border-stone-600 bg-stone-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div>
-                                <h4 className="font-bold text-stone-200">Application Version</h4>
-                                <p className="text-sm text-stone-300 mt-1">Current version: <span className="font-mono font-bold text-accent">{version}</span></p>
+                    </div>
+                </CollapsibleSection>
+                <CollapsibleSection title="Reward Valuation">
+                     <div className="p-6 space-y-4">
+                        <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val) => handleRewardValuationChange('enabled', val)} label="Enable Real-World Value Calculation" />
+                         {formState.rewardValuation.enabled && (
+                            <div className="pl-6 border-l-2 border-stone-700/60 space-y-4">
+                                <Input as="select" label="Real-World Currency" value={formState.rewardValuation.realWorldCurrency} onChange={(e) => handleRewardValuationChange('realWorldCurrency', e.target.value)}>
+                                    {REAL_WORLD_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                </Input>
+                                <Input label="Currency Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
+                                <Input label="XP Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />
                             </div>
-                            <Button onClick={checkForUpdate}>Check for Updates</Button>
+                         )}
+                    </div>
+                </CollapsibleSection>
+                <CollapsibleSection title="Application Updates">
+                    <div className="p-6 space-y-4">
+                         <div className="p-4 bg-stone-900/50 rounded-lg">
+                            <p className="font-semibold text-stone-200">Current Version: <span className="font-mono font-normal text-emerald-300">{version}</span></p>
+                            {isUpdateAvailable ? (
+                                <div className="mt-2 text-amber-300 bg-amber-900/40 p-3 rounded-md">
+                                    <p className="font-bold">An update is ready to install!</p>
+                                    <Button onClick={installUpdate} size="sm" className="mt-2">Install Now & Reload</Button>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-stone-400">Your application is up to date.</p>
+                            )}
                         </div>
-                        <div className="p-4 border border-stone-600 bg-stone-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div>
-                                <h4 className="font-bold text-emerald-300">Apply Feature Updates</h4>
-                                <p className="text-sm text-stone-300 mt-1 max-w-xl">Safely adds new features and settings from the latest app version without overwriting your customizations. Use this if new sidebar links or options are not appearing after an update.</p>
-                            </div>
-                            <Button onClick={() => setConfirmation('applyUpdates')} className="flex-shrink-0">
-                                Apply Updates
-                            </Button>
-                        </div>
-                        <div className="pt-4 border-t border-stone-700/60">
-                            <h4 className="font-bold text-lg text-emerald-300 mb-2">Update Service Log</h4>
-                            <ServiceWorkerLogger />
-                        </div>
+                        <ServiceWorkerLogger />
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Danger Zone">
-                     <div className="p-6 space-y-4">
-                         <DangerZoneAction
-                            title="Reset All Settings"
-                            description={<p>Reverts all application settings to their defaults. User-created content (quests, items, users) will not be affected.</p>}
-                            buttonText="Reset Settings"
-                            onAction={() => setConfirmation('resetSettings')}
-                         />
-                         <DangerZoneAction
-                            title="Clear All History"
-                            description={<p>Permanently deletes all historical records like quest completions and purchases. User accounts and created content are not affected.</p>}
-                            buttonText="Clear History"
-                            onAction={() => setConfirmation('clearHistory')}
-                         />
-                         <DangerZoneAction
-                            title="Reset All Player Data"
-                            description={
-                                <div>
-                                    <p>Resets progress for all non-admin users. Their currency, XP, and owned items will be cleared. User accounts will not be deleted.</p>
-                                    <div className="mt-2">
-                                        <label className="flex items-center gap-2 text-sm text-amber-300">
-                                            <input
-                                                type="checkbox"
-                                                checked={includeAdminsInReset}
-                                                onChange={(e) => setIncludeAdminsInReset(e.target.checked)}
-                                                className="h-4 w-4 rounded text-amber-600 bg-stone-700 border-stone-600 focus:ring-amber-500"
-                                            />
-                                            Also reset Admin accounts.
-                                        </label>
-                                    </div>
-                                </div>
-                            }
-                            buttonText="Reset Player Data"
-                            onAction={() => setConfirmation('resetPlayers')}
-                         />
-                         <DangerZoneAction
-                            title="Delete All Custom Content"
-                            description={<p>Permanently deletes all content you created: quests, items, markets, rewards, ranks, and trophies. User accounts are not affected.</p>}
-                            buttonText="Delete Custom Content"
-                            onAction={() => setConfirmation('deleteContent')}
-                         />
-                          <DangerZoneAction
-                            title="Factory Reset Application"
-                            description={<p>The ultimate reset. Wipes ALL data (users, quests, settings) and returns the app to its initial setup state. This cannot be undone.</p>}
-                            buttonText="Factory Reset"
-                            onAction={() => setConfirmation('factoryReset')}
-                         />
+                    <div className="p-6 space-y-4">
+                        <DangerZoneAction title="Apply Setting Updates" description={<><p>After updating the application, some new features might require new default settings.</p><p>This action safely merges new default settings from the latest version into your current configuration, preserving all your existing customizations.</p></>} buttonText="Apply Updates" onAction={() => setConfirmation('applyUpdates')} />
+                        <DangerZoneAction title="Reset All Settings" description="This will revert all settings on this page, including Terminology and Security, to their original defaults. This does NOT affect user data or created content." buttonText="Reset All Settings" onAction={() => setConfirmation('resetSettings')} />
+                        <DangerZoneAction title="Clear All History" description="Permanently delete all historical records, including quest completions, purchases, adjustments, and notifications. This is useful for cleaning up test data." buttonText="Clear History" onAction={() => setConfirmation('clearHistory')} />
+                        <DangerZoneAction title="Reset Player Data" description={<><p>Reset all players' currencies, XP, and owned items to zero. This does NOT delete the users themselves.</p><div className="mt-2"><ToggleSwitch enabled={includeAdminsInReset} setEnabled={setIncludeAdminsInReset} label="Include Donegeon Masters in Reset" /></div></>} buttonText="Reset Player Data" onAction={() => setConfirmation('resetPlayers')} />
+                        <DangerZoneAction title="Delete All Custom Content" description="Permanently delete all user-created content, including quests, items, markets, ranks, trophies, guilds, and themes. Core/default content will be restored." buttonText="Delete Content" onAction={() => setConfirmation('deleteContent')} />
+                        <DangerZoneAction title="Factory Reset" description={<><p>This is the nuclear option. It will <strong className="text-red-300">permanently delete all users, content, and settings</strong>, reverting the application to its first-run state. Use with extreme caution.</p><p className="text-amber-300 text-sm mt-1">It is highly recommended to create a backup before performing a factory reset.</p></>} buttonText="Factory Reset Application" onAction={() => setConfirmation('factoryReset')} />
                     </div>
                 </CollapsibleSection>
             </Card>
+
             <ConfirmDialog 
                 isOpen={!!confirmation}
                 onClose={() => setConfirmation(null)}
                 onConfirm={handleConfirm}
-                title="Are you absolutely sure?"
-                message={confirmation === 'applyUpdates' ? 'This will apply new default settings without overwriting your changes. Proceed?' : "This action is permanent and cannot be undone."}
+                title="Confirm Destructive Action"
+                message="Are you sure you want to proceed? This action cannot be undone."
             />
         </div>
     );

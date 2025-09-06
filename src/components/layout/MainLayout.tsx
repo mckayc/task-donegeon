@@ -1,7 +1,9 @@
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { Role, Page, SystemNotification, Quest } from '../../types';
+import { Role } from '../users/types';
+import { Page } from '../../types/app';
+import { SystemNotification } from '../system/types';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';

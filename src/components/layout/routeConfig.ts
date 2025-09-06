@@ -1,3 +1,4 @@
+
 import { lazy } from 'react';
 import { Page } from '../../types/app';
 
@@ -8,7 +9,6 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Collection': lazy(() => import('../pages/CollectionPage')),
     'Themes': lazy(() => import('../pages/ThemesPage')),
     'Quests': lazy(() => import('../pages/QuestsPage')),
-    // FIX: Corrected the lazy import for MarketplacePage to handle a default export.
     'Marketplace': lazy(() => import('../pages/MarketplacePage')),
     'Calendar': lazy(() => import('../pages/CalendarPage')),
     'Progress': lazy(() => import('../pages/ProgressPage')),
@@ -22,7 +22,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Manage Quest Groups': lazy(() => import('../pages/management/ManageQuestGroupsPage')),
     'Manage Rotations': lazy(() => import('../pages/management/ManageRotationsPage')),
     'Manage Goods': lazy(() => import('../pages/management/ManageItemsPage')),
-    'Manage Markets': lazy(() => import('../pages/management/ManageMarketsPage')),
+    'Manage Markets': lazy(() => import('../pages/management/ManageMarketsPage').then(module => ({ default: module.ManageMarketsPage }))),
     'Manage Guilds': lazy(() => import('../pages/management/ManageGuildsPage')),
     'Manage Ranks': lazy(() => import('../pages/management/ManageRanksPage')),
     'Manage Trophies': lazy(() => import('../pages/management/ManageTrophiesPage')),
@@ -38,7 +38,6 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Asset Library': lazy(() => import('../pages/management/AssetLibraryPage')),
     'Profile': lazy(() => import('../pages/ProfilePage')),
     'About': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.HelpPage }))),
-    // FIX: Corrected the lazy import to handle a named export by wrapping it in a default export object.
     'Help Guide': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.HelpPage }))),
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),

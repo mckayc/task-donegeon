@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScheduledEvent } from '../../../types';
+import { ScheduledEvent } from '../../types';
 import Button from '../user-interface/Button';
 import { useEconomyState } from '../../context/EconomyContext';
 

@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { Rotation, Quest, User } from '../../types';
@@ -96,7 +95,6 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
     };
 
     const handleToggleQuestGroup = (groupId: string) => {
-        // FIX: Corrected a property access error by changing `quest.groupId` to `quest.groupIds` to correctly check for group membership in arrays.
         const questsInGroup = quests.filter(q => q.groupIds?.includes(groupId)).map(q => q.id);
         if (questsInGroup.length === 0) return;
     

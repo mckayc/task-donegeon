@@ -1,7 +1,7 @@
-
-
 import React, { useMemo } from 'react';
-import { GameAsset, RewardItem, ScheduledEvent, RewardCategory } from '../../types';
+import { GameAsset, RewardItem } from '../items/types';
+import { RewardCategory } from '../users/types';
+import { ScheduledEvent } from '../events/types';
 import Button from '../user-interface/Button';
 import { getFinalCostGroups } from './utils/markets';
 import { useUIState } from '../../context/UIContext';

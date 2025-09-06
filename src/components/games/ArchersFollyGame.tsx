@@ -155,8 +155,10 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
     const gameLoop = useCallback(() => {
         if (gameState !== 'playing') return;
 
+        const ball = arrowsRef.current; // Rename for clarity
+        
         // Update arrows
-        arrowsRef.current.forEach((arrow, arrowIndex) => {
+        ball.forEach((arrow, arrowIndex) => {
             arrow.vy += GRAVITY;
             arrow.x += arrow.vx;
             arrow.y += arrow.vy;
@@ -241,40 +243,39 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
 
         const start = drawStartPosRef.current;
         const end = currentMousePosRef.current;
-        if (!start || !end) return;
 
-        const dx = start.x - end.x;
-        const dy = start.y - end.y;
+        if (start && end) {
+            const dx = start.x - end.x;
+            const dy = start.y - end.y;
+            const power = Math.min(Math.sqrt(dx * dx + dy * dy), 100);
+            const angle = Math.atan2(dy, dx);
+            
+            const velocity = power * 0.2; // Scale power to velocity
 
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const power = Math.min(distance, 100); // Max power capped at 100px drag
-        
-        const angle = Math.atan2(dy, dx);
-
-        const newArrow: Arrow = {
-            x: bowPosition.x,
-            y: bowPosition.y,
-            vx: Math.cos(angle) * (power / 5), // Scaled for reasonable speed
-            vy: Math.sin(angle) * (power / 5),
-            rotation: angle,
-        };
-
-        arrowsRef.current.push(newArrow);
-        setArrowsLeft(a => a - 1);
+            arrowsRef.current.push({
+                x: bowPosition.x,
+                y: bowPosition.y,
+                vx: velocity * Math.cos(angle),
+                vy: velocity * Math.sin(angle),
+                rotation: angle,
+            });
+            
+            setArrowsLeft(prev => prev - 1);
+        }
 
         drawStartPosRef.current = null;
         currentMousePosRef.current = null;
-    }, [gameState, bowPosition]);
 
-    // FIX: Added missing return statement with game JSX to resolve component type error.
+    }, [gameState, bowPosition, arrowsLeft]);
+    
     return (
         <div className="flex flex-col items-center justify-center p-4">
-             <div className="w-full max-w-[800px] flex justify-between items-center mb-4 text-white font-bold text-lg">
+            <div className="w-full max-w-[800px] flex justify-between items-center mb-4 text-white font-bold text-lg">
                 <span>Score: {score}</span>
                 <span className="text-2xl font-medieval text-amber-300">Archer's Folly</span>
-                <span>Arrows: {arrowsLeft} / {MAX_ARROWS}</span>
+                <span>Arrows: {arrowsLeft}</span>
             </div>
-             <div className="relative" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}>
+            <div className="relative" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}>
                 <canvas 
                     ref={canvasRef} 
                     width={GAME_WIDTH} 
@@ -283,12 +284,12 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp} // Fire arrow if mouse leaves canvas
+                    onMouseLeave={handleMouseUp} // Fire on leave as well
                 />
                 {gameState === 'pre-game' && (
                     <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white text-center">
                         <h2 className="text-4xl font-bold font-medieval text-emerald-400">Archer's Folly</h2>
-                        <p className="mt-2 max-w-sm">Click and drag from the bow to aim and set your power. Release to fire! Hit the targets to score points.</p>
+                        <p className="mt-2">Click and drag to aim, release to fire. Hit the targets!</p>
                         <Button onClick={resetGame} className="mt-6">Start Game</Button>
                     </div>
                 )}
@@ -296,6 +297,7 @@ const ArchersFollyGame: React.FC<ArchersFollyGameProps> = ({ onClose }) => {
                     <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white">
                         <h2 className="text-4xl font-bold font-medieval text-red-500">Out of Arrows!</h2>
                         <p className="text-xl mt-2">Final Score: {score}</p>
+                        <p className="text-lg mt-1">High Score: {highScore}</p>
                         <Button onClick={resetGame} className="mt-6">Play Again</Button>
                     </div>
                 )}

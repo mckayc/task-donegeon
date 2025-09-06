@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -35,7 +36,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
     if (Number(inputValue) !== value) {
       setInputValue(String(value));
     }
-  }, [value]);
+  }, [value, inputValue]);
 
   const intervalRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -48,14 +49,13 @@ const NumberInput: React.FC<NumberInputProps> = ({
   }, []);
 
   const handleStep = useCallback((direction: 'up' | 'down') => {
-    // FIX: The onChange prop is a simple callback that expects a number, not a function like useState's setter.
-    // This calculates the new value based on the current `value` prop and calls `onChange` correctly.
+    const currentValue = Number(inputValue) || 0;
     const precision = String(step).split('.')[1]?.length || 0;
-    const newValue = parseFloat((value + (direction === 'up' ? step : -step)).toFixed(precision));
+    const newValue = parseFloat((currentValue + (direction === 'up' ? step : -step)).toFixed(precision));
     const clampedValue = Math.max(min, Math.min(max, newValue));
-    setInputValue(String(clampedValue)); // Keep local state in sync for immediate feedback
+    setInputValue(String(clampedValue));
     onChange(clampedValue);
-  }, [min, max, onChange, step, value]);
+  }, [min, max, onChange, step, inputValue]);
 
   const startStepping = useCallback((direction: 'up' | 'down') => {
     stopStepping();
@@ -75,14 +75,12 @@ const NumberInput: React.FC<NumberInputProps> = ({
     const stringValue = e.target.value;
     setInputValue(stringValue);
 
-    // Only allow numeric-like characters that are valid for parsing or are partial
     if (stringValue === '' || stringValue === '-' || /^-?\d*\.?\d*$/.test(stringValue)) {
         const numValue = parseFloat(stringValue);
-        // Propagate change to parent if it's a valid number, or 0 if it's empty
         if (!isNaN(numValue)) {
             onChange(numValue);
         } else if (stringValue === '') {
-            onChange(0); // This is the key fix to allow clearing.
+            onChange(0);
         }
     }
   };
@@ -90,12 +88,10 @@ const NumberInput: React.FC<NumberInputProps> = ({
   const handleBlur = () => {
     let numValue = parseFloat(inputValue);
     if (isNaN(numValue)) {
-      numValue = 0; // Treat blank as zero instead of reverting. This is the other key fix.
+      numValue = 0;
     }
     const clamped = Math.max(min, Math.min(max, numValue));
-    // Finalize the value in the parent state
     onChange(clamped);
-    // And ensure the input visually reflects the final clamped value
     setInputValue(String(clamped));
   };
   

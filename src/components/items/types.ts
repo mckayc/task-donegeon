@@ -1,8 +1,9 @@
-// FIX: Changed to `import type` to break a circular dependency with quests/types.ts
+
+// Changed to `import type` to break a circular dependency with quests/types.ts
 import type { Quest } from '../quests/types';
 import { Rank } from '../ranks/types';
 import { ConditionSet, Condition } from '../conditions/types';
-// FIX: Import RewardItem and RewardCategory from users/types to break circular dependency with quests/types.
+// Import RewardItem and RewardCategory from users/types to break circular dependency with quests/types.
 import { RewardItem, RewardCategory } from '../users/types';
 
 export { RewardCategory };

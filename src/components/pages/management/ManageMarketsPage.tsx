@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Market } from '../../../types';
+import { Market } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditMarketDialog from '../../markets/EditMarketDialog';
@@ -72,7 +73,7 @@ const MarketCard: React.FC<{
     );
 };
 
-const ManageMarketsPage: React.FC = () => {
+export const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { markets } = useEconomyState();
@@ -138,49 +139,45 @@ const ManageMarketsPage: React.FC = () => {
         switch (confirmation.action) {
             case 'delete': return `Are you sure you want to permanently delete ${count} ${item}?`;
             case 'open': return `Are you sure you want to mark ${count} ${item} as open? This won't affect conditional markets.`;
-            case 'close': return `Are you sure you want to mark ${count} ${item} as closed? This won't affect conditional markets.`;
+            case 'close': return `Are you sure you want to mark ${count} ${item} as closed?`;
             default: return 'Are you sure?';
         }
     };
 
-    const headerActions = (
-        <div className="flex items-center gap-2 flex-wrap">
-            {isAiAvailable && (
-                <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary" size="sm">
-                    Create with AI
-                </Button>
-            )}
-            <Button onClick={handleCreateMarket} size="sm">
-                Create New {settings.terminology.store}
-            </Button>
-        </div>
-    );
-
     return (
         <div className="space-y-6">
-            {globalSets.length > 0 && (
+             {globalSets.length > 0 && (
                 <div className="bg-sky-900/50 border border-sky-700 text-sky-200 text-sm p-4 rounded-lg">
-                    <p>
-                        <span className="font-bold">Active Global Sets:</span> {globalSets.map(s => s.name).join(', ')}. These rules apply to all items on this page.
-                    </p>
+                    <p><span className="font-bold">Active Global Sets:</span> {globalSets.map(s => s.name).join(', ')}. These rules apply to all items on this page.</p>
                 </div>
             )}
             <Card
                 title={`All Created ${settings.terminology.stores}`}
-                headerAction={headerActions}
+                headerAction={
+                    <div className="flex items-center gap-2">
+                         {isAiAvailable && (
+                            <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                                Create with AI
+                            </Button>
+                        )}
+                        <Button onClick={handleCreateMarket} size="sm">
+                            Create New {settings.terminology.store}
+                        </Button>
+                    </div>
+                }
             >
-                {selectedMarkets.length > 0 && (
-                     <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
+                 {selectedMarkets.length > 0 && (
+                    <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedMarkets.length} selected</span>
+                        <Button size="sm" variant="secondary" onClick={() => cloneMarket(selectedMarkets[0])} disabled={selectedMarkets.length !== 1}>Clone</Button>
                         <Button size="sm" variant="secondary" onClick={() => handleEditMarket(markets.find(m => m.id === selectedMarkets[0])!)} disabled={selectedMarkets.length !== 1}>Edit</Button>
-                        <Button size="sm" variant="secondary" onClick={() => cloneMarket(selectedMarkets[0])} disabled={selectedMarkets.length !== 1 || selectedMarkets[0] === 'market-bank'}>Clone</Button>
                         <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'open', ids: selectedMarkets })}>Mark Open</Button>
                         <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'close', ids: selectedMarkets })}>Mark Closed</Button>
-                        <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedMarkets })}>Delete</Button>
+                        <Button size="sm" variant="destructive" onClick={() => setConfirmation({ action: 'delete', ids: selectedMarkets })}>Delete</Button>
                     </div>
                 )}
-                {isMobileView ? (
-                    <div className="space-y-3">
+                 {isMobileView ? (
+                     <div className="space-y-3">
                         {markets.map(market => (
                             <MarketCard
                                 key={market.id}
@@ -193,11 +190,11 @@ const ManageMarketsPage: React.FC = () => {
                             />
                         ))}
                     </div>
-                ) : (
+                 ) : (
                     <MarketTable
                         markets={markets}
                         selectedMarkets={selectedMarkets}
-                        onSelectAll={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedMarkets(e.target.checked ? marketIds : [])}
+                        onSelectAll={(e) => setSelectedMarkets(e.target.checked ? marketIds : [])}
                         onSelectOne={handleCheckboxClick}
                         onEdit={handleEditMarket}
                         onClone={cloneMarket}
@@ -205,20 +202,12 @@ const ManageMarketsPage: React.FC = () => {
                         terminology={settings.terminology}
                         onCreate={handleCreateMarket}
                     />
-                )}
+                 )}
             </Card>
 
-            {isMarketDialogOpen && (
-                <EditMarketDialog
-                    market={editingMarket}
-                    initialData={initialCreateData || undefined}
-                    onClose={() => {
-                        setIsMarketDialogOpen(false);
-                        setInitialCreateData(null);
-                    }}
-                />
-            )}
-            
+            {isMarketDialogOpen && <EditMarketDialog market={editingMarket} initialData={initialCreateData || undefined} onClose={() => { setIsMarketDialogOpen(false); setInitialCreateData(null); }} />}
+            {isGeneratorOpen && <MarketIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
+
             <ConfirmDialog
                 isOpen={!!confirmation}
                 onClose={() => setConfirmation(null)}
@@ -226,10 +215,6 @@ const ManageMarketsPage: React.FC = () => {
                 title="Confirm Action"
                 message={getConfirmationMessage()}
             />
-
-            {isGeneratorOpen && <MarketIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
         </div>
     );
 };
-
-export default ManageMarketsPage;

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Guild } from '../../../types';
+import { Guild } from '../../guilds/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditGuildDialog from '../../guilds/EditGuildDialog';

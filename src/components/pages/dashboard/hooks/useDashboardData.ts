@@ -1,19 +1,20 @@
+
 import { useMemo, useState, useEffect } from 'react';
-import { useSystemState } from '../../../context/SystemContext';
-import { useUIState } from '../../../context/UIContext';
-import { useAuthState } from '../../../context/AuthContext';
-import { QuestCompletionStatus, QuestKind, QuestType, Quest } from '../../quests/types';
-import { RewardCategory } from '../../users/types';
-import { Rank } from '../../ranks/types';
-import { Trophy } from '../../trophies/types';
-import { RewardItem } from '../../items/types';
-import { ChronicleEvent } from '../../chronicles/types';
-import { isQuestAvailableForUser, questSorter } from '../../../utils/quests';
-import { isQuestVisibleToUserInMode, toYMD } from '../../../utils/conditions';
-import { useQuestsState } from '../../../context/QuestsContext';
-import { useProgressionState } from '../../../context/ProgressionContext';
-import { useEconomyState } from '../../../context/EconomyContext';
-import { useCommunityState } from '../../../context/CommunityContext';
+import { useSystemState } from '../../../../context/SystemContext';
+import { useUIState } from '../../../../context/UIContext';
+import { useAuthState } from '../../../../context/AuthContext';
+import { QuestCompletionStatus, QuestKind, QuestType, Quest } from '../../../quests/types';
+import { RewardCategory } from '../../../users/types';
+import { Rank } from '../../../ranks/types';
+import { Trophy } from '../../../trophies/types';
+import { RewardItem } from '../../../items/types';
+import { ChronicleEvent } from '../../../chronicles/types';
+import { isQuestAvailableForUser, questSorter } from '../../../../utils/quests';
+import { isQuestVisibleToUserInMode, toYMD } from '../../../../utils/conditions';
+import { useQuestsState } from '../../../../context/QuestsContext';
+import { useProgressionState } from '../../../../context/ProgressionContext';
+import { useEconomyState } from '../../../../context/EconomyContext';
+import { useCommunityState } from '../../../../context/CommunityContext';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];
@@ -177,11 +178,11 @@ export const useDashboardData = () => {
         return users.map(user => {
             let userTotalXp = 0;
             if (currentGuildId) {
-                // FIX: Changed `amount: number` to `amount: any` to satisfy TypeScript's strictness which infers `unknown`.
-                userTotalXp = Object.values((user.guildBalances[currentGuildId]?.experience) || {}).reduce((sum: number, amount: any) => sum + Number(amount), 0);
+                // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
+                userTotalXp = Object.values((user.guildBalances[currentGuildId]?.experience) || {}).reduce((sum, amount) => sum + Number(amount), 0);
             } else {
-                // FIX: Changed `amount: number` to `amount: any` to satisfy TypeScript's strictness which infers `unknown`.
-                userTotalXp = Object.values(user.personalExperience || {}).reduce((sum: number, amount: any) => sum + Number(amount), 0);
+                // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
+                userTotalXp = Object.values(user.personalExperience || {}).reduce((sum, amount) => sum + Number(amount), 0);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);

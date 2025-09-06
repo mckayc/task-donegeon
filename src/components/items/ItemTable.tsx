@@ -1,5 +1,6 @@
 import React from 'react';
-import { GameAsset, Terminology, RewardTypeDefinition } from '../../types';
+import { GameAsset, RewardTypeDefinition } from './types';
+import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { ItemManagerIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';

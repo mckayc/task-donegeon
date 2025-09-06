@@ -1,3 +1,4 @@
+
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -108,29 +109,31 @@ const INITIAL_SETTINGS = {
     theme: 'emerald',
     terminology: {
       appName: 'Task Donegeon',
+      // Singular
       task: 'Quest',
-      tasks: 'Quests',
       recurringTask: 'Duty',
-      recurringTasks: 'Duties',
       singleTask: 'Venture',
-      singleTasks: 'Ventures',
       journey: 'Journey',
-      journeys: 'Journeys',
-      shoppingCenter: 'Marketplace',
       store: 'Market',
-      stores: 'Markets',
       history: 'Chronicles',
       group: 'Guild',
-      groups: 'Guilds',
       level: 'Rank',
-      levels: 'Ranks',
       award: 'Trophy',
-      awards: 'Trophies',
       point: 'Reward',
-      points: 'Rewards',
       xp: 'XP',
       currency: 'Currency',
       negativePoint: 'Setback',
+      // Plural
+      tasks: 'Quests',
+      recurringTasks: 'Duties',
+      singleTasks: 'Ventures',
+      journeys: 'Journeys',
+      shoppingCenter: 'Marketplace',
+      stores: 'Markets',
+      groups: 'Guilds',
+      levels: 'Ranks',
+      awards: 'Trophies',
+      points: 'Rewards',
       negativePoints: 'Setbacks',
       // Roles
       admin: 'Donegeon Master',
@@ -353,4 +356,14 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-45', name: 'Good Sport', description: 'For showing great sportsmanship, win or lose.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] },
     { id: 'trophy-46', name: 'Practice Pays Off', description: 'For mastering a new skill through practice.', iconType: 'emoji', icon: '🎯', isManual: true, requirements: [] },
     { id: 'trophy-47', name: 'Master of the Mop', description: 'For mopping the floors to a sparkling shine.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] },
-    { id: 'trophy-48', name: 'Laundry Lord', description: 'For washing, drying, and folding 5 loads of laundry.', iconType: 'emoji', icon: '🧺', isManual:
+    { id: 'trophy-48', name: 'Laundry Lord', description: 'For washing, drying, and folding 5 loads of laundry.', iconType: 'emoji', icon: '🧺', isManual: true, requirements: [] },
+    { id: 'trophy-49', name: 'The Green Thumb', description: 'For keeping a plant alive for a month.', iconType: 'emoji', icon: '🪴', isManual: true, requirements: [] },
+    { id: 'trophy-50', name: 'The Organizer', description: 'For decluttering a messy drawer or closet.', iconType: 'emoji', icon: '🗂️', isManual: true, requirements: [] },
+    { id: 'trophy-51', name: 'The Recycler', description: 'For consistently sorting the recycling correctly.', iconType: 'emoji', icon: '♻️', isManual: true, requirements: [] },
+    { id: 'trophy-52', name: 'The Repairman', description: 'For fixing something that was broken.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] },
+    { id: 'trophy-53', name: 'The Pet Pal', description: 'For taking excellent care of a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] },
+    { id: 'trophy-54', name: 'The Dust Slayer', description: 'For dusting the entire house.', iconType: 'emoji', icon: '🌬️', isManual: true, requirements: [] },
+    { id: 'trophy-55', name: 'Honor Roll', description: "For getting straight A's on a report card.", iconType: 'emoji', icon: '🅰️', isManual: true, requirements: [] },
+    { id: 'trophy-56', name: 'Perfect Attendance', description: 'For not missing a single day of school.', iconType: 'emoji', icon: '🗓️', isManual: true, requirements: [] },
+    { id: 'trophy-57', name: 'Science Fair Winner', description: 'For winning a prize at the science fair.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] },
+    { id: 'trophy-58', name: 'Spelling Bee Champ', description: 'For winning the spelling bee.', iconType: '

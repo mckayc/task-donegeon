@@ -1,5 +1,6 @@
+
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-// FIX: Corrected import path for useSystemDispatch hook.
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
 
@@ -15,7 +16,6 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
     const [countdown, setCountdown] = useState(3);
     const { submitScore } = useSystemDispatch();
 
-    // FIX: Initialize useRef with null to create a mutable ref object, and type it to allow null.
     const gameLoopRef = useRef<number | null>(null);
     const directionRef = useRef({ x: 1, y: 0 });
     const snakeRef = useRef([{ x: 10, y: 10 }]);

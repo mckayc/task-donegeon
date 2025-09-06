@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
@@ -294,65 +295,50 @@ const SharedCalendarPage: React.FC = () => {
                         <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
                             {(() => {
                                 const userQuests = questsByUser.get(user.id);
-                                const hasDuties = userQuests && userQuests.duties.length > 0;
-                                const hasVentures = userQuests && userQuests.ventures.length > 0;
-
-                                if (!hasDuties && !hasVentures) {
-                                    return <p className="text-center text-stone-500 pt-8">No quests for today.</p>;
+                                if (!userQuests || (userQuests.duties.length === 0 && userQuests.ventures.length === 0)) {
+                                    return <p className="text-center text-stone-500 pt-16">No quests scheduled for today.</p>
                                 }
-
                                 return (
                                     <>
-                                        {hasDuties && (
-                                            <div>
-                                                <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.recurringTasks}</h3>
-                                                <div className="space-y-3">
-                                                    {userQuests.duties.map(quest => (
-                                                        <QuestCardComponent quest={quest} user={user} key={quest.id} />
-                                                    ))}
-                                                </div>
+                                        {userQuests.duties.length > 0 && (
+                                            <div className="space-y-2">
+                                                <h4 className="font-bold text-lg text-stone-300">Duties</h4>
+                                                {userQuests.duties.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
                                             </div>
                                         )}
-                                        {hasVentures && (
-                                            <div className={hasDuties ? 'pt-3 mt-3 border-t border-stone-700/60' : ''}>
-                                                <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-2">{settings.terminology.singleTasks} &amp; {settings.terminology.journeys}</h3>
-                                                <div className="space-y-3">
-                                                    {userQuests.ventures.map(quest => (
-                                                        <QuestCardComponent quest={quest} user={user} key={quest.id} />
-                                                    ))}
-                                                </div>
+                                        {userQuests.ventures.length > 0 && (
+                                            <div className="space-y-2">
+                                                <h4 className="font-bold text-lg text-stone-300 mt-4">Ventures</h4>
+                                                {userQuests.ventures.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
                                             </div>
                                         )}
                                     </>
-                                );
+                                )
                             })()}
                         </div>
                     </div>
                 ))}
             </div>
+
             {verifyingQuest && (
                 <PinEntryDialog user={verifyingQuest.user} onClose={() => setVerifyingQuest(null)} onSuccess={onPinSuccess} />
             )}
+
             {questForNoteCompletion && (
-                <CompleteQuestDialog 
-                    quest={questForNoteCompletion.quest}
-                    user={questForNoteCompletion.user}
-                    onClose={() => setQuestForNoteCompletion(null)} 
-                    completionDate={currentDate}
-                />
+                <CompleteQuestDialog quest={questForNoteCompletion.quest} user={questForNoteCompletion.user} onClose={() => setQuestForNoteCompletion(null)} completionDate={currentDate} />
             )}
-             {selectedQuestDetails && (
+
+            {selectedQuestDetails && (
                 <QuestDetailDialog
                     quest={selectedQuestDetails.quest}
                     userForView={selectedQuestDetails.user}
                     onClose={() => setSelectedQuestDetails(null)}
-                    onComplete={settings.sharedMode.allowCompletion ? handleStartCompletionFromDialog : undefined}
+                    onComplete={handleStartCompletionFromDialog}
                     onToggleTodo={handleToggleTodo}
-                    isTodo={selectedQuestDetails.quest.type === QuestType.Venture && !!selectedQuestDetails.quest.todoUserIds?.includes(selectedQuestDetails.user.id)}
-                    dialogTitle={`For ${selectedQuestDetails.user.gameName}`}
+                    isTodo={selectedQuestDetails.quest.type === QuestType.Venture && selectedQuestDetails.quest.todoUserIds?.includes(selectedQuestDetails.user.id)}
                 />
             )}
-             {viewingConditionsForQuest && (
+            {viewingConditionsForQuest && (
                 <QuestConditionStatusDialog
                     quest={viewingConditionsForQuest.quest}
                     user={viewingConditionsForQuest.user}

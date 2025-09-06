@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
-import { BugReport, BugReportStatus, BugReportLogEntry } from '../../../types';
+import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';

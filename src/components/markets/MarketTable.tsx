@@ -1,6 +1,6 @@
-
 import React, { useMemo } from 'react';
-import { Market, Terminology } from '../../types';
+import { Market } from '../items/types';
+import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { MarketplaceIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';

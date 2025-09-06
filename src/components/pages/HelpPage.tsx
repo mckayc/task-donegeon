@@ -46,9 +46,9 @@ const FeaturesContent: React.FC = () => {
              <div>
                 <h4 className="text-lg font-bold text-stone-100">For Admins ({settings.terminology.admin}s)</h4>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong>Customizable Dashboard:</strong> Collapse cards you don't use often and drag-and-drop your most important widgets to the top. Your layout is saved automatically.</li>
                     <li><strong>Powerful Content Management:</strong> Create and manage every aspect of the game world, including {settings.terminology.tasks}, items, {settings.terminology.stores}, {settings.terminology.levels}, and {settings.terminology.awards}.</li>
                     <li><strong>AI Suggestion Engine:</strong> Use Google's Gemini AI to generate creative ideas for any game asset, from {settings.terminology.tasks} to items to {settings.terminology.awards}.</li>
+                    <li><strong>Integrated Bug Tracker:</strong> Report bugs directly within the app. The "Notes & AI Instructions" tab allows you to save and manage reusable text snippets. The "Copy & Append" feature streamlines providing instructions to AI or other tools.</li>
                     <li><strong>Asset Library:</strong> Kickstart your world with pre-made content packs that can be imported with a single click.</li>
                     <li><strong>Blueprint System:</strong> Export your own custom content as a "Blueprint" file to share with others or back up your creations.</li>
                     <li><strong>Dynamic Rules Engine:</strong> Create powerful "Condition Sets" to control when {settings.terminology.tasks} and {settings.terminology.stores} become available based on player progress, time of day, or items owned.</li>
@@ -132,6 +132,37 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 27, 2025 (v0.4.58)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Leaderboard & Rank Enhancements:</strong> The Dashboard Leaderboard now correctly ranks users based on their total lifetime earned XP, providing a more accurate measure of overall progress.</li>
+                <li>The Rank card has been updated to display both a user's current balance and their lifetime earnings for XP and all currencies, offering a richer, more detailed view of their economic status.</li>
+                <li>Backend data models were updated to efficiently track and serve these new lifetime statistics.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 20, 2025 (v0.4.57)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Dashboard Customization Overhaul:</strong> The 'Customize Dashboard' dialog has been improved for better usability.</li>
+                <li>Cards can now be moved between columns using new left/right arrow buttons, in addition to drag-and-drop.</li>
+                <li>All visible and hidden card columns now maintain an equal height for a cleaner appearance.</li>
+                <li>Fixed a bug in 'single-column' mode where cards from the side column could become inaccessible. The dialog now correctly merges columns when switching layouts, ensuring all cards remain manageable.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 13, 2025 (v0.4.56)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quest Page Bug Fix:</strong> Fixed an issue where recurring quests (Duties) could appear incorrectly dimmed even if they were not completed on the current day. The dimming logic now more reliably checks for same-day completions.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 6, 2025 (v0.4.55)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quick Actions Overhaul:</strong> The Dashboard's Quick Actions card is now scrollable and divides quests into "Duties" and "Ventures & Journeys" for better organization.</li>
+                <li><strong>Bug Tracker Notes:</strong> Added a "Notes & AI Instructions" tab to the Bug Tracker to create, manage, and reuse text snippets. A "Copy & Append" feature streamlines providing instructions to AI or other tools.</li>
+                <li><strong>UI Fixes:</strong> Redesigned the bug reporter bar into a responsive, two-row layout to prevent controls from being hidden on smaller screens. Also enlarged the bug tracker's note editor dialog for better usability.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of November 24, 2025 (v0.4.52)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

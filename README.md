@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.54
+**Version:** 0.4.55
 
 ---
 
@@ -14,6 +14,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Version History
+
+#### Week of September 6, 2025 (v0.4.55)
+-   **Quick Actions Overhaul:** The Dashboard's Quick Actions card is now scrollable and divides quests into "Duties" and "Ventures & Journeys" for better organization.
+-   **Bug Tracker Notes:** Added a "Notes & AI Instructions" tab to the Bug Tracker to create, manage, and reuse text snippets. A "Copy & Append" feature streamlines adding these notes to bug reports.
+-   **UI Fixes:** Redesigned the bug reporter bar into a responsive, two-row layout to prevent controls from being hidden on smaller screens. Also enlarged the bug tracker's note editor dialog for better usability.
 
 #### Week of November 24, 2025 (v0.4.52)
 -   **Customizable Dashboard:** All cards on the Dashboard are now collapsible and can be reordered via drag-and-drop. Your preferred layout and collapsed states are saved automatically to your profile, allowing for a personalized view of your most important information.

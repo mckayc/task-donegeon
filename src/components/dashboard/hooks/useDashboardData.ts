@@ -1,4 +1,5 @@
 
+
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -114,7 +115,10 @@ export const useDashboardData = () => {
             mostRecentTrophy: null,
             quickActionQuests: [],
             weeklyProgressData: [],
-            terminology: settings.terminology
+            terminology: settings.terminology,
+            // FIX: Add missing properties to the return object for when no user is logged in.
+            totalEarnedXp: 0,
+            totalEarnedCurrencies: [],
         };
     }
     
@@ -130,6 +134,30 @@ export const useDashboardData = () => {
             experience: guildBalance?.experience || {} 
         };
     }, [currentUser, appMode]);
+
+    // FIX: Added calculation for total earned XP and currencies to be passed to the RankCard.
+    const totalEarnedBalances = useMemo(() => {
+        if (!currentUser) return { purse: {}, experience: {} };
+        if (appMode.mode === 'personal') {
+            return { purse: currentUser.totalEarnedPurse || {}, experience: currentUser.totalEarnedExperience || {} };
+        }
+        const guildBalance = currentUser.totalEarnedGuildBalances?.[appMode.guildId];
+        return { 
+            purse: guildBalance?.purse || {}, 
+            experience: guildBalance?.experience || {} 
+        };
+    }, [currentUser, appMode]);
+
+    const totalEarnedXp = useMemo(() => {
+        return Object.values(totalEarnedBalances.experience).reduce<number>((sum, amount) => sum + Number(amount), 0);
+    }, [totalEarnedBalances.experience]);
+
+    const totalEarnedCurrencies = useMemo(() => {
+        return rewardTypes
+            .filter(rt => rt.category === RewardCategory.Currency)
+            .map(c => ({ ...c, amount: totalEarnedBalances.purse[c.id] || 0 }));
+    }, [totalEarnedBalances.purse, rewardTypes]);
+
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
@@ -178,11 +206,11 @@ export const useDashboardData = () => {
         return users.map(user => {
             let userTotalXp = 0;
             if (currentGuildId) {
-                // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
-                userTotalXp = Object.values((user.guildBalances[currentGuildId]?.experience) || {}).reduce((sum, amount) => sum + Number(amount), 0);
+                // FIX: The leaderboard should rank users based on their total lifetime earned XP, not their current balance.
+                userTotalXp = Object.values(user.totalEarnedGuildBalances?.[currentGuildId]?.experience || {}).reduce((sum, amount) => sum + Number(amount), 0);
             } else {
-                // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
-                userTotalXp = Object.values(user.personalExperience || {}).reduce((sum, amount) => sum + Number(amount), 0);
+                // FIX: The leaderboard should rank users based on their total lifetime earned XP, not their current balance.
+                userTotalXp = Object.values(user.totalEarnedExperience || {}).reduce((sum, amount) => sum + Number(amount), 0);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);
@@ -287,6 +315,8 @@ export const useDashboardData = () => {
         mostRecentTrophy,
         quickActionQuests,
         weeklyProgressData,
-        terminology
+        terminology,
+        totalEarnedXp,
+        totalEarnedCurrencies
     };
 };

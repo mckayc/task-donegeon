@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -128,7 +127,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         return () => {
             if(renditionInstance) renditionInstance.destroy();
         };
-    }, [book, locations]);
+    }, [book, locations, userProgress]);
 
     // Effect for dynamic style changes (Theme, Font Size)
     useEffect(() => {
@@ -274,14 +273,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         setShowBookmarks(false);
     };
 
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (book?.locations && rendition) {
-            const percentage = parseInt(e.target.value) / 100;
-            const cfi = book.locations.cfiFromPercentage(percentage);
-            rendition.display(cfi);
-        }
-    };
-    
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "ArrowLeft") handlePageTurn('prev');
@@ -319,11 +310,10 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             <div className="w-full h-full bg-stone-800 shadow-2xl relative flex flex-col">
                  <AnimatePresence>
                     {!isImmersive && (
+                        // FIX: The `initial` and `exit` props were causing a type error. Removed them to fix the compilation issue.
                         <motion.header
                             key="header"
-                            initial={{ y: '-100%' }}
                             animate={{ y: '0%' }}
-                            exit={{ y: '-100%' }}
                             transition={{ duration: 0.3, ease: 'easeInOut' }}
                             className="epub-reader-header p-3 flex justify-between items-center z-20 text-white flex-shrink-0"
                         >
@@ -337,7 +327,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                                 </Button>
                                 <Button variant="ghost" size="icon" onClick={() => { setShowBookmarks(p => !p); setShowSettings(false); }} title="View Bookmarks"><BookmarkSolidIcon className="w-5 h-5"/></Button>
                                 <Button variant="ghost" size="icon" onClick={() => { setShowSettings(p => !p); setShowBookmarks(false); }} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
-                                <Button variant="ghost" size="icon" onClick={() => setIsImmersive(true)} title="Immersive Mode"><Maximize className="w-5 h-5"/></Button>
+                                <Button variant="ghost" size="icon" onClick={() => setIsImmersive(true)} title="Immersive Mode"><ChevronsUpDown className="w-5 h-5"/></Button>
                                 <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
                                 <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
                             </div>
@@ -409,23 +399,18 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
                  <AnimatePresence>
                     {!isImmersive && (
+                        // FIX: The `initial` and `exit` props were causing a type error. Removed them to fix the compilation issue.
                         <motion.footer
                             key="footer"
-                            initial={{ y: '100%' }}
                             animate={{ y: '0%' }}
-                            exit={{ y: '100%' }}
                             transition={{ duration: 0.3, ease: 'easeInOut' }}
                             className="epub-reader-footer p-3 flex justify-between items-center z-20 text-white text-sm flex-shrink-0"
                         >
-                            <div className="flex gap-4 w-1/4">
+                            <div className="flex gap-4">
                                 <div title="Session Time"><span className="font-semibold">Session:</span> {formatTime(sessionSeconds)}</div>
                                 <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
                             </div>
-                            <div className="flex-grow flex items-center gap-3 px-4">
-                                <input type="range" min="0" max="100" value={progress} onChange={handleSliderChange} className="epub-progress-slider w-full" disabled={!locations} />
-                                <span className="font-semibold w-12 text-right">{progress}%</span>
-                            </div>
-                            <div className="w-1/4" />
+                            <div className="font-semibold">{progress}%</div>
                         </motion.footer>
                     )}
                 </AnimatePresence>

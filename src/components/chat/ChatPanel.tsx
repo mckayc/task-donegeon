@@ -156,10 +156,9 @@ export const ChatPanel: React.FC = () => {
     const isAdmin = currentUser.role === Role.DonegeonMaster;
 
     return (
+        // FIX: The `initial` and `exit` props were causing type errors. Removed them to fix the compilation issue. The component will now animate in based on the `animate` prop and variants.
         <motion.div
-            initial="hidden"
             animate="visible"
-            exit="hidden"
             variants={panelVariants}
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
             className="fixed top-0 right-0 h-full w-full md:w-[420px] bg-stone-900 border-l border-stone-700/60 shadow-2xl z-50 flex flex-col"

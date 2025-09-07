@@ -49,8 +49,9 @@ const Notification = ({ notification, onDismiss }: NotificationProps) => {
     }, [notification.id, notification.duration, handleDismiss]);
   
     return (
+      // FIX: The `layout` prop was causing a type error. Changed to layout="position" to align with modern framer-motion APIs.
       <motion.div
-        layout
+        layout="position"
         initial={{ opacity: 0, y: 50, scale: 0.3 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}

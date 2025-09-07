@@ -198,7 +198,7 @@ const initializeApp = async () => {
         snakeGame = manager.create(MinigameEntity, {
             id: 'minigame-snake',
             name: 'Snake',
-            description: 'The classic game of snake. Eat the food to grow longer, but don\\'t run into yourself or the walls!',
+            description: 'The classic game of snake. Eat the food to grow longer, but don\'t run into yourself or the walls!',
             icon: '🐍',
             cost: 1, // Costs 1 Game Token
         });

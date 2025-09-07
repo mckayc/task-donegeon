@@ -51,11 +51,11 @@ const Card: React.FC<CardProps> = ({ children, className, title, titleIcon, head
         </div>
       )}
 
-       <AnimatePresence>
+       <AnimatePresence initial={false}>
         {!isCollapsed && (
-          // FIX: The `initial` prop was causing a type error. Animation is now controlled by the parent `AnimatePresence` and the component's variants.
           <motion.section
             key="content"
+            initial="collapsed"
             animate="open"
             exit="collapsed"
             style={{ overflow: 'hidden' }}

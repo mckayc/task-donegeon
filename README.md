@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.72
+**Version:** 0.4.73
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 25, 2025 (v0.4.73):**
+    -   **Bug Reporter Visibility Fix:** Fixed a bug where the Bug Reporter tool was visible to all users. It is now correctly restricted to Donegeon Masters (admins) only, ensuring non-admin users have a cleaner interface.
 
 -   **Week of October 18, 2025 (v0.4.72):**
     -   **Quest Group UI Fix:** Fixed a bug where adding, editing, or deleting Quest Groups would not update the UI until the page was refreshed. The state management for Quest Groups has been corrected to provide immediate visual feedback for all CUD (Create, Update, Delete) operations.

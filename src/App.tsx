@@ -15,6 +15,7 @@ import { useCommunityState } from './context/CommunityContext';
 import BugReporter from './components/dev/BugReporter';
 import { useDeveloperState } from './context/DeveloperContext';
 import GameOverlay from './components/games/GameOverlay';
+import { Role } from './components/users/types';
 
 const App: React.FC = () => {
     const { currentUser, isFirstRun, isAppUnlocked, isSwitchingUser, users } = useAuthState();
@@ -75,7 +76,7 @@ const App: React.FC = () => {
                 {isUpdateAvailable && !isRecording && (
                     <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setUpdateAvailable(null)} />
                 )}
-                {settings.developerMode.enabled && <BugReporter />}
+                {settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster && <BugReporter />}
                 {activeGame && <GameOverlay gameId={activeGame} onClose={() => setActiveGame(null)} />}
             </div>
         </ErrorBoundary>

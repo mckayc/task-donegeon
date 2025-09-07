@@ -174,6 +174,12 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 25, 2025 (v0.4.73)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Bug Reporter Visibility Fix:</strong> Fixed a bug where the Bug Reporter tool was visible to all users. It is now correctly restricted to Donegeon Masters (admins) only.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 18, 2025 (v0.4.72)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Quest Group UI Fix:</strong> Fixed a bug where creating, editing, or deleting a Quest Group would not update the UI until the page was refreshed. All CUD operations for Quest Groups now provide immediate feedback.</li>

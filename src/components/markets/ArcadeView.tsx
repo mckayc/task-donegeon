@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { Market, Minigame } from '../../../types';
+import { Market, Minigame, GameScore, User } from '../../../types';
 import Card from '../user-interface/Card';
-import { useSystemState } from '../../context/SystemState';
+import { useSystemState } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIDispatch } from '../../context/UIContext';
 import Button from '../user-interface/Button';
@@ -29,21 +29,21 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
             } 
         } = {};
 
-        minigames.forEach(game => {
-            const gameSpecificScores = gameScores.filter(s => s.gameId === game.id);
+        minigames.forEach((game: Minigame) => {
+            const gameSpecificScores = gameScores.filter((s: GameScore) => s.gameId === game.id);
             let userHighScore = 0;
             if(currentUser) {
                 userHighScore = Math.max(0, ...gameSpecificScores
-                    .filter(s => s.userId === currentUser.id)
-                    .map(s => s.score));
+                    .filter((s: GameScore) => s.userId === currentUser.id)
+                    .map((s: GameScore) => s.score));
             }
 
             let globalHighScore = 0;
             let globalHighScoreHolder = null;
 
             if (gameSpecificScores.length > 0) {
-                globalHighScore = Math.max(0, ...gameSpecificScores.map(s => s.score));
-                const topScoreEntry = gameSpecificScores.find(s => s.score === globalHighScore);
+                globalHighScore = Math.max(0, ...gameSpecificScores.map((s: GameScore) => s.score));
+                const topScoreEntry = gameSpecificScores.find((s: GameScore) => s.score === globalHighScore);
                 if (topScoreEntry) {
                     const holder = users.find(u => u.id === topScoreEntry.userId);
                     globalHighScoreHolder = holder ? holder.gameName : 'Unknown Hero';
@@ -57,7 +57,7 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
 
     const arcadeLegends = useMemo(() => {
         const userHighScoresByGame: { [userId: string]: { [gameId: string]: number } } = {};
-        gameScores.forEach(score => {
+        gameScores.forEach((score: GameScore) => {
             if (!userHighScoresByGame[score.userId]) {
                 userHighScoresByGame[score.userId] = {};
             }

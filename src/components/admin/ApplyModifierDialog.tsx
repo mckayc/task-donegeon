@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAuthState } from '../../context/AuthContext';
 import { User, ModifierDefinition, Role } from '../../types';
@@ -13,7 +14,7 @@ interface ApplyModifierDialogProps {
 }
 
 const ApplyModifierDialog: React.FC<ApplyModifierDialogProps> = ({ users, onClose }) => {
-  const { applyBulkModifier } = useSystemDispatch();
+  const { bulkApplyModifier } = useSystemDispatch();
   const { currentUser } = useAuthState();
   const { modifierDefinitions } = useSystemState();
   const { addNotification } = useNotificationsDispatch();
@@ -39,11 +40,11 @@ const ApplyModifierDialog: React.FC<ApplyModifierDialogProps> = ({ users, onClos
 
     setIsSaving(true);
     const userIds = users.map(u => u.id);
-    await applyBulkModifier({
+    // FIX: Removed `appliedById` as it is handled by the context action.
+    await bulkApplyModifier({
       userIds,
       modifierDefinitionId: selectedModifierId,
       reason,
-      appliedById: currentUser.id,
     });
     setIsSaving(false);
     onClose();

@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { Minigame, User } from '../../../types';
+import { Minigame, User, GameScore } from '../../../types';
 import Button from '../user-interface/Button';
-import { useSystemState } from '../../context/SystemState';
+import { useSystemState } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
 import Avatar from '../user-interface/Avatar';
 import { motion } from 'framer-motion';
@@ -42,7 +42,7 @@ const GameSummaryDialog: React.FC<GameSummaryDialogProps> = ({ game, onClose, on
   const isFunctional = FUNCTIONAL_GAMES.has(game.id);
 
   const stats = useMemo(() => {
-    const gameSpecificScores = gameScores.filter(s => s.gameId === game.id);
+    const gameSpecificScores = gameScores.filter((s: GameScore) => s.gameId === game.id);
     
     const leaderboard = [...gameSpecificScores]
       .sort((a, b) => b.score - a.score)
@@ -55,8 +55,8 @@ const GameSummaryDialog: React.FC<GameSummaryDialogProps> = ({ game, onClose, on
     let userHighScore = 0;
     let userTotalPlays = 0;
     if (currentUser) {
-        const userScores = gameSpecificScores.filter(s => s.userId === currentUser.id);
-        userHighScore = userScores.length > 0 ? Math.max(...userScores.map(s => s.score)) : 0;
+        const userScores = gameSpecificScores.filter((s: GameScore) => s.userId === currentUser.id);
+        userHighScore = userScores.length > 0 ? Math.max(...userScores.map((s: GameScore) => s.score)) : 0;
         userTotalPlays = userScores.length;
     }
 

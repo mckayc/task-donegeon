@@ -1,6 +1,5 @@
 const { dataSource } = require('../data-source');
 const { UserEntity, ModifierDefinitionEntity, QuestEntity, AppliedModifierEntity, RewardTypeDefinitionEntity, ChronicleEventEntity } = require('../entities');
-const { In } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 
@@ -133,56 +132,6 @@ const apply = async (userId, modifierDefinitionId, reason, appliedById, override
     });
 };
 
-const bulkApply = async (userIds, modifierDefinitionId, reason, appliedById) => {
-    return await dataSource.transaction(async manager => {
-        const userRepo = manager.getRepository(UserEntity);
-        const definitionRepo = manager.getRepository(ModifierDefinitionEntity);
-        const questRepo = manager.getRepository(QuestEntity);
-        const appliedRepo = manager.getRepository(AppliedModifierEntity);
-        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
-        const allRewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
-
-        const definition = await definitionRepo.findOneBy({ id: modifierDefinitionId });
-        const appliedBy = await userRepo.findOneBy({ id: appliedById });
-        const users = await userRepo.findBy({ id: In(userIds) });
-
-        if (!definition || !appliedBy || users.length === 0) return null;
-
-        const results = {
-            newAppliedModifiers: [],
-            newChronicleEvents: [],
-            newRedemptionQuests: [],
-            usersToUpdate: [],
-        };
-        
-        for (const user of users) {
-            // Re-using logic from single apply, without overrides for bulk action
-            const now = new Date();
-            const { updatedUser, newAppliedModifier, newRedemptionQuest } = await apply(user.id, modifierDefinitionId, reason, appliedById, {});
-            
-            if(newAppliedModifier) results.newAppliedModifiers.push(newAppliedModifier);
-            if(newRedemptionQuest) results.newRedemptionQuests.push(newRedemptionQuest);
-            if(updatedUser) results.usersToUpdate.push(updatedUser);
-        }
-        
-        // The single apply function already handles chronicle events and saving users.
-        // We just need to aggregate results. The 'updates' object will be constructed in the controller from these results.
-        
-        updateEmitter.emit('update');
-
-        const finalUpdatedUsers = await userRepo.findBy({ id: In(userIds) });
-        // After transaction, get the latest state of all affected data.
-        const updates = {
-            users: finalUpdatedUsers,
-            appliedModifiers: await appliedRepo.findBy({ userId: In(userIds) }),
-            quests: results.newRedemptionQuests.length > 0 ? await questRepo.findBy({ id: In(results.newRedemptionQuests.map(q => q.id))}) : [],
-            chronicleEvents: await chronicleRepo.findBy({ userId: In(userIds), actorId: appliedById, type: In(['Triumph', 'Trial']) }),
-        };
-
-        return { updates };
-    });
-};
-
 
 module.exports = {
     getAll,
@@ -190,5 +139,4 @@ module.exports = {
     update,
     deleteMany,
     apply,
-    bulkApply,
 };

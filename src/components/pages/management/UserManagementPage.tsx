@@ -15,7 +15,6 @@ import { useUIState } from '../../../context/UIContext';
 import { EllipsisVerticalIcon } from '../../user-interface/Icons';
 import Avatar from '../../user-interface/Avatar';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
-import ApplyModifierDialog from '../../admin/ApplyModifierDialog';
 
 const UserCard: React.FC<{
     user: User;
@@ -93,7 +92,6 @@ const UserManagementPage: React.FC = () => {
     const [adjustingUser, setAdjustingUser] = useState<User | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-    const [applyingModifierToUsers, setApplyingModifierToUsers] = useState<User[] | null>(null);
     
     const pageUsers = useMemo(() => {
         let filteredUsers = [...users];
@@ -172,7 +170,6 @@ const UserManagementPage: React.FC = () => {
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedUsers.length} selected</span>
                         <Button size="sm" variant="secondary" onClick={() => setEditingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Edit</Button>
                         <Button size="sm" variant="secondary" onClick={() => setAdjustingUser(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Adjust</Button>
-                        <Button size="sm" variant="secondary" onClick={() => setApplyingModifierToUsers(pageUsers.filter(u => selectedUsers.includes(u.id)))}>Apply Modifier</Button>
                         <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedUsers)}>Delete</Button>
                     </div>
                 )}
@@ -220,12 +217,6 @@ const UserManagementPage: React.FC = () => {
                 <ManualAdjustmentDialog
                     user={adjustingUser}
                     onClose={() => setAdjustingUser(null)}
-                />
-            )}
-            {applyingModifierToUsers && (
-                <ApplyModifierDialog
-                    users={applyingModifierToUsers}
-                    onClose={() => setApplyingModifierToUsers(null)}
                 />
             )}
             {deletingIds.length > 0 && (

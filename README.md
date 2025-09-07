@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.79
+**Version:** 0.4.78
 
 ---
 
@@ -14,9 +14,6 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
-
--   **Week of December 6, 2025 (v0.4.79):**
-    -   **Bulk Apply Triumphs & Trials:** Added the ability to apply modifiers to multiple users at once. From the "Manage Users" page, administrators can now select several users and apply any Triumph or Trial to all of them in a single action, complete with a mandatory reason for a clear audit trail in the Chronicles.
 
 -   **Week of November 29, 2025 (v0.4.78):**
     -   **EPUB Reader Caching & Offline Support:** The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.

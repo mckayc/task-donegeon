@@ -245,8 +245,20 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         updateReadingProgress: async (questId, userId, data) => {
             await apiAction(() => updateReadingProgressAPI(questId, userId, data));
         },
-        addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data), 'Quest group created!'),
-        updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data), 'Quest group updated!'),
+        addQuestGroup: async (data) => {
+            const result = await apiAction(() => addQuestGroupAPI(data), 'Quest group created!');
+            if (result) {
+                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questGroups: [result] } });
+            }
+            return result;
+        },
+        updateQuestGroup: async (data) => {
+            const result = await apiAction(() => updateQuestGroupAPI(data), 'Quest group updated!');
+            if (result) {
+                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questGroups: [result] } });
+            }
+            return result;
+        },
         assignQuestGroupToUsers: (groupId, userIds) => {
             if (!currentUser) return Promise.resolve();
             return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds, currentUser.id));

@@ -69,6 +69,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Instant Feedback:</strong> All create, update, and clone actions on management pages now immediately update the application's state with the data returned from the server. This ensures that the UI always shows the most current information without any delay.</li>
             <li><strong>Optimized Deletion:</strong> Deletion actions now use a more robust callback system. When items are deleted, they are instantly removed from the view on the management pages, providing a much smoother and more intuitive administrative experience.</li>
+            <li><strong>Quest Group Management:</strong> Fixed a bug where creating, editing, or deleting a Quest Group would not update the UI until the page was refreshed.</li>
         </ul>
         <h3>Dashboard Customization</h3>
         <p>The dashboard customization experience has been enhanced for better usability:</p>
@@ -172,6 +173,18 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 18, 2025 (v0.4.72)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quest Group UI Fix:</strong> Fixed a bug where creating, editing, or deleting a Quest Group would not update the UI until the page was refreshed. All CUD operations for Quest Groups now provide immediate feedback.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 11, 2025 (v0.4.71)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quest To-Do Crash Fix:</strong> Fixed a critical bug where toggling a quest's 'To-Do' status from the Dashboard or Calendar would cause the app to crash. The state management on affected pages has been refactored to prevent stale data and ensure stability.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 27, 2025 (v0.4.70)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

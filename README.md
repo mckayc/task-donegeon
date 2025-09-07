@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.71
+**Version:** 0.4.72
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 18, 2025 (v0.4.72):**
+    -   **Quest Group UI Fix:** Fixed a bug where adding, editing, or deleting Quest Groups would not update the UI until the page was refreshed. The state management for Quest Groups has been corrected to provide immediate visual feedback for all CUD (Create, Update, Delete) operations.
 
 -   **Week of October 11, 2025 (v0.4.71):**
     -   **Quest To-Do Crash Fix:** Fixed a critical bug where toggling a quest's 'To-Do' status from the Dashboard or Calendar would frequently cause the app to crash. The state management on these pages has been refactored to be more robust, preventing stale data from causing render loops. The "To-Do" toggle feature has also been added to quests opened from the Dashboard for consistency.

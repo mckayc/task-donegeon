@@ -64,6 +64,12 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+        <h3>Real-Time UI Updates</h3>
+        <p>A comprehensive fix has been implemented to address state synchronization issues across the application. Previously, actions such as creating, updating, or deleting assets (like Quests, Items, Markets, etc.) would not immediately reflect in the user interface, requiring a page refresh to see the changes. This has been resolved.</p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Instant Feedback:</strong> All create, update, and clone actions on management pages now immediately update the application's state with the data returned from the server. This ensures that the UI always shows the most current information without any delay.</li>
+            <li><strong>Optimized Deletion:</strong> Deletion actions now use a more robust callback system. When items are deleted, they are instantly removed from the view on the management pages, providing a much smoother and more intuitive administrative experience.</li>
+        </ul>
         <h3>Dashboard Customization</h3>
         <p>The dashboard customization experience has been enhanced for better usability:</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -98,7 +104,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
             <li>
-                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and time read, is saved and synced across your devices.
+                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated and can be triggered by swiping on touch devices. All progress, including location, bookmarks, and time read, is saved and synced across your devices.
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
@@ -166,6 +172,18 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 4, 2025 (v0.4.69)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>eBook Reader Redesign:</strong> The EPUB reader has been completely overhauled with a new UI. It now features an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a subtle page-turn animation, and swipe controls on touch devices for a more intuitive reading experience.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 27, 2025 (v0.4.68)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Real-Time UI Updates:</strong> Implemented a major fix for real-time UI updates. All create, update, and delete actions on management pages now reflect instantly without needing a page refresh, greatly improving the administrative workflow and resolving a long-standing state synchronization bug.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 20, 2025 (v0.4.67)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

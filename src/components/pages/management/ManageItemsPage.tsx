@@ -13,13 +13,14 @@ import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import ItemTable from '../../items/ItemTable';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
-import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useEconomyState, useEconomyDispatch, useEconomyReducerDispatch } from '../../../context/EconomyContext';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { gameAssets: allGameAssets, rewardTypes } = useEconomyState();
     const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
     const { cloneGameAsset } = useEconomyDispatch();
+    const economyDispatch = useEconomyReducerDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
@@ -146,12 +147,13 @@ const ManageItemsPage: React.FC = () => {
 
     const handleConfirmAction = async () => {
         if (!confirmation || confirmation.action !== 'delete') return;
-        try {
-            await deleteSelectedAssets({ gameAssets: confirmation.ids });
-            addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
-            setSelectedAssets([]);
-        } catch (e) { /* error handled in context */ }
+        const idsToDelete = confirmation.ids;
         setConfirmation(null);
+
+        await deleteSelectedAssets({ gameAssets: idsToDelete }, () => {
+            economyDispatch({ type: 'REMOVE_ECONOMY_DATA', payload: { gameAssets: idsToDelete }});
+            setSelectedAssets([]);
+        });
     };
 
     const handleUseIdea = (idea: any) => {

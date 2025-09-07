@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Market } from '../../items/types';
 import Button from '../../user-interface/Button';
@@ -9,7 +8,7 @@ import { useSystemState, useSystemDispatch } from '../../../context/SystemContex
 import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
-import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useEconomyState, useEconomyDispatch, useEconomyReducerDispatch } from '../../../context/EconomyContext';
 import MarketTable from '../../markets/MarketTable';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useUIState } from '../../../context/UIContext';
@@ -78,6 +77,7 @@ export const ManageMarketsPage: React.FC = () => {
     const { deleteSelectedAssets } = useSystemDispatch();
     const { markets } = useEconomyState();
     const { updateMarketsStatus, cloneMarket } = useEconomyDispatch();
+    const economyDispatch = useEconomyReducerDispatch();
     const { isMobileView } = useUIState();
 
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
@@ -113,23 +113,26 @@ export const ManageMarketsPage: React.FC = () => {
         setIsMarketDialogOpen(true);
     };
     
-    const handleConfirmAction = () => {
+    const handleConfirmAction = async () => {
         if (!confirmation) return;
         
-        switch(confirmation.action) {
+        const { action, ids } = confirmation;
+        setConfirmation(null);
+
+        switch(action) {
             case 'delete':
-                deleteSelectedAssets({ markets: confirmation.ids });
+                await deleteSelectedAssets({ markets: ids }, () => {
+                    economyDispatch({ type: 'REMOVE_ECONOMY_DATA', payload: { markets: ids }});
+                    setSelectedMarkets([]);
+                });
                 break;
             case 'open':
-                updateMarketsStatus(confirmation.ids, 'open');
+                await updateMarketsStatus(ids, 'open');
                 break;
             case 'close':
-                updateMarketsStatus(confirmation.ids, 'closed');
+                await updateMarketsStatus(ids, 'closed');
                 break;
         }
-
-        setSelectedMarkets([]);
-        setConfirmation(null);
     };
 
     const getConfirmationMessage = () => {

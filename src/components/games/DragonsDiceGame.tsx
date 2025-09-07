@@ -165,7 +165,6 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
     const [keptDice, setKeptDice] = useState<boolean[]>(new Array(6).fill(false));
     const [selectedDice, setSelectedDice] = useState<boolean[]>(new Array(6).fill(false));
     const [bankableDice, setBankableDice] = useState<boolean[]>(new Array(6).fill(false));
-    const [combinations, setCombinations] = useState<Combination[]>([]);
     
     const [currentRoundScore, setCurrentRoundScore] = useState(0);
     const [bankedRoundScores, setBankedRoundScores] = useState<number[]>([]);
@@ -183,7 +182,6 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
         setKeptDice(new Array(6).fill(false));
         setSelectedDice(new Array(6).fill(false));
         setBankableDice(new Array(6).fill(false));
-        setCombinations([]);
         setCurrentRoundScore(0);
         const nextRound = currentRound + 1;
         setCurrentRound(nextRound);
@@ -196,7 +194,6 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
         setKeptDice(new Array(6).fill(false));
         setSelectedDice(new Array(6).fill(false));
         setBankableDice(new Array(6).fill(false));
-        setCombinations([]);
         setCurrentRoundScore(0);
         setBankedRoundScores([]);
         setCurrentRound(1);
@@ -240,7 +237,6 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
                     const newBankable = new Array(6).fill(false);
                     allScoringDiceIndices.forEach(i => newBankable[i] = true);
                     setBankableDice(newBankable);
-                    // We don't need to set combinations here as it's not used for validation anymore.
                     setGameState('scoring');
                     setMessage("Select your scoring dice.");
                 }
@@ -253,10 +249,6 @@ const DragonsDiceGame: React.FC<DragonsDiceGameProps> = ({ onClose }) => {
         
         const newSelected = [...selectedDice];
         newSelected[index] = !newSelected[index];
-        
-        // This is a simplified selection logic. A more advanced version might group
-        // dice (e.g., selecting one '2' in a 3-of-a-kind selects all three).
-        // For now, this allows individual selection of any bankable die.
         setSelectedDice(newSelected);
     };
     

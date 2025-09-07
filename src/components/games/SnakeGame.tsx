@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 
 interface SnakeGameProps {
   onClose: () => void;
@@ -12,10 +14,12 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
     const [highScore, setHighScore] = useState(0);
     const [gameState, setGameState] = useState<'pre-game' | 'playing' | 'game-over'>('pre-game');
     const [countdown, setCountdown] = useState(3);
+    const [isTabletMode, setIsTabletMode] = useState(false);
     const { submitScore } = useSystemDispatch();
 
     const gameLoopRef = useRef<number | null>(null);
     const directionRef = useRef({ x: 1, y: 0 });
+    const directionChangedInTickRef = useRef(false);
     const snakeRef = useRef([{ x: 10, y: 10 }]);
     const foodRef = useRef({ x: 15, y: 15 });
     const gridSize = 20;
@@ -59,6 +63,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
         if (gameState !== 'playing') return;
 
         const gameLoop = () => {
+            directionChangedInTickRef.current = false; // Allow direction change for the new tick
             const snake = snakeRef.current;
             const head = { x: snake[0].x + directionRef.current.x, y: snake[0].y + directionRef.current.y };
             
@@ -109,16 +114,25 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
             setGameState('playing');
         }
     }, [gameState, countdown]);
+    
+    const handleDirectionChange = useCallback((newDir: { x: number; y: number }) => {
+        if (directionChangedInTickRef.current) return;
+        const { x, y } = directionRef.current;
+        if (newDir.x === -x && x !== 0) return; // Prevent reversing
+        if (newDir.y === -y && y !== 0) return; // Prevent reversing
+        
+        directionRef.current = newDir;
+        directionChangedInTickRef.current = true;
+    }, []);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        const { x, y } = directionRef.current;
         switch (e.key) {
-            case 'ArrowUp': if (y === 0) directionRef.current = { x: 0, y: -1 }; break;
-            case 'ArrowDown': if (y === 0) directionRef.current = { x: 0, y: 1 }; break;
-            case 'ArrowLeft': if (x === 0) directionRef.current = { x: -1, y: 0 }; break;
-            case 'ArrowRight': if (x === 0) directionRef.current = { x: 1, y: 0 }; break;
+            case 'ArrowUp': handleDirectionChange({ x: 0, y: -1 }); break;
+            case 'ArrowDown': handleDirectionChange({ x: 0, y: 1 }); break;
+            case 'ArrowLeft': handleDirectionChange({ x: -1, y: 0 }); break;
+            case 'ArrowRight': handleDirectionChange({ x: 1, y: 0 }); break;
         }
-    }, []);
+    }, [handleDirectionChange]);
 
     const resetGame = useCallback(() => {
         setScore(0);
@@ -147,19 +161,13 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
 
-    const DPadButton: React.FC<{ dir: 'up' | 'down' | 'left' | 'right', children: React.ReactNode }> = ({ dir, children }) => {
+    const DPadButton: React.FC<{ dir: {x: number, y: number}, children: React.ReactNode }> = ({ dir, children }) => {
         const handleClick = () => {
              if (gameState === 'game-over') {
                 resetGame();
                 return;
             }
-             const { x, y } = directionRef.current;
-             switch(dir) {
-                case 'up': if (y === 0) directionRef.current = { x: 0, y: -1 }; break;
-                case 'down': if (y === 0) directionRef.current = { x: 0, y: 1 }; break;
-                case 'left': if (x === 0) directionRef.current = { x: -1, y: 0 }; break;
-                case 'right': if (x === 0) directionRef.current = { x: 1, y: 0 }; break;
-             }
+            handleDirectionChange(dir);
         };
         return <button onClick={handleClick} className="w-16 h-16 bg-stone-700/80 text-white rounded-lg flex items-center justify-center text-2xl active:bg-emerald-600">{children}</button>;
     }
@@ -179,6 +187,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
         <div className="w-full h-full flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-lg flex justify-between items-center mb-4 text-white font-bold text-lg">
                 <span>Score: {score}</span>
+                <ToggleSwitch enabled={isTabletMode} setEnabled={setIsTabletMode} label="Tablet Mode" />
                 <span>High Score: {highScore}</span>
             </div>
             <div className="relative w-[300px] h-[300px] md:w-[500px] md:h-[500px]">
@@ -193,15 +202,29 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
                     </div>
                 )}
             </div>
-             <div className="mt-8 grid grid-cols-3 gap-2 w-52">
-                <div />
-                <DPadButton dir="up">↑</DPadButton>
-                <div />
-                <DPadButton dir="left">←</DPadButton>
-                <DPadButton dir="down">↓</DPadButton>
-                <DPadButton dir="right">→</DPadButton>
-            </div>
-            <Button variant="secondary" onClick={onClose} className="mt-8">Exit Game</Button>
+            {isTabletMode ? (
+                <>
+                    <div className="fixed bottom-10 left-10 flex flex-col items-center gap-2">
+                        <DPadButton dir={{ x: 0, y: -1 }}><ArrowUp /></DPadButton>
+                        <DPadButton dir={{ x: 0, y: 1 }}><ArrowDown /></DPadButton>
+                    </div>
+                    <div className="fixed bottom-10 right-10 flex flex-col items-center gap-2">
+                        <DPadButton dir={{ x: -1, y: 0 }}><ArrowLeft /></DPadButton>
+                        <DPadButton dir={{ x: 1, y: 0 }}><ArrowRight /></DPadButton>
+                    </div>
+                </>
+            ) : (
+                <div className="mt-8 grid grid-cols-3 gap-2 w-52">
+                    <div />
+                    <DPadButton dir={{ x: 0, y: -1 }}><ArrowUp /></DPadButton>
+                    <div />
+                    <DPadButton dir={{ x: -1, y: 0 }}><ArrowLeft /></DPadButton>
+                    <DPadButton dir={{ x: 0, y: 1 }}><ArrowDown /></DPadButton>
+                    <DPadButton dir={{ x: 1, y: 0 }}><ArrowRight /></DPadButton>
+                </div>
+            )}
+            
+            <Button variant="secondary" onClick={onClose} className="fixed bottom-4 left-1/2 -translate-x-1/2">Exit Game</Button>
         </div>
     );
 };

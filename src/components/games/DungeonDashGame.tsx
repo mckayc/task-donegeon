@@ -108,11 +108,11 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
             obstacle.x -= gameSpeedRef.current;
 
             // Collision detection with spikes
+            const spikeTipY = obstacle.y - obstacle.height;
             if (
                 player.x < obstacle.x + obstacle.width &&
                 player.x + player.width > obstacle.x &&
-                player.y < obstacle.y + obstacle.height &&
-                player.y + player.height > obstacle.y
+                player.y + player.height > spikeTipY
             ) {
                 setGameState('game-over');
                 if (score > highScore) setHighScore(score);

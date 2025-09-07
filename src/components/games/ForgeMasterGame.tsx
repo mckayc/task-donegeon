@@ -107,26 +107,29 @@ export const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => 
         let feedbackColor = '239, 68, 68'; // Red for miss
         let comboBonus = 0;
         let newStrikes = strikes;
+        let newCombo = combo;
 
         if (indicatorX >= perfectZoneX && indicatorX <= perfectZoneX + perfectZoneWidth) {
             strikeScore = 100;
             feedbackText = 'Perfect!';
             feedbackColor = '74, 222, 128'; // Green
-            setCombo(c => {
-                comboBonus = (c + 1) * 10;
-                return c + 1;
-            });
+            newCombo += 1;
+            comboBonus = newCombo * 10;
+            indicatorRef.current.speed *= 1.05; // Speed up
         } else if (indicatorX >= targetZoneX && indicatorX <= targetZoneX + targetZoneWidth) {
             strikeScore = 50;
             feedbackText = 'Good!';
             feedbackColor = '250, 204, 21'; // Yellow
-            setCombo(0);
+            newCombo = 0;
+            indicatorRef.current.speed = 4; // Reset speed
         } else {
-            setCombo(0);
+            newCombo = 0;
             newStrikes = strikes - 1;
-            setStrikes(newStrikes);
+            indicatorRef.current.speed = 4; // Reset speed
         }
         
+        setCombo(newCombo);
+        setStrikes(newStrikes);
         const finalScore = score + strikeScore + comboBonus;
         setScore(finalScore);
         setFeedback({ text: `${feedbackText}${comboBonus > 0 ? ` +${comboBonus} combo` : ''}`, color: feedbackColor, x: indicatorX, y: FORGE_BAR_Y - 20, alpha: 1 });
@@ -167,7 +170,7 @@ export const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => 
              <div className="w-full max-w-[600px] flex justify-between items-center mb-4 text-white font-bold text-lg">
                 <span>Score: {score}</span>
                 <span className="text-2xl font-medieval text-amber-300">Forge Master</span>
-                <span>Strikes: {strikes}</span>
+                <span>Strikes: {strikes} | Combo: {combo}x</span>
             </div>
              <div className="relative" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }} onClick={handleStrike} >
                 <canvas 

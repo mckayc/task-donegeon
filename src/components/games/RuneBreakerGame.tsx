@@ -55,6 +55,7 @@ const RuneBreakerGame: React.FC<RuneBreakerGameProps> = ({ onClose }) => {
         ballRef.current = { x: GAME_WIDTH / 2, y: GAME_HEIGHT - 30, dx: 4 * (1 + (nextLevel - 1) * 0.1), dy: -4 * (1 + (nextLevel - 1) * 0.1), radius: 8 };
         paddleRef.current.x = GAME_WIDTH / 2 - paddleRef.current.width / 2;
         createRunes(nextLevel);
+        powerUpsRef.current = [];
         setGameState('playing');
     }, [createRunes]);
     

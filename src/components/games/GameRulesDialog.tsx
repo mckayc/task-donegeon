@@ -30,11 +30,11 @@ const RulesContent: React.FC<{ gameId: string }> = ({ gameId }) => {
              return (
                 <div className={commonClasses}>
                     <h4>Objective</h4>
-                    <p>Be the first player to reach the target score (usually 5,000 or 10,000 points).</p>
+                    <p>Score as many points as possible over 5 rounds.</p>
                     <h4>How to Play</h4>
                     <ol>
                         <li>On your turn, you roll all six dice. You must select at least one scoring die or combination.</li>
-                        <li>After selecting your dice, you can either **Bank** your current turn's score and end your turn, or **Roll Again** with the remaining dice.</li>
+                        <li>After selecting your dice, you can either **Bank** your current turn's score and end your round, or **Roll Again** with the remaining dice.</li>
                         <li>If you roll and none of the new dice can score, you **BUST**! You lose all points accumulated during that turn.</li>
                         <li>If you score with all six dice in one or more rolls (called "Hot Dice"), you can roll all six dice again and continue your turn.</li>
                     </ol>
@@ -125,10 +125,10 @@ const RulesContent: React.FC<{ gameId: string }> = ({ gameId }) => {
                     </ul>
                     <h4>Scoring</h4>
                      <ul className="list-disc list-inside space-y-1">
-                        <li>1 Line (Single): <strong>100</strong> points x level</li>
-                        <li>2 Lines (Double): <strong>300</strong> points x level</li>
-                        <li>3 Lines (Triple): <strong>500</strong> points x level</li>
-                        <li>4 Lines (Tetris): <strong>800</strong> points x level</li>
+                        <li>1 Line (Single): <strong>100</strong> points x (level + 1)</li>
+                        <li>2 Lines (Double): <strong>300</strong> points x (level + 1)</li>
+                        <li>3 Lines (Triple): <strong>500</strong> points x (level + 1)</li>
+                        <li>4 Lines (Tetris): <strong>800</strong> points x (level + 1)</li>
                     </ul>
                 </div>
             );

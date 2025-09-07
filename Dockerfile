@@ -1,6 +1,6 @@
 # --- Stage 1: Build the React Frontend ---
 # We use 'AS build' to name this stage. It will be discarded later,
-# leaving behind only its final output (the 'dist' folder).
+# leaving behind only its final output (the 'dist' folder)
 FROM node:20-alpine AS build
 
 # Set the working directory inside the container for the build process.

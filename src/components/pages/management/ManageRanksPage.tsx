@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useContext } from 'react';
 import { Rank } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditRankDialog from '../../settings/EditRankDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
-import { useProgressionState } from '../../../context/ProgressionContext';
+import { useProgressionState, ProgressionDispatchContext } from '../../../context/ProgressionContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import RankTable from '../../ranks/RankTable';
 import { useUIState } from '../../../context/UIContext';
@@ -64,6 +64,8 @@ const ManageRanksPage: React.FC = () => {
     const { settings } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { isMobileView } = useUIState();
+    const progressionDispatch = useContext(ProgressionDispatchContext)!.dispatch;
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -98,9 +100,12 @@ const ManageRanksPage: React.FC = () => {
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
             deleteSelectedAssets({ ranks: deletingIds }, () => {
+                progressionDispatch({ type: 'REMOVE_PROGRESSION_DATA', payload: { ranks: deletingIds } });
                 setDeletingIds([]);
                 setSelectedRanks(prev => prev.filter(id => !deletingIds.includes(id)));
             });
+        } else {
+            setDeletingIds([]);
         }
     };
     

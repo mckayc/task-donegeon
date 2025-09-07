@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.68
+**Version:** 0.4.71
 
 ---
 
@@ -15,8 +15,14 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of September 27, 2025 (v0.4.68):**
+-   **Week of October 11, 2025 (v0.4.71):**
+    -   **Quest To-Do Crash Fix:** Fixed a critical bug where toggling a quest's 'To-Do' status from the Dashboard or Calendar would frequently cause the app to crash. The state management on these pages has been refactored to be more robust, preventing stale data from causing render loops. The "To-Do" toggle feature has also been added to quests opened from the Dashboard for consistency.
+
+-   **Week of September 27, 2025 (v0.4.70):**
     -   **Real-Time UI Updates:** Implemented a major fix for real-time UI updates. All create, update, and delete actions on management pages now reflect instantly without needing a page refresh, greatly improving the administrative workflow and resolving a long-standing state synchronization bug.
+
+-   **Week of October 4, 2025 (v0.4.69):**
+    -   **Service Worker Update Fix:** Resolved a critical issue where the application would fail to automatically update on some browsers due to aggressive caching of the service worker script. The app now explicitly checks for updates on every page load, ensuring users receive new versions promptly.
 
 -   **Week of September 20, 2025 (v0.4.67):**
     -   **Arcade UX & Gameplay Improvements:** Made several enhancements to the Arcade. The "Play" button on game cards is now a primary, full-width button for better visibility. The Snake game's on-screen controls are now always visible on tablets, improving playability on touch devices. Archer's Folly has been updated with a new aiming guide showing power and trajectory, and its difficulty now progressively increases as the player's score rises.

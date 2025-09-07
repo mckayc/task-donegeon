@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.68 - ePub Tests",
-  "version": "0.4.68",
-  "description": "Implemented a major fix for real-time UI updates. All create, update, and delete actions on management pages now reflect instantly without needing a page refresh, greatly improving the administrative workflow.",
+  "name": "Task Donegeon 2.0 - 0.4.71 - Quest To-Do Crash Fix",
+  "version": "0.4.71",
+  "description": "Fixed a critical bug where toggling a quest's 'To-Do' status from the Dashboard or Calendar would cause the app to crash. Refactored state management on affected pages to prevent stale data and ensure stability.",
   "requestFramePermissions": [
     "camera"
   ],

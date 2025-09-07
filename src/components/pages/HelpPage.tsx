@@ -173,9 +173,15 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of September 27, 2025 (v0.4.68)</h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 27, 2025 (v0.4.70)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Real-Time UI Updates:</strong> Implemented a major fix for real-time UI updates. All create, update, and delete actions on management pages now reflect instantly without needing a page refresh, greatly improving the administrative workflow and resolving a long-standing state synchronization bug.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 4, 2025 (v0.4.69)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Service Worker Update Fix:</strong> Resolved a critical issue where the application would fail to automatically update on some browsers due to aggressive caching of the service worker script. The app now explicitly checks for updates on every page load, ensuring users receive new versions promptly.</li>
             </ul>
         </div>
         <div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';
@@ -38,18 +37,18 @@ const SharedCalendarPage: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
     const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
-    const [selectedQuestDetails, setSelectedQuestDetails] = useState<{ quest: Quest; user: User } | null>(null);
+    const [selectedQuestDetailsId, setSelectedQuestDetailsId] = useState<{ questId: string; userId: string } | null>(null);
     const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<{ quest: Quest; user: User } | null>(null);
 
-    // Safely syncs the dialog's quest data with the main quests list from the provider.
-    useEffect(() => {
-        if (selectedQuestDetails) {
-            const updatedQuestInList = quests.find(q => q.id === selectedQuestDetails.quest.id);
-            if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(selectedQuestDetails.quest)) {
-                setSelectedQuestDetails(prev => prev ? { ...prev, quest: updatedQuestInList } : null);
-            }
+    const selectedQuestDetails = useMemo(() => {
+        if (!selectedQuestDetailsId) return null;
+        const quest = quests.find(q => q.id === selectedQuestDetailsId.questId);
+        const user = users.find(u => u.id === selectedQuestDetailsId.userId);
+        if (quest && user) {
+            return { quest, user };
         }
-    }, [quests, selectedQuestDetails]);
+        return null;
+    }, [selectedQuestDetailsId, quests, users]);
 
 
     const sharedUsers = useMemo(() => {
@@ -142,7 +141,7 @@ const SharedCalendarPage: React.FC = () => {
         } else {
             proceedWithCompletion(quest, user);
         }
-        setSelectedQuestDetails(null);
+        setSelectedQuestDetailsId(null);
     };
     
     const conditionDependencies = useMemo<ConditionDependencies & { allConditionSets: ConditionSet[] }>(() => ({
@@ -154,7 +153,7 @@ const SharedCalendarPage: React.FC = () => {
         if (lockStatus.isLocked) {
             setViewingConditionsForQuest({ quest, user });
         } else {
-            setSelectedQuestDetails({ quest, user });
+            setSelectedQuestDetailsId({ questId: quest.id, userId: user.id });
         }
     };
 
@@ -332,7 +331,7 @@ const SharedCalendarPage: React.FC = () => {
                 <QuestDetailDialog
                     quest={selectedQuestDetails.quest}
                     userForView={selectedQuestDetails.user}
-                    onClose={() => setSelectedQuestDetails(null)}
+                    onClose={() => setSelectedQuestDetailsId(null)}
                     onComplete={handleStartCompletionFromDialog}
                     onToggleTodo={handleToggleTodo}
                     isTodo={selectedQuestDetails.quest.type === QuestType.Venture && selectedQuestDetails.quest.todoUserIds?.includes(selectedQuestDetails.user.id)}

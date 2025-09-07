@@ -71,7 +71,8 @@ const CalendarPage: React.FC = () => {
     const [viewRange, setViewRange] = useState<{ start: Date; end: Date } | null>(null);
     const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
     const [viewingEvent, setViewingEvent] = useState<ScheduledEvent | null>(null);
-    const [viewingQuest, setViewingQuest] = useState<{ quest: Quest; date: Date } | null>(null);
+    const [viewingQuestId, setViewingQuestId] = useState<string | null>(null);
+    const [viewingQuestDate, setViewingQuestDate] = useState<Date | null>(null);
     const [completingQuest, setCompletingQuest] = useState<{ quest: Quest; date: Date } | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [createInitialData, setCreateInitialData] = useState<Partial<Quest> & { hasDeadlines?: boolean } | null>(null);
@@ -80,22 +81,14 @@ const CalendarPage: React.FC = () => {
     
     const calendarRef = useRef<FullCalendar>(null);
 
+    const viewingQuest = useMemo(() => viewingQuestId ? quests.find(q => q.id === viewingQuestId) : null, [viewingQuestId, quests]);
+
     const chronicles = useChronicles({
         startDate: viewRange?.start || new Date(),
         endDate: viewRange?.end || new Date(),
     });
     
     if (!currentUser) return null;
-
-    // Safely syncs the dialog's quest data with the main quests list from the provider.
-    useEffect(() => {
-        if (viewingQuest) {
-            const updatedQuestInList = quests.find(q => q.id === viewingQuest.quest.id);
-            if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(viewingQuest.quest)) {
-                setViewingQuest(prev => prev ? { ...prev, quest: updatedQuestInList } : null);
-            }
-        }
-    }, [quests, viewingQuest]);
     
     const conditionDependencies = useMemo(() => ({
         ...progressionState, ...economyState, ...communityState, quests, questGroups, questCompletions, allConditionSets: systemState.settings.conditionSets, appMode
@@ -315,7 +308,8 @@ const CalendarPage: React.FC = () => {
             if (lockStatus.isLocked) {
                 setViewingConditionsForQuest(props.quest);
             } else {
-                setViewingQuest({ quest: props.quest, date: clickInfo.event.start || new Date() });
+                setViewingQuestId(props.quest.id);
+                setViewingQuestDate(clickInfo.event.start || new Date());
             }
         } else if (clickInfo.event.url) {
             window.open(clickInfo.event.url, '_blank');
@@ -381,17 +375,18 @@ const CalendarPage: React.FC = () => {
     };
 
     const handleStartCompletion = () => {
-        if (!viewingQuest) return;
+        if (!viewingQuest || !viewingQuestDate) return;
         const isAvailable = isQuestAvailableForUser(
-            viewingQuest.quest,
+            viewingQuest,
             questCompletions.filter(c => c.userId === currentUser.id),
             new Date(),
             scheduledEvents,
             appMode
         );
         if (isAvailable) {
-            setCompletingQuest(viewingQuest);
-            setViewingQuest(null);
+            setCompletingQuest({ quest: viewingQuest, date: viewingQuestDate });
+            setViewingQuestId(null);
+            setViewingQuestDate(null);
         } else {
              addNotification({ type: 'error', message: 'This quest cannot be completed at this time.' });
         }
@@ -399,13 +394,12 @@ const CalendarPage: React.FC = () => {
 
     const handleToggleTodo = () => {
         if (!viewingQuest || !currentUser) return;
-        const { quest } = viewingQuest;
-        const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
+        const isCurrentlyTodo = viewingQuest.todoUserIds?.includes(currentUser.id);
         
         if (isCurrentlyTodo) {
-            unmarkQuestAsTodo(quest.id, currentUser.id);
+            unmarkQuestAsTodo(viewingQuest.id, currentUser.id);
         } else {
-            markQuestAsTodo(quest.id, currentUser.id);
+            markQuestAsTodo(viewingQuest.id, currentUser.id);
         }
     };
 
@@ -506,13 +500,13 @@ const CalendarPage: React.FC = () => {
             {viewingEvent && (
                 <EventDetailDialog event={viewingEvent} onClose={() => setViewingEvent(null)} />
             )}
-            {viewingQuest && (
+            {viewingQuest && viewingQuestDate && (
                 <QuestDetailDialog
-                    quest={viewingQuest.quest}
-                    onClose={() => setViewingQuest(null)}
+                    quest={viewingQuest}
+                    onClose={() => { setViewingQuestId(null); setViewingQuestDate(null); }}
                     onComplete={handleStartCompletion}
                     onToggleTodo={handleToggleTodo}
-                    isTodo={!!(viewingQuest.quest.type === QuestType.Venture && viewingQuest.quest.todoUserIds?.includes(currentUser.id))}
+                    isTodo={!!(viewingQuest.type === QuestType.Venture && viewingQuest.todoUserIds?.includes(currentUser.id))}
                 />
             )}
             {completingQuest && (

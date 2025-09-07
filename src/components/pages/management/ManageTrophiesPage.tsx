@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -6,7 +6,7 @@ import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
-import { useProgressionState } from '../../../context/ProgressionContext';
+import { useProgressionState, ProgressionDispatchContext } from '../../../context/ProgressionContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import TrophyTable from '../../trophies/TrophyTable';
 import { useUIState } from '../../../context/UIContext';
@@ -67,6 +67,8 @@ const ManageTrophiesPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
     const { deleteSelectedAssets } = useSystemDispatch();
     const { isMobileView } = useUIState();
+    const progressionDispatch = useContext(ProgressionDispatchContext)!.dispatch;
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -98,6 +100,7 @@ const ManageTrophiesPage: React.FC = () => {
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
             deleteSelectedAssets({ trophies: deletingIds }, () => {
+                progressionDispatch({ type: 'REMOVE_PROGRESSION_DATA', payload: { trophies: deletingIds } });
                 setSelectedTrophies(prev => prev.filter(id => !deletingIds.includes(id)));
                 setDeletingIds([]);
             });

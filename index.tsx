@@ -21,6 +21,11 @@ if ('serviceWorker' in navigator) {
     console.log('SW registered: ', registration);
     swLogger.log('REGISTRATION_SUCCESS', { scope: registration.scope });
 
+    // Force an update check on every page load.
+    // This bypasses the browser's HTTP cache for sw.js, fixing issues
+    // where the browser might not detect a new service worker version.
+    registration.update();
+
     // 1. Check for a waiting worker immediately on registration.
     // This catches updates that were downloaded before this page loaded.
     if (registration.waiting) {

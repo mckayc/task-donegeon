@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { Quest, DashboardLayout, ConditionSet } from '../../types';
+import { Quest, DashboardLayout, ConditionSet, QuestType } from '../../types';
 import RankCard from '../dashboard/RankCard';
 import InventoryCard from '../dashboard/InventoryCard';
 import LeaderboardCard from '../dashboard/LeaderboardCard';
@@ -22,10 +23,9 @@ import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
-import { useQuestsState } from '../../context/QuestsContext';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { QuestType } from '../quests/types';
 
 export const allCardComponents: { [key: string]: { name: string, component: React.FC<any> } } = {
     quickActions: { name: 'Quick Actions', component: QuickActionsCard },
@@ -54,7 +54,7 @@ const defaultLayout: DashboardLayout = {
 };
 
 const Dashboard: React.FC = () => {
-    const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
+    const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [isCustomizeDialogOpen, setIsCustomizeDialogOpen] = useState(false);
     const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
@@ -64,6 +64,13 @@ const Dashboard: React.FC = () => {
     const { updateUser } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { activePageMeta, appMode } = useUIState();
+    const { quests } = useQuestsState();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
+
+    const selectedQuest = useMemo(() => {
+        if (!selectedQuestId) return null;
+        return quests.find(q => q.id === selectedQuestId);
+    }, [selectedQuestId, quests]);
 
     // Dependencies for condition checking
     const progressionState = useProgressionState();
@@ -178,14 +185,25 @@ const Dashboard: React.FC = () => {
         if (lockStatus.isLocked) {
             setViewingConditionsForQuest(quest);
         } else {
-            setSelectedQuest(quest);
+            setSelectedQuestId(quest.id);
         }
     };
 
     const handleStartCompletion = () => {
         if (selectedQuest) {
             setCompletingQuest(selectedQuest);
-            setSelectedQuest(null);
+            setSelectedQuestId(null);
+        }
+    };
+
+    const handleToggleTodo = () => {
+        if (!selectedQuest || !currentUser) return;
+        const isCurrentlyTodo = selectedQuest.todoUserIds?.includes(currentUser.id);
+        
+        if (isCurrentlyTodo) {
+            unmarkQuestAsTodo(selectedQuest.id, currentUser.id);
+        } else {
+            markQuestAsTodo(selectedQuest.id, currentUser.id);
         }
     };
     
@@ -284,7 +302,13 @@ const Dashboard: React.FC = () => {
             </div>
             
             {selectedQuest && (
-                <QuestDetailDialog quest={selectedQuest} onClose={() => setSelectedQuest(null)} onComplete={handleStartCompletion} />
+                <QuestDetailDialog
+                    quest={selectedQuest}
+                    onClose={() => setSelectedQuestId(null)}
+                    onComplete={handleStartCompletion}
+                    onToggleTodo={handleToggleTodo}
+                    isTodo={selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id)}
+                />
             )}
             {completingQuest && (
                 <CompleteQuestDialog quest={completingQuest} onClose={() => setCompletingQuest(null)} />

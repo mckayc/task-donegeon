@@ -1,4 +1,5 @@
 
+
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore
 } from './types';
@@ -138,6 +139,7 @@ export const importBugReportsAPI = (reports: BugReport[], mode: 'merge' | 'repla
 export const addModifierDefinitionAPI = (data: Omit<ModifierDefinition, 'id'>) => apiRequest('POST', '/api/setbacks', data);
 export const updateModifierDefinitionAPI = (data: ModifierDefinition) => apiRequest('PUT', `/api/setbacks/${data.id}`, data);
 export const applyModifierAPI = (userId: string, modifierId: string, reason: string, appliedById: string, overrides?: Partial<ModifierDefinition>) => apiRequest('POST', '/api/applied-modifiers/apply', { userId, modifierDefinitionId: modifierId, reason, appliedById, overrides });
+export const bulkApplyModifierAPI = (data: { userIds: string[], modifierDefinitionId: string, reason: string, appliedById: string }) => apiRequest('POST', '/api/applied-modifiers/bulk-apply', data);
 export const deleteAppliedModifiersAPI = (ids: string[]) => apiRequest('DELETE', '/api/applied-modifiers', { ids });
 export const cloneUserAPI = (userId: string) => apiRequest('POST', `/api/users/clone/${userId}`);
 export const sendMessageAPI = (data: { senderId: string; recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => apiRequest('POST', '/api/chat/send', data);

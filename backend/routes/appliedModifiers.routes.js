@@ -5,7 +5,8 @@ const {
     createAppliedModifier,
     updateAppliedModifier,
     deleteAppliedModifiers,
-    applyModifier 
+    applyModifier,
+    bulkApplyModifier
 } = require('../controllers/appliedModifiers.controller');
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.delete('/', asyncMiddleware(deleteAppliedModifiers));
 
 // --- Actions ---
 router.post('/apply', asyncMiddleware(applyModifier));
+router.post('/bulk-apply', asyncMiddleware(bulkApplyModifier));
 
 module.exports = router;

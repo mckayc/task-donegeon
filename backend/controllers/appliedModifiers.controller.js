@@ -32,10 +32,18 @@ const applyModifier = async (req, res) => {
     res.json(result);
 };
 
+const bulkApplyModifier = async (req, res) => {
+    const { userIds, modifierDefinitionId, reason, appliedById } = req.body;
+    const result = await modifierService.bulkApply(userIds, modifierDefinitionId, reason, appliedById);
+    if (!result) return res.status(404).json({ error: 'Failed to apply modifiers. Check if users and definition exist.' });
+    res.json(result);
+};
+
 module.exports = {
     getAllAppliedModifiers,
     createAppliedModifier,
     updateAppliedModifier,
     deleteAppliedModifiers,
     applyModifier,
+    bulkApplyModifier,
 };

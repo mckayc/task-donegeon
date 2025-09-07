@@ -1,4 +1,3 @@
-
 // Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
 // FIX: Fix import path for types to resolve module not found error.
@@ -7,8 +6,10 @@ import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI, playMinigameAPI, submitScoreAPI, updateMinigameAPI, resetAllScoresForGameAPI, resetScoresForUsersAPI } from '../api';
+import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI, playMinigameAPI, submitScoreAPI, updateMinigameAPI, resetAllScoresForGameAPI, resetScoresForUsersAPI, bulkApplyModifierAPI } from '../api';
 import { swLogger } from '../utils/swLogger';
+// FIX: Import `useQuestsReducerDispatch` to allow dispatching quest-related state updates.
+import { useQuestsReducerDispatch } from './QuestsContext';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -64,6 +65,8 @@ export interface SystemDispatch {
   addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
   updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
   applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
+  // FIX: Added 'bulkApplyModifier' to the dispatch interface to support applying modifiers to multiple users at once.
+  bulkApplyModifier: (data: { userIds: string[], modifierDefinitionId: string, reason: string }) => Promise<void>;
   deleteAppliedModifier: (modifierId: string) => Promise<void>;
   cloneUser: (userId: string) => Promise<User | null>;
   sendMessage: (messageData: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => Promise<ChatMessage | null>;
@@ -148,6 +151,8 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { addNotification } = useNotificationsDispatch();
     const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
     const { currentUser } = useAuthState();
+    // FIX: Import the quests reducer dispatch to handle quest updates from system actions.
+    const questsDispatch = useQuestsReducerDispatch();
 
     const setUpdateAvailable = useCallback((worker: ServiceWorker | null) => {
         dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
@@ -304,6 +309,26 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
             return false;
         },
+        // FIX: Implemented 'bulkApplyModifier' to handle applying modifiers to multiple users.
+        bulkApplyModifier: async (data) => {
+            if (!currentUser) return;
+            const result = await apiAction(() => bulkApplyModifierAPI({ ...data, appliedById: currentUser.id }), `Modifier applied to ${data.userIds.length} user(s).`);
+            if (result && (result as any).updates) {
+                const { users, appliedModifiers, quests, chronicleEvents } = (result as any).updates;
+                if (users) {
+                    users.forEach((u: User) => updateUser(u.id, u));
+                }
+                if (appliedModifiers) {
+                    dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { appliedModifiers } });
+                }
+                if (chronicleEvents) {
+                    dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { chronicleEvents } });
+                }
+                if (quests) {
+                    questsDispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests } });
+                }
+            }
+        },
         deleteAppliedModifier: async (modifierId: string) => {
             const result = await apiAction(() => deleteAppliedModifiersAPI([modifierId]));
             if (result === null) { // Expect 204 No Content on success
@@ -376,7 +401,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         installUpdate,
         checkForUpdate,
-    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate, setUpdateAvailable, state.gameScores]);
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate, setUpdateAvailable, state.gameScores, questsDispatch]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

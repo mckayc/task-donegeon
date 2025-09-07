@@ -1,12 +1,13 @@
+
 import React, { useState, useMemo } from 'react';
 import { Market, Minigame } from '../../../types';
 import Card from '../user-interface/Card';
-import { useSystemState } from '../../context/SystemContext';
+import { useSystemState } from '../../context/SystemState';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIDispatch } from '../../context/UIContext';
 import Button from '../user-interface/Button';
 import ConfirmPlayDialog from './ConfirmPlayDialog';
-import GameStatsDialog from '../games/GameStatsDialog';
+import GameSummaryDialog from './GameSummaryDialog';
 
 interface ArcadeViewProps {
     market: Market;
@@ -17,9 +18,8 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
     const { currentUser, users } = useAuthState();
     const { setActiveMarketId } = useUIDispatch();
     const [gameToPlay, setGameToPlay] = useState<Minigame | null>(null);
-    const [gameForStats, setGameForStats] = useState<Minigame | null>(null);
+    const [gameForSummary, setGameForSummary] = useState<Minigame | null>(null);
 
-    // Calculate scores for each game
     const scoresByGame = useMemo(() => {
         const scores: { 
             [gameId: string]: { 
@@ -55,9 +55,7 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
         return scores;
     }, [minigames, gameScores, currentUser, users]);
 
-    // Calculate overall leaderboard
     const arcadeLegends = useMemo(() => {
-        // 1. Find the highest score for each user for each game
         const userHighScoresByGame: { [userId: string]: { [gameId: string]: number } } = {};
         gameScores.forEach(score => {
             if (!userHighScoresByGame[score.userId]) {
@@ -69,14 +67,12 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
             }
         });
 
-        // 2. Sum up the high scores for each user
         const userTotalScores: { userId: string, totalScore: number }[] = [];
         Object.keys(userHighScoresByGame).forEach(userId => {
             const totalScore = Object.values(userHighScoresByGame[userId]).reduce((sum, score) => sum + score, 0);
             userTotalScores.push({ userId, totalScore });
         });
         
-        // 3. Sort and get top 5, adding user names
         return userTotalScores
             .sort((a, b) => b.totalScore - a.totalScore)
             .slice(0, 5)
@@ -117,40 +113,45 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
                     {minigames.map(game => {
                         const scores = scoresByGame[game.id] || { userHighScore: 0, globalHighScore: 0, globalHighScoreHolder: null };
                         return (
-                            <div key={game.id} className="bg-indigo-900/30 border-2 border-indigo-700/60 rounded-xl shadow-lg flex flex-col h-full">
+                            <div key={game.id} className="bg-indigo-900/30 border-2 border-indigo-700/60 rounded-xl shadow-lg flex flex-col h-full hover:border-indigo-500 hover:scale-105 transition-all duration-200">
                                 <div className="p-4 border-b border-white/10">
                                     <div className="text-6xl text-center mb-3">{game.icon}</div>
                                     <h4 className="font-bold text-lg text-stone-100 text-center">{game.name}</h4>
-                                    <p className="text-stone-300 text-sm mt-1 text-center">{game.description}</p>
                                 </div>
                                 <div className="p-4 flex-grow space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="font-semibold text-stone-400">Your High Score:</span>
+                                        <span className="font-semibold text-stone-400">Your Best:</span>
                                         <span className="font-bold text-amber-300">{scores.userHighScore}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="font-semibold text-stone-400">Global High Score:</span>
+                                        <span className="font-semibold text-stone-400">High Score:</span>
                                          <span className="font-bold text-emerald-300 text-right">
                                             {scores.globalHighScore} {scores.globalHighScoreHolder && <span className="text-xs text-stone-400 font-normal block">({scores.globalHighScoreHolder})</span>}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-center gap-2">
-                                    <Button onClick={() => setGameToPlay(game)}>
-                                        Play for 1 🪙
+                                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-center">
+                                    <Button onClick={() => setGameForSummary(game)} className="w-full">
+                                        Play for {game.cost} 🪙
                                     </Button>
-                                    <Button variant="secondary" size="sm" onClick={() => setGameForStats(game)}>Stats</Button>
                                 </div>
                             </div>
                         );
                     })}
                 </div>
             </Card>
+            {gameForSummary && (
+                <GameSummaryDialog 
+                    game={gameForSummary}
+                    onClose={() => setGameForSummary(null)}
+                    onPlay={() => {
+                        setGameToPlay(gameForSummary);
+                        setGameForSummary(null);
+                    }}
+                />
+            )}
             {gameToPlay && (
                 <ConfirmPlayDialog game={gameToPlay} onClose={() => setGameToPlay(null)} />
-            )}
-            {gameForStats && (
-                <GameStatsDialog game={gameForStats} onClose={() => setGameForStats(null)} />
             )}
         </>
     );

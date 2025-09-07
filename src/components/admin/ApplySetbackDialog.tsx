@@ -9,13 +9,15 @@ import RewardInputGroup from '../forms/RewardInputGroup';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
+import NumberInput from '../user-interface/NumberInput';
 
-interface ApplyModifierDialogProps {
+// FIX: Renamed props interface to match the component filename and intent.
+interface ApplySetbackDialogProps {
     setback: ModifierDefinition;
     onClose: () => void;
 }
 
-const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modifier, onClose }) => {
+const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback: modifier, onClose }) => {
     const { applyModifier } = useSystemDispatch();
     const { currentUser, users } = useAuthState();
     const { markets, rewardTypes } = useEconomyState();
@@ -30,6 +32,12 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     const redemptionQuests = useMemo(() => {
         return quests.filter(q => q.kind === QuestKind.Redemption);
     }, [quests]);
+
+    useEffect(() => {
+        if (modifier) {
+            setFormData(JSON.parse(JSON.stringify(modifier)));
+        }
+    }, [modifier]);
 
     const handleAddEffect = () => {
         const newEffect: ModifierEffect = formData.category === 'Trial'

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.78 - EPUB Caching & Offline Support",
-  "version": "0.4.78",
-  "description": "Implemented local caching for EPUB files, enabling faster loads and offline reading for eBooks. Added a download progress bar to the reader for better user feedback during initial download.",
+  "name": "Task Donegeon 2.0 - 0.4.79 - Bulk Apply Modifiers",
+  "version": "0.4.79",
+  "description": "Implemented bulk application of Triumphs & Trials from the User Management page, allowing administrators to apply modifiers to multiple users at once with a clear audit trail.",
   "requestFramePermissions": [
     "camera"
   ],

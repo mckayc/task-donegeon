@@ -198,7 +198,7 @@ const initializeApp = async () => {
         snakeGame = manager.create(MinigameEntity, {
             id: 'minigame-snake',
             name: 'Snake',
-            description: 'The classic game of snake. Eat the food to grow longer, but don\'t run into yourself or the walls!',
+            description: 'The classic game of snake. Eat the food to grow longer, but don\\'t run into yourself or the walls!',
             icon: '🐍',
             cost: 1, // Costs 1 Game Token
         });
@@ -213,6 +213,7 @@ const initializeApp = async () => {
         { id: 'minigame-dungeon-dash', name: 'Dungeon Dash', description: 'A simple side-scrolling "endless runner." An adventurer runs automatically, and the player taps to make them jump over pits and slide under obstacles.', icon: '🏃‍♂️', cost: 1 },
         { id: 'minigame-forge-master', name: 'Forge Master', description: 'A rhythm and timing game. The player must click or tap at the right moment to strike a piece of hot metal with a hammer, following a moving bar on the screen.', icon: '🔨', cost: 1 },
         { id: 'minigame-archers-folly', name: "Archer's Folly", description: 'An archery game where the player clicks and drags to aim their bow. They must hit a series of moving targets, accounting for arrow drop over distance.', icon: '🏹', cost: 1 },
+        { id: 'minigame-tetris', name: 'Tetris', description: 'The classic block-stacking puzzle game. Clear lines to score points!', icon: '🧱', cost: 1 },
     ];
 
     for (const gameData of newMinigames) {
@@ -245,7 +246,7 @@ const initializeApp = async () => {
     const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
     const gameTokenReward = await rewardTypeRepo.findOneBy({ id: 'core-token' });
     if (!gameTokenReward) {
-        console.log('[Data Sync] Game Token reward type not found. Creating it...');
+        console.log('[Data Sync] Game Token reward type not found. Creating it...`);
         const gameTokenData = INITIAL_REWARD_TYPES.find(rt => rt.id === 'core-token');
         if (gameTokenData) {
             const newGameToken = rewardTypeRepo.create(gameTokenData);

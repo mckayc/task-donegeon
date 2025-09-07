@@ -1,4 +1,5 @@
 
+
 const minigameService = require('../services/minigame.service');
 
 const getAllMinigames = async (req, res) => {

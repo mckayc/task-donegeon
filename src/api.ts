@@ -1,7 +1,6 @@
 
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore
-// FIX: Corrected the import path for `types` from `../types` to `./types` as the file is in the `src` root.
 } from './types';
 
 // Generic API Request Function

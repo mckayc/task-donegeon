@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.73
+**Version:** 0.4.76
 
 ---
 
@@ -15,14 +15,30 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of October 25, 2025 (v0.4.73):**
-    -   **Bug Reporter Visibility Fix:** Fixed a bug where the Bug Reporter tool was visible to all users. It is now correctly restricted to Donegeon Masters (admins) only, ensuring non-admin users have a cleaner interface.
+-   **Week of November 15, 2025 (v0.4.76):**
+    -   **New Game: Tetris!** Added a complete, from-scratch implementation of the classic puzzle game Tetris to the Arcade, featuring scoring, levels, a next-piece preview, and on-screen controls.
+    -   **Tablet Mode:** The new Tetris game includes a "Tablet Mode" toggle, which provides an optimized two-handed control layout for larger devices.
+    -   **Game Rules:** A new "Game Rules" dialog has been created to show players how to play any game in the Arcade.
+
+-   **Week of November 8, 2025 (v0.4.75):**
+    -   **Arcade Gameplay Overhaul:** Implemented a massive update to the Arcade based on user feedback. This includes:
+        -   **UI Improvements:** Game cards now have explicit "Play", "Rules", and "Stats" buttons for clearer actions.
+        -   **Rune Breaker:** Added falling power-ups (e.g., paddle widener) to make gameplay more dynamic.
+        -   **Dungeon Dash:** Fixed a critical bug where players were not correctly defeated upon hitting a spike.
+        -   **Forge Master:** Implemented a combo system to reward consecutive "Perfect" hits with bonus points and a progressive speed increase.
+        -   **Archer's Folly:** Added a trajectory line and power meter to make aiming more intuitive.
+        -   **Snake:** Fixed a bug that allowed players to reverse direction and end the game. Added a "Tablet Mode" toggle for a two-handed D-pad layout on larger devices.
+        -   **Dragon's Dice:** Added a clear "BUSTED!" message when a player fails to score on a roll.
+        -   **Admin Tools:** Admins can now edit minigame properties like cost, plays per token, and prize thresholds from the management page.
+
+-   **Week of October 25, 2025 (v0.4.74):**
+    -   **Bug Reporter Visibility Fix:** Fixed a bug where the Bug Reporter tool was visible to all users. It is now correctly restricted to Donegeon Masters (admins) only.
 
 -   **Week of October 18, 2025 (v0.4.72):**
-    -   **Quest Group UI Fix:** Fixed a bug where adding, editing, or deleting Quest Groups would not update the UI until the page was refreshed. The state management for Quest Groups has been corrected to provide immediate visual feedback for all CUD (Create, Update, Delete) operations.
+    -   **Quest Group UI Fix:** Fixed a bug where creating, editing, or deleting a Quest Group would not update the UI until the page was refreshed. All CUD operations for Quest Groups now provide immediate feedback.
 
 -   **Week of October 11, 2025 (v0.4.71):**
-    -   **Quest To-Do Crash Fix:** Fixed a critical bug where toggling a quest's 'To-Do' status from the Dashboard or Calendar would frequently cause the app to crash. The state management on these pages has been refactored to be more robust, preventing stale data from causing render loops. The "To-Do" toggle feature has also been added to quests opened from the Dashboard for consistency.
+    -   **Quest To-Do Crash Fix:** Fixed a critical bug where toggling a quest's 'To-Do' status from the Dashboard or Calendar would cause the app to crash. The state management on affected pages has been refactored to prevent stale data and ensure stability.
 
 -   **Week of September 27, 2025 (v0.4.70):**
     -   **Real-Time UI Updates:** Implemented a major fix for real-time UI updates. All create, update, and delete actions on management pages now reflect instantly without needing a page refresh, greatly improving the administrative workflow and resolving a long-standing state synchronization bug.
@@ -40,13 +56,7 @@ Task Donegeon is a gamified task and chore management application designed for f
     -   **EPUB Reader Fix:** Fixed a critical bug in the EPUB reader where the progress bar would incorrectly display 100% and not update upon navigation. The progress calculation is now more robust and accurately reflects the user's position within the book.
 
 -   **Week of September 6, 2025 (v0.4.64):**
-    -   **Bug Bar Consolidation:** The bug recording bar has been consolidated into a more compact and responsive two-row layout. This prevents controls from overflowing on smaller screens and ensures the note input field and primary actions (Stop, Cancel) are always accessible, regardless of the report's title length.
-
--   **Week of September 6, 2025 (v0.4.63):**
-    -   **Bug Reporter UI Fix:** Fixed a flexbox layout issue in the Bug Detail popup where long commenter names could push the action buttons (dim, mark good/bad) out of view. The buttons are now consistently visible on all comments.
-
--   **Week of September 6, 2025 (v0.4.62):**
-    -   **Bug Reporter UX Fix:** Restored the visibility of action buttons (Dim, Mark Good/Review) on bug report comments. These controls are now always visible instead of only appearing on hover, improving usability.
+    -   **Bug Bar Consolidation:** The bug recording bar has been consolidated into a more compact and responsive two-row layout to prevent controls from overflowing on smaller screens.
 
 -   **Week of September 1, 2025 (v0.4.61):**
     -   **Rank & Leaderboard Logic Overhaul:** Ranks and the main Leaderboard are now calculated based on a user's *total lifetime XP earned from quests*, rather than their current XP balance. This provides a more accurate and fair representation of a user's overall progress that isn't affected by spending rewards. The Rank Card on the dashboard has been updated to display both current balances and total earned values for clarity.

@@ -7,6 +7,7 @@ import RuneBreakerGame from './RuneBreakerGame';
 import DungeonDashGame from './DungeonDashGame';
 import { ForgeMasterGame } from './ForgeMasterGame';
 import ArchersFollyGame from './ArchersFollyGame';
+import TetrisGame from './TetrisGame';
 
 interface GameOverlayProps {
   gameId: string;
@@ -37,6 +38,8 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
         return <ForgeMasterGame onClose={onClose} />;
       case 'minigame-archers-folly':
         return <ArchersFollyGame onClose={onClose} />;
+      case 'minigame-tetris':
+        return <TetrisGame onClose={onClose} />;
       default:
         return (
             <div className="text-white">

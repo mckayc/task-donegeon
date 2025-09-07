@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.73 - Bug Reporter Visibility Fix",
-  "version": "0.4.73",
-  "description": "Fixed a bug where the Bug Reporter tool was visible to all users. It is now correctly restricted to Donegeon Masters (admins) only.",
+  "name": "Task Donegeon 2.0 - 0.4.76 - Tetris & Arcade Improvements",
+  "version": "0.4.76",
+  "description": "Added a full-featured Tetris game to the Arcade, complete with a tablet mode for optimized controls. Also introduced a new Game Rules dialog to provide instructions for all minigames.",
   "requestFramePermissions": [
     "camera"
   ],

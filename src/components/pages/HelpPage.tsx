@@ -104,7 +104,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
             <li>
-                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated and can be triggered by swiping on touch devices. All progress, including location, bookmarks, and time read, is saved and synced across your devices.
+                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and time read, is saved and synced across your devices.
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
@@ -172,12 +172,6 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of October 4, 2025 (v0.4.69)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>eBook Reader Redesign:</strong> The EPUB reader has been completely overhauled with a new UI. It now features an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a subtle page-turn animation, and swipe controls on touch devices for a more intuitive reading experience.</li>
-            </ul>
-        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 27, 2025 (v0.4.68)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

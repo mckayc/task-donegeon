@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.69 - ePub Reader Enhancements",
-  "version": "0.4.69",
-  "description": "Enhanced the EPUB reader with swipe gestures to turn pages, a subtle page-flip animation, and a new immersive mode to maximize reading space.",
+  "name": "Task Donegeon 2.0 - 0.4.68 - Real-Time UI Updates",
+  "version": "0.4.68",
+  "description": "Implemented a major fix for real-time UI updates. All create, update, and delete actions on management pages now reflect instantly without needing a page refresh, greatly improving the administrative workflow.",
   "requestFramePermissions": [
     "camera"
   ],

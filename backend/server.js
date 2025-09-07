@@ -246,7 +246,7 @@ const initializeApp = async () => {
     const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
     const gameTokenReward = await rewardTypeRepo.findOneBy({ id: 'core-token' });
     if (!gameTokenReward) {
-        console.log('[Data Sync] Game Token reward type not found. Creating it...`);
+        console.log('[Data Sync] Game Token reward type not found. Creating it...');
         const gameTokenData = INITIAL_REWARD_TYPES.find(rt => rt.id === 'core-token');
         if (gameTokenData) {
             const newGameToken = rewardTypeRepo.create(gameTokenData);

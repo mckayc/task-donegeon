@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.77
+**Version:** 0.4.78
 
 ---
 
@@ -14,6 +14,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of November 29, 2025 (v0.4.78):**
+    -   **EPUB Reader Caching & Offline Support:** The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.
+    -   **Service Worker Update:** The service worker has been updated to enable this new caching strategy.
 
 -   **Week of November 22, 2025 (v0.4.77):**
     -   **The Grand Arcade Expansion:** Added six brand new minigames to the Arcade:

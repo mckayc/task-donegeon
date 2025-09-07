@@ -34,7 +34,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const [currentCfi, setCurrentCfi] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(true);
+    const [downloadProgress, setDownloadProgress] = useState<number | null>(0);
     const [bookTitle, setBookTitle] = useState('');
     const [pageTurnClass, setPageTurnClass] = useState('');
     
@@ -70,25 +72,81 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     // --- Book Initialization and Setup ---
     useEffect(() => {
         if (!quest.epubUrl) return;
-        const epubBook = ePub(quest.epubUrl);
-        setBook(epubBook);
-        epubBook.loaded.metadata.then((meta: any) => {
-            setBookTitle(meta.title);
-        });
-    }, [quest.epubUrl]);
-
-    useEffect(() => {
-        if (!book) return;
         let isMounted = true;
-        book.ready.then(() => {
-            return book.locations.generate(1650); // Standard value for better accuracy
-        }).then((generatedLocations: any) => {
+    
+        const initializeBook = async (bookData: ArrayBuffer) => {
+            if (!isMounted) return;
+            setIsDownloading(false);
+            setIsLoading(true); // Now we are in the parsing phase
+            
+            const newBook = ePub(bookData);
+            setBook(newBook);
+            
+            newBook.loaded.metadata.then((meta: any) => {
+                if (isMounted) setBookTitle(meta.title);
+            });
+            
+            await newBook.ready;
+            if (!isMounted) return;
+            
+            const generatedLocations = await newBook.locations.generate(1650);
             if (isMounted) {
                 setLocations(generatedLocations);
             }
-        });
+        };
+
+        const fetchEpubWithProgress = async (url: string) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const total = Number(response.headers.get('Content-Length'));
+                
+                if (!response.body || total === 0) {
+                    setDownloadProgress(null);
+                    const arrayBuffer = await response.arrayBuffer();
+                    if (isMounted) initializeBook(arrayBuffer);
+                    return;
+                }
+
+                const reader = response.body.getReader();
+                let loaded = 0;
+                const chunks: Uint8Array[] = [];
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    if (!isMounted) return;
+
+                    chunks.push(value);
+                    loaded += value.length;
+                    setDownloadProgress((loaded / total) * 100);
+                }
+
+                const fullResponse = new Uint8Array(loaded);
+                let position = 0;
+                for (const chunk of chunks) {
+                    fullResponse.set(chunk, position);
+                    position += chunk.length;
+                }
+                
+                if (isMounted) {
+                    initializeBook(fullResponse.buffer);
+                }
+
+            } catch (error) {
+                if (isMounted) {
+                    console.error("Failed to fetch EPUB:", error);
+                    addNotification({ type: 'error', message: 'Failed to download the book.' });
+                    setReadingQuest(null);
+                }
+            }
+        };
+        
+        fetchEpubWithProgress(quest.epubUrl);
+        
         return () => { isMounted = false; };
-    }, [book]);
+    }, [quest.epubUrl, addNotification, setReadingQuest]);
     
     useEffect(() => {
         if (!book || !locations || !viewerRef.current) return;
@@ -104,7 +162,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         
         renditionInstance.on("relocated", (locationData: any) => {
             setCurrentCfi(locationData.start.cfi);
-            // FIX: Use the more reliable percentageFromCfi method instead of the direct percentage.
             if (book && book.locations) {
                 const percentage = book.locations.percentageFromCfi(locationData.start.cfi);
                 setProgress(Math.round(percentage * 100));
@@ -186,8 +243,11 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     useEffect(() => {
         const intervalId = setInterval(() => syncProgress(false), 30000);
+        window.addEventListener('beforeunload', () => syncProgress(true));
+        
         return () => {
             clearInterval(intervalId);
+            window.removeEventListener('beforeunload', () => syncProgress(true));
             syncProgress(true);
         };
     }, [syncProgress]);
@@ -311,9 +371,18 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 </header>
 
                 <div id="viewer-wrapper" className="flex-grow relative min-h-0" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-                    {isLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-stone-800 z-30">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+                    {(isDownloading || isLoading) && (
+                        <div className="absolute inset-0 bg-stone-900/80 z-40 flex flex-col items-center justify-center gap-4">
+                            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
+                            <p className="text-xl font-semibold text-white">
+                                {isDownloading ? 'Downloading eBook...' : 'Preparing Reader...'}
+                            </p>
+                            {isDownloading && downloadProgress !== null && (
+                                <div className="w-64 bg-stone-700 rounded-full h-2.5">
+                                    <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
+                                </div>
+                            )}
+                             {isDownloading && downloadProgress !== null && <p className="text-white font-mono">{Math.round(downloadProgress)}%</p>}
                         </div>
                     )}
                     <div id="viewer" ref={viewerRef} className={`h-full w-full ${theme} ${pageTurnClass}`} />

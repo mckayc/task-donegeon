@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.77 - The Grand Arcade Expansion",
-  "version": "0.4.77",
-  "description": "Expanded the Arcade with six new minigames: Gemstone Mines, Labyrinth of the Minotaur, Alchemist's Trial, Goblin Ambush, River Crossing, and Wizard's Vortex. Also enhanced Tetris with a Hold Queue, Ghost Piece, and visual polish.",
+  "name": "Task Donegeon 2.0 - 0.4.78 - EPUB Caching & Offline Support",
+  "version": "0.4.78",
+  "description": "Implemented local caching for EPUB files, enabling faster loads and offline reading for eBooks. Added a download progress bar to the reader for better user feedback during initial download.",
   "requestFramePermissions": [
     "camera"
   ],

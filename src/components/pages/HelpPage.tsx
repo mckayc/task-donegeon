@@ -106,6 +106,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
             </li>
             <li>
                 <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and time read, is saved and synced across your devices.
+                <ul className="list-disc list-inside pl-6 mt-2">
+                    <li><strong>Offline Caching:</strong> The reader now downloads and caches eBooks locally on the first open for significantly faster subsequent loads and full offline access. A progress bar displays the initial download status, ensuring a smooth user experience.</li>
+                </ul>
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
@@ -173,6 +176,20 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of November 29, 2025 (v0.4.78)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>EPUB Reader Caching & Offline Support:</strong> The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.</li>
+                <li><strong>Service Worker Update:</strong> The service worker has been updated to enable this new caching strategy.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of November 22, 2025 (v0.4.77)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                 <li><strong>The Grand Arcade Expansion:</strong> Added six brand new minigames to the Arcade: Gemstone Mines, Labyrinth of the Minotaur, Alchemist's Trial, Goblin Ambush, River Crossing, and Wizard's Vortex.</li>
+                 <li><strong>Major Tetris Improvements:</strong> Overhauled Tetris with modern features, including a Hold Queue, a Ghost Piece, and satisfying particle effects.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 25, 2025 (v0.4.73)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

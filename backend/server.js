@@ -214,6 +214,12 @@ const initializeApp = async () => {
         { id: 'minigame-forge-master', name: 'Forge Master', description: 'A rhythm and timing game. The player must click or tap at the right moment to strike a piece of hot metal with a hammer, following a moving bar on the screen.', icon: '🔨', cost: 1 },
         { id: 'minigame-archers-folly', name: "Archer's Folly", description: 'An archery game where the player clicks and drags to aim their bow. They must hit a series of moving targets, accounting for arrow drop over distance.', icon: '🏹', cost: 1 },
         { id: 'minigame-tetris', name: 'Tetris', description: 'The classic block-stacking puzzle game. Clear lines to score points!', icon: '🧱', cost: 1 },
+        { id: 'minigame-gemstone-mines', name: 'Gemstone Mines', description: 'Swap adjacent gems to create lines of three or more. Create combos for big points!', icon: '💎', cost: 1 },
+        { id: 'minigame-labyrinth', name: "Labyrinth of the Minotaur", description: 'Navigate the maze, find the exit, and avoid the patrolling minotaur!', icon: '🏛️', cost: 1 },
+        { id: 'minigame-alchemists-trial', name: "Alchemist's Trial", description: 'A test of memory. Watch the sequence of ingredients and repeat it perfectly.', icon: '🧪', cost: 1 },
+        { id: 'minigame-goblin-ambush', name: 'Goblin Ambush', description: 'Whack the goblins as they pop out, but be careful not to hit the friendly gnomes!', icon: '👺', cost: 1 },
+        { id: 'minigame-river-crossing', name: 'River Crossing', description: 'Guide your hero across the treacherous river, hopping on logs and avoiding danger.', icon: '🏞️', cost: 1 },
+        { id: 'minigame-wizards-vortex', name: "Wizard's Vortex", description: 'Survive waves of incoming monsters by blasting them with your magic spells.', icon: '🧙', cost: 1 },
     ];
 
     for (const gameData of newMinigames) {

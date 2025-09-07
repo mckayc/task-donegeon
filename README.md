@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.76
+**Version:** 0.4.77
 
 ---
 
@@ -14,6 +14,16 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of November 22, 2025 (v0.4.77):**
+    -   **The Grand Arcade Expansion:** Added six brand new minigames to the Arcade:
+        -   **Gemstone Mines:** A classic match-3 puzzle game.
+        -   **Labyrinth of the Minotaur:** A procedurally generated maze runner.
+        -   **Alchemist's Trial:** A "Simon Says" style memory game.
+        -   **Goblin Ambush:** A fast-paced "Whack-a-Mole" reflex game.
+        -   **River Crossing:** A fantasy take on the arcade classic *Frogger*.
+        -   **Wizard's Vortex:** A top-down magical survival shooter.
+    -   **Major Tetris Improvements:** Overhauled Tetris with modern features, including a **Hold Queue** to save pieces for later, a **Ghost Piece** to preview placement, and satisfying particle effects for line clears.
 
 -   **Week of November 15, 2025 (v0.4.76):**
     -   **New Game: Tetris!** Added a complete, from-scratch implementation of the classic puzzle game Tetris to the Arcade, featuring scoring, levels, a next-piece preview, and on-screen controls.

@@ -208,7 +208,7 @@ const SnakeGame: React.FC<SnakeGameProps> = ({ onClose }) => {
                         <DPadButton dir={{ x: 0, y: -1 }}><ArrowUp /></DPadButton>
                         <DPadButton dir={{ x: 0, y: 1 }}><ArrowDown /></DPadButton>
                     </div>
-                    <div className="fixed bottom-10 right-10 flex flex-col items-center gap-2">
+                    <div className="fixed bottom-10 right-10 flex items-center gap-2">
                         <DPadButton dir={{ x: -1, y: 0 }}><ArrowLeft /></DPadButton>
                         <DPadButton dir={{ x: 1, y: 0 }}><ArrowRight /></DPadButton>
                     </div>

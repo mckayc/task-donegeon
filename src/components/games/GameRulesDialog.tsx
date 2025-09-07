@@ -132,6 +132,92 @@ const RulesContent: React.FC<{ gameId: string }> = ({ gameId }) => {
                     </ul>
                 </div>
             );
+        case 'minigame-gemstone-mines':
+            return (
+                <div className={commonClasses}>
+                    <h4>Objective</h4>
+                    <p>Score as many points as you can by matching gems before time runs out.</p>
+                    <h4>How to Play</h4>
+                    <ul>
+                        <li>Click or tap on a gem, then click an adjacent gem to swap them.</li>
+                        <li>You can only swap gems if the move results in a match of 3 or more identical gems in a row or column.</li>
+                        <li>Matching 4 gems creates a Power Gem that clears a whole row or column when matched.</li>
+                        <li>Matching 5 gems creates a Hyper Cube that clears all gems of one color when swapped with any gem.</li>
+                        <li>Clear gems to fill the bar on the right and extend your time!</li>
+                    </ul>
+                </div>
+            );
+        case 'minigame-labyrinth':
+            return (
+                <div className={commonClasses}>
+                    <h4>Objective</h4>
+                    <p>Find the golden exit of the maze before the time runs out, while avoiding the patrolling Minotaur.</p>
+                    <h4>How to Play</h4>
+                    <ul>
+                        <li>Use the arrow keys or on-screen D-pad to move your hero.</li>
+                        <li>The maze is different every time you play.</li>
+                        <li>A Minotaur wanders the maze. If it touches you, the game is over!</li>
+                        <li>Reach the golden square to win and score points based on your remaining time.</li>
+                    </ul>
+                </div>
+            );
+        case 'minigame-alchemists-trial':
+            return (
+                <div className={commonClasses}>
+                    <h4>Objective</h4>
+                    <p>Test your memory by correctly repeating the sequence of glowing ingredients.</p>
+                    <h4>How to Play</h4>
+                    <ul>
+                        <li>The game will show you a sequence by lighting up the ingredients in order.</li>
+                        <li>After the sequence plays, it's your turn. Click or tap the ingredients in the exact same order.</li>
+                        <li>Each time you succeed, the sequence gets one ingredient longer.</li>
+                        <li>If you make a mistake, the game is over.</li>
+                    </ul>
+                </div>
+            );
+        case 'minigame-goblin-ambush':
+            return (
+                <div className={commonClasses}>
+                    <h4>Objective</h4>
+                    <p>Whack as many goblins as you can before time runs out!</p>
+                    <h4>How to Play</h4>
+                    <ul>
+                        <li>Goblins will randomly pop out of the holes. Click or tap them to score points.</li>
+                        <li><strong>Do NOT hit the friendly Gnomes!</strong> Hitting a gnome will deduct points.</li>
+                        <li>Golden Goblins are rare and are worth extra points. Be quick to get them!</li>
+                        <li>The game ends when the timer reaches zero.</li>
+                    </ul>
+                </div>
+            );
+        case 'minigame-river-crossing':
+            return (
+                <div className={commonClasses}>
+                    <h4>Objective</h4>
+                    <p>Guide your hero from the bottom of the screen to an empty home at the top.</p>
+                    <h4>How to Play</h4>
+                    <ul>
+                        <li>Use the arrow keys or D-pad to move your hero up, down, left, and right.</li>
+                        <li>Cross the road by avoiding the moving carts.</li>
+                        <li>Cross the river by hopping on moving logs and turtle shells. Be careful, some turtles will dive!</li>
+                        <li>The game ends if you are hit by a cart, fall in the water, or run out of time.</li>
+                    </ul>
+                </div>
+            );
+        case 'minigame-wizards-vortex':
+            return (
+                <div className={commonClasses}>
+                    <h4>Objective</h4>
+                    <p>Survive for as long as you can against endless waves of monsters.</p>
+                    <h4>How to Play</h4>
+                    <ul>
+                        <li>Your wizard stands in the center. Use your mouse to aim.</li>
+                        <li>Click to fire a magic bolt in the direction of your cursor.</li>
+                        <li>Monsters will spawn from the edges of the screen and move towards you.</li>
+                        <li>Shoot the monsters to destroy them and score points.</li>
+                        <li>The game ends if a monster reaches the center vortex.</li>
+                    </ul>
+                </div>
+            );
         default:
             return <p>No rules available for this game.</p>;
     }

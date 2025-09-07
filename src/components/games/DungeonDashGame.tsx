@@ -112,7 +112,8 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
             if (
                 player.x < obstacle.x + obstacle.width &&
                 player.x + player.width > obstacle.x &&
-                player.y + player.height > spikeTipY
+                player.y + player.height > spikeTipY &&
+                player.y < obstacle.y // Ensure player is actually overlapping vertically
             ) {
                 setGameState('game-over');
                 if (score > highScore) setHighScore(score);

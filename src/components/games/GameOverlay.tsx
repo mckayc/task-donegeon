@@ -8,6 +8,12 @@ import DungeonDashGame from './DungeonDashGame';
 import { ForgeMasterGame } from './ForgeMasterGame';
 import ArchersFollyGame from './ArchersFollyGame';
 import TetrisGame from './TetrisGame';
+import GemstoneMinesGame from './GemstoneMinesGame';
+import LabyrinthGame from './LabyrinthGame';
+import AlchemistsTrialGame from './AlchemistsTrialGame';
+import GoblinAmbushGame from './GoblinAmbushGame';
+import RiverCrossingGame from './RiverCrossingGame';
+import WizardsVortexGame from './WizardsVortexGame';
 
 interface GameOverlayProps {
   gameId: string;
@@ -40,6 +46,18 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
         return <ArchersFollyGame onClose={onClose} />;
       case 'minigame-tetris':
         return <TetrisGame onClose={onClose} />;
+      case 'minigame-gemstone-mines':
+        return <GemstoneMinesGame onClose={onClose} />;
+      case 'minigame-labyrinth':
+        return <LabyrinthGame onClose={onClose} />;
+      case 'minigame-alchemists-trial':
+        return <AlchemistsTrialGame onClose={onClose} />;
+      case 'minigame-goblin-ambush':
+        return <GoblinAmbushGame onClose={onClose} />;
+      case 'minigame-river-crossing':
+        return <RiverCrossingGame onClose={onClose} />;
+      case 'minigame-wizards-vortex':
+        return <WizardsVortexGame onClose={onClose} />;
       default:
         return (
             <div className="text-white">

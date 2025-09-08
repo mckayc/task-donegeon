@@ -1,11 +1,11 @@
 
-
 const fs = require('fs').promises;
 const path = require('path');
 const { dataSource } = require('../data-source');
 const { getFullAppData, updateTimestamps } = require('../utils/helpers');
 const { SettingEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
+const { In } = require("typeorm");
 
 const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
 const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
@@ -104,30 +104,89 @@ const removeMany = async (filenames) => {
     }
 };
 
-const restore = async (file) => {
+const restore = async (file, actorId) => {
     console.log(`Starting restore from ${file.originalname}`);
     if (file.mimetype === 'application/json' || file.originalname.endsWith('.json')) {
         const fileContent = await fs.readFile(file.path, 'utf-8');
-        const parsedData = JSON.parse(fileContent);
+        const data = JSON.parse(fileContent);
 
-        if (parsedData.helpGuideContent) {
-            try {
-                await fs.writeFile(HELP_GUIDE_PATH, parsedData.helpGuideContent, 'utf-8');
-                console.log("[Restore] HelpGuide.md restored successfully.");
-            } catch (err) {
-                console.error("Failed to restore HelpGuide.md:", err);
-                // Do not throw; continue with DB restore
+        await dataSource.transaction(async manager => {
+            console.log('[Restore] Starting database transaction.');
+            const entities = dataSource.entityMetadatas;
+            await manager.query('PRAGMA foreign_keys=OFF;');
+            for (const entity of entities.slice().reverse()) {
+                await manager.query(`DELETE FROM \`${entity.tableName}\`;`);
             }
-        }
-        // Complex restore logic for JSON database would go here
-        console.log("JSON restore is a complex operation and is placeholder for now for database.");
+            console.log('[Restore] All tables cleared.');
 
+            const saveData = async (repoName, items) => {
+                if (!items || items.length === 0) return;
+                const repo = manager.getRepository(repoName);
+                await repo.save(items, { chunk: 100 });
+            };
+            
+            // Insert data in order of dependency
+            if (data.users) await saveData('User', data.users.map(({guildIds, ...u}) => u));
+            if (data.rewardTypes) await saveData('RewardTypeDefinition', data.rewardTypes);
+            if (data.ranks) await saveData('Rank', data.ranks);
+            if (data.trophies) await saveData('Trophy', data.trophies);
+            if (data.themes) await saveData('ThemeDefinition', data.themes);
+            if (data.questGroups) await saveData('QuestGroup', data.questGroups);
+            if (data.markets) await saveData('Market', data.markets);
+            if (data.minigames) await saveData('Minigame', data.minigames);
+            if (data.modifierDefinitions) await saveData('ModifierDefinition', data.modifierDefinitions);
+            if (data.rotations) await saveData('Rotation', data.rotations);
+            if (data.scheduledEvents) await saveData('ScheduledEvent', data.scheduledEvents);
+            if (data.bugReports) await saveData('BugReport', data.bugReports);
+
+            if (data.guilds) {
+                for(const guild of data.guilds) {
+                    const { memberIds, ...guildData } = guild;
+                    const newGuild = manager.create('Guild', guildData);
+                    if(memberIds) newGuild.members = await manager.findBy('User', {id: In(memberIds)});
+                    await manager.save(newGuild);
+                }
+            }
+            if (data.gameAssets) await saveData('GameAsset', data.gameAssets);
+            if (data.quests) {
+                for(const quest of data.quests) {
+                    const { assignedUserIds, ...questData } = quest;
+                    const newQuest = manager.create('Quest', questData);
+                    if(assignedUserIds) newQuest.assignedUsers = await manager.findBy('User', {id: In(assignedUserIds)});
+                    await manager.save(newQuest);
+                }
+            }
+            
+            if (data.questCompletions) {
+                const qcs = data.questCompletions.map(qc => ({...qc, user: {id: qc.userId}, quest: {id: qc.questId}}));
+                await saveData('QuestCompletion', qcs);
+            }
+            if (data.purchaseRequests) await saveData('PurchaseRequest', data.purchaseRequests);
+            if (data.userTrophies) await saveData('UserTrophy', data.userTrophies);
+            if (data.adminAdjustments) await saveData('AdminAdjustment', data.adminAdjustments);
+            if (data.appliedModifiers) await saveData('AppliedModifier', data.appliedModifiers);
+            if (data.tradeOffers) await saveData('TradeOffer', data.tradeOffers);
+            if (data.gifts) await saveData('Gift', data.gifts);
+            if (data.gameScores) await saveData('GameScore', data.gameScores);
+            if (data.systemLogs) await saveData('SystemLog', data.systemLogs);
+            if (data.chatMessages) await saveData('ChatMessage', data.chatMessages);
+            if (data.systemNotifications) await saveData('SystemNotification', data.systemNotifications);
+            if (data.chronicleEvents) await saveData('ChronicleEvent', data.chronicleEvents);
+            
+            if (data.settings) await manager.save('Setting', { id: 1, settings: data.settings });
+            if (data.loginHistory) await manager.save('LoginHistory', { id: 1, history: data.loginHistory });
+            
+            await manager.query('PRAGMA foreign_keys=ON;');
+        });
+        
     } else if (file.originalname.endsWith('.sqlite')) {
-        await dataSource.destroy();
+        if(dataSource.isInitialized) await dataSource.destroy();
         await fs.copyFile(file.path, DB_PATH);
+        await dataSource.initialize(); // Reconnect to the new DB file
     } else {
         throw new Error('Unsupported backup file type.');
     }
+
     await fs.unlink(file.path);
     updateEmitter.emit('update');
     console.log('Restore completed.');

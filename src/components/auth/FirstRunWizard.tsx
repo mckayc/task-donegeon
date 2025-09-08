@@ -127,20 +127,39 @@ const FirstRunWizard: React.FC = () => {
                   </>
                 )}
               </StatusCheck>
-              <StatusCheck title="Persistent Data Storage" isOk={status.database.isCustomPath} isSkipped={skip.database} onSkipToggle={() => handleSkipToggle('database')} skipLabel="I've mapped a volume">
-                <p>Your application data is currently stored in the default internal location. For your data (users, quests, images) to be safe and persist if the container is recreated, you must map a persistent volume from your host machine.</p>
-                <p><strong>Recommended Setup (Docker):</strong></p>
-                <p>Set the <code>APP_DATA_PATH</code> environment variable in your <code>docker-compose.yml</code> or Docker run command to map a local folder to the container's <code>/app/data</code> directory.</p>
+              <StatusCheck title="Persistent Data Storage" isOk={status.database.isCustomPath} isSkipped={skip.database} onSkipToggle={() => handleSkipToggle('database')} skipLabel="My data volume is mapped">
+                <p>Your application data is currently stored in a temporary location. To ensure your data (users, quests, images) persists when the container is updated or recreated, you must map a volume from your host machine.</p>
+                
+                <h4>Recommended Setup (Docker)</h4>
+                <p>In your <code>docker-compose.yml</code> file, map a local folder on your computer to the <code>/app/data</code> directory inside the container. You can also explicitly set the database path inside that volume if you wish.</p>
                 <pre className="whitespace-pre-wrap break-all"><code>
 {`services:
   task-donegeon:
-    # ...
+    # ... your other service config
     environment:
-      - APP_DATA_PATH=./my-task-data
+      # Optional: Explicitly set the database path inside the container.
+      # If unset, it defaults to /app/data/database/database.sqlite
+      # - DATABASE_PATH=/app/data/database/database.sqlite 
     volumes:
-      - "\${APP_DATA_PATH:-./data}:/app/data"`}
+      # This links a folder on your host (e.g., ./my-task-data)
+      # to the /app/data folder inside the container.
+      - ./my-task-data:/app/data`}
                 </code></pre>
-                <p>If you've already done this, you can safely check the box above and continue.</p>
+                 <div className="mt-4 p-3 bg-amber-900/20 border border-amber-700/50 rounded-lg">
+                    <h5 className="font-bold text-amber-300">Important Note on Permissions</h5>
+                    <p className="text-sm">
+                        This is the most common cause of startup errors. When Docker/Portainer creates a new data folder on your server (like when you set up a new 'dev' environment with a different path), that folder is owned by the <code>root</code> user.
+                    </p>
+                    <p className="text-sm mt-1">
+                        For security, the application inside the container runs as a less-privileged user (ID <code>1000:1000</code>) and is not allowed to write to a <code>root</code>-owned folder. This prevents it from creating the database file.
+                    </p>
+                    <p className="text-sm mt-2">You can fix this by running the following command on your server's command line, which changes the folder's owner:</p>
+                    <pre className="whitespace-pre-wrap break-all mt-1"><code>sudo chown -R 1000:1000 /path/to/your/data/folder</code></pre>
+                     <p className="text-sm mt-1">
+                        Be sure to replace <code>/path/to/your/data/folder</code> with the exact path you are using for your volume.
+                    </p>
+                </div>
+                <p className="mt-4">If you have correctly mapped a volume to <code>/app/data</code> and set the permissions, the default database path is persistent and you can safely check the box above to continue.</p>
               </StatusCheck>
               <StatusCheck title="JWT Secret" isOk={status.jwtSecretSet} isSkipped={skip.jwt} onSkipToggle={() => handleSkipToggle('jwt')}>
                  {status.jwtSecretSet ? (

@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { AppMode, Page, Quest } from '../types';
 import { bugLogger } from '../utils/bugLogger';
@@ -14,6 +15,7 @@ export interface UIState {
   isKioskDevice: boolean;
   activeGame: string | null;
   readingQuest: Quest | null;
+  readingPdfQuest: Quest | null;
 }
 
 export interface UIDispatch {
@@ -25,6 +27,7 @@ export interface UIDispatch {
   setActiveMarketId: (marketId: string | null) => void;
   setActiveGame: (gameId: string | null) => void;
   setReadingQuest: (quest: Quest | null) => void;
+  setReadingPdfQuest: (quest: Quest | null) => void;
 }
 
 const UIStateContext = createContext<UIState | undefined>(undefined);
@@ -52,6 +55,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       return false;
   });
   const [readingQuest, _setReadingQuest] = useState<Quest | null>(null);
+  const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
 
   const setActivePage = (page: Page, meta?: any) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
@@ -105,6 +109,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       _setReadingQuest(quest);
   };
 
+  const setReadingPdfQuest = (quest: Quest | null) => {
+      _setReadingPdfQuest(quest);
+  };
+
   const state = useMemo(() => ({
     activePage,
     activePageMeta,
@@ -116,7 +124,8 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     isKioskDevice,
     activeGame,
     readingQuest,
-  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest]);
+    readingPdfQuest,
+  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest]);
 
   const dispatch: UIDispatch = {
     setActivePage,
@@ -127,6 +136,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setActiveMarketId,
     setActiveGame,
     setReadingQuest,
+    setReadingPdfQuest,
   };
 
   return (

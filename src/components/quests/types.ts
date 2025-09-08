@@ -1,4 +1,3 @@
-
 // Changed import from '../items/types' to '../users/types' to break circular dependency.
 import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -29,6 +28,7 @@ export enum QuestMediaType {
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
   EPUB = 'EPUB',
+  PDF = 'PDF',
 }
 
 export interface Checkpoint {
@@ -62,6 +62,7 @@ export interface Quest {
   aiTutorSessionMinutes?: number;
   videoUrl?: string;
   epubUrl?: string;
+  pdfUrl?: string;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
@@ -102,7 +103,7 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; locationCfi?: string; bookmarks?: string[] } };
+  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; locationCfi?: string; bookmarks?: string[]; pageNumber?: number; } };
   createdAt?: string;
   updatedAt?: string;
 }

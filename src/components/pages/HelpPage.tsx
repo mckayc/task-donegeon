@@ -64,6 +64,12 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+        <h3>Blueprint & Backup/Restore Fixes</h3>
+        <p>A set of critical bugs affecting data portability have been resolved:</p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Blueprint User Imports:</strong> Fixed an issue where users exported in a blueprint JSON file would not appear in the import preview dialog. The system now correctly identifies users by their username, ensuring successful imports.</li>
+            <li><strong>JSON & SQLite Restore:</strong> Overhauled the Backup & Restore functionality. Restoring from a JSON backup now correctly repopulates the entire database. Restoring from an SQLite backup no longer incorrectly triggers the first-run wizard and now correctly re-initializes the database connection.</li>
+        </ul>
         <h3>Real-Time UI Updates</h3>
         <p>A comprehensive fix has been implemented to address state synchronization issues across the application. Previously, actions such as creating, updating, or deleting assets (like Quests, Items, Markets, etc.) would not immediately reflect in the user interface, requiring a page refresh to see the changes. This has been resolved.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -109,6 +115,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Offline Caching:</strong> The reader now downloads and caches eBooks locally on the first open for significantly faster subsequent loads and full offline access. A progress bar displays the initial download status, ensuring a smooth user experience.</li>
                 </ul>
+            </li>
+            <li>
+                <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and downloads the file for faster loading and offline access.
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
@@ -176,6 +185,13 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of December 6, 2025 (v0.4.79)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Data Import/Export Fixes:</strong> Fixed critical bugs preventing user imports from blueprints and causing failures in JSON/SQLite database restores. Data portability is now reliable.</li>
+                <li><strong>Service Worker Update:</strong> Made a minor change to the service worker to ensure update prompts are triggered correctly.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of November 29, 2025 (v0.4.78)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

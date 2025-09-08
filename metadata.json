@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.78 - EPUB Caching & Offline Support",
-  "version": "0.4.78",
-  "description": "Implemented local caching for EPUB files, enabling faster loads and offline reading for eBooks. Added a download progress bar to the reader for better user feedback during initial download.",
+  "name": "Task Donegeon 2.0 - 0.4.80 - PDF Reader",
+  "version": "0.4.80",
+  "description": "Added a full-featured PDF reader for quests. Users can now attach and read PDF documents directly within the app, with progress saving and offline support.",
   "requestFramePermissions": [
     "camera"
   ],

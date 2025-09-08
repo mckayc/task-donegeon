@@ -1,4 +1,3 @@
-
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore
 } from './types';
@@ -15,9 +14,12 @@ const apiRequest = async (method: string, path: string, body?: any) => {
     return response.status === 204 ? null : await response.json();
 };
 
-const apiUpload = async (path: string, file: File) => {
+const apiUpload = async (path: string, file: File, category?: string) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (category) {
+        formData.append('category', category);
+    }
     
     const response = await fetch(path, { method: 'POST', body: formData });
     if (!response.ok) {
@@ -93,7 +95,7 @@ export const claimQuestAPI = (questId: string, userId: string) => apiRequest('PO
 export const unclaimQuestAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/unclaim', { questId, userId });
 export const approveClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/approve-claim', { questId, userId, adminId });
 export const rejectClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/reject-claim', { questId, userId, adminId });
-export const updateReadingProgressAPI = (questId: string, userId: string, data: { secondsToAdd?: number, locationCfi?: string, bookmarks?: string[] }) => apiRequest('POST', `/api/quests/${questId}/reading-progress`, { userId, data });
+export const updateReadingProgressAPI = (questId: string, userId: string, data: { secondsToAdd?: number, locationCfi?: string, bookmarks?: string[], pageNumber?: number }) => apiRequest('POST', `/api/quests/${questId}/reading-progress`, { userId, data });
 
 // --- Minigames API ---
 export const getMinigamesAPI = () => apiRequest('GET', '/api/minigames');

@@ -116,6 +116,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
                     <li><strong>Offline Caching:</strong> The reader now downloads and caches eBooks locally on the first open for significantly faster subsequent loads and full offline access. A progress bar displays the initial download status, ensuring a smooth user experience.</li>
                 </ul>
             </li>
+            <li>
+                <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and downloads the file for faster loading and offline access.
+            </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
         <p>The "Arcade" is a special market where users can spend "Game Tokens" to play minigames.</p>

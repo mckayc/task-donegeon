@@ -1,7 +1,7 @@
 {
   "name": "task-donegeon",
   "private": true,
-  "version": "0.4.79",
+  "version": "0.4.80",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,6 +29,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-image-crop": "^11.0.5",
+    "react-pdf": "^9.1.0",
     "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {

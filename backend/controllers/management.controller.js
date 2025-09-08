@@ -312,7 +312,7 @@ const uploadToMediaLibrary = (req, res) => {
 
 
 const browseMedia = async (req, res) => {
-    const ALLOWED_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg', '.epub'];
+    const ALLOWED_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg', '.epub', '.pdf'];
     const { path: relativePath = '/' } = req.query;
 
     console.log(`[Media Browser] Browsing path: ${relativePath}`);

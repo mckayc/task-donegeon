@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -244,7 +245,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             ref={fileInputRef}
                             className="hidden"
                             onChange={handleFileUpload}
-                            accept="video/*,.epub"
+                            accept="video/*,.epub,.pdf"
                             disabled={isUploading}
                         />
                         <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>

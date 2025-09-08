@@ -60,9 +60,9 @@ export interface Quest {
   kind: QuestKind; // New field to distinguish quest types
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
-  videoUrl?: string;
-  epubUrl?: string;
-  pdfUrl?: string;
+  videoUrl?: string | null;
+  epubUrl?: string | null;
+  pdfUrl?: string | null;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;

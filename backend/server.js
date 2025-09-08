@@ -1,616 +1,334 @@
 
-
-
+require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
 const path = require('path');
-const multer = require('multer');
-const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs').promises;
-const { GoogleGenAI } = require('@google/genai');
+const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
+const { GuildEntity, UserEntity, MarketEntity, TrophyEntity, MinigameEntity, RewardTypeDefinitionEntity } = require('./entities');
+const { updateTimestamps } = require('./utils/helpers');
+const { In } = require('typeorm');
+const { INITIAL_TROPHIES, INITIAL_REWARD_TYPES } = require('./initialData');
 
-// --- Environment Variable Checks ---
-const requiredEnv = ['DATABASE_URL', 'STORAGE_PROVIDER'];
-if (process.env.STORAGE_PROVIDER === 'supabase') {
-    requiredEnv.push('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY');
-}
-for (const envVar of requiredEnv) {
-    if (!process.env[envVar]) {
-        console.error(`FATAL ERROR: ${envVar} environment variable is not set.`);
-        process.exit(1);
-    }
-}
+// --- Routers ---
+const questsRouter = require('./routes/quests.routes');
+const usersRouter = require('./routes/users.routes');
+const marketsRouter = require('./routes/markets.routes');
+const rewardsRouter = require('./routes/rewards.routes');
+const ranksRouter = require('./routes/ranks.routes');
+const trophiesRouter = require('./routes/trophies.routes');
+const assetsRouter = require('./routes/assets.routes');
+const questGroupsRouter = require('./routes/questGroups.routes');
+const themesRouter = require('./routes/themes.routes');
+const eventsRouter = require('./routes/events.routes');
+const rotationsRouter = require('./routes/rotations.routes');
+const appliedModifiersRouter = require('./routes/appliedModifiers.routes');
+const tradesRouter = require('./routes/trades.routes');
+const giftsRouter = require('./routes/gifts.routes');
+const guildsRouter = require('./routes/guilds.routes');
+const settingsRouter = require('./routes/settings.routes');
+const chatRouter = require('./routes/chat.routes');
+const bugReportsRouter = require('./routes/bugReports.routes');
+const notificationsRouter = require('./routes/notifications.routes');
+const setbacksRouter = require('./routes/setbacks.routes');
+const minigamesRouter = require('./routes/minigames.routes');
+// --- NEW MODULAR ROUTERS ---
+const dataRouter = require('./routes/data.routes');
+const managementRouters = require('./routes/management.routes');
+const aiRouter = require('./routes/ai.routes');
+const systemRouter = require('./routes/system.routes');
+const chroniclesRouter = require('./routes/chronicles.routes');
+
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // === Middleware ===
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// === Supabase Client (if applicable) ===
-let supabase;
-if (process.env.STORAGE_PROVIDER === 'supabase') {
-    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-}
+// === Server-Side Activity Logging Setup ===
+const loggedUsers = new Map(); // In-memory store for user IDs and their logging expiry timestamps.
 
-// === Gemini AI Client ===
-let ai;
-if (process.env.API_KEY) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-} else {
-    console.warn("WARNING: API_KEY environment variable not set. AI features will be disabled.");
-}
-
-// === Multer Configuration for File Uploads ===
-const UPLOADS_DIR = path.resolve('/app', 'uploads');
-const storage = process.env.STORAGE_PROVIDER === 'supabase'
-  ? multer.memoryStorage()
-  : multer.diskStorage({
-      destination: async (req, file, cb) => {
-        const category = req.body.category || 'Miscellaneous';
-        // Sanitize category to prevent path traversal and invalid folder names
-        const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-        const finalDir = path.join(UPLOADS_DIR, sanitizedCategory);
-        try {
-            await fs.mkdir(finalDir, { recursive: true });
-            cb(null, finalDir);
-        } catch (err) {
-            cb(err);
-        }
-      },
-      filename: (req, file, cb) => {
-        // Sanitize filename
-        const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_');
-        cb(null, `${Date.now()}-${sanitizedFilename}`);
-      }
-    });
-
-const upload = multer({
-    storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB file size limit
+// Middleware to attach the logger store to each request
+app.use((req, res, next) => {
+    req.loggedUsers = loggedUsers;
+    next();
 });
 
-// === Backup Configuration ===
-const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
-
-// === Database Connection Pool ===
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000,
-});
-
-// === Database Initialization ===
-const initializeDatabase = async () => {
-    let retries = 5;
-    while (retries) {
-        try {
-            const client = await pool.connect();
-            try {
-                await client.query(`
-                    CREATE TABLE IF NOT EXISTS app_data (
-                        key TEXT PRIMARY KEY,
-                        value JSONB NOT NULL
-                    );
-                `);
-                console.log("Table 'app_data' is ready.");
-                // Ensure backup directory exists
-                await fs.mkdir(BACKUP_DIR, { recursive: true });
-                console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
-                return; // Success
-            } finally {
-                client.release();
-            }
-        } catch (err) {
-            console.error('Database initialization failed, retrying...', err.message);
-            retries -= 1;
-            if (retries === 0) {
-                console.error('Could not connect to database after several retries. Exiting.');
-                process.exit(1);
-            }
-            await new Promise(res => setTimeout(res, 5000));
+const activityLogMiddleware = (req, res, next) => {
+    // This middleware will log requests for specific users if their logging session is active.
+    // It relies on the body being parsed, so it should run after express.json().
+    // We try to find the user ID from various common places in the request.
+    const userId = req.body?.userId || req.query?.userId || req.params?.userId || req.body?.senderId || (req.body?.user?.id) || (req.body?.adminUserData?.id);
+    
+    if (userId && req.loggedUsers.has(userId)) {
+        const expiry = req.loggedUsers.get(userId);
+        if (Date.now() < expiry) {
+            // Log the activity
+            console.log(`[Activity Log] User: ${userId} | ${req.method} ${req.originalUrl} | Body: ${JSON.stringify(req.body)}`);
+        } else {
+            // Clean up expired session
+            req.loggedUsers.delete(userId);
+            console.log(`[Activity Log] Logging session expired for user ${userId}.`);
         }
     }
+    next();
 };
 
-// Initialize DB immediately when the module loads
-initializeDatabase().catch(err => {
-    console.error("Critical error during database initialization:", err);
-    process.exit(1);
-});
+// Apply the logging middleware to all API routes
+app.use('/api', activityLogMiddleware);
 
 
-// === API ROUTES ===
+// === Backup/Asset Directories & Scheduler ===
+const DATA_ROOT = path.resolve(__dirname, '..', 'data');
+const UPLOADS_DIR = path.resolve(DATA_ROOT, 'assets');
+const MEDIA_DIR = process.env.CONTAINER_MEDIA_PATH || '/app/media';
+const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
+const ASSET_PACKS_DIR = path.resolve(DATA_ROOT, 'asset_packs');
+const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
 
-// Health check
-app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
+const { runScheduledBackups, runScheduledRotations } = require('./controllers/management.controller');
+const startAutomatedBackupScheduler = () => {
+    setInterval(runScheduledBackups, 3600000); // Check every hour
+    setTimeout(runScheduledBackups, 10000); // Also run 10s after start
+};
 
-// Get app metadata
-app.get('/api/metadata', async (req, res, next) => {
+const startAutomatedRotationScheduler = () => {
+    // Run every 15 minutes to check for due rotations
+    setInterval(runScheduledRotations, 15 * 60 * 1000);
+    // Also run shortly after server start for immediate assignment if needed
+    setTimeout(runScheduledRotations, 15000);
+};
+
+const ensureDefaultAssetPacksExist = async () => {
     try {
-        const metadataPath = path.join(__dirname, '..', 'metadata.json');
-        const data = await fs.readFile(metadataPath, 'utf8');
-        const metadata = JSON.parse(data);
-        res.status(200).json(metadata);
-    } catch (err) {
-        console.error('Error reading metadata.json:', err);
-        next(err);
-    }
-});
-
-// Load data
-app.get('/api/data/load', async (req, res, next) => {
-    console.log(`[${new Date().toISOString()}] Received GET /api/data/load`);
-    try {
-        const result = await pool.query('SELECT key, value FROM app_data');
-        const data = result.rows[0]?.value || {};
-        const chatMessagesCount = data.chatMessages?.length || 0;
-        console.log(`[${new Date().toISOString()}] Loading data success. Chat messages in DB: ${chatMessagesCount}.`);
-        res.status(200).json(data);
-    } catch (err) {
-        console.error(`[${new Date().toISOString()}] ERROR in GET /api/data/load:`, err);
-        next(err);
-    }
-});
-
-// Save data
-app.post('/api/data/save', async (req, res, next) => {
-    console.log(`[${new Date().toISOString()}] Received POST /api/data/save`);
-    try {
-        const dataToSave = req.body;
-        if (!dataToSave || typeof dataToSave !== 'object') {
-            console.error(`[${new Date().toISOString()}] Invalid data received for saving.`);
-            return res.status(400).json({ error: 'Invalid data format. Expected a JSON object.' });
-        }
-        const chatMessagesCount = dataToSave.chatMessages?.length || 0;
-        console.log(`[${new Date().toISOString()}] Attempting to save data. Chat messages received: ${chatMessagesCount}.`);
-
-        const dataString = JSON.stringify(dataToSave);
-        
-        await pool.query(
-            `INSERT INTO app_data (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2;`,
-            ['app_state', dataString]
-        );
-
-        console.log(`[${new Date().toISOString()}] Save data success. Persisted ${chatMessagesCount} chat messages.`);
-        res.status(200).json({ message: 'Data saved successfully.' });
-    } catch (err) {
-        console.error(`[${new Date().toISOString()}] ERROR in POST /api/data/save:`, err);
-        next(err);
-    }
-});
-
-// --- Backup Endpoints ---
-
-// List backups
-app.get('/api/backups', async (req, res, next) => {
-    try {
-        const files = await fs.readdir(BACKUP_DIR);
-        const backupDetails = await Promise.all(
-            files
-                .filter(file => file.endsWith('.json'))
-                .map(async file => {
-                    const stats = await fs.stat(path.join(BACKUP_DIR, file));
-                    return {
-                        filename: file,
-                        createdAt: stats.birthtime,
-                        size: stats.size,
-                        isAuto: file.startsWith('auto_backup_'),
-                    };
-                })
-        );
-        res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-    } catch (err) {
-        if (err.code === 'ENOENT') {
-            return res.json([]);
-        }
-        next(err);
-    }
-});
-
-// Create a manual backup
-app.post('/api/backups', async (req, res, next) => {
-    try {
-        const dataToBackup = JSON.stringify(req.body, null, 2);
-        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-        const filename = `manual_backup_${timestamp}.json`;
-        await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup);
-        res.status(201).json({ message: 'Manual backup created successfully.' });
-    } catch (err) {
-        next(err);
-    }
-});
-
-
-// Download a backup
-app.get('/api/backups/:filename', (req, res, next) => {
-    const filename = path.basename(req.params.filename); // Sanitize to prevent path traversal
-    const filePath = path.join(BACKUP_DIR, filename);
-
-    res.download(filePath, (err) => {
-        if (err) {
-            if (err.code === "ENOENT") {
-                return res.status(404).json({ error: "File not found." });
-            }
-            return next(err);
-        }
-    });
-});
-
-// Delete a backup
-app.delete('/api/backups/:filename', async (req, res, next) => {
-    try {
-        const filename = path.basename(req.params.filename); // Sanitize
-        await fs.unlink(path.join(BACKUP_DIR, filename));
-        res.status(200).json({ message: 'Backup deleted successfully.' });
-    } catch (err) {
-        if (err.code === "ENOENT") {
-            return res.status(404).json({ error: "File not found." });
-        }
-        next(err);
-    }
-});
-
-
-// Media Upload
-app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
-
-    try {
-        let fileUrl;
-        if (process.env.STORAGE_PROVIDER === 'supabase') {
-            const category = req.body.category || 'Miscellaneous';
-            const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-            const sanitizedFilename = req.file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_');
-            const filePath = sanitizedCategory ? `${sanitizedCategory}/${Date.now()}-${sanitizedFilename}` : `${Date.now()}-${sanitizedFilename}`;
-
-            const { data, error } = await supabase.storage
-                .from('media-assets')
-                .upload(filePath, req.file.buffer, {
-                    contentType: req.file.mimetype,
-                    upsert: false,
-                });
-            if (error) throw error;
-            const { data: { publicUrl } } = supabase.storage.from('media-assets').getPublicUrl(data.path);
-            fileUrl = publicUrl;
-        } else {
-            // Construct URL based on the final path, including the category subfolder
-            const relativePath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
-            fileUrl = `/uploads/${relativePath}`;
-        }
-        res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size });
-    } catch (err) {
-        next(err);
-    }
-});
-
-// Local Image Gallery
-app.get('/api/media/local-gallery', async (req, res, next) => {
-    if (process.env.STORAGE_PROVIDER !== 'local') {
-        return res.status(200).json([]); // Only for local storage
-    }
-    
-    const walk = async (dir, parentCategory = null) => {
-        let dirents;
-        try {
-            dirents = await fs.readdir(dir, { withFileTypes: true });
-        } catch (e) {
-            if (e.code === 'ENOENT') { // Directory doesn't exist yet
-                await fs.mkdir(dir, { recursive: true });
-                return [];
-            }
-            throw e; // Other errors
-        }
-
-        let imageFiles = [];
-        for (const dirent of dirents) {
-            const fullPath = path.join(dir, dirent.name);
-            if (dirent.isDirectory()) {
-                const nestedFiles = await walk(fullPath, dirent.name);
-                imageFiles = imageFiles.concat(nestedFiles);
-            } else if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(dirent.name)) {
-                const relativePath = path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/');
-                imageFiles.push({
-                    url: `/uploads/${relativePath}`,
-                    category: parentCategory ? (parentCategory.charAt(0).toUpperCase() + parentCategory.slice(1)) : 'Miscellaneous',
-                    name: dirent.name.replace(/\.[^/.]+$/, ""),
-                });
-            }
-        }
-        return imageFiles;
-    };
-
-    try {
-        const allImageFiles = await walk(UPLOADS_DIR);
-        res.status(200).json(allImageFiles);
-    } catch (err) {
-        next(err);
-    }
-});
-
-
-// --- AI Endpoints ---
-app.get('/api/ai/status', (req, res) => {
-  res.json({ isConfigured: !!ai });
-});
-
-app.post('/api/ai/test', async (req, res, next) => {
-    if (!ai) {
-        return res.status(400).json({ success: false, error: "AI features are not configured on the server." });
-    }
-    try {
-        // Perform a simple, low-cost API call to validate the key
-        const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
-        // Check if response is valid, though just not erroring is usually enough
-        if (response && response.text) {
-             res.json({ success: true });
-        } else {
-            throw new Error("Received an empty or invalid response from the API.");
+        await fs.mkdir(ASSET_PACKS_DIR, { recursive: true });
+        const defaultPacks = await fs.readdir(DEFAULT_ASSET_PACKS_SOURCE_DIR);
+        for (const packFilename of defaultPacks) {
+            const sourcePath = path.join(DEFAULT_ASSET_PACKS_SOURCE_DIR, packFilename);
+            const destPath = path.join(ASSET_PACKS_DIR, packFilename);
+            await fs.copyFile(sourcePath, destPath);
+            console.log(`Synced default asset pack: ${packFilename}`);
         }
     } catch (error) {
-        console.error("AI API Key Test Failed:", error.message);
-        // Check for specific authentication-related errors if possible, otherwise send a generic message.
-        // Google's API often returns a 400 or 403 with specific error messages in the body for bad keys.
-        res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' });
-    }
-});
-
-app.post('/api/ai/generate', async (req, res, next) => {
-    if (!ai) return res.status(503).json({ error: "AI features are not configured on the server." });
-    
-    const { model, prompt, generationConfig } = req.body;
-    
-    try {
-        const response = await ai.models.generateContent({
-            model,
-            contents: prompt,
-            config: generationConfig,
-        });
-        res.json({ text: response.text });
-    } catch (err) {
-        next(err);
-    }
-});
-
-// --- Image Pack Importer Endpoints ---
-const GITHUB_REPO = 'mckayc/task-donegeon';
-const GITHUB_BRANCH = 'master';
-const IMAGE_PACK_ROOT = 'image-packs';
-
-// Helper to get all local file basenames for comparison
-const getLocalFileBasenames = async (dir) => {
-    let basenames = new Set();
-    try {
-        const dirents = await fs.readdir(dir, { withFileTypes: true });
-        for (const dirent of dirents) {
-            const res = path.resolve(dir, dirent.name);
-            if (dirent.isDirectory()) {
-                const nestedBasenames = await getLocalFileBasenames(res);
-                nestedBasenames.forEach(b => basenames.add(b));
-            } else {
-                basenames.add(dirent.name);
-            }
-        }
-    } catch (err) {
-        if (err.code !== 'ENOENT') {
-            console.error("Error reading local gallery for comparison:", err);
+        if (error.code !== 'ENOENT') { // Ignore if the default packs dir doesn't exist
+            console.error('Could not ensure default asset packs exist:', error);
         }
     }
-    return basenames;
 };
 
 
-app.get('/api/image-packs', async (req, res, next) => {
-    try {
-        const repoUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}?ref=${GITHUB_BRANCH}`;
-        const response = await fetch(repoUrl);
-        if (!response.ok) {
-            throw new Error(`GitHub API error: ${response.statusText}`);
-        }
-        const packsData = await response.json();
-        
-        if (!Array.isArray(packsData)) {
-            return res.json([]);
-        }
+// === Database Initialization and Server Start ===
+const initializeApp = async () => {
+    await ensureDatabaseDirectoryExists();
+    await dataSource.initialize();
+    console.log("Data Source has been initialized!");
 
-        const packPromises = packsData
-            .filter(item => item.type === 'dir')
-            .map(async (packDir) => {
-                const packContentsUrl = packDir.url;
-                const contentsResponse = await fetch(packContentsUrl);
-                const contentsData = await contentsResponse.json();
-                
-                if (!Array.isArray(contentsData)) return null;
+    const manager = dataSource.manager;
 
-                const sampleImage = contentsData.find(item => 
-                    item.type === 'file' && 
-                    item.name.toLowerCase().startsWith('sample.')
-                );
-
-                if (sampleImage) {
-                    return {
-                        name: packDir.name,
-                        sampleImageUrl: sampleImage.download_url,
-                    };
-                }
-                return null;
-            });
-
-        const availablePacks = (await Promise.all(packPromises)).filter(Boolean);
-        res.status(200).json(availablePacks);
-
-    } catch (err) {
-        next(err);
+    // MIGRATION/SYNC: Ensure a default guild exists and all users are members.
+    let defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });
+    if (!defaultGuild) {
+        console.log('[Data Sync] No default guild found. Creating one...');
+        defaultGuild = manager.create(GuildEntity, {
+            id: 'guild-default',
+            name: "Adventurer's Guild",
+            purpose: 'The main guild for all adventurers.',
+            isDefault: true,
+            treasury: { purse: {}, ownedAssetIds: [] },
+            members: [],
+        });
+        await manager.save(updateTimestamps(defaultGuild, true));
+        console.log('[Data Sync] Default guild created.');
     }
-});
-
-app.get('/api/image-packs/:packName', async (req, res, next) => {
-    const { packName } = req.params;
-    const sanitizedPackName = path.basename(packName); // Sanitize
-
-    try {
-        const localBasenames = await getLocalFileBasenames(UPLOADS_DIR);
-        
-        const packUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}/${sanitizedPackName}?ref=${GITHUB_BRANCH}`;
-        const packResponse = await fetch(packUrl);
-        if (!packResponse.ok) throw new Error(`Could not find pack '${sanitizedPackName}' on GitHub.`);
-        const packContents = await packResponse.json();
-
-        let filesToCompare = [];
-
-        for (const item of packContents) {
-            if (item.type === 'dir') { // Category
-                const categoryContentsResponse = await fetch(item.url);
-                const categoryContents = await categoryContentsResponse.json();
-                for (const file of categoryContents) {
-                    if (file.type === 'file') {
-                        filesToCompare.push({
-                            category: item.name,
-                            name: file.name,
-                            url: file.download_url,
-                            exists: localBasenames.has(file.name)
-                        });
-                    }
-                }
-            } else if (item.type === 'file') { // File in root of pack
-                 filesToCompare.push({
-                    category: 'Miscellaneous',
-                    name: item.name,
-                    url: item.download_url,
-                    exists: localBasenames.has(item.name)
-                });
-            }
+    
+    const allUsers = await manager.find(UserEntity);
+    const guildMemberIds = new Set(defaultGuild.members.map(m => m.id));
+    let needsSave = false;
+    allUsers.forEach(user => {
+        if (!guildMemberIds.has(user.id)) {
+            console.log(`[Data Sync] Adding user "${user.gameName}" (${user.id}) to default guild.`);
+            defaultGuild.members.push(user);
+            needsSave = true;
         }
-        
-        res.json(filesToCompare);
-
-    } catch (err) {
-        next(err);
-    }
-});
-
-
-app.post('/api/image-packs/import', async (req, res, next) => {
-    const { files } = req.body; // Expecting an array of { category, name, url }
-    if (!Array.isArray(files) || files.length === 0) {
-        return res.status(400).json({ error: 'No files specified for import.' });
+    });
+    if (needsSave) {
+        await manager.save(updateTimestamps(defaultGuild));
+        console.log(`[Data Sync] Default guild membership updated.`);
     }
 
-    try {
-        let importedCount = 0;
-        for (const file of files) {
-            const { category, name, url } = file;
-            if (!category || !name || !url) continue;
-
-            const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-            const categoryDir = path.join(UPLOADS_DIR, sanitizedCategory);
-            await fs.mkdir(categoryDir, { recursive: true });
-
-            const imageResponse = await fetch(url);
-            if (!imageResponse.ok) {
-                console.warn(`Failed to download ${name} from ${url}`);
-                continue;
-            }
-            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-            
-            const sanitizedFilename = name.replace(/[^a-zA-Z0-9-._]/g, '_');
-            const finalPath = path.join(categoryDir, sanitizedFilename);
-            
-            await fs.writeFile(finalPath, imageBuffer);
-            importedCount++;
-        }
-        res.status(200).json({ message: `${importedCount} images imported successfully.` });
-    } catch (err) {
-        next(err);
+    // MIGRATION/SYNC: Ensure a default exchange market exists.
+    let defaultMarket = await manager.findOne(MarketEntity, { where: { id: 'market-bank' } });
+    if (!defaultMarket) {
+        console.log('[Data Sync] No default market found. Creating one...');
+        defaultMarket = manager.create(MarketEntity, {
+            id: 'market-bank',
+            title: "Exchange Post",
+            description: "Exchange your various currencies and experience points.",
+            iconType: 'emoji',
+            icon: '⚖️',
+            status: { type: 'open' },
+        });
+        await manager.save(updateTimestamps(defaultMarket, true));
+        console.log('[Data Sync] Default market created.');
     }
-});
+    
+    // MIGRATION/SYNC: Ensure The Arcade market exists.
+    let arcadeMarket = await manager.findOne(MarketEntity, { where: { id: 'market-arcade' } });
+    if (!arcadeMarket) {
+        console.log('[Data Sync] Arcade market not found. Creating it...');
+        arcadeMarket = manager.create(MarketEntity, {
+            id: 'market-arcade',
+            title: "The Arcade",
+            description: "Spend your Game Tokens to play fun minigames and compete for high scores!",
+            iconType: 'emoji',
+            icon: '🕹️',
+            status: { type: 'open' },
+        });
+        await manager.save(updateTimestamps(arcadeMarket, true));
+        console.log('[Data Sync] The Arcade created.');
+    }
 
+    // MIGRATION/SYNC: Ensure the Snake minigame exists.
+    let snakeGame = await manager.findOne(MinigameEntity, { where: { id: 'minigame-snake' } });
+    if (!snakeGame) {
+        console.log('[Data Sync] Snake game not found. Creating it...');
+        snakeGame = manager.create(MinigameEntity, {
+            id: 'minigame-snake',
+            name: 'Snake',
+            description: 'The classic game of snake. Eat the food to grow longer, but don\'t run into yourself or the walls!',
+            icon: '🐍',
+            cost: 1, // Costs 1 Game Token
+        });
+        await manager.save(updateTimestamps(snakeGame, true));
+        console.log('[Data Sync] Snake game created.');
+    }
+
+    // MIGRATION/SYNC: Add new minigames if they don't exist
+    const newMinigames = [
+        { id: 'minigame-dragons-dice', name: "Dragon's Dice", description: "A classic dice game of risk and reward. Roll the dice, bank points, but don't get greedy or you'll lose it all!", icon: '🎲', cost: 1 },
+        { id: 'minigame-rune-breaker', name: 'Rune Breaker', description: 'A fantasy-themed version of the classic Breakout. Control a magical shield and bounce an orb to break rows of enchanted runes.', icon: '🛡️', cost: 1 },
+        { id: 'minigame-dungeon-dash', name: 'Dungeon Dash', description: 'A simple side-scrolling "endless runner." An adventurer runs automatically, and the player taps to make them jump over pits and slide under obstacles.', icon: '🏃‍♂️', cost: 1 },
+        { id: 'minigame-forge-master', name: 'Forge Master', description: 'A rhythm and timing game. The player must click or tap at the right moment to strike a piece of hot metal with a hammer, following a moving bar on the screen.', icon: '🔨', cost: 1 },
+        { id: 'minigame-archers-folly', name: "Archer's Folly", description: 'An archery game where the player clicks and drags to aim their bow. They must hit a series of moving targets, accounting for arrow drop over distance.', icon: '🏹', cost: 1 },
+        { id: 'minigame-tetris', name: 'Tetris', description: 'The classic block-stacking puzzle game. Clear lines to score points!', icon: '🧱', cost: 1 },
+        { id: 'minigame-gemstone-mines', name: 'Gemstone Mines', description: 'Swap adjacent gems to create lines of three or more. Create combos for big points!', icon: '💎', cost: 1 },
+        { id: 'minigame-labyrinth', name: "Labyrinth of the Minotaur", description: 'Navigate the maze, find the exit, and avoid the patrolling minotaur!', icon: '🏛️', cost: 1 },
+        { id: 'minigame-alchemists-trial', name: "Alchemist's Trial", description: 'A test of memory. Watch the sequence of ingredients and repeat it perfectly.', icon: '🧪', cost: 1 },
+        { id: 'minigame-goblin-ambush', name: 'Goblin Ambush', description: 'Whack the goblins as they pop out, but be careful not to hit the friendly gnomes!', icon: '👺', cost: 1 },
+        { id: 'minigame-river-crossing', name: 'River Crossing', description: 'Guide your hero across the treacherous river, hopping on logs and avoiding danger.', icon: '🏞️', cost: 1 },
+        { id: 'minigame-wizards-vortex', name: "Wizard's Vortex", description: 'Survive waves of incoming monsters by blasting them with your magic spells.', icon: '🧙', cost: 1 },
+    ];
+
+    for (const gameData of newMinigames) {
+        let game = await manager.findOne(MinigameEntity, { where: { id: gameData.id } });
+        if (!game) {
+            console.log(`[Data Sync] ${gameData.name} game not found. Creating it...`);
+            game = manager.create(MinigameEntity, gameData);
+            await manager.save(updateTimestamps(game, true));
+            console.log(`[Data Sync] ${gameData.name} game created.`);
+        }
+    }
+
+
+    // MIGRATION/SYNC: Add birthday trophies if they don't exist
+    const trophyRepo = manager.getRepository(TrophyEntity);
+    const birthdayTrophyIds = INITIAL_TROPHIES.filter(t => t.id.startsWith('trophy-bday-')).map(t => t.id);
+    if (birthdayTrophyIds.length > 0) {
+        const existingBdayTrophies = await trophyRepo.findBy({ id: In(birthdayTrophyIds) });
+        const existingBdayTrophyIds = new Set(existingBdayTrophies.map(t => t.id));
+        const trophiesToAdd = INITIAL_TROPHIES.filter(t => t.id.startsWith('trophy-bday-') && !existingBdayTrophyIds.has(t.id));
+
+        if (trophiesToAdd.length > 0) {
+            console.log(`[Data Sync] Found ${trophiesToAdd.length} missing birthday trophies. Adding them now...`);
+            await trophyRepo.save(trophiesToAdd.map(t => updateTimestamps(t, true)));
+            console.log('[Data Sync] Birthday trophies added.');
+        }
+    }
+
+    // MIGRATION/SYNC: Ensure core Game Token reward type exists.
+    const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
+    const gameTokenReward = await rewardTypeRepo.findOneBy({ id: 'core-token' });
+    if (!gameTokenReward) {
+        console.log('[Data Sync] Game Token reward type not found. Creating it...');
+        const gameTokenData = INITIAL_REWARD_TYPES.find(rt => rt.id === 'core-token');
+        if (gameTokenData) {
+            const newGameToken = rewardTypeRepo.create(gameTokenData);
+            await rewardTypeRepo.save(updateTimestamps(newGameToken, true));
+            console.log('[Data Sync] Game Token reward type created.');
+        }
+    }
+
+
+    // Ensure asset and backup directories exist
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
+    // This will check/create the MEDIA_DIR if it doesn't exist, which is good practice.
+    await fs.mkdir(MEDIA_DIR, { recursive: true });
+    await ensureDefaultAssetPacksExist();
+    
+    // Start schedulers
+    startAutomatedBackupScheduler();
+    startAutomatedRotationScheduler();
+
+    console.log("Application initialization complete.");
+};
+
+// === API Routes ===
+app.use('/api/quests', questsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/markets', marketsRouter);
+app.use('/api/reward-types', rewardsRouter);
+app.use('/api/ranks', ranksRouter);
+app.use('/api/trophies', trophiesRouter);
+app.use('/api/assets', assetsRouter);
+app.use('/api/quest-groups', questGroupsRouter);
+app.use('/api/themes', themesRouter);
+app.use('/api/events', eventsRouter);
+app.use('/api/rotations', rotationsRouter);
+app.use('/api/applied-modifiers', appliedModifiersRouter);
+app.use('/api/trades', tradesRouter);
+app.use('/api/gifts', giftsRouter);
+app.use('/api/guilds', guildsRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/bug-reports', bugReportsRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/setbacks', setbacksRouter);
+app.use('/api/minigames', minigamesRouter);
+// Modular routers
+app.use('/api/data', dataRouter);
+app.use('/api/system', systemRouter);
+app.use('/api/chronicles', chroniclesRouter);
+app.use('/api/ai', aiRouter);
+// Management routers from the management.routes.js file
+app.use('/api/asset-packs', managementRouters.assetPacksRouter);
+app.use('/api/image-packs', managementRouters.imagePacksRouter);
+app.use('/api/backups', managementRouters.backupsRouter);
+app.use('/api/media', managementRouters.mediaRouter);
 
 // === Static File Serving ===
-// Serve React app build files
-app.use(express.static(path.join(__dirname, '../dist')));
-// Serve local uploads if using local storage
-if (process.env.STORAGE_PROVIDER === 'local') {
-    app.use('/uploads', express.static(UPLOADS_DIR));
-}
+// Serve static assets from the 'dist' directory (frontend build output)
+app.use(express.static(path.join(__dirname, '..', 'dist')));
+// Serve uploaded assets from the 'data/assets' directory
+app.use('/uploads', express.static(UPLOADS_DIR));
+// Serve media files from the user-configurable 'data/media' directory
+app.use('/media', express.static(MEDIA_DIR));
 
-
-// === Final Catchall & Error Handling ===
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
-
-app.use((err, req, res, next) => {
-  console.error('An error occurred:', err.stack);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-  });
+// === Catch-all for Frontend Routing ===
+// For any other request, serve the index.html file to let the React router handle it.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
 
 
-// === Automated Backup Logic ===
-const runAutomatedBackup = async () => {
-    let client;
-    try {
-        client = await pool.connect();
-        const result = await client.query('SELECT value FROM app_data WHERE key = $1', ['app_state']);
-        const appState = result.rows[0]?.value;
-        const settings = appState?.settings;
-
-        if (!settings || !settings.automatedBackups || !settings.automatedBackups.enabled) {
-            return; // Feature disabled
-        }
-
-        const files = await fs.readdir(BACKUP_DIR).catch(() => []);
-        const autoBackups = files.filter(f => f.startsWith('auto_backup_')).sort().reverse();
-
-        if (autoBackups.length > 0) {
-            const latestBackupFilename = autoBackups[0];
-            const timestampStr = latestBackupFilename.replace('auto_backup_', '').replace('.json', '');
-            const lastBackupDate = new Date(timestampStr);
-            const hoursSinceLast = (new Date() - lastBackupDate) / (1000 * 60 * 60);
-
-            if (hoursSinceLast < settings.automatedBackups.frequencyHours) {
-                return; // Not time yet
-            }
-        }
-        
-        // Time to create a new backup
-        console.log(`[Automated Backup] Creating new backup at ${new Date().toLocaleString()}`);
-        const dataToBackup = JSON.stringify(appState, null, 2);
-        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-        const newFilename = `auto_backup_${timestamp}.json`;
-        await fs.writeFile(path.join(BACKUP_DIR, newFilename), dataToBackup);
-
-        // Prune old backups
-        const updatedAutoBackups = [newFilename, ...autoBackups];
-        if (updatedAutoBackups.length > settings.automatedBackups.maxBackups) {
-            const backupsToDelete = updatedAutoBackups.slice(settings.automatedBackups.maxBackups);
-            console.log(`[Automated Backup] Pruning ${backupsToDelete.length} old backup(s).`);
-            for (const filename of backupsToDelete) {
-                await fs.unlink(path.join(BACKUP_DIR, filename)).catch(err => console.error(`Failed to delete old backup ${filename}`, err));
-            }
-        }
-
-    } catch (err) {
-        console.error('[Automated Backup] An error occurred:', err);
-    } finally {
-        if (client) client.release();
-    }
-};
-
-
-// === Start Server ===
-// This part is ignored by Vercel but used for local development
-if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+// === Start the server after initialization ===
+initializeApp().then(() => {
     app.listen(port, () => {
-        console.log(`Task Donegeon backend listening at http://localhost:${port}`);
-        // Start automated backup timer (checks every 30 minutes)
-        setInterval(runAutomatedBackup, 30 * 60 * 1000);
+        console.log(`Server running at http://localhost:${port}`);
     });
-}
-
-
-// Export the app for Vercel
-module.exports = app;
+}).catch(error => {
+    console.error("Failed to initialize application:", error);
+    process.exit(1);
+});

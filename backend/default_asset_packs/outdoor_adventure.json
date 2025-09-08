@@ -1,0 +1,131 @@
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.outdooradventure.v1",
+    "name": "Outdoor Adventure Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "A collection of quests for yard work, playing outside, and exploring nature.",
+    "emoji": "🌳",
+    "category": "Home & Life"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "outdoor-quest-1",
+        "title": "Weed Patrol",
+        "description": "Spend 15 minutes pulling weeds from the garden or flower beds.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🌿",
+        "tags": [
+          "Yardwork",
+          "Outdoors"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 20
+          },
+          {
+            "rewardTypeId": "core-gold",
+            "amount": 5
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 20,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "outdoor-quest-2",
+        "title": "Tidy the Path",
+        "description": "Sweep the front porch, walkway, or back patio.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧹",
+        "tags": [
+          "Yardwork",
+          "Cleaning"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 15
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 20,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "outdoor-quest-3",
+        "title": "Nature's Scavenger",
+        "description": "Find three interesting things in the yard or on a walk (a cool rock, a unique leaf, a pretty flower).",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🔍",
+        "tags": [
+          "Outdoors",
+          "Exploring"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 10
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      }
+    ]
+  }
+}

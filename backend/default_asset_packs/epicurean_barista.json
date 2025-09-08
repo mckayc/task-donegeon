@@ -1,0 +1,95 @@
+
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.epicurean.barista.v1",
+    "name": "Barista's Brew Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Quests for the aspiring coffee and tea connoisseur.",
+    "emoji": "☕",
+    "category": "Epicurean"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "ebq1",
+        "title": "Morning Coffee Ritual",
+        "description": "Prepare coffee for the adults in the house.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "☕",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["barista", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+      },
+      {
+        "id": "ebq2",
+        "title": "Tea Time",
+        "description": "Prepare a pot of tea for the family to share.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🫖",
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 15 }],
+        "tags": ["barista", "social"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "ebq3",
+        "title": "Latte Art Practice",
+        "description": "Attempt to make a simple latte art design.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🎨",
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 20 }],
+        "tags": ["barista", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "ebq4",
+        "title": "Explore a New Blend",
+        "description": "Try a new type of coffee bean or tea leaf.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧐",
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["barista", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "ebq5",
+        "title": "Clean the Coffee Maker",
+        "description": "Thoroughly clean and descale the coffee machine.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧼",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
+        "tags": ["barista", "cleaning"],
+        "isActive": true, "isOptional": false, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "ebq6",
+        "title": "Iced Beverage Creation",
+        "description": "Make an iced coffee or iced tea.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧊",
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }],
+        "tags": ["barista", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.sampleusers.v1",
+    "name": "Sample User Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Adds a few pre-configured users for testing. PINs: Knight (1234), Mage (5678), Rogue (1111).",
+    "emoji": "👥",
+    "category": "Utilities"
+  },
+  "assets": {
+    "quests": [],
+    "questGroups": [],
+    "rewardTypes": [],
+    "ranks": [],
+    "trophies": [],
+    "markets": [],
+    "gameAssets": [],
+    "users": [
+      {
+        "firstName": "Arthur",
+        "lastName": "Pendragon",
+        "username": "knight",
+        "email": "knight@donegeon.com",
+        "gameName": "Sir Reginald the Valiant",
+        "birthday": "2008-05-20",
+        "role": "Gatekeeper",
+        "pin": "1234",
+        "password": "password123"
+      },
+      {
+        "firstName": "Morgana",
+        "lastName": "Le Fay",
+        "username": "mage",
+        "email": "mage@donegeon.com",
+        "gameName": "Elara the Wise",
+        "birthday": "2010-11-12",
+        "role": "Explorer",
+        "pin": "5678"
+      },
+      {
+        "firstName": "Jack",
+        "lastName": "Swift",
+        "username": "rogue",
+        "email": "rogue@donegeon.com",
+        "gameName": "Finn the Quick",
+        "birthday": "2012-03-01",
+        "role": "Explorer",
+        "pin": "1111"
+      }
+    ]
+  }
+}

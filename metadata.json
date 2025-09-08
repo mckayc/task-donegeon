@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon - 0.0.92 - Admin Workflow Enhancements",
-  "version": "0.0.92",
-  "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
+  "name": "Task Donegeon 2.0 - Dev 0.4.79 - Data Import Export Fixes",
+  "version": "0.4.79",
+  "description": "Fixed critical bugs in the Object Exporter and Backup & Restore systems. User imports from blueprints now work correctly, and restoring from JSON or SQLite backups is now reliable.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -1,0 +1,173 @@
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.studentsdailyquest.v1",
+    "name": "Student's Daily Quest",
+    "author": "Donegeon Team",
+    "version": "1.0.1",
+    "description": "A starter pack of daily duties for a typical school week, with screen time rewards for a job well done. Updated for modern compatibility.",
+    "emoji": "🧑‍🎓",
+    "category": "Home & Life"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "sdq-duty-1",
+        "title": "Armor Up for the Day! ☀️",
+        "description": "The day awaits! Don your daily armor (get dressed) and prepare for the adventures ahead.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "👕",
+        "imageUrl": null,
+        "tags": ["Morning Routine", "Personal"],
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "assignedUserIds": [], "guildId": null, "groupId": "qg-personal", "claimedByUserIds": [], "dismissals": [], "todoUserIds": [],
+        "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "startTime": "07:30:00",
+        "endTime": "08:10:00",
+        "allDay": false,
+        "startDateTime": null, "endDateTime": null
+      },
+      {
+        "id": "sdq-duty-2",
+        "title": "Banish the Breakfast Goblins 👹",
+        "description": "Clean up your breakfast battlefield! Make sure your spot at the table is clean and your dishes are in the sink.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🍽️",
+        "imageUrl": null,
+        "tags": ["Morning Routine", "Kitchen", "Cleaning"],
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
+        "lateSetbacks": [], "incompleteSetbacks": [], "isActive": true, "isOptional": false, "requiresApproval": false, "assignedUserIds": [], "guildId": null, "groupId": "qg-household", "claimedByUserIds": [], "dismissals": [], "todoUserIds": [],
+        "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "startTime": "08:10:00",
+        "endTime": "08:40:00",
+        "allDay": false,
+        "startDateTime": null, "endDateTime": null
+      },
+      {
+        "id": "sdq-duty-3",
+        "title": "The Pearly Gate Polish ✨",
+        "description": "Defend your teeth from the sugar trolls! Brush them thoroughly and make sure your backpack is ready for its quest.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🦷",
+        "imageUrl": null,
+        "tags": ["Morning Routine", "Hygiene", "School"],
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
+        "lateSetbacks": [], "incompleteSetbacks": [], "isActive": true, "isOptional": false, "requiresApproval": false, "assignedUserIds": [], "guildId": null, "groupId": "qg-health", "claimedByUserIds": [], "dismissals": [], "todoUserIds": [],
+        "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "startTime": "08:40:00",
+        "endTime": "08:45:00",
+        "allDay": false,
+        "startDateTime": null, "endDateTime": null
+      },
+      {
+        "id": "sdq-duty-4",
+        "title": "Homeward Bound Tidy 🏡",
+        "description": "Your backpack has returned from its journey. Put it away and ensure your room is tidy from the day's adventures.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🎒",
+        "imageUrl": null,
+        "tags": ["Afternoon Routine", "Cleaning", "Organization"],
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "lateSetbacks": [], "incompleteSetbacks": [], "isActive": true, "isOptional": false, "requiresApproval": true, "assignedUserIds": [], "guildId": null, "groupId": "qg-household", "claimedByUserIds": [], "dismissals": [], "todoUserIds": [],
+        "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "startTime": "16:00:00",
+        "endTime": "16:10:00",
+        "allDay": false,
+        "startDateTime": null, "endDateTime": null
+      },
+      {
+        "id": "sdq-duty-5",
+        "title": "Scrolls of Knowledge 📜",
+        "description": "Dedicate 20 minutes to studying the ancient scrolls (your homework).",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "✍️",
+        "imageUrl": null,
+        "tags": ["Homework", "School", "Learning"],
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
+        "lateSetbacks": [], "incompleteSetbacks": [], "isActive": true, "isOptional": false, "requiresApproval": false, "assignedUserIds": [], "guildId": null, "groupId": "qg-school", "claimedByUserIds": [], "dismissals": [], "todoUserIds": [],
+        "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "startTime": "17:00:00",
+        "endTime": "17:30:00",
+        "allDay": false,
+        "startDateTime": null, "endDateTime": null
+      },
+      {
+        "id": "sdq-duty-6",
+        "title": "The Sage's Tome 📚",
+        "description": "Expand your mind! Spend 20 minutes reading a book of your choice.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "📖",
+        "imageUrl": null,
+        "tags": ["Reading", "Learning"],
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "lateSetbacks": [], "incompleteSetbacks": [], "isActive": true, "isOptional": true, "requiresApproval": false, "assignedUserIds": [], "guildId": null, "groupId": "qg-school", "claimedByUserIds": [], "dismissals": [], "todoUserIds": [],
+        "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "startTime": "20:00:00",
+        "endTime": "20:30:00",
+        "allDay": false,
+        "startDateTime": null, "endDateTime": null
+      },
+      {
+        "id": "sdq-venture-1",
+        "title": "Friday Fun Day Bonus! 🎉",
+        "description": "Congratulations on completing another week of quests! Enjoy this bonus as a reward for your hard work.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🎉",
+        "imageUrl": null,
+        "tags": ["Bonus", "Weekly"],
+        "rewards": [{ "rewardTypeId": "core-crystal", "amount": 50 }],
+        "lateSetbacks": [], "incompleteSetbacks": [], "isActive": true, "isOptional": false, "requiresApproval": false, "assignedUserIds": [], "guildId": null, "groupId": "qg-personal", "claimedByUserIds": [], "dismissals": [], "todoUserIds": [],
+        "rrule": "FREQ=WEEKLY;BYDAY=FR",
+        "startTime": null, "endTime": null,
+        "allDay": true,
+        "startDateTime": null, "endDateTime": null
+      }
+    ],
+    "markets": [
+      {
+        "id": "market-screen-time",
+        "title": "Screen Time Emporium",
+        "description": "Exchange your hard-earned crystals for awesome screen time rewards! Available on weekends.",
+        "iconType": "emoji",
+        "icon": "👾",
+        "imageUrl": null,
+        "guildId": null,
+        "status": {
+          "type": "conditional",
+          "logic": "any",
+          "conditions": [
+            { "type": "DAY_OF_WEEK", "days": [5, 6, 0] }
+          ]
+        }
+      }
+    ],
+    "gameAssets": [
+      {"id": "ga-tablet", "name": "One Hour Tablet Time", "description": "One hour of free time on your tablet.", "iconType": "emoji", "icon": "📱", "category": "Screen Time", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 60 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-wiiu", "name": "One Hour Wii U Time", "description": "One hour of gaming on the Wii U.", "iconType": "emoji", "icon": "🎮", "category": "Screen Time", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 60 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-tv", "name": "One Hour TV Time", "description": "One hour to watch your favorite show.", "iconType": "emoji", "icon": "📺", "category": "Screen Time", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 60 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-movie", "name": "Choose Weekend Movie", "description": "You get to pick the movie for family movie night!", "iconType": "emoji", "icon": "🎬", "category": "Screen Time", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 100 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-computer", "name": "1 Hour on Dad's Computer", "description": "One hour of gaming on Dad's powerful computer.", "iconType": "emoji", "icon": "💻", "category": "Screen Time", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 75 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-playwithdad", "name": "Play Game with Dad", "description": "Spend one hour playing a Wii U or computer game together with Dad.", "iconType": "emoji", "icon": "👨‍👦", "category": "Screen Time", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 150 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-install-app", "name": "Install New App", "description": "Get a new free-to-play app or game installed on your device.", "iconType": "emoji", "icon": "📲", "category": "Digital Good", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 25 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-purchase-5", "name": "Game/App Purchase ($5)", "description": "Purchase a game or app up to a value of $5.", "iconType": "emoji", "icon": "💸", "category": "Digital Good", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 50 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-purchase-10", "name": "Game/App Purchase ($10)", "description": "Purchase a game or app up to a value of $10.", "iconType": "emoji", "icon": "💰", "category": "Digital Good", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 100 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0},
+      {"id": "ga-usbc-cable", "name": "USB-C Charging Cable", "description": "A brand new, durable USB-C cable for charging your devices.", "iconType": "emoji", "icon": "🔌", "category": "Physical Good", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 120 }]], "marketIds": ["market-screen-time"], "requiresApproval": true, "creatorId": "system", "createdAt": "2025-01-01T00:00:00.000Z", "purchaseLimit": null, "purchaseLimitType": "Total", "purchaseCount": 0}
+    ]
+  }
+}

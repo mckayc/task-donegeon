@@ -1,11 +1,10 @@
-
 # Task Donegeon
 
-**Version:** 0.0.92
+**Version:** 0.4.78
 
 ---
 
-Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and an **AI Studio** powered by Google Gemini to help administrators generate new quests and items, making world-building a breeze.
+Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and a **Suggestion Engine** powered by Google Gemini to help administrators generate new quests and items, making world-building a breeze.
 
 ## Table of Contents
 - [✨ Features](#-features)
@@ -14,54 +13,152 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [🚀 Getting Started](#-getting-started)
 - [⚙️ Installation and Running](#️-installation-and-running)
 
+### Weekly Summaries
+
+-   **Week of November 29, 2025 (v0.4.78):**
+    -   **EPUB Reader Caching & Offline Support:** The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.
+    -   **Service Worker Update:** The service worker has been updated to enable this new caching strategy.
+
+-   **Week of November 22, 2025 (v0.4.77):**
+    -   **The Grand Arcade Expansion:** Added six brand new minigames to the Arcade:
+        -   **Gemstone Mines:** A classic match-3 puzzle game.
+        -   **Labyrinth of the Minotaur:** A procedurally generated maze runner.
+        -   **Alchemist's Trial:** A "Simon Says" style memory game.
+        -   **Goblin Ambush:** A fast-paced "Whack-a-Mole" reflex game.
+        -   **River Crossing:** A fantasy take on the arcade classic *Frogger*.
+        -   **Wizard's Vortex:** A top-down magical survival shooter.
+    -   **Major Tetris Improvements:** Overhauled Tetris with modern features, including a **Hold Queue** to save pieces for later, a **Ghost Piece** to preview placement, and satisfying particle effects for line clears.
+
+-   **Week of November 15, 2025 (v0.4.76):**
+    -   **New Game: Tetris!** Added a complete, from-scratch implementation of the classic puzzle game Tetris to the Arcade, featuring scoring, levels, a next-piece preview, and on-screen controls.
+    -   **Tablet Mode:** The new Tetris game includes a "Tablet Mode" toggle, which provides an optimized two-handed control layout for larger devices.
+    -   **Game Rules:** A new "Game Rules" dialog has been created to show players how to play any game in the Arcade.
+
+-   **Week of November 8, 2025 (v0.4.75):**
+    -   **Arcade Gameplay Overhaul:** Implemented a massive update to the Arcade based on user feedback. This includes:
+        -   **UI Improvements:** Game cards now have explicit "Play", "Rules", and "Stats" buttons for clearer actions.
+        -   **Rune Breaker:** Added falling power-ups (e.g., paddle widener) to make gameplay more dynamic.
+        -   **Dungeon Dash:** Fixed a critical bug where players were not correctly defeated upon hitting a spike.
+        -   **Forge Master:** Implemented a combo system to reward consecutive "Perfect" hits with bonus points and a progressive speed increase.
+        -   **Archer's Folly:** Added a trajectory line and power meter to make aiming more intuitive.
+        -   **Snake:** Fixed a bug that allowed players to reverse direction and end the game. Added a "Tablet Mode" toggle for a two-handed D-pad layout on larger devices.
+        -   **Dragon's Dice:** Added a clear "BUSTED!" message when a player fails to score on a roll.
+        -   **Admin Tools:** Admins can now edit minigame properties like cost, plays per token, and prize thresholds from the management page.
+
+-   **Week of October 25, 2025 (v0.4.74):**
+    -   **Bug Reporter Visibility Fix:** Fixed a bug where the Bug Reporter tool was visible to all users. It is now correctly restricted to Donegeon Masters (admins) only.
+
+-   **Week of October 18, 2025 (v0.4.72):**
+    -   **Quest Group UI Fix:** Fixed a bug where creating, editing, or deleting a Quest Group would not update the UI until the page was refreshed. All CUD operations for Quest Groups now provide immediate feedback.
+
+-   **Week of October 11, 2025 (v0.4.71):**
+    -   **Quest To-Do Crash Fix:** Fixed a critical bug where toggling a quest's 'To-Do' status from the Dashboard or Calendar would cause the app to crash. The state management on affected pages has been refactored to prevent stale data and ensure stability.
+
+-   **Week of September 27, 2025 (v0.4.70):**
+    -   **Real-Time UI Updates:** Implemented a major fix for real-time UI updates. All create, update, and delete actions on management pages now reflect instantly without needing a page refresh, greatly improving the administrative workflow and resolving a long-standing state synchronization bug.
+
+-   **Week of October 4, 2025 (v0.4.69):**
+    -   **Service Worker Update Fix:** Resolved a critical issue where the application would fail to automatically update on some browsers due to aggressive caching of the service worker script. The app now explicitly checks for updates on every page load, ensuring users receive new versions promptly.
+
+-   **Week of September 20, 2025 (v0.4.67):**
+    -   **Arcade UX & Gameplay Improvements:** Made several enhancements to the Arcade. The "Play" button on game cards is now a primary, full-width button for better visibility. The Snake game's on-screen controls are now always visible on tablets, improving playability on touch devices. Archer's Folly has been updated with a new aiming guide showing power and trajectory, and its difficulty now progressively increases as the player's score rises.
+
+-   **Week of September 13, 2025 (v0.4.66):**
+    -   **Dashboard Customization UX Improvements:** Overhauled the "Customize Dashboard" dialog for better usability. The layout editor columns now have equal heights for a cleaner look. Cards can now be moved between main, side, and hidden columns using new arrow icons, providing an alternative to drag-and-drop. Fixed a bug where cards in the side column would disappear when switching to the "single-column" layout.
+
+-   **Week of September 6, 2025 (v0.4.65):**
+    -   **EPUB Reader Fix:** Fixed a critical bug in the EPUB reader where the progress bar would incorrectly display 100% and not update upon navigation. The progress calculation is now more robust and accurately reflects the user's position within the book.
+
+-   **Week of September 6, 2025 (v0.4.64):**
+    -   **Bug Bar Consolidation:** The bug recording bar has been consolidated into a more compact and responsive two-row layout to prevent controls from overflowing on smaller screens.
+
+-   **Week of September 1, 2025 (v0.4.61):**
+    -   **Rank & Leaderboard Logic Overhaul:** Ranks and the main Leaderboard are now calculated based on a user's *total lifetime XP earned from quests*, rather than their current XP balance. This provides a more accurate and fair representation of a user's overall progress that isn't affected by spending rewards. The Rank Card on the dashboard has been updated to display both current balances and total earned values for clarity.
+
+-   **Week of September 1, 2025 (v0.4.60):**
+    -   **Quest Scheduling Fix:** Implemented a new rule preventing users from completing "Duty" quests on days they are not scheduled to be active. Users now receive a notification explaining why the quest is unavailable, improving clarity and preventing incorrect completions.
+
+-   **Week of November 24, 2025 (v0.4.52):**
+    -   **Customizable Dashboard:** All cards on the Dashboard are now collapsible and can be reordered via drag-and-drop. Your preferred layout and collapsed states are saved automatically to your profile, allowing for a personalized view of your most important information.
+
+-   **Week of November 17, 2025 (v0.4.46):**
+    -   **eBook Reader Redesign:** The EPUB reader has been completely overhauled with a new UI. It now features permanent, opaque top and bottom bars for controls, an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a dedicated "add bookmark" button, and a subtle page-turn animation.
+
+-   **Week of November 10, 2025 (v0.4.45):**
+    -   **EPUB Reader Overhaul:** The eBook reader has been significantly upgraded with fullscreen mode, swipe controls, light/dark themes, improved bookmark display (with progress percentage), and database-backed progress syncing for a seamless experience across devices. Session and total time read are now also tracked and displayed.
+    -   **Media Library Enhancements:** Added the ability to create folders, fixed upload paths, and implemented drag-and-drop for files and folders in the media library.
+    -   **Bug Fixes:** Resolved an issue allowing users to complete daily duties multiple times and fixed a syntax error on the server.
+    -   **Quality of Life:** Added timestamps to the approvals page for better tracking.
+
+-   **November 3, 2025 (v0.4.28):**
+    -   **The Arcade Expansion:** Five new minigames have been added: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.
+    -   **Arcade Leaderboard:** A new "All-Time Arcade Legends" leaderboard now appears in the Arcade, showing top players based on cumulative scores across all games.
+    -   **High Score Display:** Each minigame card now proudly displays the name of the current global high score holder.
+
+-   **Week of October 27, 2025 (v0.4.27):**
+    -   **Snake Minigame Overhaul:** The Snake minigame in the Arcade has been significantly improved for better playability. The game window is now larger, the initial speed is slower, a "3, 2, 1, GO!" countdown has been added, and players can now restart the game by pressing any arrow key on the "Game Over" screen.
+    -   **Global Condition Fix:** Resolved a critical logic bug where a quest that was part of a quest group used in a *globally applied* condition set would lock itself, making it impossible to complete. The global condition check now correctly excludes the quest being evaluated from its own group's completion requirements.
+
+-   **Week of October 20, 2025 (v0.4.25):**
+    -   **Conditional Market Unlocks:** Locked markets now show a dialog detailing the specific conditions a user must meet to gain access, mirroring the functionality of locked quests.
+    -   **Global Conditions:** Introduced "Global" condition sets that can lock content across the entire application, providing a new layer of administrative control.
+    -   **Circular Dependency Fix:** Resolved a critical logic bug where a quest could be locked by a condition requiring the completion of its own quest group. The system now intelligently ignores the quest being checked when evaluating its group's completion status.
+    -   **Refactored Logic:** Refactored the internal condition checking logic to be more robust and consistent between quests and markets.
+
+-   **Week of October 13, 2025 (v0.4.05 - v0.4.24):**
+    -   Introduced user-specific and global Condition Sets for granular content control.
+    -   Revamped Kiosk Mode to be a persistent, device-specific setting.
+    -   Overhauled Manual Adjustments for flexibility, adding new birthday trophies.
+    -   Enhanced the AI Teacher with personalization and better question handling.
+    -   Fixed critical bugs related to Quest Group saving and recurring build failures.
+
+-   **Week of October 6, 2025 (v0.3.01 - v0.4.04):**
+    -   Developed and launched the full AI Teacher feature, moving from a backend foundation to a full-screen UI with an interactive "Teach, Check, Feedback" loop and robust tool-calling for quizzes.
+    -   Fixed issues with AI Teacher button responsiveness and made minor improvements to Kiosk Mode and item approval defaults.
+
+-   **Week of September 29, 2025 (v0.1.96 - v0.3.0):**
+    -   **Kiosk Mode Overhaul:** Re-architected Kiosk Mode to be a more stable URL-based system (`/kiosk`), patching critical security and login flow bugs.
+    -   **AI Foundations:** Implemented the backend foundation for the AI Teacher feature with stateful chat sessions.
+
+-   **Week of September 22, 2025 (v0.1.90 - v0.1.95):**
+    -   **Dashboard & Notifications:** Introduced new dashboard widgets and header notifications for pending user items.
+    -   **Responsive Approvals:** Made the Approvals page fully responsive for mobile devices.
+    -   **Enhanced Chronicles:** The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.
+
+-   **September 2025 (Pre v0.1.90):**
+    -   **Full Mobile Responsiveness:** Implemented a responsive design across the application.
+    -   **New "Journey" Quest Type:** Introduced multi-stage quests with checkpoints.
+    -   **Visual Quest System:** Added color-coded and animated borders to quest cards to indicate urgency and status.
+    -   **Core Feature Development:** Initial public release and foundational feature development.
+---
+
 ## ✨ Features
 
-### What's New in Version 0.0.92 (July 24, 2025)
--   **In-Dialog Quest Group Creation:** To streamline workflow, administrators can now create new Quest Groups directly from within the "Create/Edit Quest" dialog without navigating to a separate management page.
--   **Quick Edit Access:** On the "Manage Quests" and "Manage Goods" pages, an item's title is now clickable, immediately opening the edit dialog for faster content updates.
+### For Players ({users})
+-   **Gamified Experience:** Complete {tasks} to earn {points} and {xp}.
+-   **Character Progression:** Level up through a series of configurable {levels}.
+-   **Virtual Economy:** Spend {currency} in {stores} to buy virtual goods.
+-   **Avatar Customization:** Personalize your character with purchased items.
+-   **Trophy Room:** Earn {awards} for completing milestones.
+-   **Multiple Scopes:** Manage tasks in both a **Personal** space and within shared **{groups}**.
+-   **AI Teacher:** Engage with an AI-powered tutor on educational {tasks}.
 
-### Version History
-- **v0.0.91 (July 23, 2025):** Redesigned "Manage Goods" and "Manage Quests" pages with tabs, sorting, and search. Added a new "Quest Group" system for organization and bulk assignment.
-- **v0.0.90 (July 22, 2025):** **Smarter Asset Pack Importer:** The "Import from Library" feature was overhauled to intelligently compare local and remote files, preventing duplicate downloads and giving admins granular import control.
-- **v0.0.89 (July 21, 2025):** **Enhanced Chronicles:** The activity feed now displays the currency and amount spent for each item purchase, providing a clearer transaction history.
-- **v0.0.88 (July 20, 2025):** **Critical Docker Stability Fix:** Resolved a race condition that caused chat messages to not save and the app to become unresponsive in Docker environments. The data saving mechanism is now more robust, preventing server syncs from overwriting unsaved local changes and eliminating the frequent "Failed to fetch" errors.
-- **v0.0.87 (July 20, 2025):** **Calendar Day View Enhancement:** Added due date/time information for quests on the main 'Day' view of the calendar, improving at-a-glance scheduling clarity.
-- **v0.0.86 (July 19, 2025):** **Enhanced Reward Valuation Helper:** The helper text in the quest editor now shows both the anchor reward equivalent and the final "real-world" value (e.g., `(equals 5 💎 or $5.00)`), providing admins with clearer context for balancing the game's economy. The layout of the reward input has also been improved for better readability.
-- **v0.0.85 (July 19, 2025):** **Image Pack Importer:** A new feature has been added to the `Asset Manager` page, allowing administrators to dynamically import curated image packs directly from the project's GitHub repository. This keeps the main application lean while providing easy access to a library of high-quality images.
-- **v0.0.84 (July 19, 2025):** **Categorized Frontend Uploads:** The asset management workflow has been significantly improved. Admins can now specify a category when uploading an image from the `Asset Manager`, and the backend will automatically organize the file into a corresponding sub-folder.
-- **v0.0.83 (July 19, 2025):** **Durable Server-Side Backups:** The entire backup system has been overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process.
-- **v0.0.82 (July 19, 2025):** **Login Notifications System & DM Announcements:** A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.
-- **v0.0.81 (July 19, 2025):** Revamped About Page, direct GitHub link, and a new Version History section.
-- **v0.0.80 (July 19, 2025):** UI Streamlining (Global Reward Display), Smarter Sticky Card Headers, Docker Chat Fix, Dashboard Cleanup.
-
-### Core Features
--   **Full-featured In-App Chat:** A real-time chat system allows users to message each other directly within the app, with notifications for unread messages.
--   **Bulk Content Management:** Admins can now select multiple items on management pages to perform bulk actions like deleting or changing status.
--   **AI Image Generation Helper:** The Asset Manager now includes an AI prompt helper with links to free AI art generators to streamline asset creation.
--   **New Default Marketplaces:** Added a bank for currency exchange, an experience shop, and a candy store, complete with new items.
--   **AI Studio Enhancements:** The asset generator now distinguishes between creating "Duties" and "Ventures" and can generate up to 20 ideas at once.
--   **Expanded Trophy Collection:** Added over 30 new default trophies for users to earn.
--   **Complete Theme Editor Overhaul:** Redesigned with a live preview, more fonts, and granular controls for colors and sizes.
--   **Enhanced Calendar Views:** Day view now has two columns (Duties/Ventures), and Week/Month "Chronicles" views are fully functional.
--   **Guild-Specific Themes:** Guilds can now have their own unique, lockable themes when in "Guild View".
--   **Profile Picture Uploads:** Users can upload their own profile pictures for a more personalized avatar.
--   **Automated Backups:** Configure automated local backups to run at set intervals, ensuring data safety.
--   **Numerous UI/UX Improvements:** Including a redesigned PIN pad, scrollable dashboard sections, improved quest board sorting, and more customization options like editable sidebar link names.
--   **Market Controls:** Admins can now set markets to "Open" or "Closed" status, controlling their visibility in the Marketplace.
--   **Data Synchronization:** Automatic data syncing keeps your application state consistent across all your devices.
--   **AI-Powered Content Generation:** The AI Studio, powered by Google Gemini, can generate ideas for quests, items, markets, trophies, and themes.
--   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards, deadlines, and penalties.
--   **Avatar Customization:** Unlock and equip different cosmetic items, now correctly reflected in the header and throughout the app.
--   **Full Backup, Restore, and Sharing:** Admins can download a complete backup, restore it, or create smaller "Blueprints" to share content with others.
+### For Admins ({admin}s)
+-   **Powerful Content Management:** Create and manage every aspect of the game world, including {tasks}, items, {stores}, {levels}, and {awards}.
+-   **AI Suggestion Engine:** Use Google's Gemini AI to generate creative ideas for any game asset, from {tasks} to items to {awards}.
+-   **Asset Library:** Kickstart your world with pre-made content packs that can be imported with a single click.
+-   **Blueprint System:** Export your own custom content as a "Blueprint" file to share with others or back up your creations.
+-   **Dynamic Rules Engine:** Create powerful "Condition Sets" to control when {tasks} and {stores} become available based on player progress, time of day, or items owned.
+-   **User Management:** Easily manage members, assign roles, and make manual adjustments to player accounts.
+-   **Shared / Kiosk Mode:** Configure a device for shared family use with a quick-login screen and optional PIN protection.
+-   **In-Depth Theming:** Customize the application's entire look and feel, from fonts and colors to button shapes, using the Theme Editor.
+-   **Robust Data Management:** Create manual or automated backups of your entire application data (in JSON or SQLite format) and restore from them at any time.
 
 ## 🗺️ Roadmap
 
 Here is the planned development path for Task Donegeon, prioritized for the most impactful features first.
 
 ### Phase 1: Foundational Features & Quality of Life
-This phase focuses on high-impact improvements for admins and players that enhance the core experience.
-
--   **Conditional Market Opening:** Allow markets to open based on conditions like the day of the week, user rank, or quest completion.
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
 -   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
 -   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
@@ -70,128 +167,5 @@ This phase focuses on high-impact improvements for admins and players that enhan
 -   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
 
 ### Phase 2: Core Gameplay & Personalization
-This phase introduces major new creative outlets and systems for deeper engagement.
-
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward Rarity & Limits:** Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.
--   **Automated Quest Rotation:** A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.
-
-### Phase 3: Advanced Systems & World Expansion
-This phase includes the big, game-changing features that add new dimensions to the world.
-
--   **Game Map:** A visual map with unlockable locations. Traveling to a location could unlock new quests or markets.
--   **Explorer Markets:** Allow explorers to open their own markets to sell items or services to other players, creating a player-driven economy.
--   **Advanced Reporting:** A dedicated reporting dashboard for admins to track user engagement, economic flow, and quest completion rates.
-
-### Phase 4: Platform Maturity & Polish
-This phase focuses on long-term stability, accessibility, and preparing the app for a wider audience.
-
--   **Real-time Notifications:** Use WebSockets for instant updates on approvals, purchases, and guild activity.
--   **Accessibility (A11Y) Audit:** A full review to ensure the application is usable by people with disabilities.
--   **Mobile App / PWA:** Package the application as a Progressive Web App (PWA) for a native-like experience on mobile devices.
-
-
-## 🛠️ Tech Stack
-
--   **Frontend:** React (with Hooks & Context API), TypeScript, Vite, TailwindCSS
--   **Backend:** Node.js with Express.js, PostgreSQL, Google Gemini
--   **Deployment:** Docker, Vercel (Frontend & Serverless Functions), Supabase (Database & Storage)
-
-## 🚀 Getting Started
-
-When you run the application for the first time, it will be automatically seeded with a default set of users and data. You will be presented with a lock screen.
-
-**Login as the administrator to unlock the app:**
--   **Username**: Select `admin` from the dropdown (if shown).
--   **Password**: `123456`
-
-Once unlocked, you and other users can log in using the "Switch Profile" button. Other pre-seeded accounts have the password `123456` if they are an admin/moderator role, or a PIN of `1234` if they are a standard user.
-
-## ⚙️ Installation and Running
-
-### Option 1: Local Development (Recommended for contributing)
-1.  **Clone & Install:**
-    ```bash
-    git clone https://github.com/mckayc/task-donegeon.git
-    cd task-donegeon
-    npm install
-    cd backend
-    npm install
-    cd ..
-    ```
-2.  **Run PostgreSQL with Docker:**
-    ```bash
-    docker run --name task-donegeon-db -e POSTGRES_PASSWORD=your_secret_password -p 5432:5432 -d postgres
-    ```
-3.  **Configure `.env` File:**
-    Copy `.env.example` to `.env` and fill in the variables.
-    -   `DATABASE_URL`: `postgres://postgres:your_secret_password@localhost:5432/postgres`
-    -   `STORAGE_PROVIDER`: `local`
-    -   **`API_KEY`**: Your Google Gemini API Key. Without this, AI features will be disabled.
-    -   **`BACKUP_PATH`** (Optional): The path *inside the container* where backups are stored. Defaults to `/app/backend/backups`. You generally don't need to change this.
-
-4.  **Run Backend & Frontend:**
-    -   In one terminal, from the `backend` directory: `npm start`
-    -   In another terminal, from the root directory: `npm run dev`
-
-### Option 2: Vercel & Supabase Deployment (Recommended for production)
-1.  **Fork the Repository** to your own GitHub account.
-
-2.  **Set up Supabase Project:**
-    -   Create a new Supabase project.
-    -   Go to **Project Settings > Database** and copy the **URI** connection string.
-    -   Go to the **SQL Editor** and run: `CREATE TABLE app_data (key TEXT PRIMARY KEY, value JSONB NOT NULL);`
-    -   Go to **Storage**, click **New bucket**, name it `media-assets`, and check the box to make it a **Public bucket**.
-
-3.  **Set up and Deploy on Vercel:**
-    -   Import your forked repository on Vercel.
-    -   Under **Environment Variables**, add the following:
-        -   `DATABASE_URL`: Your full Supabase URI connection string.
-        -   `STORAGE_PROVIDER`: `supabase`
-        -   `SUPABASE_URL`: Your Supabase project URL (from **Project Settings > API**).
-        -   `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase `service_role` key (from **Project Settings > API**).
-        -   **`API_KEY`**: Your Google Gemini API Key.
-    -   Click **Deploy**.
-    -   **Note:** The server-side backup feature is designed for Docker/local deployments with persistent storage and will not work on Vercel's ephemeral filesystem.
-
-### Option 3: Docker Deployment
-1.  **Clone the Repository**.
-2.  **Configure `.env` File:** Copy `.env.example` to `.env` and set all variables.
-    -   `POSTGRES_PASSWORD`: A strong, unique password.
-    -   `STORAGE_PROVIDER`: `local`
-    -   **`API_KEY`**: Your Google Gemini API Key.
-3.  **Build and Run:**
-    ```bash
-    # Create local folders for persistent storage first
-    mkdir uploads
-    mkdir backups
-    # Ensure uploads folder has correct permissions for the container user (UID 1000)
-    sudo chown -R 1000:1000 ./uploads
-    docker-compose up --build
-    ```
-    The app will be at `http://localhost:3002`. Uploaded files will be in the `./uploads` directory, and server-side backups will be in `./backups`.
-
-### Option 4: Portainer Deployment (Updated Guide)
-1.  In Portainer, go to **Stacks** > **+ Add stack**.
-2.  Give the stack a **Name** (e.g., `task-donegeon`).
-3.  **Paste** the contents of `docker-compose.prod.yml` into the Web editor.
-4.  Scroll down to the **Environment variables** section. It's crucial to add the required secrets here. Click **Add environment variable** for each of the following:
-    -   **Name:** `POSTGRES_PASSWORD`, **Value:** `your_super_secret_password_here` (Choose a strong password)
-    -   **Name:** `API_KEY`, **Value:** `your_gemini_api_key_here` (If you want AI features)
-5.  **Important:** To make backups and uploads persistent, go to the **Volumes** tab in Portainer and map the container paths (e.g., `/app/backend/backups`, `/app/uploads`) to a host path (e.g., `/portainer/data/task-donegeon/backups`).
-6.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
-
-### Option 5: Production Deployment from Docker Hub
-1.  Create a `.env` file with the required production variables.
-2.  **Create local directories for persistent storage:**
-    ```bash
-    mkdir uploads
-    mkdir backups
-    # Set correct ownership for container user
-    sudo chown -R 1000:1000 ./uploads ./backups
-    ```
-3.  Run the application using the `docker-compose.prod.yml` file:
-    ```bash
-    docker-compose -f docker-compose.prod.yml up -d
-    ```
-    This command will pull the latest pre-built image from Docker Hub and run it. Uploaded files and server-side backups will be saved to the `./uploads` and `./backups` folders on your host machine, respectively.
+-   **Reward Rework:** Overhaul the reward system to allow for more complex and interesting rewards, such as items that grant temporary bonuses or unlock special abilities.

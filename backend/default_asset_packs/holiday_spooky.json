@@ -1,0 +1,94 @@
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.holiday.spooky.v1",
+    "name": "Spooky Season Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "A collection of ghoulishly fun quests and items for the Halloween season.",
+    "emoji": "🎃",
+    "category": "Holidays"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "sq1",
+        "title": "Carve a Jack-o'-Lantern",
+        "description": "Design and carve a pumpkin.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🎃",
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 40 }],
+        "tags": ["holiday", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "sq2",
+        "title": "Decorate the Lair",
+        "description": "Put up spooky decorations inside or outside.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🕷️",
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 30 }],
+        "tags": ["holiday", "decorating"],
+        "isActive": true, "isOptional": true, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "sq3",
+        "title": "Costume Crafting",
+        "description": "Help create or assemble a Halloween costume.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "👻",
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }],
+        "tags": ["holiday", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "sq4",
+        "title": "Monster Movie Night",
+        "description": "Help pick out and set up for a spooky movie night.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🎬",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["holiday", "family time"],
+        "isActive": true, "isOptional": true, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "sq5",
+        "title": "Tell a Ghost Story",
+        "description": "Tell a spooky (but not too scary!) story.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "📖",
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["holiday", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+      },
+      {
+        "id": "sq6",
+        "title": "Candy Distribution Duty",
+        "description": "Help hand out candy to trick-or-treaters.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🍬",
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 20 }],
+        "tags": ["holiday", "helping"],
+        "isActive": true, "isOptional": false, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "short_name": "Task Donegeon",
+  "name": "Task Donegeon",
+  "description": "A gamified task and chore tracker for families and groups.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1c1917",
+  "background_color": "#0c0a09"
+}

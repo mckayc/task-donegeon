@@ -1,0 +1,94 @@
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.holiday.spring.v1",
+    "name": "Spring Celebration Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "A bundle of fresh quests and items to celebrate the arrival of spring.",
+    "emoji": "🌸",
+    "category": "Holidays"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "spq1",
+        "title": "Garden Preparation",
+        "description": "Help clear a garden bed and prepare it for planting.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🌱",
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 30 }],
+        "tags": ["holiday", "yardwork"],
+        "isActive": true, "isOptional": true, "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "spq2",
+        "title": "Egg Painting",
+        "description": "Decorate and dye eggs for the spring celebration.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🎨",
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 25 }],
+        "tags": ["holiday", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "spq3",
+        "title": "Spring Cleaning Sweep",
+        "description": "Help with a deep clean of one room in the house.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧹",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 40 }],
+        "tags": ["holiday", "cleaning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "spq4",
+        "title": "Help Prepare the Feast",
+        "description": "Assist in making a special meal for the celebration.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧑‍🍳",
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 20 }],
+        "tags": ["holiday", "cooking"],
+        "isActive": true, "isOptional": false, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "spq5",
+        "title": "Plant a Seedling",
+        "description": "Plant a new flower or vegetable in the garden.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🌿",
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["holiday", "yardwork"],
+        "isActive": true, "isOptional": true, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "spq6",
+        "title": "Hide the Eggs",
+        "description": "Help hide the decorated eggs for the hunt.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🥚",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["holiday", "helping"],
+        "isActive": true, "isOptional": false, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      }
+    ]
+  }
+}

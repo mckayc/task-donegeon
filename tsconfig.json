@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "ESNext",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
@@ -10,12 +11,21 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["jest", "@testing-library/jest-dom"]
   },
-  "include": ["components", "context", "data", "hooks", "utils", "index.tsx", "App.tsx", "types.ts", "metadata.json"],
+  "include": ["src", "index.tsx"],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "jest.config.js",
+    "jest.setup.js",
+    "test-utils.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,0 +1,95 @@
+
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.roleplaying.pirate.v1",
+    "name": "Pirate's Booty Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Embark on a swashbuckling adventure with these pirate-themed quests and treasures.",
+    "emoji": "🏴‍☠️",
+    "category": "Roleplaying"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "rpq1",
+        "title": "Swab the Deck",
+        "description": "Mop the kitchen or bathroom floor.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "💧",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
+        "tags": ["pirate", "cleaning"],
+        "isActive": true, "isOptional": false, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "rpq2",
+        "title": "Bury the Treasure",
+        "description": "Put away your toys or belongings in their proper chest.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "📦",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
+        "tags": ["pirate", "organization"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+      },
+      {
+        "id": "rpq3",
+        "title": "Map the Seas",
+        "description": "Draw a treasure map of your house or yard.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🗺️",
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 20 }],
+        "tags": ["pirate", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "rpq4",
+        "title": "Find the X",
+        "description": "Complete a treasure hunt set up by the Quartermaster (a parent).",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "❌",
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }],
+        "tags": ["pirate", "puzzle"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "rpq5",
+        "title": "Share the Booty",
+        "description": "Share a snack or toy with a sibling or friend.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🤝",
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 15 }],
+        "tags": ["pirate", "social"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+      },
+      {
+        "id": "rpq6",
+        "title": "Hoist the Colors",
+        "description": "Help raise or lower a flag, or help with laundry.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🚩",
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }],
+        "tags": ["pirate", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+      }
+    ]
+  }
+}

@@ -1,0 +1,165 @@
+
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.creativehobbies.v1",
+    "name": "Creative Hobbies Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Quests designed to inspire creativity in art, music, writing, and more.",
+    "emoji": "🎨",
+    "category": "Personal Development"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "creative-quest-1",
+        "title": "The Sketch Artist",
+        "description": "Spend 15 minutes drawing or doodling anything you like.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "✏️",
+        "tags": [
+          "Creative",
+          "Art"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 15
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "creative-quest-2",
+        "title": "The Minstrel's Practice",
+        "description": "Practice a musical instrument for 20 minutes.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🎵",
+        "tags": [
+          "Creative",
+          "Music"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 10
+          },
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 10
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "creative-quest-3",
+        "title": "The Storyteller",
+        "description": "Write a short story or a journal entry (at least one paragraph).",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "📖",
+        "tags": [
+          "Creative",
+          "Writing"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 20
+          },
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 15
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "creative-quest-4",
+        "title": "The LEGO Master",
+        "description": "Build something cool with LEGOs or other building blocks.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧱",
+        "tags": [
+          "Creative",
+          "Building"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 25
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      }
+    ]
+  }
+}

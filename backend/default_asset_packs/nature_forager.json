@@ -1,0 +1,95 @@
+
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.nature.forager.v1",
+    "name": "The Forager's Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Learn about the natural world with quests about plant identification and outdoor skills.",
+    "emoji": "🍄",
+    "category": "Nature & Survival"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "nfq1",
+        "title": "Identify Three Trees",
+        "description": "Learn to identify three different types of trees in your area.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🌳",
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
+        "tags": ["nature", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "nfq2",
+        "title": "Cloud Gazing",
+        "description": "Identify three types of clouds (cumulus, stratus, cirrus).",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "☁️",
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["nature", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "nfq3",
+        "title": "Build a Simple Shelter",
+        "description": "Construct a small, temporary shelter in the yard using branches and leaves.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🏕️",
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 35 }],
+        "tags": ["nature", "survival"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "nfq4",
+        "title": "Follow a Trail",
+        "description": "Go for a hike on a marked trail in a local park or nature reserve.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🥾",
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 30 }],
+        "tags": ["nature", "exercise"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "nfq5",
+        "title": "Berry Picking",
+        "description": "Help pick berries (if in season and with adult supervision).",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🍓",
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
+        "tags": ["nature", "foraging"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null
+      },
+      {
+        "id": "nfq6",
+        "title": "Leave No Trace",
+        "description": "Pick up any litter you find on a walk or at a park.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "♻️",
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 20 }],
+        "tags": ["nature", "service"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY"
+      }
+    ]
+  }
+}

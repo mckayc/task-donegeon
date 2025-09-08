@@ -6,7 +6,7 @@
 # need to copy the massive local node_modules folder.
 node_modules/
 
-# IDE and OS-specific files. These are specific to your local machine.
+# IDE and OS-specific files. These are specific to your local machine
 .vscode/
 .idea/
 .DS_Store

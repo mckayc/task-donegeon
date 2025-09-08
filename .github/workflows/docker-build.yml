@@ -33,27 +33,37 @@ jobs:
           else
             echo "SUFFIX=dev" >> "$GITHUB_OUTPUT"
           fi
-
-      # 4⃣ Set up QEMU and Buildx
+      # Start test code
+      # 4⃣ Decide build platforms (multi-arch only on master)
+      - name: Set build platforms
+        id: platforms
+        run: |
+          if [ "${GITHUB_REF##*/}" = "master" ]; then
+            echo "PLATFORMS=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
+          else
+            echo "PLATFORMS=linux/amd64" >> "$GITHUB_OUTPUT"
+          fi
+      # End test code
+      # 5⃣ Set up QEMU and Buildx
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 5⃣ Log in to Docker Hub
+      # 6⃣ Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 6⃣ Build and push Docker image
+      # 7⃣ Build and push Docker image
       - name: Build & push image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.platforms.outputs.PLATFORMS }}
           tags: |
             ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.IMAGE_TAG }}
             ${{ env.IMAGE_NAME }}:${{ steps.branch_tag.outputs.SUFFIX }}

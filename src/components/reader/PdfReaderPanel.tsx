@@ -23,6 +23,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const { setReadingPdfQuest } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { updateReadingProgress } = useQuestsDispatch();
+  const { addNotification } = useNotificationsDispatch();
   const { quests } = useQuestsState();
 
   const liveQuest = useMemo(() => quests.find(q => q.id === quest.id) || quest, [quests, quest]);
@@ -32,6 +33,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const [zoom, setZoom] = useState(1);
   const [pdfFile, setPdfFile] = useState<string | File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -47,21 +49,24 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
     const fetchAndCachePdf = async () => {
       if (!liveQuest.pdfUrl) return;
       setIsLoading(true);
+      setError(null);
+      setPdfFile(null);
       try {
         const cache = await caches.open(PDF_CACHE_NAME);
         let response = await cache.match(liveQuest.pdfUrl);
 
         if (!response) {
           response = await fetch(liveQuest.pdfUrl);
+          if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.statusText}`);
           await cache.put(liveQuest.pdfUrl, response.clone());
         }
         
         const blob = await response.blob();
         setPdfFile(URL.createObjectURL(blob));
-
-      } catch (error) {
-        console.error("Failed to load or cache PDF:", error);
-      } finally {
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        console.error("Failed to load or cache PDF:", message);
+        setError(`Could not load document: ${message}`);
         setIsLoading(false);
       }
     };
@@ -69,17 +74,26 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   }, [liveQuest.pdfUrl]);
 
   useEffect(() => {
-    if (currentUser && debouncedPageNumber > 1) {
+    if (currentUser && debouncedPageNumber > 1 && numPages) { // Only sync if document is loaded
       updateReadingProgress(quest.id, currentUser.id, { pageNumber: debouncedPageNumber });
     }
-  }, [debouncedPageNumber, quest.id, currentUser, updateReadingProgress]);
+  }, [debouncedPageNumber, quest.id, currentUser, updateReadingProgress, numPages]);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = useCallback(({ numPages: totalPages }: { numPages: number }) => {
+    setNumPages(totalPages);
     if(currentUser && liveQuest.readingProgress?.[currentUser.id]?.pageNumber) {
-        setPageNumber(Math.min(numPages, liveQuest.readingProgress[currentUser.id]!.pageNumber!));
+        setPageNumber(p => Math.min(totalPages, p));
     }
-  };
+    setIsLoading(false);
+  }, [currentUser, liveQuest.readingProgress]);
+  
+  const onDocumentLoadError = useCallback((error: Error) => {
+    console.error('React-PDF load error:', error);
+    setError(`Failed to render PDF: ${error.message}`);
+    setIsLoading(false);
+    addNotification({ type: 'error', message: `Could not open PDF file. It might be corrupted or in an unsupported format.`});
+  }, [addNotification]);
+
 
   const handlePageChange = (newPageNumber: number) => {
     if (numPages) {
@@ -117,15 +131,23 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
         </header>
 
         <div className="flex-grow w-full h-full overflow-auto relative">
-            {isLoading && (
+            {(isLoading || error) && (
                  <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4">
-                    <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
-                    <p className="text-xl font-semibold text-white">Loading Document...</p>
+                    {isLoading && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>}
+                    <p className={`text-xl font-semibold ${error ? 'text-red-400' : 'text-white'}`}>
+                        {error ? error : 'Preparing Reader...'}
+                    </p>
                 </div>
             )}
-            {pdfFile && (
-                <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess} className="flex justify-center">
-                    <Page pageNumber={pageNumber} scale={zoom} renderAnnotationLayer={false} renderTextLayer={false} />
+            {pdfFile && !error && (
+                <Document 
+                    file={pdfFile} 
+                    onLoadSuccess={onDocumentLoadSuccess} 
+                    onLoadError={onDocumentLoadError}
+                    loading={<></>} // Hide default loader
+                    className="flex justify-center"
+                >
+                    {!isLoading && <Page pageNumber={pageNumber} scale={zoom} renderAnnotationLayer={false} renderTextLayer={false} />}
                 </Document>
             )}
         </div>
@@ -139,6 +161,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                     min={1}
                     max={numPages || 1}
                     className="w-24"
+                    disabled={!numPages}
                 />
                 <span className="text-stone-400">of {numPages || '...'}</span>
             </div>

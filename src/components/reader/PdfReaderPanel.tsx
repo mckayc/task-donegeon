@@ -43,7 +43,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
     if (!currentUser || !liveQuest.pdfUrl) return;
     const initialPage = liveQuest.readingProgress?.[currentUser.id]?.pageNumber || 1;
     setPageNumber(initialPage);
-  }, [liveQuest, currentUser]);
+  }, [quest.id, currentUser]);
 
   useEffect(() => {
     const fetchAndCachePdf = async () => {

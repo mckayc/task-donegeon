@@ -118,6 +118,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
             </li>
             <li>
                 <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and downloads the file for faster loading and offline access.
+                <ul className="list-disc list-inside pl-6 mt-2">
+                    <li><strong>Navigation Stability Fix:</strong> Resolved a state synchronization bug that caused the page number to revert to its previously saved state immediately after navigating to a new page. The reading experience is now smooth and stable.</li>
+                </ul>
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
@@ -185,6 +188,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.80)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New Media Type - PDF:</strong> Added a full-featured PDF reader. Quests can now include PDF documents, which users can read directly in the app. The reader includes page navigation, zoom, fullscreen mode, automatic progress saving, and offline caching.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 6, 2025 (v0.4.79)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

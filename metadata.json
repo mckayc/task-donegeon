@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.80 - PDF Reader",
-  "version": "0.4.80",
-  "description": "Added a full-featured PDF reader for quests. Users can now attach and read PDF documents directly within the app, with progress saving and offline support.",
+  "name": "Task Donegeon 2.0 - 0.4.81 - PDF Reader Fix",
+  "version": "0.4.81",
+  "description": "Fixed a bug in the PDF reader where the page would revert after navigation due to a state synchronization issue. Reading progress is now stable.",
   "requestFramePermissions": [
     "camera"
   ],

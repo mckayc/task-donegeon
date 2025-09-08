@@ -3,7 +3,7 @@
 # Gives the workflow a name, which is displayed in the "Actions" tab of your GitHub repository.
 name: Docker Build and Push
 
-# Specifies the trigger for this workflow. In this case, it runs on every 'push' to the 'main' branch.
+# Specifies the trigger for this workflow. In this case, it runs on every 'push' to the 'main' branch
 on:
   push:
     branches: [ "master", "dev"  ]

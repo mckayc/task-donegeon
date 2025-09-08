@@ -18,6 +18,6 @@ RUN chown -R appuser:appgroup /app
 # Switch to the non-root user.
 USER appuser
 # Expose the port that the backend server will listen on inside the container.
-EXPOSE 3000
+EXPOSE 3001
 # Define the command that will run when the container starts.
 CMD ["node", "backend/server.js"]

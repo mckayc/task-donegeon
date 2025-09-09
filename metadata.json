@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.95 - EPUB Reader Overhaul",
-  "version": "0.4.95",
-  "description": "Overhauled the EPUB reader for better performance and usability. It now features offline caching for instant loads, swipe gestures, and a new UI with a progress slider, page turn buttons, and bookmarking functionality.",
+  "name": "Task Donegeon 2.0 - 0.4.93 - PDF Reader Fixes - Navigator fix",
+  "version": "0.4.93",
+  "description": "Fixed several bugs in the PDF reader including page navigation, total time calculation, and fullscreen layout. Simplified controls for a better user experience.",
   "requestFramePermissions": [
     "camera"
   ],

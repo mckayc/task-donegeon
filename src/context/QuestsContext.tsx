@@ -55,8 +55,8 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  // FIX: Added `sessionSeconds` to the `updateReadingProgress` interface to support EPUB reader progress saving and resolve a type error.
-  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; locationCfi?: string; bookmarks?: string[]; pageNumber?: number; sessionSeconds?: number; }) => Promise<void>;
+  // FIX: Added the optional 'pageNumber' property to the 'updateReadingProgress' dispatch interface to allow PDF reading progress to be saved, resolving a type error in the PdfReaderPanel.
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; locationCfi?: string; bookmarks?: string[], pageNumber?: number }) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);

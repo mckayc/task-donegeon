@@ -3,7 +3,6 @@
 
 
 
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -55,11 +54,13 @@ interface GoalCardProps {
 }
 
 const ProgressBar: React.FC<{ progress: GoalProgress }> = ({ progress }) => {
+    // FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'.
     const percentage = Math.min(100, (progress.current / progress.amount) * 100);
     return (
         <div>
             <div className="flex justify-between items-center text-xs mb-1">
                 <span className="font-semibold text-stone-300 flex items-center gap-1">{progress.icon} {progress.name}</span>
+                {/* FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'. */}
                 <span className="font-mono">{progress.current} / {progress.amount}</span>
             </div>
             <div className="w-full bg-stone-700 rounded-full h-2.5">

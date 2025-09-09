@@ -110,48 +110,64 @@ const Dashboard: React.FC = () => {
     } = useDashboardData();
 
     const layout = useMemo<DashboardLayout>(() => {
+        // Start with a deep copy of the default layout to ensure all properties are present.
+        const newLayout = JSON.parse(JSON.stringify(defaultLayout));
         const userLayout = currentUser?.dashboardLayout;
-        if (!userLayout) return defaultLayout;
     
-        const newLayout: DashboardLayout = {
-            layoutType: userLayout.layoutType || defaultLayout.layoutType,
-            columns: {
-                main: { order: [], collapsed: userLayout.columns?.main?.collapsed || [] },
-                side: { order: [], collapsed: userLayout.columns?.side?.collapsed || [] },
-            },
-            hidden: userLayout.hidden || [],
-        };
+        if (userLayout) {
+            // Apply user's preferences over the default.
+            newLayout.layoutType = userLayout.layoutType || defaultLayout.layoutType;
+            newLayout.hidden = userLayout.hidden || [];
+            
+            // Use user's collapsed states
+            newLayout.columns.main.collapsed = userLayout.columns?.main?.collapsed || [];
+            newLayout.columns.side.collapsed = userLayout.columns?.side?.collapsed || [];
     
-        const allKnownCardIds = new Set(Object.keys(allCardComponents));
+            const allCardIdsInApp = new Set(Object.keys(allCardComponents));
+            const placedCardIds = new Set<string>();
     
-        const placedInMain = userLayout.columns?.main?.order || [];
-        const placedInSide = userLayout.columns?.side?.order || [];
-        const placedInHidden = userLayout.hidden || [];
-        
-        newLayout.columns.main.order = placedInMain.filter(id => allKnownCardIds.has(id));
-        newLayout.columns.side.order = placedInSide.filter(id => allKnownCardIds.has(id));
-        newLayout.hidden = placedInHidden.filter(id => allKnownCardIds.has(id));
+            // Respect user's ordering for cards they've placed, ensuring the card still exists in the app.
+            const userMainOrder = userLayout.columns?.main?.order || [];
+            const userSideOrder = userLayout.columns?.side?.order || [];
+            
+            newLayout.columns.main.order = userMainOrder.filter((id: string) => {
+                if (allCardIdsInApp.has(id)) {
+                    placedCardIds.add(id);
+                    return true;
+                }
+                return false;
+            });
     
-        const placedCardIds = new Set([
-            ...newLayout.columns.main.order,
-            ...newLayout.columns.side.order,
-            ...newLayout.hidden,
-        ]);
+            newLayout.columns.side.order = userSideOrder.filter((id: string) => {
+                if (allCardIdsInApp.has(id)) {
+                    placedCardIds.add(id);
+                    return true;
+                }
+                return false;
+            });
     
-        const unplacedCardIds = Object.keys(allCardComponents).filter(id => !placedCardIds.has(id));
+            // Add hidden cards to the placed set so they don't get re-added to visible columns.
+            newLayout.hidden.forEach((id: string) => placedCardIds.add(id));
     
-        unplacedCardIds.forEach(id => {
-            if (defaultLayout.columns.main.order.includes(id)) {
-                newLayout.columns.main.order.push(id);
-            } else if (defaultLayout.columns.side.order.includes(id)) {
-                newLayout.columns.side.order.push(id);
-            } else {
-                newLayout.hidden.push(id);
-            }
-        });
+            // Find any new cards (e.g., from an update) that the user hasn't placed yet.
+            const newUnplacedCards = Object.keys(allCardComponents).filter(id => !placedCardIds.has(id));
+    
+            // Place new cards in their default columns.
+            newUnplacedCards.forEach(id => {
+                if (defaultLayout.columns.main.order.includes(id)) {
+                    newLayout.columns.main.order.push(id);
+                } else if (defaultLayout.columns.side.order.includes(id)) {
+                    newLayout.columns.side.order.push(id);
+                }
+            });
+        }
     
         return newLayout;
     }, [currentUser?.dashboardLayout]);
+
+    const visibleMainCards = useMemo(() => layout.columns.main.order.filter(id => !layout.hidden.includes(id)), [layout]);
+    const visibleSideCards = useMemo(() => layout.columns.side.order.filter(id => !layout.hidden.includes(id)), [layout]);
+
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {
         if (currentUser) {
@@ -171,9 +187,23 @@ const Dashboard: React.FC = () => {
         saveLayout(newLayout);
     }, [layout, saveLayout]);
 
-    const handleReorder = useCallback((column: 'main' | 'side', newOrder: string[]) => {
+    const handleReorder = useCallback((column: 'main' | 'side', newVisibleOrder: string[]) => {
         const newLayout = JSON.parse(JSON.stringify(layout));
-        newLayout.columns[column].order = newOrder;
+        const fullOrder = newLayout.columns[column].order;
+        const visibleCardsInColumn = fullOrder.filter((id: string) => !newLayout.hidden.includes(id));
+    
+        // Create a copy to consume
+        const newOrderCopy = [...newVisibleOrder];
+        
+        // Reconstruct the full order array by replacing visible items with their new order
+        const newFullOrder = fullOrder.map((cardId: string) => {
+            if (visibleCardsInColumn.includes(cardId)) {
+                return newOrderCopy.shift()!;
+            }
+            return cardId;
+        });
+    
+        newLayout.columns[column].order = newFullOrder;
         saveLayout(newLayout);
     }, [layout, saveLayout]);
     
@@ -281,11 +311,11 @@ const Dashboard: React.FC = () => {
             <div className={`grid ${gridClasses}`}>
                 <Reorder.Group
                     axis="y"
-                    values={layout.columns.main.order}
-                    onReorder={(newOrder) => handleReorder('main', newOrder as string[])}
+                    values={visibleMainCards}
+                    onReorder={newOrder => handleReorder('main', newOrder)}
                     className={`${mainColClasses} space-y-6`}
                 >
-                    {layout.columns.main.order.map(cardId => {
+                    {visibleMainCards.map(cardId => {
                          const controls = useDragControls();
                          const card = renderCard(cardId, 'main', controls);
                          if (!card) return null;
@@ -300,11 +330,11 @@ const Dashboard: React.FC = () => {
                 {layout.layoutType !== 'single-column' && (
                     <Reorder.Group
                         axis="y"
-                        values={layout.columns.side.order}
-                        onReorder={(newOrder) => handleReorder('side', newOrder as string[])}
+                        values={visibleSideCards}
+                        onReorder={newOrder => handleReorder('side', newOrder)}
                         className={`${sideColClasses} space-y-6`}
                     >
-                        {layout.columns.side.order.map(cardId => {
+                        {visibleSideCards.map(cardId => {
                             const controls = useDragControls();
                             const card = renderCard(cardId, 'side', controls);
                             if (!card) return null;

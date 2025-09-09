@@ -92,12 +92,13 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li><strong>Quest Group Management:</strong> Fixed a bug where creating, editing, or deleting a Quest Group would not update the UI until the page was refreshed.</li>
         </ul>
         <h3>Dashboard Customization</h3>
-        <p>The dashboard customization experience has been enhanced for better usability:</p>
+        <p>The dashboard can be fully customized to suit your needs. Changes are saved automatically to your profile.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
-            <li><strong>Layout Editor:</strong> In the "Customize Dashboard" popup, the columns for "Main", "Side", and "Hidden" cards are now equal height for a cleaner visual layout.</li>
-            <li><strong>Card Movement:</strong> In addition to drag-and-drop, each card in the editor now features arrow icons, allowing for quick movement between columns with a single click.</li>
-            <li><strong>Single-Column Mode:</strong> A bug was fixed where cards from the "Side" column would become hidden when switching to the "single-column" layout. Now, all visible cards from both columns are correctly consolidated into one list, and can be moved to and from the "Hidden" section.</li>
-            <li><strong>Duplicate Card Fix:</strong> Resolved a logic error where moving a card from its default column could cause it to appear in both the new and old columns simultaneously. The layout system now correctly handles new and moved cards to prevent duplication.</li>
+            <li><strong>Reorder Cards:</strong> In the "Customize Dashboard" popup (accessible from your profile menu), you can drag and drop cards within a column to change their order.</li>
+            <li><strong>Move Cards:</strong> Use the arrow icons on each card in the editor to move it between the Main and Side columns.</li>
+            <li><strong>Hide Cards:</strong> Click the eyeball icon on any card in the editor to toggle its visibility. Hidden cards (which will appear dimmed in the editor) will not be displayed on your dashboard but can be re-enabled at any time.</li>
+            <li><strong>Change Layout:</strong> Choose between a two-column layout (with a wider main column on the left or right) or a single-column layout, which is ideal for narrower screens.</li>
+            <li><strong>Layout Stability:</strong> Resolved a logic error where certain cards like "My Pending Items" would either be duplicated across columns or disappear entirely after customization or an app update. The new layout system correctly handles all card states to prevent these issues.</li>
         </ul>
         <h3>Dynamic Rules Engine</h3>
         <ul className="list-disc list-inside space-y-2 mt-2">

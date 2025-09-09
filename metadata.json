@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.87 - Dashboard Layout Fix",
-  "version": "0.4.87",
-  "description": "Fixes a bug where dashboard cards like 'Live Reading Activity' and 'My Pending Items' could appear in two columns simultaneously after customization.",
+  "name": "Task Donegeon 2.0 - 0.4.88 - Dashboard Customization Overhaul",
+  "version": "0.4.88",
+  "description": "Fixes persistent dashboard layout bugs and introduces a more intuitive UI for hiding/showing cards via an eyeball icon instead of a 'Hidden' column.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -1,5 +1,5 @@
 import React from 'react';
-export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut } from 'lucide-react';
+export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut, Eye, EyeOff } from 'lucide-react';
 
 const iconProps = {
   xmlns: "http://www.w3.org/2000/svg",

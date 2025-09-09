@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.82 - Quest Group Exemptions",
-  "version": "0.4.82",
-  "description": "Enhanced Global Condition Sets to allow exempting entire Quest Groups, providing more flexible control over quest availability.",
+  "name": "Task Donegeon 2.0 - 0.4.83 - Quest Timing Fix",
+  "version": "0.4.83",
+  "description": "Implemented strict server-side validation to prevent quests from being completed after their 'incomplete' time has passed, ensuring accurate completion timestamps.",
   "requestFramePermissions": [
     "camera"
   ],

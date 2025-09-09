@@ -92,6 +92,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <p>To ensure fairness and clarity, the system now enforces stricter availability rules for quests:</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Scheduled Duties:</strong> Duties (recurring quests) that are not scheduled to be active on the current day will now be fully disabled. While they may still appear dimmed on the Quest Page for informational purposes, they cannot be selected or completed until their scheduled day. This prevents accidental completions on non-active days and clarifies user expectations.</li>
+            <li><strong>Quest Completion Timing:</strong> Server-side validation has been strengthened to strictly enforce quest deadlines. The system now prevents users from submitting a quest completion after its defined "incomplete" time has passed. This resolves an issue where completions could be logged with a timestamp that was after the quest's cutoff, ensuring that all completion data is accurate and adheres to the established rules.</li>
         </ul>
         <h3>Rank & Leaderboard Calculations</h3>
         <p>
@@ -192,6 +193,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.82)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quest Group Exemptions:</strong> Added the ability to exempt entire Quest Groups from "Global" Condition Sets, allowing admins to create categories of quests that will always be available regardless of other global rules.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.81)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

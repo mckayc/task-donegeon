@@ -1,7 +1,7 @@
 
 
 const { dataSource } = require('../data-source');
-const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity } = require('../entities');
+const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity, ScheduledEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps, checkAndAwardTrophies, logGeneralAdminAction } = require('../utils/helpers');
@@ -10,6 +10,23 @@ const { INITIAL_SETTINGS } = require('../initialData');
 const questRepo = dataSource.getRepository(QuestEntity);
 const userRepo = dataSource.getRepository(UserEntity);
 const completionRepo = dataSource.getRepository(QuestCompletionEntity);
+
+const toYMD = (date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const isVacationActiveOnDate = (date, scheduledEvents, guildId) => {
+    const dateKey = toYMD(date);
+    return scheduledEvents.some(event => {
+        if (event.eventType !== 'Vacation') return false;
+        const scopeMatch = !event.guildId || event.guildId === guildId;
+        if (!scopeMatch) return false;
+        return dateKey >= event.startDate && dateKey <= event.endDate;
+    });
+};
 
 const getAll = async () => {
     const quests = await questRepo.find({ relations: ['assignedUsers'] });
@@ -173,6 +190,30 @@ const complete = async (completionData) => {
         const user = await manager.findOneBy(UserEntity, { id: completionData.userId });
         const quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
         if (!user || !quest) throw new Error('User or Quest not found');
+
+        // Server-side deadline validation
+        const scheduledEvents = await manager.find(ScheduledEventEntity);
+        const completionTime = new Date(completionData.completedAt);
+        const onVacation = isVacationActiveOnDate(completionTime, scheduledEvents, quest.guildId);
+
+        // Check Duty incomplete time
+        if (quest.type === 'Duty' && quest.endTime && !onVacation) {
+            const [hours, minutes] = quest.endTime.split(':').map(Number);
+            const deadlineToday = new Date(completionTime);
+            deadlineToday.setHours(hours, minutes, 0, 0);
+
+            if (completionTime > deadlineToday) {
+                throw new Error(`Quest "${quest.title}" is incomplete for the day and can no longer be completed.`);
+            }
+        }
+
+        // Check Venture/Journey final deadline
+        if ((quest.type === 'Venture' || quest.type === 'Journey') && quest.endDateTime && !onVacation) {
+            const deadline = new Date(quest.endDateTime);
+            if (completionTime > deadline) {
+                 throw new Error(`Quest "${quest.title}" is past its deadline and can no longer be completed.`);
+            }
+        }
 
         // Validation for duty quests to prevent multiple completions on the same day.
         if (quest.type === 'Duty') {
@@ -705,6 +746,9 @@ const updateReadingProgress = async (questId, userId, progressData) => {
     }
     if (progressData.bookmarks) {
         userProgress.bookmarks = progressData.bookmarks;
+    }
+     if (progressData.pageNumber) {
+        userProgress.pageNumber = progressData.pageNumber;
     }
 
     quest.readingProgress[userId] = userProgress;

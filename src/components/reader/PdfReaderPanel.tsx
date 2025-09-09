@@ -62,31 +62,33 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   }, [quest.id, currentUser, liveQuest]);
 
   useEffect(() => {
-    const fetchAndCachePdf = async () => {
+    const initializeAndCachePdf = async () => {
       if (!liveQuest.pdfUrl) return;
       setIsLoading(true);
       setError(null);
-      setPdfFile(null);
+
+      // Immediately set the URL for react-pdf to start its progressive loading.
+      setPdfFile(liveQuest.pdfUrl);
+
+      // In the background, ensure the file is in the cache for offline use.
+      // This doesn't block rendering.
       try {
         const cache = await caches.open(PDF_CACHE_NAME);
-        let response = await cache.match(liveQuest.pdfUrl);
-
+        const response = await cache.match(liveQuest.pdfUrl);
         if (!response) {
-          response = await fetch(liveQuest.pdfUrl);
-          if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.statusText}`);
-          await cache.put(liveQuest.pdfUrl, response.clone());
+          console.log('PDF not in cache, fetching to prime for offline use...');
+          const fetchResponse = await fetch(liveQuest.pdfUrl);
+          if (fetchResponse.ok) {
+            await cache.put(liveQuest.pdfUrl, fetchResponse.clone());
+            console.log('PDF cached successfully.');
+          }
         }
-        
-        const blob = await response.blob();
-        setPdfFile(URL.createObjectURL(blob));
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        console.error("Failed to load or cache PDF:", message);
-        setError(`Could not load document: ${message}`);
-        setIsLoading(false);
+        console.warn('Could not prime PDF cache:', err);
+        // This is not a critical error for online viewing, so we don't set the error state.
       }
     };
-    fetchAndCachePdf();
+    initializeAndCachePdf();
   }, [liveQuest.pdfUrl]);
 
   // --- Time & Progress Syncing ---

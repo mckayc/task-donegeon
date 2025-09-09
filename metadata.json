@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.91 - Goal Card & Layout Fix",
-  "version": "0.4.91",
-  "description": "Fixed a critical bug causing dashboard cards to disappear after customization. Introduced a new 'My Goal' card to track progress towards wishlist items from the Marketplace.",
+  "name": "Task Donegeon 2.0 - 0.4.92 - PDF Performance Upgrade",
+  "version": "0.4.92",
+  "description": "Upgraded the PDF reader to support progressive loading, allowing large documents to open much faster and with less memory usage. Caching for offline use is now a background process.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -121,6 +121,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and total time read *for this specific document*, allowing you to pick up where you left off. The file is also downloaded for faster loading and offline access.
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Navigation Stability Fix:</strong> Resolved a state synchronization bug that caused the page number to revert to its previously saved state immediately after navigating to a new page. The reading experience is now smooth and stable.</li>
+                    <li><strong>Large File Support:</strong> The PDF reader has been optimized for performance. It now uses progressive loading, allowing very large documents to open almost instantly without requiring the entire file to be downloaded first. This significantly reduces memory usage and prevents browser crashes with big files.</li>
                 </ul>
             </li>
         </ul>

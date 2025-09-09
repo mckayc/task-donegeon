@@ -97,6 +97,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li><strong>Layout Editor:</strong> In the "Customize Dashboard" popup, the columns for "Main", "Side", and "Hidden" cards are now equal height for a cleaner visual layout.</li>
             <li><strong>Card Movement:</strong> In addition to drag-and-drop, each card in the editor now features arrow icons, allowing for quick movement between columns with a single click.</li>
             <li><strong>Single-Column Mode:</strong> A bug was fixed where cards from the "Side" column would become hidden when switching to the "single-column" layout. Now, all visible cards from both columns are correctly consolidated into one list, and can be moved to and from the "Hidden" section.</li>
+            <li><strong>Duplicate Card Fix:</strong> Resolved a logic error where moving a card from its default column could cause it to appear in both the new and old columns simultaneously. The layout system now correctly handles new and moved cards to prevent duplication.</li>
         </ul>
         <h3>Dynamic Rules Engine</h3>
         <ul className="list-disc list-inside space-y-2 mt-2">

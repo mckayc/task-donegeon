@@ -112,28 +112,45 @@ const Dashboard: React.FC = () => {
     const layout = useMemo<DashboardLayout>(() => {
         const userLayout = currentUser?.dashboardLayout;
         if (!userLayout) return defaultLayout;
-
-        const mergedLayout = JSON.parse(JSON.stringify(defaultLayout));
-        mergedLayout.layoutType = userLayout.layoutType || defaultLayout.layoutType;
-
-        const allKnownCardIds = new Set(Object.keys(allCardComponents));
-
-        const mergeColumn = (column: 'main' | 'side') => {
-            if (userLayout.columns && userLayout.columns[column]) {
-                const userOrder = userLayout.columns[column].order || [];
-                const defaultOrder = defaultLayout.columns[column].order;
-                const combinedOrder = [...new Set([...userOrder, ...defaultOrder])];
-                mergedLayout.columns[column].order = combinedOrder.filter(id => allKnownCardIds.has(id) && !(userLayout.hidden || []).includes(id));
-                mergedLayout.columns[column].collapsed = userLayout.columns[column].collapsed || [];
-            }
+    
+        const newLayout: DashboardLayout = {
+            layoutType: userLayout.layoutType || defaultLayout.layoutType,
+            columns: {
+                main: { order: [], collapsed: userLayout.columns?.main?.collapsed || [] },
+                side: { order: [], collapsed: userLayout.columns?.side?.collapsed || [] },
+            },
+            hidden: userLayout.hidden || [],
         };
-
-        mergeColumn('main');
-        mergeColumn('side');
+    
+        const allKnownCardIds = new Set(Object.keys(allCardComponents));
+    
+        const placedInMain = userLayout.columns?.main?.order || [];
+        const placedInSide = userLayout.columns?.side?.order || [];
+        const placedInHidden = userLayout.hidden || [];
         
-        mergedLayout.hidden = userLayout.hidden?.filter(id => allKnownCardIds.has(id)) || [];
-
-        return mergedLayout;
+        newLayout.columns.main.order = placedInMain.filter(id => allKnownCardIds.has(id));
+        newLayout.columns.side.order = placedInSide.filter(id => allKnownCardIds.has(id));
+        newLayout.hidden = placedInHidden.filter(id => allKnownCardIds.has(id));
+    
+        const placedCardIds = new Set([
+            ...newLayout.columns.main.order,
+            ...newLayout.columns.side.order,
+            ...newLayout.hidden,
+        ]);
+    
+        const unplacedCardIds = Object.keys(allCardComponents).filter(id => !placedCardIds.has(id));
+    
+        unplacedCardIds.forEach(id => {
+            if (defaultLayout.columns.main.order.includes(id)) {
+                newLayout.columns.main.order.push(id);
+            } else if (defaultLayout.columns.side.order.includes(id)) {
+                newLayout.columns.side.order.push(id);
+            } else {
+                newLayout.hidden.push(id);
+            }
+        });
+    
+        return newLayout;
     }, [currentUser?.dashboardLayout]);
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.86 - Exchange Rate Display",
-  "version": "0.4.86",
-  "description": "The Exchange Post now clearly displays the direct conversion rate between two selected currencies to improve user experience and clarity.",
+  "name": "Task Donegeon 2.0 - 0.4.87 - Dashboard Layout Fix",
+  "version": "0.4.87",
+  "description": "Fixes a bug where dashboard cards like 'Live Reading Activity' and 'My Pending Items' could appear in two columns simultaneously after customization.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -67,39 +67,61 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     useEffect(() => {
         if (!viewerElementRef.current || !quest.epubUrl) return;
         let viewer: any;
+
         const init = async () => {
-            viewer = new WebpubViewer(viewerElementRef.current, {
-                bookUrl: quest.epubUrl,
-            });
-            viewerRef.current = viewer;
+            try {
+                // Fetch the book data manually
+                const response = await fetch(quest.epubUrl!);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch book: ${response.statusText}`);
+                }
+                const bookData = await response.arrayBuffer();
+                const bookDataUint8 = new Uint8Array(bookData);
 
-            viewer.on('location', (locationData: any) => {
-                setCurrentLocation(locationData);
-                setProgress(Math.round(locationData.progress * 100));
-            });
+                // Initialize the viewer with the raw data
+                viewer = new WebpubViewer(viewerElementRef.current, {
+                    bookData: bookDataUint8,
+                });
+                viewerRef.current = viewer;
 
-            viewer.on('toc', (tocData: TocItem[]) => setToc(tocData));
+                viewer.on('location', (locationData: any) => {
+                    setCurrentLocation(locationData);
+                    setProgress(Math.round(locationData.progress * 100));
+                });
 
-            viewer.on('error', (error: any) => {
-                console.error("Reader Error:", error);
-                addNotification({ type: 'error', message: 'Failed to load the book.' });
+                viewer.on('toc', (tocData: TocItem[]) => setToc(tocData));
+
+                viewer.on('error', (error: any) => {
+                    console.error("Reader Error:", error);
+                    addNotification({ type: 'error', message: 'Failed to load the book.' });
+                    setReadingQuest(null);
+                });
+
+                await viewer.start();
+                setBookTitle(viewer.publication.metadata.title);
+                
+                const savedLocation = userProgress?.locationCfi;
+                if (savedLocation) viewer.goTo(savedLocation);
+                
+                setBookmarks(userProgress?.bookmarks || []);
+                setIsLoading(false);
+
+            } catch (error) {
+                console.error("Error initializing EPUB reader:", error);
+                addNotification({ type: 'error', message: `Could not load book file: ${error instanceof Error ? error.message : 'Unknown error'}`});
                 setReadingQuest(null);
-            });
-
-            await viewer.start();
-            setBookTitle(viewer.publication.metadata.title);
-            
-            const savedLocation = userProgress?.locationCfi;
-            if (savedLocation) viewer.goTo(savedLocation);
-            
-            // FIX: The `userProgress.bookmarks` type now matches the `Bookmark[]` state type.
-            setBookmarks(userProgress?.bookmarks || []);
-            setIsLoading(false);
+            }
         };
 
         init();
-        return () => viewer?.destroy();
+
+        return () => {
+            if (viewer) {
+                viewer.destroy();
+            }
+        };
     }, [quest.epubUrl, userProgress, addNotification, setReadingQuest]);
+
 
     // Apply Theme & Font Size
     useEffect(() => {

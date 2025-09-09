@@ -156,21 +156,25 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         )).then(setBookmarks);
 
         return () => renditionInstance.destroy();
-    }, [book, locations]);
+    }, [book, locations, userProgress]);
 
     useEffect(() => {
+        let resizeTimeout: number | undefined;
         if (rendition) {
             rendition.themes.fontSize(`${fontSize}%`);
             rendition.themes.override("color", theme === 'light' ? "#1c1917" : "#f3f4f6");
-            // FIX: The timeout is to ensure the DOM has updated with theme/font changes before resizing.
-            // It needs a cleanup function to prevent calling resize on a destroyed instance.
-            const timerId = setTimeout(() => {
+            
+            resizeTimeout = window.setTimeout(() => {
                 if (rendition && !rendition.destroyed) {
                     rendition.resize();
                 }
             }, 50);
-            return () => clearTimeout(timerId);
         }
+        return () => {
+            if (resizeTimeout) {
+                clearTimeout(resizeTimeout);
+            }
+        };
     }, [rendition, theme, fontSize]);
     
     useEffect(() => {
@@ -188,17 +192,17 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const syncProgress = useCallback(async (forceSync = false, bookmarksToSync?: string[]) => {
         if (!currentUser || !currentCfi) return;
         const now = Date.now();
-        const secondsToAdd = Math.round((now - lastSyncTimeRef.current) / 1000);
+        const secondsSinceLastSync = Math.round((now - lastSyncTimeRef.current) / 1000);
         
-        if (secondsToAdd > 0 || forceSync || bookmarksToSync) {
+        if (secondsSinceLastSync > 0 || forceSync || bookmarksToSync) {
             try {
                 await updateReadingProgress(quest.id, currentUser.id, { 
                     locationCfi: currentCfi,
                     sessionSeconds,
-                    secondsToAdd: forceSync ? secondsToAdd : undefined,
+                    secondsToAdd: forceSync ? secondsSinceLastSync : undefined,
                     bookmarks: bookmarksToSync,
                 });
-                if (secondsToAdd > 0) lastSyncTimeRef.current = now;
+                if (secondsSinceLastSync > 0) lastSyncTimeRef.current = now;
             } catch (e) {
                 console.error("Sync failed", e);
             }

@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -67,11 +65,12 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         const { currentUser } = useAuthState();
         const { updateUser } = useAuthDispatch();
 
-        const isWishlisted = useMemo(() => currentUser?.wishlistAssetIds?.includes(asset.id), [currentUser?.wishlistAssetIds, asset.id]);
+        if (!currentUser) return null;
+
+        const isWishlisted = useMemo(() => currentUser.wishlistAssetIds?.includes(asset.id), [currentUser.wishlistAssetIds, asset.id]);
 
         const handleToggleWishlist = (e: React.MouseEvent) => {
             e.stopPropagation();
-            if (!currentUser) return;
             const currentWishlist = currentUser.wishlistAssetIds || [];
             const newWishlist = isWishlisted
                 ? currentWishlist.filter(id => id !== asset.id)
@@ -101,7 +100,6 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [asset.costGroups, saleForThisItem]);
         
         const balances = useMemo(() => {
-            if (!currentUser) return new Map<string, number>();
             const purse = appMode.mode === 'guild' && appMode.guildId ? currentUser.guildBalances[appMode.guildId]?.purse || {} : currentUser.personalPurse;
             const xp = appMode.mode === 'guild' && appMode.guildId ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
             const combined = new Map<string, number>();
@@ -113,14 +111,12 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         }, [currentUser, appMode, rewardTypes]);
 
         const canAffordAny = useMemo(() => {
-            if (!currentUser) return false;
-            
             const getBalance = (rewardTypeId: string): number => balances.get(rewardTypeId) || 0;
 
             return finalCostGroups.some(group => 
                 group.every(costItem => getBalance(costItem.rewardTypeId) >= costItem.amount)
             );
-        }, [currentUser, finalCostGroups, balances]);
+        }, [finalCostGroups, balances]);
 
         const userPurchaseCount = currentUser.ownedAssetIds.filter((id: string) => id === asset.id).length;
         const isSoldOut = asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && asset.purchaseCount >= asset.purchaseLimit;

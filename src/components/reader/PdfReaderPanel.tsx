@@ -38,7 +38,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const pageContainerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState<number | undefined>();
+  const [containerSize, setContainerSize] = useState<{ width?: number, height?: number }>({});
   const initialPageSetRef = useRef(false);
 
   const debouncedPageNumber = useDebounce(pageNumber, 1000);
@@ -57,7 +57,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   useEffect(() => {
     // Set this only once when the component mounts for this quest.
     initialTotalSecondsRef.current = userProgress?.totalSeconds || 0;
-  }, [quest.id]);
+  }, [quest.id, userProgress]);
 
   const totalSecondsRead = useMemo(() => {
     return initialTotalSecondsRef.current + sessionSeconds;
@@ -66,7 +66,10 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   useEffect(() => {
     const observer = new ResizeObserver(entries => {
         for (let entry of entries) {
-            setContainerWidth(entry.contentRect.width - 20); // Subtract some padding
+            setContainerSize({ 
+                width: entry.contentRect.width, 
+                height: entry.contentRect.height 
+            });
         }
     });
 
@@ -203,7 +206,11 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   };
     
   useEffect(() => {
-    const onFullscreenChange = () => setIsFullScreen(!!document.fullscreenElement);
+    const onFullscreenChange = () => {
+        const isFull = !!document.fullscreenElement;
+        setIsFullScreen(isFull);
+        setZoom(1); // Reset zoom on fullscreen change to re-trigger fit logic
+    };
     document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
@@ -219,12 +226,8 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
         <header className="w-full p-3 flex justify-between items-center z-20 text-white bg-stone-800/80 flex-shrink-0">
             <h3 className="font-bold text-lg truncate">{quest.title}</h3>
             <div className="flex items-center gap-1">
-                {!isFullScreen && (
-                    <>
-                        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(3, z + 0.2))} title="Zoom In"><ZoomIn className="w-5 h-5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} title="Zoom Out"><ZoomOut className="w-5 h-5" /></Button>
-                    </>
-                )}
+                <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(3, z + 0.2))} title="Zoom In"><ZoomIn className="w-5 h-5" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} title="Zoom Out"><ZoomOut className="w-5 h-5" /></Button>
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
                 <Button variant="ghost" size="icon" onClick={() => setReadingPdfQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6" /></Button>
             </div>
@@ -249,8 +252,9 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                 >
                     {!isLoading && <Page 
                         pageNumber={pageNumber} 
-                        width={isFullScreen && containerWidth ? containerWidth : undefined}
-                        scale={!isFullScreen ? zoom : undefined}
+                        height={isFullScreen && zoom === 1 ? (containerSize.height ? containerSize.height - 40 : undefined) : undefined}
+                        width={!isFullScreen && zoom === 1 ? (containerSize.width ? containerSize.width - 20 : undefined) : undefined}
+                        scale={zoom !== 1 ? zoom : undefined}
                         renderAnnotationLayer={false} 
                         renderTextLayer={false} 
                     />}

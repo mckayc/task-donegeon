@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.88 - Dashboard Customization Overhaul",
-  "version": "0.4.88",
-  "description": "Fixes persistent dashboard layout bugs and introduces a more intuitive UI for hiding/showing cards via an eyeball icon instead of a 'Hidden' column.",
+  "name": "Task Donegeon 2.0 - 0.4.89 - Dashboard Final Fix",
+  "version": "0.4.89",
+  "description": "A final, robust fix for the dashboard layout logic, resolving issues where cards could disappear or duplicate after customization or app updates.",
   "requestFramePermissions": [
     "camera"
   ],

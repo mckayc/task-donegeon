@@ -110,57 +110,56 @@ const Dashboard: React.FC = () => {
     } = useDashboardData();
 
     const layout = useMemo<DashboardLayout>(() => {
-        // Start with a deep copy of the default layout to ensure all properties are present.
-        const newLayout = JSON.parse(JSON.stringify(defaultLayout));
         const userLayout = currentUser?.dashboardLayout;
+        if (!userLayout) {
+            return defaultLayout;
+        }
     
-        if (userLayout) {
-            // Apply user's preferences over the default.
-            newLayout.layoutType = userLayout.layoutType || defaultLayout.layoutType;
-            newLayout.hidden = userLayout.hidden || [];
-            
-            // Use user's collapsed states
-            newLayout.columns.main.collapsed = userLayout.columns?.main?.collapsed || [];
-            newLayout.columns.side.collapsed = userLayout.columns?.side?.collapsed || [];
+        const allCardIds = new Set(Object.keys(allCardComponents));
+        const handledCardIds = new Set<string>();
     
-            const allCardIdsInApp = new Set(Object.keys(allCardComponents));
-            const placedCardIds = new Set<string>();
+        const newLayout: DashboardLayout = {
+            layoutType: userLayout.layoutType || defaultLayout.layoutType,
+            columns: {
+                main: { order: [], collapsed: userLayout.columns?.main?.collapsed || [] },
+                side: { order: [], collapsed: userLayout.columns?.side?.collapsed || [] }
+            },
+            hidden: []
+        };
     
-            // Respect user's ordering for cards they've placed, ensuring the card still exists in the app.
-            const userMainOrder = userLayout.columns?.main?.order || [];
-            const userSideOrder = userLayout.columns?.side?.order || [];
-            
-            newLayout.columns.main.order = userMainOrder.filter((id: string) => {
-                if (allCardIdsInApp.has(id)) {
-                    placedCardIds.add(id);
-                    return true;
-                }
-                return false;
-            });
+        // 1. Process user's visible cards from their saved layout
+        (userLayout.columns?.main?.order || []).forEach(id => {
+            if (allCardIds.has(id)) {
+                newLayout.columns.main.order.push(id);
+                handledCardIds.add(id);
+            }
+        });
+        (userLayout.columns?.side?.order || []).forEach(id => {
+            if (allCardIds.has(id)) {
+                newLayout.columns.side.order.push(id);
+                handledCardIds.add(id);
+            }
+        });
     
-            newLayout.columns.side.order = userSideOrder.filter((id: string) => {
-                if (allCardIdsInApp.has(id)) {
-                    placedCardIds.add(id);
-                    return true;
-                }
-                return false;
-            });
+        // 2. Process user's hidden cards from their saved layout
+        (userLayout.hidden || []).forEach(id => {
+            if (allCardIds.has(id)) {
+                newLayout.hidden.push(id);
+                handledCardIds.add(id);
+            }
+        });
     
-            // Add hidden cards to the placed set so they don't get re-added to visible columns.
-            newLayout.hidden.forEach((id: string) => placedCardIds.add(id));
-    
-            // Find any new cards (e.g., from an update) that the user hasn't placed yet.
-            const newUnplacedCards = Object.keys(allCardComponents).filter(id => !placedCardIds.has(id));
-    
-            // Place new cards in their default columns.
-            newUnplacedCards.forEach(id => {
+        // 3. Process any new cards that weren't in the user's saved layout
+        allCardIds.forEach(id => {
+            if (!handledCardIds.has(id)) {
+                // It's a new card, add it to its default column's order
                 if (defaultLayout.columns.main.order.includes(id)) {
                     newLayout.columns.main.order.push(id);
                 } else if (defaultLayout.columns.side.order.includes(id)) {
                     newLayout.columns.side.order.push(id);
                 }
-            });
-        }
+            }
+        });
     
         return newLayout;
     }, [currentUser?.dashboardLayout]);

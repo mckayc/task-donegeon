@@ -1,6 +1,5 @@
-
-// v120
-const CACHE_NAME = 'task-donegeon-cache-v120';
+// v123
+const CACHE_NAME = 'task-donegeon-cache-v123';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -40,37 +39,31 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(event.request).then(response => {
+        // Return cached response if found
         if (response) {
           return response;
         }
 
-        return fetch(event.request).then(
-          response => {
-            // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
+        // Otherwise, fetch from network
+        return fetch(event.request).then(networkResponse => {
+          // Check if we received a valid response to cache
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             // IMPORTANT: Clone the response. A response is a stream
             // and because we want the browser to consume the response
             // as well as the cache consuming the response, we need
             // to clone it so we have two streams.
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
+            const responseToCache = networkResponse.clone();
+            cache.put(event.request, responseToCache);
           }
-        );
-      })
+          return networkResponse;
+        });
+      });
+    })
   );
 });
+
 
 // Update a service worker
 self.addEventListener('activate', event => {

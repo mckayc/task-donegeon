@@ -1,7 +1,6 @@
 
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-// FIX: The `PDFPageProxy` type is not a direct export from `react-pdf`. It should be accessed via the imported `pdfjs` object as `pdfjs.PDFPageProxy`.
+// FIX: PDFPageProxy is not directly exported from 'react-pdf' in this version.
 import { pdfjs, Document, Page } from 'react-pdf';
 import { Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -12,6 +11,11 @@ import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
+
+// FIX: Infer the PDFPageProxy type from the Page component's props for type safety.
+type PageProps = React.ComponentProps<typeof Page>;
+type OnPageLoadSuccess = NonNullable<PageProps['onLoadSuccess']>;
+type PDFPageProxy = Parameters<OnPageLoadSuccess>[0];
 
 // Configure the PDF.js worker from a CDN. This is required by react-pdf.
 pdfjs.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@${pdfjs.version}/build/pdf.worker.js`;
@@ -190,8 +194,9 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
     addNotification({ type: 'error', message: `Could not open PDF file. It might be corrupted or in an unsupported format.`});
   }, [addNotification]);
 
-  const onPageLoadSuccess = useCallback((page: pdfjs.PDFPageProxy) => {
-    setPageDimensions({ width: page.originalWidth, height: page.originalHeight });
+  const onPageLoadSuccess = useCallback((page: PDFPageProxy) => {
+    const viewport = page.getViewport({ scale: 1 });
+    setPageDimensions({ width: viewport.width, height: viewport.height });
   }, []);
 
   const isPortrait = useMemo(() => {
@@ -241,16 +246,15 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
 
   if (zoom !== 1) {
       pageProps.scale = zoom;
-  } else if (isFullScreen) {
-      // Fit-to-view logic for fullscreen
+  } else {
+      // Smart fit-to-view logic for both fullscreen and initial load
       if (isPortrait) {
-          pageProps.height = containerSize.height ? containerSize.height - 40 : undefined;
+          pageProps.height = containerSize.height ? containerSize.height - (isFullScreen ? 0 : 40) : undefined;
+          pageProps.width = undefined; // Unset width to maintain aspect ratio
       } else { // Landscape
           pageProps.width = containerSize.width ? containerSize.width - 20 : undefined;
+          pageProps.height = undefined; // Unset height to maintain aspect ratio
       }
-  } else {
-      // Default non-fullscreen view, fit to width
-      pageProps.width = containerSize.width ? containerSize.width - 20 : undefined;
   }
 
   return (

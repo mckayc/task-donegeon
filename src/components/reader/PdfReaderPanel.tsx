@@ -37,6 +37,8 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const [error, setError] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number | undefined>();
   const initialPageSetRef = useRef(false);
 
   const debouncedPageNumber = useDebounce(pageNumber, 1000);
@@ -61,6 +63,23 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
     return initialTotalSecondsRef.current + sessionSeconds;
   }, [sessionSeconds]);
 
+  useEffect(() => {
+    const observer = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            setContainerWidth(entry.contentRect.width - 20); // Subtract some padding
+        }
+    });
+
+    if (pageContainerRef.current) {
+        observer.observe(pageContainerRef.current);
+    }
+
+    return () => {
+        if (pageContainerRef.current) {
+            observer.unobserve(pageContainerRef.current);
+        }
+    };
+  }, []);
 
   useEffect(() => {
     if (!currentUser || !liveQuest.pdfUrl || initialPageSetRef.current) return;
@@ -200,14 +219,18 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
         <header className="w-full p-3 flex justify-between items-center z-20 text-white bg-stone-800/80 flex-shrink-0">
             <h3 className="font-bold text-lg truncate">{quest.title}</h3>
             <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(3, z + 0.2))} title="Zoom In"><ZoomIn className="w-5 h-5" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} title="Zoom Out"><ZoomOut className="w-5 h-5" /></Button>
+                {!isFullScreen && (
+                    <>
+                        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(3, z + 0.2))} title="Zoom In"><ZoomIn className="w-5 h-5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} title="Zoom Out"><ZoomOut className="w-5 h-5" /></Button>
+                    </>
+                )}
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
                 <Button variant="ghost" size="icon" onClick={() => setReadingPdfQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6" /></Button>
             </div>
         </header>
 
-        <div className="flex-grow w-full min-h-0 overflow-auto relative">
+        <div ref={pageContainerRef} className="flex-grow w-full min-h-0 overflow-auto relative">
             {(isLoading || error) && (
                  <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4">
                     {isLoading && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>}
@@ -224,7 +247,13 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                     loading={<></>} // Hide default loader
                     className="flex justify-center"
                 >
-                    {!isLoading && <Page pageNumber={pageNumber} scale={zoom} renderAnnotationLayer={false} renderTextLayer={false} />}
+                    {!isLoading && <Page 
+                        pageNumber={pageNumber} 
+                        width={isFullScreen && containerWidth ? containerWidth : undefined}
+                        scale={!isFullScreen ? zoom : undefined}
+                        renderAnnotationLayer={false} 
+                        renderTextLayer={false} 
+                    />}
                 </Document>
             )}
         </div>

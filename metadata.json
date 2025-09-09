@@ -1,5 +1,5 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.93 - PDF Reader Fixes",
+  "name": "Task Donegeon 2.0 - 0.4.93 - PDF Reader Fixes - Navigator fix",
   "version": "0.4.93",
   "description": "Fixed several bugs in the PDF reader including page navigation, total time calculation, and fullscreen layout. Simplified controls for a better user experience.",
   "requestFramePermissions": [

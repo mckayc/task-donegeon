@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { pdfjs, Document, Page } from 'react-pdf';
 import { Quest } from '../../types';
@@ -8,7 +9,7 @@ import { XCircleIcon, ZoomIn, ZoomOut, Minimize, Maximize, ChevronLeftIcon, Chev
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import NumberInput from '../user-interface/NumberInput';
+import Input from '../user-interface/Input';
 
 // Configure the PDF.js worker from a CDN. This is required by react-pdf.
 pdfjs.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@${pdfjs.version}/build/pdf.worker.js`;
@@ -36,6 +37,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const [error, setError] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialPageSetRef = useRef(false);
 
   const debouncedPageNumber = useDebounce(pageNumber, 1000);
   
@@ -43,23 +45,29 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const sessionStartTimeRef = useRef(Date.now());
   const lastSyncTimeRef = useRef(Date.now());
+  const initialTotalSecondsRef = useRef(0);
 
   const userProgress = useMemo(() => {
     if (!currentUser) return null;
     return liveQuest.readingProgress?.[currentUser.id];
   }, [liveQuest.readingProgress, currentUser]);
 
+  useEffect(() => {
+    // Set this only once when the component mounts for this quest.
+    initialTotalSecondsRef.current = userProgress?.totalSeconds || 0;
+  }, [quest.id]);
+
   const totalSecondsRead = useMemo(() => {
-    const storedSeconds = userProgress?.totalSeconds || 0;
-    return storedSeconds + sessionSeconds;
-  }, [userProgress, sessionSeconds]);
+    return initialTotalSecondsRef.current + sessionSeconds;
+  }, [sessionSeconds]);
 
 
   useEffect(() => {
-    if (!currentUser || !liveQuest.pdfUrl) return;
+    if (!currentUser || !liveQuest.pdfUrl || initialPageSetRef.current) return;
     const initialPage = liveQuest.readingProgress?.[currentUser.id]?.pageNumber || 1;
     setPageNumber(initialPage);
-  }, [quest.id, currentUser, liveQuest]);
+    initialPageSetRef.current = true;
+  }, [currentUser, liveQuest.pdfUrl, liveQuest.readingProgress]);
 
   useEffect(() => {
     const initializeAndCachePdf = async () => {
@@ -199,7 +207,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
             </div>
         </header>
 
-        <div className="flex-grow w-full h-full overflow-auto relative">
+        <div className="flex-grow w-full min-h-0 overflow-auto relative">
             {(isLoading || error) && (
                  <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4">
                     {isLoading && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>}
@@ -229,12 +237,23 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
             <div className="flex-grow flex justify-center items-center gap-4">
                 <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber - 1)} disabled={pageNumber <= 1}><ChevronLeftIcon className="w-5 h-5"/></Button>
                 <div className="flex items-center gap-2">
-                    <NumberInput
+                    <Input
+                        type="number"
                         value={pageNumber}
-                        onChange={(val) => handlePageChange(val)}
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val)) setPageNumber(val);
+                        }}
+                        onBlur={() => handlePageChange(pageNumber)}
+                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                            if (e.key === 'Enter') {
+                                handlePageChange(pageNumber);
+                                (e.target as HTMLInputElement).blur();
+                            }
+                        }}
+                        className="w-20 text-center no-spinner"
                         min={1}
                         max={numPages || 1}
-                        className="w-24"
                         disabled={!numPages}
                     />
                     <span className="text-stone-400">of {numPages || '...'}</span>

@@ -1,7 +1,8 @@
+
 {
-  "name": "Task Donegeon 2.0 - 0.4.92 - PDF Performance Upgrade",
-  "version": "0.4.92",
-  "description": "Upgraded the PDF reader to support progressive loading, allowing large documents to open much faster and with less memory usage. Caching for offline use is now a background process.",
+  "name": "Task Donegeon 2.0 - 0.4.93 - PDF Reader Fixes",
+  "version": "0.4.93",
+  "description": "Fixed several bugs in the PDF reader including page navigation, total time calculation, and fullscreen layout. Simplified controls for a better user experience.",
   "requestFramePermissions": [
     "camera"
   ],

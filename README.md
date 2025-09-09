@@ -1,6 +1,7 @@
+
 # Task Donegeon
 
-**Version:** 0.4.92
+**Version:** 0.4.93
 
 ---
 
@@ -14,6 +15,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of January 3, 2026 (v0.4.93):**
+    -   **PDF Reader Bug Fixes:** Implemented a series of fixes to the PDF reader for a more stable and intuitive experience. This includes resolving a bug that prevented page turning, correcting the total time read calculation, improving the fullscreen layout to properly fill the screen, and simplifying the page navigation controls.
 
 -   **Week of December 27, 2025 (v0.4.92):**
     -   **PDF Reader Performance Upgrade:** Overhauled the PDF reader to use progressive loading. Large PDF files now load significantly faster and use less memory, preventing crashes and long wait times for big documents. Caching for offline access is now handled in the background without blocking the initial view.

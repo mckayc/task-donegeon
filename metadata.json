@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.83 - Quest Timing Fix",
-  "version": "0.4.83",
-  "description": "Implemented strict server-side validation to prevent quests from being completed after their 'incomplete' time has passed, ensuring accurate completion timestamps.",
+  "name": "Task Donegeon 2.0 - 0.4.84 - Reward Exchange Control",
+  "version": "0.4.84",
+  "description": "Added a toggle to control which rewards can be included in the currency exchange, giving admins more granular control over the in-game economy.",
   "requestFramePermissions": [
     "camera"
   ],

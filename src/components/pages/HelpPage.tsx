@@ -64,6 +64,13 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+        <h3>Reward Exchange Control</h3>
+        <p>Administrators now have granular control over which rewards can be traded in the Exchange Post.</p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>"Include in Exchange" Toggle:</strong> A new toggle has been added to the "Edit Reward" dialog. This option is available for any reward type that has a "Base Value" greater than zero.</li>
+            <li><strong>Default Behavior:</strong> By default, all existing and new valuable rewards are included in the exchange to maintain previous functionality.</li>
+            <li><strong>Exchange UI:</strong> The Exchange Post will now only display currencies and points that are explicitly enabled for exchange, providing a cleaner and more controlled trading experience.</li>
+        </ul>
         <h3>Blueprint & Backup/Restore Fixes</h3>
         <p>A set of critical bugs affecting data portability have been resolved:</p>
         <ul className="list-disc list-inside space-y-2 mt-2">

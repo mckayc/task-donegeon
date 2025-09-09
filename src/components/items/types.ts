@@ -1,4 +1,3 @@
-
 // Changed to `import type` to break a circular dependency with quests/types.ts
 import type { Quest } from '../quests/types';
 import { Rank } from '../ranks/types';
@@ -19,7 +18,8 @@ export interface RewardTypeDefinition {
   icon: string;
   imageUrl?: string;
   // How many units of the real-world currency are equal to 1 unit of this reward.
-  baseValue: number; 
+  baseValue: number;
+  isExchangeable?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

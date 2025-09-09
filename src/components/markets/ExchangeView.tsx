@@ -58,7 +58,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const [toAmount, setToAmount] = useState<number>(0);
 
     const exchangeableRewardTypes = useMemo(() => {
-        return rewardTypes.filter(rt => rt.baseValue > 0);
+        return rewardTypes.filter(rt => rt.baseValue > 0 && rt.isExchangeable !== false);
     }, [rewardTypes]);
 
     const { payWithRewards, receiveRewards } = useMemo(() => {

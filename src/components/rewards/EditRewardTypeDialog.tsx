@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { RewardTypeDefinition } from '../items/types';
 import { RewardCategory } from '../users/types';
@@ -10,6 +9,7 @@ import DynamicIcon from '../user-interface/DynamicIcon';
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { useSystemState } from '../../context/SystemContext';
 import NumberInput from '../user-interface/NumberInput';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface EditRewardTypeDialogProps {
   rewardType: RewardTypeDefinition | null;
@@ -27,6 +27,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
     icon: '💰',
     imageUrl: '',
     baseValue: 1,
+    isExchangeable: true,
   });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -41,6 +42,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
         icon: rewardType.icon || '💰',
         imageUrl: rewardType.imageUrl || '',
         baseValue: rewardType.baseValue || 1,
+        isExchangeable: rewardType.isExchangeable ?? true,
       });
     }
   }, [rewardType]);
@@ -117,13 +119,22 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
             )}
             
             {settings.rewardValuation.enabled && (
-                <NumberInput 
-                    label={`Base Value (in ${settings.rewardValuation.realWorldCurrency})`} 
-                    value={formData.baseValue}
-                    onChange={(newValue) => setFormData(p => ({ ...p, baseValue: newValue }))}
-                    min={0}
-                    step={0.01}
-                />
+                <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                    <NumberInput 
+                        label={`Base Value (in ${settings.rewardValuation.realWorldCurrency})`} 
+                        value={formData.baseValue}
+                        onChange={(newValue) => setFormData(p => ({ ...p, baseValue: newValue }))}
+                        min={0}
+                        step={0.01}
+                    />
+                    {formData.baseValue > 0 && (
+                        <ToggleSwitch
+                            enabled={formData.isExchangeable}
+                            setEnabled={(val) => setFormData(p => ({ ...p, isExchangeable: val }))}
+                            label="Include in Exchange"
+                        />
+                    )}
+                </div>
             )}
           </form>
           <div className="flex justify-end space-x-4 pt-4">

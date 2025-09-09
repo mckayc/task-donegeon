@@ -1,7 +1,7 @@
 
 # Task Donegeon
 
-**Version:** 0.4.93
+**Version:** 0.5.0
 
 ---
 
@@ -15,6 +15,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of January 10, 2026 (v0.5.0):**
+    -   **eBook Reader Overhaul:** Replaced the legacy `epub.js` library with the modern ReadiumJS `web-pub-viewer` toolkit for a more robust, feature-rich, and stable reading experience.
+    -   **New Reader UI:** The eBook reader now features a completely redesigned, professional UI with a translucent header and footer, a slide-out side panel for Table of Contents and Bookmarks, and a dedicated settings popover for theme and font size control.
+    -   **Enhanced Functionality:** The new reader includes improved progress tracking, bookmark management, and seamless theme/font-size adjustments. It also proactively caches book files for faster loading and full offline access.
 
 -   **Week of January 3, 2026 (v0.4.93):**
     -   **PDF Reader Bug Fixes:** Implemented a series of fixes to the PDF reader for a more stable and intuitive experience. This includes resolving a bug that prevented page turning, correcting the total time read calculation, improving the fullscreen layout to properly fill the screen, and simplifying the page navigation controls.

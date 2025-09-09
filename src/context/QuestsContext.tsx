@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
+// FIX: Import the `Bookmark` type to use in the dispatch interface.
+import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { 
     addQuestAPI, updateQuestAPI, cloneQuestAPI, updateQuestsStatusAPI, bulkUpdateQuestsAPI, 
@@ -55,8 +56,8 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  // FIX: Added the optional 'pageNumber' property to the 'updateReadingProgress' dispatch interface to allow PDF reading progress to be saved, resolving a type error in the PdfReaderPanel.
-  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; locationCfi?: string; bookmarks?: string[], pageNumber?: number }) => Promise<void>;
+  // FIX: Updated `bookmarks` from `string[]` to `Bookmark[]` to match the data structure used in the EpubReaderPanel.
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; locationCfi?: string; bookmarks?: Bookmark[], pageNumber?: number }) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);

@@ -1,7 +1,8 @@
+
 {
-  "name": "Task Donegeon 2.0 - 0.4.93 - PDF Reader Fixes - Navigator fix",
-  "version": "0.4.93",
-  "description": "Fixed several bugs in the PDF reader including page navigation, total time calculation, and fullscreen layout. Simplified controls for a better user experience.",
+  "name": "Task Donegeon 2.0 - 0.5.0 - eBook Reader Overhaul",
+  "version": "0.5.0",
+  "description": "Overhauled the eBook reader to use the ReadiumJS toolkit for a more robust and feature-rich experience. Includes a new UI with a side panel for table of contents and bookmarks.",
   "requestFramePermissions": [
     "camera"
   ],

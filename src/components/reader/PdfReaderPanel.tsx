@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // FIX: PDFPageProxy is not directly exported from 'react-pdf' in this version.
 import { pdfjs, Document, Page } from 'react-pdf';
@@ -12,10 +13,10 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
 
-// FIX: Infer the PDFPageProxy type from the Page component's props for type safety.
-type PageProps = React.ComponentProps<typeof Page>;
-type OnPageLoadSuccess = NonNullable<PageProps['onLoadSuccess']>;
-type PDFPageProxy = Parameters<OnPageLoadSuccess>[0];
+// FIX: Replaced failing type inference with a minimal interface for PDFPageProxy to ensure type safety.
+type PDFPageProxy = {
+  getViewport: (options: { scale: number }) => { width: number; height: number };
+};
 
 // Configure the PDF.js worker from a CDN. This is required by react-pdf.
 pdfjs.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@${pdfjs.version}/build/pdf.worker.js`;

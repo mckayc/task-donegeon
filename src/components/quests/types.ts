@@ -52,6 +52,13 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
+// FIX: Define and export the Bookmark interface for use across components.
+export interface Bookmark {
+    href: string;
+    label: string;
+    progress: number;
+}
+
 export interface Quest {
   id: string;
   title: string;
@@ -103,7 +110,8 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; locationCfi?: string; bookmarks?: string[]; pageNumber?: number; } };
+  // FIX: Updated `bookmarks` from `string[]` to `Bookmark[]` to store structured bookmark data.
+  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; locationCfi?: string; bookmarks?: Bookmark[]; pageNumber?: number; } };
   createdAt?: string;
   updatedAt?: string;
 }

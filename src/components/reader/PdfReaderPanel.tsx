@@ -1,5 +1,7 @@
 
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+// FIX: The `PDFPageProxy` type is not a direct export from `react-pdf`. It should be accessed via the imported `pdfjs` object as `pdfjs.PDFPageProxy`.
 import { pdfjs, Document, Page } from 'react-pdf';
 import { Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -40,6 +42,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const pageContainerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<{ width?: number, height?: number }>({});
   const initialPageSetRef = useRef(false);
+  const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
 
   const debouncedPageNumber = useDebounce(pageNumber, 1000);
   
@@ -187,6 +190,14 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
     addNotification({ type: 'error', message: `Could not open PDF file. It might be corrupted or in an unsupported format.`});
   }, [addNotification]);
 
+  const onPageLoadSuccess = useCallback((page: pdfjs.PDFPageProxy) => {
+    setPageDimensions({ width: page.originalWidth, height: page.originalHeight });
+  }, []);
+
+  const isPortrait = useMemo(() => {
+    if (!pageDimensions) return true; // Default to portrait assumption until page loads
+    return pageDimensions.height >= pageDimensions.width;
+  }, [pageDimensions]);
 
   const handlePageChange = (newPageNumber: number) => {
     if (numPages) {
@@ -221,6 +232,27 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
       return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
   };
 
+  const pageProps: any = {
+    pageNumber: pageNumber,
+    renderAnnotationLayer: false,
+    renderTextLayer: false,
+    onLoadSuccess: onPageLoadSuccess,
+  };
+
+  if (zoom !== 1) {
+      pageProps.scale = zoom;
+  } else if (isFullScreen) {
+      // Fit-to-view logic for fullscreen
+      if (isPortrait) {
+          pageProps.height = containerSize.height ? containerSize.height - 40 : undefined;
+      } else { // Landscape
+          pageProps.width = containerSize.width ? containerSize.width - 20 : undefined;
+      }
+  } else {
+      // Default non-fullscreen view, fit to width
+      pageProps.width = containerSize.width ? containerSize.width - 20 : undefined;
+  }
+
   return (
     <div ref={containerRef} className="fixed inset-0 bg-stone-900/90 z-[80] flex flex-col items-center justify-center pdf-container backdrop-blur-sm">
         <header className="w-full p-3 flex justify-between items-center z-20 text-white bg-stone-800/80 flex-shrink-0">
@@ -229,7 +261,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                 <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(3, z + 0.2))} title="Zoom In"><ZoomIn className="w-5 h-5" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} title="Zoom Out"><ZoomOut className="w-5 h-5" /></Button>
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
-                <Button variant="ghost" size="icon" onClick={() => setReadingPdfQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setReadingPdfQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
             </div>
         </header>
 
@@ -250,14 +282,7 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                     loading={<></>} // Hide default loader
                     className="flex justify-center"
                 >
-                    {!isLoading && <Page 
-                        pageNumber={pageNumber} 
-                        height={isFullScreen && zoom === 1 ? (containerSize.height ? containerSize.height - 40 : undefined) : undefined}
-                        width={!isFullScreen && zoom === 1 ? (containerSize.width ? containerSize.width - 20 : undefined) : undefined}
-                        scale={zoom !== 1 ? zoom : undefined}
-                        renderAnnotationLayer={false} 
-                        renderTextLayer={false} 
-                    />}
+                    {!isLoading && <Page {...pageProps} />}
                 </Document>
             )}
         </div>

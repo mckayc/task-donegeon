@@ -162,7 +162,14 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         if (rendition) {
             rendition.themes.fontSize(`${fontSize}%`);
             rendition.themes.override("color", theme === 'light' ? "#1c1917" : "#f3f4f6");
-            setTimeout(() => rendition.resize(), 50);
+            // FIX: The timeout is to ensure the DOM has updated with theme/font changes before resizing.
+            // It needs a cleanup function to prevent calling resize on a destroyed instance.
+            const timerId = setTimeout(() => {
+                if (rendition && !rendition.destroyed) {
+                    rendition.resize();
+                }
+            }, 50);
+            return () => clearTimeout(timerId);
         }
     }, [rendition, theme, fontSize]);
     

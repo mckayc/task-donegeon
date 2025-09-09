@@ -1,6 +1,5 @@
-
 {
-  "name": "Task Donegeon 2.0 - 0.4.95 - EPUB Reader Overhaul",
+  "name": " Task Donegeon 2.0 - 0.4.95 - EPUB Reader Overhaul",
   "version": "0.4.95",
   "description": "Overhauled the EPUB reader for better performance and usability. It now features offline caching for instant loads, swipe gestures, and a new UI with a progress slider, page turn buttons, and bookmarking functionality.",
   "requestFramePermissions": [

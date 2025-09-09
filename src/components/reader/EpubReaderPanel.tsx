@@ -16,7 +16,6 @@ interface EpubReaderPanelProps {
   quest: Quest;
 }
 
-// FIX: Removed local Bookmark interface definition. It is now imported from shared types.
 interface TocItem {
     title: string;
     href: string;
@@ -71,7 +70,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const init = async () => {
             viewer = new WebpubViewer(viewerElementRef.current, {
                 bookUrl: quest.epubUrl,
-                proxyUrl: "https://cors-anywhere.herokuapp.com/", // Required for some EPUBs
             });
             viewerRef.current = viewer;
 
@@ -101,7 +99,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         init();
         return () => viewer?.destroy();
-    }, [quest.epubUrl]);
+    }, [quest.epubUrl, userProgress, addNotification, setReadingQuest]);
 
     // Apply Theme & Font Size
     useEffect(() => {

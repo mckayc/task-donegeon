@@ -13,7 +13,7 @@ interface MediaBrowserDialogProps {
 }
 
 const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClose }) => {
-    const [currentPath, setCurrentPath] = useState('/');
+    const [currentPath, setCurrentPath] = useState(() => localStorage.getItem('mediaBrowserLastPath') || '/');
     const [contents, setContents] = useState<{ directories: string[], files: string[] }>({ directories: [], files: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
@@ -26,6 +26,10 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
     const [newFolderName, setNewFolderName] = useState('');
     const [dragOverDir, setDragOverDir] = useState<string | null>(null);
     const [itemToDelete, setItemToDelete] = useState<{ name: string; type: 'folder' | 'file' } | null>(null);
+
+    useEffect(() => {
+        localStorage.setItem('mediaBrowserLastPath', currentPath);
+    }, [currentPath]);
 
     const fetchMedia = useCallback(async () => {
         setIsLoading(true);

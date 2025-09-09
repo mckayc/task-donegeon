@@ -217,6 +217,7 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
             isGlobal: false,
             exemptQuestIds: [],
             exemptMarketIds: [],
+            exemptQuestGroupIds: [],
         };
     });
     const [limitToUsers, setLimitToUsers] = useState(!!(conditionSet?.assignedUserIds && conditionSet.assignedUserIds.length > 0));
@@ -266,8 +267,8 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
         setFormData(p => ({ ...p, conditions: p.conditions.filter((_, i) => i !== index) }));
     };
 
-    const handleExemptionSave = (questIds: string[], marketIds: string[]) => {
-        setFormData(p => ({ ...p, exemptQuestIds: questIds, exemptMarketIds: marketIds }));
+    const handleExemptionSave = (questIds: string[], marketIds: string[], questGroupIds: string[]) => {
+        setFormData(p => ({ ...p, exemptQuestIds: questIds, exemptMarketIds: marketIds, exemptQuestGroupIds: questGroupIds }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -278,6 +279,7 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
             logic: formData.isGlobal ? ConditionSetLogic.ALL : formData.logic,
             exemptQuestIds: formData.exemptQuestIds || [],
             exemptMarketIds: formData.exemptMarketIds || [],
+            exemptQuestGroupIds: formData.exemptQuestGroupIds || [],
         };
         onSave(finalPayload);
     };
@@ -367,6 +369,7 @@ const EditConditionSetDialog: React.FC<EditConditionSetDialogProps> = ({ conditi
                 <ExemptionSelectorDialog
                     initialQuestIds={formData.exemptQuestIds || []}
                     initialMarketIds={formData.exemptMarketIds || []}
+                    initialQuestGroupIds={formData.exemptQuestGroupIds || []}
                     onSave={handleExemptionSave}
                     onClose={() => setIsExemptionSelectorOpen(false)}
                 />

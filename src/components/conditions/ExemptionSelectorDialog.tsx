@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Quest, Market } from '../../types';
+import { Quest, Market, QuestGroup } from '../../types';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import Button from '../user-interface/Button';
@@ -8,20 +8,23 @@ import Input from '../user-interface/Input';
 interface ExemptionSelectorDialogProps {
   initialQuestIds: string[];
   initialMarketIds: string[];
-  onSave: (questIds: string[], marketIds: string[]) => void;
+  initialQuestGroupIds: string[];
+  onSave: (questIds: string[], marketIds: string[], questGroupIds: string[]) => void;
   onClose: () => void;
 }
 
-const ExemptionSelectorDialog: React.FC<ExemptionSelectorDialogProps> = ({ initialQuestIds, initialMarketIds, onSave, onClose }) => {
-    const { quests } = useQuestsState();
+const ExemptionSelectorDialog: React.FC<ExemptionSelectorDialogProps> = ({ initialQuestIds, initialMarketIds, initialQuestGroupIds, onSave, onClose }) => {
+    const { quests, questGroups } = useQuestsState();
     const { markets } = useEconomyState();
 
     const [selectedQuestIds, setSelectedQuestIds] = useState(new Set(initialQuestIds));
     const [selectedMarketIds, setSelectedMarketIds] = useState(new Set(initialMarketIds));
+    const [selectedQuestGroupIds, setSelectedQuestGroupIds] = useState(new Set(initialQuestGroupIds));
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredQuests = useMemo(() => quests.filter(q => q.title.toLowerCase().includes(searchTerm.toLowerCase())), [quests, searchTerm]);
     const filteredMarkets = useMemo(() => markets.filter(m => m.title.toLowerCase().includes(searchTerm.toLowerCase())), [markets, searchTerm]);
+    const filteredQuestGroups = useMemo(() => questGroups.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase())), [questGroups, searchTerm]);
 
     const handleToggleQuest = (id: string) => {
         const newSet = new Set(selectedQuestIds);
@@ -36,9 +39,16 @@ const ExemptionSelectorDialog: React.FC<ExemptionSelectorDialogProps> = ({ initi
         else newSet.add(id);
         setSelectedMarketIds(newSet);
     };
+    
+    const handleToggleQuestGroup = (id: string) => {
+        const newSet = new Set(selectedQuestGroupIds);
+        if (newSet.has(id)) newSet.delete(id);
+        else newSet.add(id);
+        setSelectedQuestGroupIds(newSet);
+    };
 
     const handleSave = () => {
-        onSave(Array.from(selectedQuestIds), Array.from(selectedMarketIds));
+        onSave(Array.from(selectedQuestIds), Array.from(selectedMarketIds), Array.from(selectedQuestGroupIds));
         onClose();
     };
 
@@ -50,7 +60,7 @@ const ExemptionSelectorDialog: React.FC<ExemptionSelectorDialogProps> = ({ initi
                     <Input placeholder="Search assets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="mt-4"/>
                 </div>
 
-                <div className="flex-1 p-6 grid grid-cols-2 gap-6 overflow-y-auto">
+                <div className="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto">
                     <div>
                         <h3 className="font-semibold text-stone-200 mb-2">Quests</h3>
                         <div className="space-y-2 max-h-full overflow-y-auto pr-2">
@@ -69,6 +79,17 @@ const ExemptionSelectorDialog: React.FC<ExemptionSelectorDialogProps> = ({ initi
                                 <label key={market.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
                                     <input type="checkbox" checked={selectedMarketIds.has(market.id)} onChange={() => handleToggleMarket(market.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
                                     <span>{market.icon} {market.title}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                     <div>
+                        <h3 className="font-semibold text-stone-200 mb-2">Quest Groups</h3>
+                         <div className="space-y-2 max-h-full overflow-y-auto pr-2">
+                            {filteredQuestGroups.map(group => (
+                                <label key={group.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
+                                    <input type="checkbox" checked={selectedQuestGroupIds.has(group.id)} onChange={() => handleToggleQuestGroup(group.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
+                                    <span>{group.icon} {group.name}</span>
                                 </label>
                             ))}
                         </div>

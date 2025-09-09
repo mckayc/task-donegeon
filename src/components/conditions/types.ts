@@ -109,4 +109,5 @@ export interface ConditionSet {
     isGlobal?: boolean;
     exemptQuestIds?: string[];
     exemptMarketIds?: string[];
+    exemptQuestGroupIds?: string[];
 }

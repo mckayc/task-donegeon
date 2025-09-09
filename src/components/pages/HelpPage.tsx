@@ -84,6 +84,10 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li><strong>Card Movement:</strong> In addition to drag-and-drop, each card in the editor now features arrow icons, allowing for quick movement between columns with a single click.</li>
             <li><strong>Single-Column Mode:</strong> A bug was fixed where cards from the "Side" column would become hidden when switching to the "single-column" layout. Now, all visible cards from both columns are correctly consolidated into one list, and can be moved to and from the "Hidden" section.</li>
         </ul>
+        <h3>Dynamic Rules Engine</h3>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Quest Group Exemptions:</strong> Added the ability to exempt entire Quest Groups from "Global" Condition Sets. This allows administrators to create categories of quests (e.g., "Essential Daily Chores") that will always be available, regardless of other global rules that might be in effect (like a "Weekend Only" rule).</li>
+        </ul>
         <h3>Quest Logic & Availability</h3>
         <p>To ensure fairness and clarity, the system now enforces stricter availability rules for quests:</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -188,6 +192,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.81)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>PDF Reader Fix:</strong> Fixed a bug where the PDF reader page would revert immediately after navigation due to a state synchronization issue. Reading progress is now stable.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.80)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

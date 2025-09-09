@@ -1,4 +1,5 @@
 
+
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role, QuestType, AppMode } from '../types';
 
 /**
@@ -238,6 +239,12 @@ export const checkGlobalConditionsMet = (
         }
         if (marketId && set.exemptMarketIds?.includes(marketId)) {
             continue; 
+        }
+        if (questId && set.exemptQuestGroupIds && set.exemptQuestGroupIds.length > 0) {
+            const quest = dependencies.quests.find(q => q.id === questId);
+            if (quest && quest.groupIds?.some(gid => set.exemptQuestGroupIds!.includes(gid))) {
+                continue; // This quest is in an exempted group, so skip this global condition set.
+            }
         }
         
         const { allMet, failingSetName } = checkAllConditionSetsMet([set.id], user, dependencies, questId);

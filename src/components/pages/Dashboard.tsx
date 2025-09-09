@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -38,7 +39,7 @@ export const allCardComponents: { [key: string]: { name: string, component: Reac
     readingActivity: { name: 'Live Reading Activity', component: ReadingActivityCard },
 };
 
-const defaultLayout: DashboardLayout = {
+export const defaultLayout: DashboardLayout = {
     layoutType: 'two-column-main-left',
     columns: {
         main: {
@@ -63,7 +64,7 @@ const Dashboard: React.FC = () => {
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { activePageMeta, appMode } = useUIState();
+    const { activePageMeta, appMode, readingQuest, readingPdfQuest } = useUIState();
     const { quests } = useQuestsState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
 
@@ -116,43 +117,29 @@ const Dashboard: React.FC = () => {
         }
     
         const allCardIds = new Set(Object.keys(allCardComponents));
-        const handledCardIds = new Set<string>();
-    
-        const newLayout: DashboardLayout = {
-            layoutType: userLayout.layoutType || defaultLayout.layoutType,
-            columns: {
-                main: { order: [], collapsed: userLayout.columns?.main?.collapsed || [] },
-                side: { order: [], collapsed: userLayout.columns?.side?.collapsed || [] }
-            },
-            hidden: []
-        };
-    
-        // 1. Process user's visible cards from their saved layout
-        (userLayout.columns?.main?.order || []).forEach(id => {
-            if (allCardIds.has(id)) {
-                newLayout.columns.main.order.push(id);
-                handledCardIds.add(id);
-            }
-        });
-        (userLayout.columns?.side?.order || []).forEach(id => {
-            if (allCardIds.has(id)) {
-                newLayout.columns.side.order.push(id);
-                handledCardIds.add(id);
-            }
-        });
-    
-        // 2. Process user's hidden cards from their saved layout
-        (userLayout.hidden || []).forEach(id => {
-            if (allCardIds.has(id)) {
-                newLayout.hidden.push(id);
-                handledCardIds.add(id);
-            }
-        });
-    
-        // 3. Process any new cards that weren't in the user's saved layout
+        
+        // Create a deep copy to avoid mutation issues
+        const newLayout: DashboardLayout = JSON.parse(JSON.stringify(userLayout));
+
+        // Ensure all structural properties exist
+        newLayout.columns = newLayout.columns || { main: { order: [], collapsed: [] }, side: { order: [], collapsed: [] } };
+        newLayout.columns.main = newLayout.columns.main || { order: [], collapsed: [] };
+        newLayout.columns.side = newLayout.columns.side || { order: [], collapsed: [] };
+        newLayout.hidden = newLayout.hidden || [];
+
+        // Filter out any stale card IDs that no longer exist
+        newLayout.columns.main.order = newLayout.columns.main.order.filter(id => allCardIds.has(id));
+        newLayout.columns.side.order = newLayout.columns.side.order.filter(id => allCardIds.has(id));
+        newLayout.hidden = newLayout.hidden.filter(id => allCardIds.has(id));
+
+        const handledCardIds = new Set([
+            ...newLayout.columns.main.order,
+            ...newLayout.columns.side.order
+        ]);
+        
+        // Add any new cards from `allCardComponents` that aren't in the user's layout yet
         allCardIds.forEach(id => {
             if (!handledCardIds.has(id)) {
-                // It's a new card, add it to its default column's order
                 if (defaultLayout.columns.main.order.includes(id)) {
                     newLayout.columns.main.order.push(id);
                 } else if (defaultLayout.columns.side.order.includes(id)) {
@@ -166,6 +153,20 @@ const Dashboard: React.FC = () => {
 
     const visibleMainCards = useMemo(() => layout.columns.main.order.filter(id => !layout.hidden.includes(id)), [layout]);
     const visibleSideCards = useMemo(() => layout.columns.side.order.filter(id => !layout.hidden.includes(id)), [layout]);
+
+    const inactiveConditionalCards = useMemo(() => {
+        const inactive: string[] = [];
+        if (!mostRecentTrophy) {
+            inactive.push('trophy');
+        }
+        if (pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) {
+            inactive.push('pendingApprovals');
+        }
+        if (!readingQuest && !readingPdfQuest) {
+            inactive.push('readingActivity');
+        }
+        return inactive;
+    }, [mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest]);
 
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {
@@ -258,6 +259,8 @@ const Dashboard: React.FC = () => {
         if (!CardComponent) return null;
 
         if (cardId === 'trophy' && !mostRecentTrophy) return null;
+        if (cardId === 'pendingApprovals' && pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) return null;
+        if (cardId === 'readingActivity' && !readingQuest && !readingPdfQuest) return null;
         
         const cardProps: any = {
             isCollapsible: true,
@@ -364,6 +367,7 @@ const Dashboard: React.FC = () => {
                     userLayout={layout}
                     onClose={() => setIsCustomizeDialogOpen(false)}
                     onSave={saveLayout}
+                    inactiveConditionalCards={inactiveConditionalCards}
                 />
             )}
             {viewingConditionsForQuest && (

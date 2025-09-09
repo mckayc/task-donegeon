@@ -3,27 +3,7 @@ import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
 import { version } from '../../../package.json';
 import Button from '../user-interface/Button';
-
-const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-    return (
-        <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg mt-8" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', borderColor: 'hsl(var(--color-border))' }}>
-            <button
-                className="w-full flex justify-between items-center text-left px-6 py-4 hover:bg-stone-700/30 transition-colors"
-                onClick={() => setIsOpen(!isOpen)}
-                aria-expanded={isOpen}
-            >
-                <h3 className="text-2xl font-medieval text-accent">{title}</h3>
-                <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
-            </button>
-            {isOpen && (
-                <div className="p-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                    {children}
-                </div>
-            )}
-        </div>
-    );
-};
+import CollapsibleSection from '../user-interface/CollapsibleSection';
 
 const FeaturesContent: React.FC = () => {
     const { settings } = useSystemState();
@@ -63,7 +43,7 @@ const FeaturesContent: React.FC = () => {
 };
 
 const FunctionalSpecificationsContent: React.FC = () => (
-    <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+    <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
         <h3>Exchange Rate Clarity</h3>
         <p>To improve user understanding and transparency in the Exchange Post, the direct conversion rate between the two selected reward types is now prominently displayed.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -412,19 +392,19 @@ export const HelpPage: React.FC = () => {
                 </div>
             </Card>
 
-            <CollapsibleSection title="Features" defaultOpen>
+            <CollapsibleSection title="Features" defaultOpen className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg mt-8">
                 <FeaturesContent />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Functional Specifications">
+            <CollapsibleSection title="Functional Specifications" className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg mt-8">
                 <FunctionalSpecificationsContent />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Roadmap">
+            <CollapsibleSection title="Roadmap" className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg mt-8">
                 <RoadmapContent />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Appendix: Version History">
+            <CollapsibleSection title="Appendix: Version History" className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg mt-8">
                 <VersionHistoryContent />
             </CollapsibleSection>
         </div>

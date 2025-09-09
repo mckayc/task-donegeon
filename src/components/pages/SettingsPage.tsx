@@ -15,31 +15,8 @@ import Card from '../user-interface/Card';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 import { version } from '../../../package.json';
 import ServiceWorkerLogger from '../settings/ServiceWorkerLogger';
+import CollapsibleSection from '../user-interface/CollapsibleSection';
 
-
-const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onToggle?: (isOpen: boolean) => void; }> = ({ title, children, defaultOpen = false, onToggle }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-
-    const handleToggle = () => {
-        const newIsOpen = !isOpen;
-        setIsOpen(newIsOpen);
-        onToggle?.(newIsOpen);
-    };
-
-    return (
-        <div className="border-t border-stone-700/60 first:border-t-0">
-            <button
-                className="w-full flex justify-between items-center text-left py-4"
-                onClick={handleToggle}
-                aria-expanded={isOpen}
-            >
-                <h3 className="text-xl font-medieval text-accent">{title}</h3>
-                <ChevronDownIcon className={`w-6 h-6 text-stone-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isOpen && <div className="pb-6">{children}</div>}
-        </div>
-    );
-}
 
 const DangerZoneAction: React.FC<{
     title: string;

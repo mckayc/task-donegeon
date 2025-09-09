@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -12,7 +13,7 @@ import { isMarketOpenForUser } from '../markets/utils/markets';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { toYMD } from '../../utils/quests';
-import { useAuthState } from '../../context/AuthContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
@@ -20,6 +21,7 @@ import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import ConditionStatusDialog from '../markets/ConditionStatusDialog';
 import ArcadeView from '../markets/ArcadeView';
+import { Star } from '../user-interface/Icons';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { settings, scheduledEvents } = useSystemState();
@@ -62,6 +64,21 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     }, [scheduledEvents, market.id, market.guildId]);
 
     const ItemCard: React.FC<{ asset: GameAsset }> = ({ asset }) => {
+        const { currentUser } = useAuthState();
+        const { updateUser } = useAuthDispatch();
+
+        const isWishlisted = useMemo(() => currentUser?.wishlistAssetIds?.includes(asset.id), [currentUser?.wishlistAssetIds, asset.id]);
+
+        const handleToggleWishlist = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (!currentUser) return;
+            const currentWishlist = currentUser.wishlistAssetIds || [];
+            const newWishlist = isWishlisted
+                ? currentWishlist.filter(id => id !== asset.id)
+                : [...currentWishlist, asset.id];
+            updateUser(currentUser.id, { wishlistAssetIds: newWishlist });
+        };
+
         const saleForThisItem = useMemo(() => {
             if (!activeSaleEvent) return null;
             if (!activeSaleEvent.modifiers.assetIds || activeSaleEvent.modifiers.assetIds.length === 0 || activeSaleEvent.modifiers.assetIds.includes(asset.id)) {
@@ -119,6 +136,13 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
         return (
              <div className={`relative bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase || !canAffordAny ? 'opacity-60' : ''}`}>
+                <button 
+                    onClick={handleToggleWishlist} 
+                    className="absolute top-2 left-2 z-10 p-1.5 bg-black/40 rounded-full text-white/70 hover:text-white transition-colors"
+                    title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                >
+                    <Star className={`w-5 h-5 ${isWishlisted ? 'text-yellow-400 fill-current' : ''}`} />
+                </button>
                 {saleForThisItem && (
                     <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
                         {saleForThisItem.modifiers.discountPercent}% OFF

@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.90 - Goal Card & Layout Fix",
-  "version": "0.4.90",
+  "name": "Task Donegeon 2.0 - 0.4.91 - Goal Card & Layout Fix",
+  "version": "0.4.91",
   "description": "Fixed a critical bug causing dashboard cards to disappear after customization. Introduced a new 'My Goal' card to track progress towards wishlist items from the Marketplace.",
   "requestFramePermissions": [
     "camera"

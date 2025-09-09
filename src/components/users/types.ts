@@ -66,7 +66,7 @@ export interface User {
   updatedAt?: string;
 }
 
-export type UserTemplate = Omit<User, 'personalPurse' | 'personalExperience' | 'guildBalances' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
+export type UserTemplate = Omit<User, 'personalPurse' | 'personalExperience' | 'guildBalances' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded' | 'wishlistAssetIds'>;
 
 export enum AdminAdjustmentType {
     Reward = 'Reward',

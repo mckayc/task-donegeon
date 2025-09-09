@@ -24,7 +24,8 @@ export const useDashboardData = () => {
     const { 
         settings, scheduledEvents, adminAdjustments
     } = useSystemState();
-    const { rewardTypes } = useEconomyState();
+    // FIX: Add gameAssets to destructuring as it's needed for the 'myGoal' calculation.
+    const { rewardTypes, gameAssets } = useEconomyState();
     const { guilds } = useCommunityState();
     const { quests, questCompletions } = useQuestsState();
     const { ranks, userTrophies, trophies } = useProgressionState();
@@ -151,6 +152,41 @@ export const useDashboardData = () => {
         return statsMap;
     }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
     
+    // FIX: Add logic to calculate 'myGoal' for the dashboard.
+    const myGoal = useMemo(() => {
+        if (!currentUser || !currentUser.wishlistAssetIds || currentUser.wishlistAssetIds.length === 0) {
+            return { hasGoal: false, item: null, progress: [], isAffordable: false };
+        }
+        
+        const goalItemId = currentUser.wishlistAssetIds[0];
+        const goalItem = gameAssets.find(a => a.id === goalItemId);
+
+        if (!goalItem) {
+            return { hasGoal: false, item: null, progress: [], isAffordable: false };
+        }
+        
+        const balances = appMode.mode === 'personal'
+            ? { ...(currentUser.personalPurse || {}), ...(currentUser.personalExperience || {}) }
+            : { ...((currentUser.guildBalances || {})[appMode.guildId]?.purse || {}), ...((currentUser.guildBalances || {})[appMode.guildId]?.experience || {}) };
+
+        const costGroup = goalItem.costGroups[0] || [];
+        const progress: any[] = costGroup.map(cost => {
+            const rewardDef = rewardTypes.find(rt => rt.id === cost.rewardTypeId);
+            return {
+                rewardTypeId: cost.rewardTypeId,
+                amount: cost.amount,
+                current: balances[cost.rewardTypeId] || 0,
+                icon: rewardDef?.icon || '❓',
+                name: rewardDef?.name || 'Unknown'
+            };
+        });
+        
+        const isAffordable = progress.every(p => p.current >= p.amount);
+
+        return { hasGoal: true, item: goalItem, progress, isAffordable };
+
+    }, [currentUser, gameAssets, appMode, rewardTypes]);
+
     if (!currentUser) {
         return {
             currentUser: null,
@@ -165,6 +201,8 @@ export const useDashboardData = () => {
             mostRecentTrophy: null,
             quickActionQuests: [],
             weeklyProgressData: [],
+            // FIX: Add myGoal to the return object for the case when there is no current user.
+            myGoal: { hasGoal: false, item: null, progress: [], isAffordable: false },
             terminology: settings.terminology
         };
     }
@@ -330,6 +368,8 @@ export const useDashboardData = () => {
         mostRecentTrophy,
         quickActionQuests,
         weeklyProgressData,
+        // FIX: Add myGoal to the return object.
+        myGoal,
         terminology
     };
 };

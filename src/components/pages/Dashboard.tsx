@@ -1,9 +1,12 @@
 
 
+
+
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { Quest, DashboardLayout, ConditionSet, QuestType } from '../../types';
+import { Quest, DashboardLayout, ConditionSet, QuestType, GameAsset, RewardItem } from '../../types';
 import RankCard from '../dashboard/RankCard';
 import InventoryCard from '../dashboard/InventoryCard';
 import LeaderboardCard from '../dashboard/LeaderboardCard';
@@ -15,7 +18,7 @@ import ReadingActivityCard from '../dashboard/ReadingActivityCard';
 import { useDashboardData } from '../dashboard/hooks/useDashboardData';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Reorder, useDragControls } from 'framer-motion';
-import { useUIState } from '../../context/UIContext';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
 import DashboardCustomizationDialog from '../dashboard/DashboardCustomizationDialog';
 // FIX: Moved isQuestAvailableForUser to its correct import from quests utils.
 import { getQuestLockStatus, ConditionDependencies } from '../../utils/conditions';
@@ -27,11 +30,101 @@ import { useCommunityState } from '../../context/CommunityContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import Card from '../user-interface/Card';
+import Button from '../user-interface/Button';
+import DynamicIcon from '../user-interface/DynamicIcon';
+
+interface GoalProgress extends RewardItem {
+    current: number;
+    icon: string;
+    name: string;
+}
+
+interface GoalCardProps {
+    goalData: {
+        hasGoal: boolean;
+        item: GameAsset | null;
+        progress: GoalProgress[];
+        isAffordable: boolean;
+    };
+    isCollapsible?: boolean;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
+    dragHandleProps?: any;
+}
+
+const ProgressBar: React.FC<{ progress: GoalProgress }> = ({ progress }) => {
+    // FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'.
+    const percentage = Math.min(100, (progress.current / progress.amount) * 100);
+    return (
+        <div>
+            <div className="flex justify-between items-center text-xs mb-1">
+                <span className="font-semibold text-stone-300 flex items-center gap-1">{progress.icon} {progress.name}</span>
+                {/* FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'. */}
+                <span className="font-mono">{progress.current} / {progress.amount}</span>
+            </div>
+            <div className="w-full bg-stone-700 rounded-full h-2.5">
+                <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+            </div>
+        </div>
+    );
+};
+
+const GoalCard: React.FC<GoalCardProps> = ({ goalData, ...cardProps }) => {
+    const { setActivePage, setActiveMarketId } = useUIDispatch();
+
+    const handleViewInMarket = () => {
+        if (goalData.item?.marketIds?.[0]) {
+            setActiveMarketId(goalData.item.marketIds[0]);
+        }
+        setActivePage('Marketplace');
+    };
+
+    if (!goalData || !goalData.hasGoal || !goalData.item) {
+        return (
+            <Card title="My Goal" {...cardProps}>
+                <div className="text-center text-stone-400">
+                    <p className="text-4xl mb-2">⭐</p>
+                    <p className="font-semibold text-stone-200">Your wishlist is empty.</p>
+                    <p className="text-sm">Add items from the Marketplace to track your goals here.</p>
+                    <Button onClick={() => setActivePage('Marketplace')} size="sm" className="mt-4">Go to Marketplace</Button>
+                </div>
+            </Card>
+        );
+    }
+
+    const { item, progress } = goalData;
+
+    return (
+        <Card title="My Goal" {...cardProps}>
+            <div className="flex flex-col items-center text-center">
+                 <div className="w-24 h-24 mb-3 bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden">
+                    <DynamicIcon 
+                        iconType={item.iconType} 
+                        icon={item.icon} 
+                        imageUrl={item.imageUrl} 
+                        className="w-full h-full object-contain text-5xl"
+                        altText={item.name}
+                    />
+                </div>
+                <h4 className="font-bold text-lg text-amber-300">{item.name}</h4>
+                <div className="w-full space-y-3 mt-4 text-left">
+                    {progress.map(p => <ProgressBar key={p.rewardTypeId} progress={p} />)}
+                </div>
+                <Button onClick={handleViewInMarket} size="sm" className="mt-4">
+                    View in Marketplace
+                </Button>
+            </div>
+        </Card>
+    );
+};
+
 
 export const allCardComponents: { [key: string]: { name: string, component: React.FC<any> } } = {
     quickActions: { name: 'Quick Actions', component: QuickActionsCard },
     recentActivity: { name: 'Recent Activity', component: RecentActivityCard },
     rank: { name: 'Rank', component: RankCard },
+    goal: { name: 'My Goal', component: GoalCard },
     trophy: { name: 'Latest Trophy', component: TrophyCard },
     inventory: { name: 'Inventory', component: InventoryCard },
     leaderboard: { name: 'Leaderboard', component: LeaderboardCard },
@@ -47,7 +140,7 @@ export const defaultLayout: DashboardLayout = {
             collapsed: []
         },
         side: {
-            order: ['rank', 'trophy', 'inventory', 'leaderboard', 'pendingApprovals', 'readingActivity'],
+            order: ['rank', 'goal', 'trophy', 'inventory', 'leaderboard', 'pendingApprovals', 'readingActivity'],
             collapsed: []
         }
     },
@@ -107,6 +200,7 @@ const Dashboard: React.FC = () => {
         leaderboard, 
         mostRecentTrophy,
         quickActionQuests,
+        myGoal,
         terminology
     } = useDashboardData();
 
@@ -156,6 +250,9 @@ const Dashboard: React.FC = () => {
 
     const inactiveConditionalCards = useMemo(() => {
         const inactive: string[] = [];
+        if (!myGoal?.hasGoal) {
+            inactive.push('goal');
+        }
         if (!mostRecentTrophy) {
             inactive.push('trophy');
         }
@@ -166,7 +263,7 @@ const Dashboard: React.FC = () => {
             inactive.push('readingActivity');
         }
         return inactive;
-    }, [mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest]);
+    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest]);
 
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {
@@ -258,9 +355,7 @@ const Dashboard: React.FC = () => {
         const CardComponent = allCardComponents[cardId]?.component;
         if (!CardComponent) return null;
 
-        if (cardId === 'trophy' && !mostRecentTrophy) return null;
-        if (cardId === 'pendingApprovals' && pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) return null;
-        if (cardId === 'readingActivity' && !readingQuest && !readingPdfQuest) return null;
+        if (inactiveConditionalCards.includes(cardId)) return null;
         
         const cardProps: any = {
             isCollapsible: true,
@@ -280,6 +375,7 @@ const Dashboard: React.FC = () => {
                 cardProps.currentUserCurrencies = userCurrencies;
                 cardProps.totalEarnedCurrencies = totalEarnedCurrencies;
                 break;
+            case 'goal': cardProps.goalData = myGoal; break;
             case 'trophy': cardProps.mostRecentTrophy = mostRecentTrophy; cardProps.terminology = terminology; break;
             case 'inventory': cardProps.userCurrencies = userCurrencies; cardProps.userExperience = userExperience; cardProps.terminology = terminology; break;
             case 'leaderboard': cardProps.leaderboard = leaderboard; break;

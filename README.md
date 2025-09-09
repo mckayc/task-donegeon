@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.4.78
+**Version:** 0.4.91
 
 ---
 
@@ -14,6 +14,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of December 20, 2025 (v0.4.91):**
+    -   **New "My Goal" Dashboard Card:** Introduced a new customizable card for the Dashboard that displays the first item from a user's new "Wishlist". This card shows the item's cost and the user's current progress towards affording it, providing a clear visual goal.
+    -   **Wishlist Functionality:** Users can now add or remove items from their Wishlist directly from the Marketplace using a new star icon on each item card.
+    -   **Dashboard Layout Stability Fix:** Resolved a critical logic error where certain cards like "My Pending Items" or newly added cards would either be duplicated across columns or disappear entirely after customization or an app update. The new layout system correctly handles all card states to prevent these issues.
 
 -   **Week of November 29, 2025 (v0.4.78):**
     -   **EPUB Reader Caching & Offline Support:** The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.

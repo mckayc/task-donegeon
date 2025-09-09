@@ -45,6 +45,7 @@ export interface User {
   role: Role;
   profilePictureUrl?: string | null;
   ownedAssetIds: string[];
+  wishlistAssetIds?: string[];
   pin: string;
   password?: string;
   personalPurse: { [rewardTypeId: string]: number };

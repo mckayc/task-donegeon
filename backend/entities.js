@@ -88,6 +88,7 @@ const UserEntity = new EntitySchema({
         role: { type: "varchar" },
         profilePictureUrl: { type: "varchar", nullable: true },
         ownedAssetIds: { type: "simple-array" },
+        wishlistAssetIds: { type: "simple-array", nullable: true },
         pin: { type: "varchar" },
         password: { type: "varchar", nullable: true },
         personalPurse: { type: "simple-json" },

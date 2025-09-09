@@ -83,6 +83,17 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const fromReward = useMemo(() => rewardTypes.find(rt => rt.id === fromRewardId), [fromRewardId, rewardTypes]);
     const toReward = useMemo(() => rewardTypes.find(rt => rt.id === toRewardId), [toRewardId, rewardTypes]);
 
+    const exchangeRate = useMemo(() => {
+        if (!fromReward || !toReward || !fromReward.baseValue || !toReward.baseValue) {
+            return null;
+        }
+        const rate = fromReward.baseValue / toReward.baseValue;
+        return {
+            forward: rate, // 1 from = X to
+            inverse: 1 / rate, // 1 to = Y from
+        };
+    }, [fromReward, toReward]);
+
     const calculation = useMemo(() => {
         const toAmountNum = toAmount || 0;
         const defaultCalc = { fromAmountBase: 0, fee: 0, roundingFee: 0, totalCost: 0, maxToAmount: 0 };
@@ -203,6 +214,18 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                     <ArrowRightIcon className="w-10 h-10 text-stone-500"/>
                                     <div className="text-6xl">{toReward.icon}</div>
                                 </div>
+
+                                {exchangeRate && (
+                                    <div className="text-center text-stone-400 text-sm -mt-4 bg-stone-800/50 p-2 rounded-md">
+                                        <p className="font-semibold text-emerald-300">
+                                            1 {fromReward.name} {fromReward.icon} = {exchangeRate.forward.toLocaleString(undefined, { maximumFractionDigits: 2 })} {toReward.name} {toReward.icon}
+                                        </p>
+                                        <p className="text-xs mt-1">
+                                            (1 {toReward.name} {toReward.icon} = {exchangeRate.inverse.toLocaleString(undefined, { maximumFractionDigits: 4 })} {fromReward.name} {fromReward.icon})
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div>
                                     <NumberInput 
                                         label="Receive Amount"

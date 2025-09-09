@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.4.84 - Reward Exchange Control",
-  "version": "0.4.84",
-  "description": "Added a toggle to control which rewards can be included in the currency exchange, giving admins more granular control over the in-game economy.",
+  "name": "Task Donegeon 2.0 - 0.4.86 - Exchange Rate Display",
+  "version": "0.4.86",
+  "description": "The Exchange Post now clearly displays the direct conversion rate between two selected currencies to improve user experience and clarity.",
   "requestFramePermissions": [
     "camera"
   ],

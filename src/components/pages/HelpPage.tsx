@@ -64,6 +64,13 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6 p-6">
+        <h3>Exchange Rate Clarity</h3>
+        <p>To improve user understanding and transparency in the Exchange Post, the direct conversion rate between the two selected reward types is now prominently displayed.</p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Live Calculation:</strong> As soon as a "Pay" and "Receive" currency are selected, the system calculates and shows the one-to-one exchange rate (e.g., "1 Gem 💎 = 20 Diligence 🧹").</li>
+            <li><strong>Two-Way Display:</strong> The inverse rate is also shown in a smaller font for complete clarity (e.g., "1 Diligence 🧹 = 0.05 Gems 💎").</li>
+            <li><strong>Real-Time Updates:</strong> This display updates instantly if the user changes their selected currencies.</li>
+        </ul>
         <h3>Reward Exchange Control</h3>
         <p>Administrators now have granular control over which rewards can be traded in the Exchange Post.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -123,13 +130,13 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
             <li>
-                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and time read, is saved and synced across your devices.
+                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and total time read *for this specific book* is saved and synced across your devices. The current session time is also displayed.
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Offline Caching:</strong> The reader now downloads and caches eBooks locally on the first open for significantly faster subsequent loads and full offline access. A progress bar displays the initial download status, ensuring a smooth user experience.</li>
                 </ul>
             </li>
             <li>
-                <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and downloads the file for faster loading and offline access.
+                <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and total time read *for this specific document*, allowing you to pick up where you left off. The file is also downloaded for faster loading and offline access.
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Navigation Stability Fix:</strong> Resolved a state synchronization bug that caused the page number to revert to its previously saved state immediately after navigating to a new page. The reading experience is now smooth and stable.</li>
                 </ul>

@@ -229,7 +229,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         }
         if (bookmarksToSync) dataToSync.bookmarks = bookmarksToSync;
         
-        const shouldSync = Object.keys(dataToSync).length > 2 || forceSync;
+        const shouldSync = (dataToSync.secondsToAdd && dataToSync.secondsToAdd > 0) || forceSync;
 
         if (shouldSync) {
             try {
@@ -243,11 +243,12 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     useEffect(() => {
         const intervalId = setInterval(() => syncProgress(false), 30000);
-        window.addEventListener('beforeunload', () => syncProgress(true));
+        const handleUnload = () => syncProgress(true);
+        window.addEventListener('beforeunload', handleUnload);
         
         return () => {
             clearInterval(intervalId);
-            window.removeEventListener('beforeunload', () => syncProgress(true));
+            window.removeEventListener('beforeunload', handleUnload);
             syncProgress(true);
         };
     }, [syncProgress]);

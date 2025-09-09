@@ -37,13 +37,29 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const debouncedPageNumber = useDebounce(pageNumber, 500);
+  const debouncedPageNumber = useDebounce(pageNumber, 1000);
+  
+  // Time Tracking
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const sessionStartTimeRef = useRef(Date.now());
+  const lastSyncTimeRef = useRef(Date.now());
+
+  const userProgress = useMemo(() => {
+    if (!currentUser) return null;
+    return liveQuest.readingProgress?.[currentUser.id];
+  }, [liveQuest.readingProgress, currentUser]);
+
+  const totalSecondsRead = useMemo(() => {
+    const storedSeconds = userProgress?.totalSeconds || 0;
+    return storedSeconds + sessionSeconds;
+  }, [userProgress, sessionSeconds]);
+
 
   useEffect(() => {
     if (!currentUser || !liveQuest.pdfUrl) return;
     const initialPage = liveQuest.readingProgress?.[currentUser.id]?.pageNumber || 1;
     setPageNumber(initialPage);
-  }, [quest.id, currentUser]);
+  }, [quest.id, currentUser, liveQuest]);
 
   useEffect(() => {
     const fetchAndCachePdf = async () => {
@@ -73,11 +89,56 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
     fetchAndCachePdf();
   }, [liveQuest.pdfUrl]);
 
+  // --- Time & Progress Syncing ---
   useEffect(() => {
-    if (currentUser && debouncedPageNumber > 1 && numPages) { // Only sync if document is loaded
-      updateReadingProgress(quest.id, currentUser.id, { pageNumber: debouncedPageNumber });
+      sessionStartTimeRef.current = Date.now();
+      lastSyncTimeRef.current = Date.now();
+      setSessionSeconds(0);
+
+      const timer = setInterval(() => {
+          setSessionSeconds(Math.round((Date.now() - sessionStartTimeRef.current) / 1000));
+      }, 1000);
+
+      return () => clearInterval(timer);
+  }, []);
+
+  const syncProgress = useCallback(async (forceSync = false) => {
+    if (!currentUser) return;
+    const now = Date.now();
+    const secondsToAdd = Math.round((now - lastSyncTimeRef.current) / 1000);
+    
+    const dataToSync: any = {
+        pageNumber: debouncedPageNumber,
+        sessionSeconds,
+    };
+    if (secondsToAdd > 0) {
+        dataToSync.secondsToAdd = secondsToAdd;
     }
-  }, [debouncedPageNumber, quest.id, currentUser, updateReadingProgress, numPages]);
+    
+    const shouldSync = dataToSync.secondsToAdd > 0 || forceSync;
+
+    if (shouldSync) {
+        try {
+            await updateReadingProgress(quest.id, currentUser.id, dataToSync);
+            lastSyncTimeRef.current = now;
+        } catch (e) {
+            console.error("PDF Sync failed, not updating lastSyncTimeRef", e);
+        }
+    }
+  }, [currentUser, quest.id, updateReadingProgress, debouncedPageNumber, sessionSeconds]);
+
+  useEffect(() => {
+      const intervalId = setInterval(() => syncProgress(false), 30000);
+      const handleUnload = () => syncProgress(true);
+      window.addEventListener('beforeunload', handleUnload);
+      
+      return () => {
+          clearInterval(intervalId);
+          window.removeEventListener('beforeunload', handleUnload);
+          syncProgress(true);
+      };
+  }, [syncProgress]);
+
 
   const onDocumentLoadSuccess = useCallback(({ numPages: totalPages }: { numPages: number }) => {
     setNumPages(totalPages);
@@ -117,6 +178,12 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
     document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
+  
+  const formatTime = (totalSeconds: number) => {
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
+  };
 
   return (
     <div ref={containerRef} className="fixed inset-0 bg-stone-900/90 z-[80] flex flex-col items-center justify-center pdf-container backdrop-blur-sm">
@@ -152,20 +219,27 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
             )}
         </div>
 
-        <footer className="w-full p-3 flex justify-center items-center gap-4 z-20 text-white bg-stone-800/80 flex-shrink-0">
-            <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber - 1)} disabled={pageNumber <= 1}><ChevronLeftIcon className="w-5 h-5"/></Button>
-            <div className="flex items-center gap-2">
-                <NumberInput
-                    value={pageNumber}
-                    onChange={(val) => handlePageChange(val)}
-                    min={1}
-                    max={numPages || 1}
-                    className="w-24"
-                    disabled={!numPages}
-                />
-                <span className="text-stone-400">of {numPages || '...'}</span>
+        <footer className="w-full p-3 flex justify-between items-center gap-4 z-20 text-white bg-stone-800/80 flex-shrink-0 text-sm">
+             <div className="flex gap-4 w-1/3">
+                <div title="Session Time"><span className="font-semibold">Session:</span> {formatTime(sessionSeconds)}</div>
+                <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
             </div>
-            <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber + 1)} disabled={!numPages || pageNumber >= numPages}><ChevronRightIcon className="w-5 h-5"/></Button>
+            <div className="flex-grow flex justify-center items-center gap-4">
+                <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber - 1)} disabled={pageNumber <= 1}><ChevronLeftIcon className="w-5 h-5"/></Button>
+                <div className="flex items-center gap-2">
+                    <NumberInput
+                        value={pageNumber}
+                        onChange={(val) => handlePageChange(val)}
+                        min={1}
+                        max={numPages || 1}
+                        className="w-24"
+                        disabled={!numPages}
+                    />
+                    <span className="text-stone-400">of {numPages || '...'}</span>
+                </div>
+                <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber + 1)} disabled={!numPages || pageNumber >= numPages}><ChevronRightIcon className="w-5 h-5"/></Button>
+            </div>
+            <div className="w-1/3" />
         </footer>
     </div>
   );

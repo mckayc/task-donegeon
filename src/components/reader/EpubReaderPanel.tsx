@@ -33,6 +33,21 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const [progress, setProgress] = useState(0);
     const [bookTitle, setBookTitle] = useState('');
     const [currentLocationHref, setCurrentLocationHref] = useState<string | null>(null);
+    
+    // On-screen logger state
+    const [logMessages, setLogMessages] = useState<string[]>([]);
+    const logContainerRef = useRef<HTMLDivElement>(null);
+
+    const addToLog = useCallback((message: string) => {
+        setLogMessages(prev => [...prev.slice(-10), message]); // Keep last 10 messages
+    }, []);
+
+    useEffect(() => {
+        if(logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+    }, [logMessages]);
+
 
     // Time Tracking
     const [sessionSeconds, setSessionSeconds] = useState(0);
@@ -50,22 +65,43 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         let isMounted = true;
         let libraryCheckInterval: number | null = null;
         
+        addToLog("Initializing EPUB Reader...");
+
         const initReader = async () => {
-            if (!viewerRef.current || !quest.epubUrl) {
-                setError("Reader element not ready or EPUB URL is missing.");
+            if (!viewerRef.current) {
+                addToLog("ERROR: Reader element (viewerRef) not ready.");
+                setError("Reader component failed to mount.");
                 setIsLoading(false);
                 return;
             }
+            if (!quest.epubUrl) {
+                addToLog("ERROR: EPUB URL is missing in quest data.");
+                setError("EPUB URL is missing.");
+                setIsLoading(false);
+                return;
+            }
+            
+            addToLog("Reader element is ready.");
 
             try {
+                addToLog(`Fetching EPUB file from: ${quest.epubUrl}`);
                 const response = await fetch(quest.epubUrl);
-                if (!response.ok) throw new Error(`Could not load book file: ${response.statusText}`);
+                if (!response.ok) {
+                    addToLog(`ERROR: HTTP response not OK. Status: ${response.status} ${response.statusText}`);
+                    throw new Error(`Could not load book file: ${response.statusText}`);
+                }
                 const bookData = await response.arrayBuffer();
+                addToLog(`EPUB file fetched successfully (${(bookData.byteLength / 1024).toFixed(1)} KB).`);
 
-                if (!isMounted) return;
+                if (!isMounted) {
+                    addToLog("Component unmounted during fetch. Aborting initialization.");
+                    return;
+                }
 
+                addToLog("Instantiating AEpubReader...");
                 const reader = new window.AEpubReader(viewerRef.current);
                 readerRef.current = reader;
+                addToLog("AEpubReader instantiated.");
 
                 reader.on('relocated', (location: any) => {
                     if (isMounted && location?.end?.percentage) {
@@ -74,31 +110,46 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     }
                 });
 
+                addToLog("Opening book data...");
                 await reader.open(bookData);
+                addToLog("Book data opened.");
                 
-                if (!isMounted) return;
+                if (!isMounted) {
+                    addToLog("Component unmounted during book open. Aborting.");
+                    return;
+                }
 
+                addToLog("Fetching book metadata...");
                 const metadata = await reader.book.getMetadata();
                 setBookTitle(metadata.title);
+                addToLog(`Book title: "${metadata.title}"`);
 
                 const savedLocation = userProgress?.locationCfi;
                 if (savedLocation) {
+                    addToLog(`Applying saved location: ${savedLocation}`);
                     reader.rendition.display(savedLocation);
+                } else {
+                    addToLog("No saved location found.");
                 }
                 
+                addToLog("Reader is ready!");
                 setIsLoading(false);
 
             } catch (err) {
                 if (isMounted) {
-                    setError(err instanceof Error ? err.message : "Failed to load book.");
+                    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+                    addToLog(`FATAL ERROR: ${errorMessage}`);
+                    setError(errorMessage);
                     setIsLoading(false);
                 }
             }
         };
 
+        addToLog("Waiting for viewer library to become available...");
         libraryCheckInterval = window.setInterval(() => {
             if (window.AEpubReader) {
                 if (libraryCheckInterval) clearInterval(libraryCheckInterval);
+                addToLog("Viewer library found.");
                 initReader();
             }
         }, 100);
@@ -106,9 +157,12 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         return () => {
             isMounted = false;
             if (libraryCheckInterval) clearInterval(libraryCheckInterval);
-            readerRef.current?.destroy();
+            if (readerRef.current) {
+                addToLog("Destroying reader instance.");
+                readerRef.current.destroy();
+            }
         };
-    }, [quest.epubUrl, userProgress]);
+    }, [quest.epubUrl, userProgress, addToLog]);
     
     const syncProgress = useCallback(async (forceSync = false) => {
         if (!currentUser || !currentLocationHref) return;
@@ -170,9 +224,15 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             
             <div className="flex-grow relative min-h-0">
                 {(isLoading || error) && (
-                    <div className="absolute inset-0 bg-stone-900/80 z-40 flex flex-col items-center justify-center gap-4 p-8">
-                        {isLoading && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>}
-                        <p className="text-white mt-4 text-lg font-semibold">{error || "Preparing Reader..."}</p>
+                    <div className="absolute inset-0 bg-stone-900/90 z-40 flex flex-col items-center justify-center gap-4 p-8">
+                        <div ref={logContainerRef} className="w-full max-w-md h-64 bg-black/50 rounded-lg p-4 font-mono text-xs text-white overflow-y-auto scrollbar-hide">
+                            {logMessages.map((msg, index) => (
+                                <p key={index} className={`whitespace-pre-wrap ${msg.startsWith('ERROR') || msg.startsWith('FATAL') ? 'text-red-400' : 'text-green-400'}`}>
+                                    {`> ${msg}`}
+                                </p>
+                            ))}
+                        </div>
+                        {isLoading && !error && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400 mt-4"></div>}
                     </div>
                 )}
                 <div ref={viewerRef} className="h-full w-full bg-white" />

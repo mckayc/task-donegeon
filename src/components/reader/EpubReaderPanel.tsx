@@ -27,8 +27,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const viewerRef = useRef<HTMLDivElement>(null);
     const readerRef = useRef<any>(null);
+    const pollerRef = useRef<number | null>(null);
 
-    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [bookTitle, setBookTitle] = useState('');
@@ -63,21 +63,17 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     useEffect(() => {
         let isMounted = true;
-        const SCRIPT_ID = 'awesome-epub-reader-script';
-        const SCRIPT_URL = 'https://unpkg.com/awesome-epub-reader@latest/dist/a-epub-reader.umd.js';
-
+        
         const initReader = async () => {
             if (!viewerRef.current || !window.AEpubReader) {
                 const err = "Reader element or library not ready for initialization.";
                 addToLog(`ERROR: ${err}`);
                 setError(err);
-                setIsLoading(false);
                 return;
             }
              if (!quest.epubUrl) {
                 addToLog("ERROR: EPUB URL is missing in quest data.");
                 setError("EPUB URL is missing.");
-                setIsLoading(false);
                 return;
             }
 
@@ -116,81 +112,39 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 }
 
                 addToLog("Reader is ready!");
-                setIsLoading(false);
             } catch (err) {
                  if (isMounted) {
                     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
                     addToLog(`FATAL ERROR during reader init: ${errorMessage}`);
                     setError(errorMessage);
-                    setIsLoading(false);
                 }
             }
         };
 
-        const loadScript = () => {
+        const pollForLibrary = () => {
             addToLog("Initializing EPUB Reader...");
-
-            if (window.AEpubReader) {
-                addToLog("Viewer library already available.");
-                initReader();
-                return;
-            }
-
-            const existingScript = document.getElementById(SCRIPT_ID);
-            if (existingScript) {
-                 addToLog("Script tag already exists, waiting for it to load...");
-                 existingScript.addEventListener('load', () => {
-                     if (isMounted) {
-                         addToLog("Existing script loaded successfully.");
-                         initReader();
-                     }
-                 });
-                 existingScript.addEventListener('error', () => {
-                      if (isMounted) {
-                        const err = "Failed to load the existing EPUB viewer script.";
-                        addToLog(`ERROR: ${err}`);
-                        setError(err);
-                        setIsLoading(false);
-                    }
-                 });
-                 return;
-            }
+            addToLog("Waiting for viewer library to become available...");
             
-            addToLog("Attempting to load web-pub-viewer script...");
-            const script = document.createElement('script');
-            script.id = SCRIPT_ID;
-            script.src = SCRIPT_URL;
-            script.async = true;
-
-            script.onload = () => {
-                if (isMounted) {
-                    addToLog("Script loaded successfully.");
-                    initReader();
-                }
-            };
-
-            script.onerror = (event: Event | string) => {
-                if (isMounted) {
-                    let errorMessage = "Unknown script load error";
-                    if (event instanceof ErrorEvent) {
-                        errorMessage = event.message;
+            pollerRef.current = window.setInterval(() => {
+                if (window.AEpubReader) {
+                    if (pollerRef.current) clearInterval(pollerRef.current);
+                    if (isMounted) {
+                        addToLog("Viewer library found!");
+                        initReader();
                     }
-                    const err = `Failed to load the EPUB viewer library script: ${errorMessage}`;
-                    addToLog(`ERROR: ${err}`);
-                    setError(err);
-                    setIsLoading(false);
                 }
-            };
-
-            document.head.appendChild(script);
+            }, 100);
         };
-
-        loadScript();
+        
+        pollForLibrary();
 
         return () => {
             isMounted = false;
             if (readerRef.current) {
                 readerRef.current.destroy();
+            }
+            if (pollerRef.current) {
+                clearInterval(pollerRef.current);
             }
         };
     }, [quest.epubUrl, userProgress, addToLog]);
@@ -240,6 +194,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
     };
+    
+    const isReady = !!bookTitle && !error;
 
     return (
         <div className="fixed inset-0 bg-stone-900 z-[80] flex flex-col">
@@ -254,16 +210,16 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             </header>
             
             <div className="flex-grow relative min-h-0">
-                {(isLoading || error) && (
+                {(!isReady) && (
                     <div className="absolute inset-0 bg-stone-900/90 z-40 flex flex-col items-center justify-center gap-4 p-8">
                         <div ref={logContainerRef} className="w-full max-w-md h-64 bg-black/50 rounded-lg p-4 font-mono text-xs text-white overflow-y-auto scrollbar-hide">
                             {logMessages.map((msg, index) => (
-                                <p key={index} className={`whitespace-pre-wrap ${msg.startsWith('ERROR') || msg.startsWith('FATAL') ? 'text-red-400' : msg.startsWith('Waiting') ? 'text-yellow-400' : 'text-green-400'}`}>
+                                <p key={index} className={`whitespace-pre-wrap ${msg.startsWith('ERROR') || msg.startsWith('FATAL') ? 'text-red-400' : msg.includes('Waiting') ? 'text-yellow-400 animate-pulse' : 'text-green-400'}`}>
                                     {`> ${msg}`}
                                 </p>
                             ))}
                         </div>
-                        {isLoading && !error && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400 mt-4"></div>}
+                        {!error && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400 mt-4"></div>}
                     </div>
                 )}
                 <div ref={viewerRef} className="h-full w-full bg-white" />
@@ -274,11 +230,11 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     <p>Total Time: {formatTime(Math.floor(totalSecondsRead))}</p>
                 </div>
                 <div className="flex-grow flex items-center justify-center gap-4">
-                    <Button onClick={handlePrev} disabled={isLoading}>
+                    <Button onClick={handlePrev} disabled={!isReady}>
                         <ChevronLeftIcon className="w-5 h-5"/> Prev
                     </Button>
-                    <span className="font-semibold w-20 text-center">{progress}%</span>
-                     <Button onClick={handleNext} disabled={isLoading}>
+                    <span className="font-semibold w-20 text-center">{isReady ? `${progress}%` : '--%'}</span>
+                     <Button onClick={handleNext} disabled={!isReady}>
                         Next <ChevronRightIcon className="w-5 h-5"/>
                     </Button>
                 </div>

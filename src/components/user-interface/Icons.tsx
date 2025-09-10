@@ -1,3 +1,4 @@
+
 import React from 'react';
 // FIX: Exporting all required icons from lucide-react with aliases to match the codebase's conventions.
 // This resolves a large number of "module has no exported member" errors across the application.
@@ -41,7 +42,9 @@ export {
     Database as DatabaseIcon,
     GripVertical as GrabHandleIcon,
     Users as UserGroupIcon,
-    Plus
+    Plus,
+    Maximize as EnterFullscreenIcon,
+    Minimize as ExitFullscreenIcon
 } from 'lucide-react';
 
 const iconProps = {
@@ -91,17 +94,6 @@ export const GuildIcon: React.FC<{className?: string}> = ({ className }) => (
 
 export const AdjustmentsIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg {...iconProps} className={className || "w-6 h-6"}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-    </svg>
-);
-
-export const EnterFullscreenIcon: React.FC<{className?: string}> = ({ className }) => (
-    <svg {...iconProps} className={className || "w-6 h-6"}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-    </svg>
-);
-export const ExitFullscreenIcon: React.FC<{className?: string}> = ({ className }) => (
-    <svg {...iconProps} className={className || "w-6 h-6"}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L3.75 3.75M3.75 3.75h4.5m-4.5 0v4.5m11.25-4.5h4.5m-4.5 0v4.5M9 15l-5.25 5.25m0-4.5v4.5m0-4.5h4.5m11.25 0h-4.5m4.5 0v-4.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0h9.75m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
     </svg>
 );

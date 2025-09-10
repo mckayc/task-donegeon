@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -112,7 +113,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
             </li>
             <li>
-                <strong>eBook (EPUB) Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and total time read *for this specific book* is saved and synced across your devices. The current session time is also displayed.
+                <strong>eBook (EPUB) Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface now features persistent top and bottom control bars for easier access to navigation, themes (light/dark), font size, bookmarks, and a new fullscreen option. An "Immersive Mode" button allows for a distraction-free reading experience by hiding the controls and expanding the content to fill the screen. The progress slider is now fully functional, allowing for quick navigation, and page turns are animated. All progress, including location, bookmarks, and total time read (now displayed in a more readable format, e.g., "1h 15m") is saved and synced across devices.
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Offline Caching:</strong> The reader downloads and caches eBooks locally on the first open for significantly faster subsequent loads and full offline access. A progress bar displays the initial download status, ensuring a smooth user experience.</li>
                 </ul>
@@ -191,6 +192,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 17, 2025 (v0.5.12)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>eBook Reader Overhaul:</strong> The EPUB reader has been completely redesigned for a better user experience. This includes persistent control bars, an "Immersive Mode" for distraction-free reading, fullscreen support, and larger, always-visible page turn buttons. Critical bugs preventing bookmark creation and breaking display settings have been fixed.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.82)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

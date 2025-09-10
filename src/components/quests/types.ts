@@ -54,7 +54,6 @@ export interface QuizState {
 
 // FIX: Define and export the Bookmark interface for use across components.
 export interface Bookmark {
-    // FIX: Changed property from 'href' to 'cfi' to correctly represent an EPUB Canonical Fragment Identifier.
     cfi: string;
     label: string;
     progress: number;
@@ -111,7 +110,6 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  // FIX: Updated `bookmarks` from `string[]` to `Bookmark[]` to store structured bookmark data.
   readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; locationCfi?: string; bookmarks?: Bookmark[]; pageNumber?: number; } };
   createdAt?: string;
   updatedAt?: string;

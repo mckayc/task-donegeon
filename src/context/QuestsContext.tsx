@@ -1,5 +1,4 @@
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-// FIX: Import the `Bookmark` type to use in the dispatch interface.
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { 
@@ -56,7 +55,6 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  // FIX: Updated `bookmarks` from `string[]` to `Bookmark[]` to match the data structure used in the EpubReaderPanel.
   updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; locationCfi?: string; bookmarks?: Bookmark[], pageNumber?: number }) => Promise<void>;
 }
 

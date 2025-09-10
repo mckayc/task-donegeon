@@ -36,7 +36,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const [errorLog, setErrorLog] = useState<string | null>(null);
     const addLog = (message: string) => setLogs(prev => [...prev.slice(-10), message]);
 
-    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
     const [isViewerReady, setIsViewerReady] = useState(false);
 
     const [toc, setToc] = useState<TocItem[]>([]);
@@ -69,62 +68,36 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     useEffect(() => {
         isMountedRef.current = true;
-        return () => {
-            isMountedRef.current = false;
-        };
+        return () => { isMountedRef.current = false; };
     }, []);
 
-    // Effect to dynamically load the viewer script
+    // Wait for viewer library, then initialize
     useEffect(() => {
-        addLog('Attempting to load web-pub-viewer script...');
-        if ((window as any).WebpubViewer) {
-            addLog('Viewer library already present.');
-            setIsScriptLoaded(true);
-            return;
-        }
+        if (!viewerElementRef.current || !quest.epubUrl) return;
 
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/web-pub-viewer@1.0/build/webpub-viewer.js';
-        script.async = true;
+        const initViewer = async () => {
+            addLog('Initializing EPUB Reader...');
+            addLog('Waiting for viewer library to become available...');
 
-        const handleLoad = () => {
-            if (isMountedRef.current) {
-                addLog('Viewer library script loaded successfully.');
-                setIsScriptLoaded(true);
+            while (!(window as any).WebpubViewer && isMountedRef.current) {
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
-        };
 
-        const handleError = (error: Event | string) => {
-            if (isMountedRef.current) {
-                const errorMessage = typeof error === 'string' ? error : (error instanceof ErrorEvent ? error.message : 'Unknown script load error');
-                const fullError = `Failed to load the EPUB viewer library script: ${errorMessage}`;
-                setErrorLog(fullError);
-                addLog(`ERROR: ${fullError}`);
+            if (!isMountedRef.current) {
+                addLog('Component unmounted while waiting for library.');
+                return;
             }
-        };
+            
+            if (!(window as any).WebpubViewer) {
+                 const errorMsg = 'Could not load book file: WebpubViewer library failed to load. The script may be blocked.';
+                 setErrorLog(errorMsg);
+                 addLog(`ERROR: ${errorMsg}`);
+                 return;
+            }
 
-        script.addEventListener('load', handleLoad);
-        script.addEventListener('error', handleError);
-        document.body.appendChild(script);
+            addLog('Viewer library is available.');
 
-        return () => {
-            script.removeEventListener('load', handleLoad);
-            script.removeEventListener('error', handleError);
-        };
-    }, []);
-
-    // Initialize Viewer once the script is loaded
-    useEffect(() => {
-        if (!isScriptLoaded || !viewerElementRef.current || !quest.epubUrl) {
-            return;
-        }
-        
-        let viewer: any;
-
-        const init = async () => {
             try {
-                addLog('Initializing EPUB Reader...');
-
                 addLog(`Fetching EPUB file from: ${quest.epubUrl}...`);
                 const response = await fetch(quest.epubUrl!);
                 if (!isMountedRef.current) return;
@@ -136,7 +109,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 addLog('EPUB file fetched successfully.');
 
                 addLog('Instantiating viewer...');
-                viewer = new (window as any).WebpubViewer(viewerElementRef.current, {
+                const viewer = new (window as any).WebpubViewer(viewerElementRef.current, {
                     bookData: bookDataUint8,
                 });
                 viewerRef.current = viewer;
@@ -176,7 +149,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             }
         };
 
-        init();
+        initViewer();
 
         return () => {
             if (viewerRef.current) {
@@ -184,10 +157,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 viewerRef.current = null;
             }
         };
-    }, [isScriptLoaded, quest.epubUrl, userProgress]);
+    }, [quest.epubUrl, userProgress]);
 
-
-    // Apply Theme & Font Size
     useEffect(() => {
         const viewer = viewerRef.current;
         if (!viewer) return;
@@ -195,9 +166,10 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             theme: theme === 'dark' ? 'sepia-mode' : 'day-mode',
             fontSize: `${fontSize}%`,
         });
-    }, [theme, fontSize]);
+        localStorage.setItem('epubTheme', theme);
+        localStorage.setItem('epubFontSize', String(fontSize));
+    }, [theme, fontSize, isViewerReady]);
 
-    // Time & Progress Syncing
     useEffect(() => {
         sessionStartTimeRef.current = Date.now();
         lastSyncTimeRef.current = Date.now();
@@ -211,8 +183,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const now = Date.now();
         const secondsToAdd = Math.round((now - lastSyncTimeRef.current) / 1000);
 
-        const shouldSync = (secondsToAdd > 0) || forceSync;
-        if (shouldSync) {
+        if (secondsToAdd > 0 || forceSync) {
             try {
                 await updateReadingProgress(quest.id, currentUser.id, {
                     secondsToAdd,
@@ -239,9 +210,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const handleClose = () => setReadingQuest(null);
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (viewerRef.current) {
-            viewerRef.current.goTo({ percentage: parseInt(e.target.value) / 100 });
-        }
+        if (viewerRef.current) viewerRef.current.goTo({ percentage: parseInt(e.target.value) / 100 });
     };
     
     const isBookmarked = useMemo(() => !!(currentLocation && bookmarks.some(b => b.href === currentLocation.href)), [currentLocation, bookmarks]);

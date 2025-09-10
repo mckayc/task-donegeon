@@ -1,217 +1,224 @@
 
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1c1917" />
-    <title>Task Donegeon</title>
-    <link rel="manifest" href="/manifest.json" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Almendra+Display&family=Almendra+SC&family=Almendra&family=Butcherman&family=Cinzel+Decorative&family=Cinzel&family=Comic+Neue:wght@400;700&family=Cormorant+Garamond&family=Creepster&family=Crimson+Pro&family=EB+Garamond&family=Eater&family=Fondamento&family=Fruktur&family=Griffy&family=Henny+Penny&family=IM+Fell+English+SC&family=Lora&family=MedievalSharp&family=Metamorphous&family=New+Rocker&family=Nosifer&family=Pirata+One&family=Press+Start+2P&family=Roboto:wght@400;500;700&family=Rye&family=Sancreek&family=Smokum&family=Special+Elite&family=Uncial+Antiqua&family=Vollkorn&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://esm.sh/react-image-crop@11.0.5/dist/ReactCrop.css" />
-    <link rel="stylesheet" href="https://unpkg.com/react-pdf@9.1.0/dist/esm/Page/AnnotationLayer.css" />
-    <link rel="stylesheet" href="https://unpkg.com/react-pdf@9.1.0/dist/esm/Page/TextLayer.css" />
-    <link rel="stylesheet" href="https://unpkg.com/foliate-js/dist/foliate.css" />
-    <style>
-      .font-medieval {
-        font-family: var(--font-family-heading);
-      }
-      /* For hiding scrollbars */
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Foliate from 'foliate-js';
+import { Quest } from '../../types';
+import Button from '../user-interface/Button';
+import { useUIDispatch } from '../../context/UIContext';
+import { useAuthState } from '../../context/AuthContext';
+import { XCircleIcon, ChevronLeftIcon, ChevronRightIcon } from '../user-interface/Icons';
+import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 
-      /* For hiding number input spinners */
-      .no-spinner::-webkit-outer-spin-button,
-      .no-spinner::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-      .no-spinner {
-        -moz-appearance: textfield;
-      }
-      
-      /* THEME VARIABLES */
-      :root {
-        /* FONT DEFAULTS */
-        --font-family-heading: 'MedievalSharp', cursive;
-        --font-family-body: 'Roboto', sans-serif;
-        --font-weight-normal: 400;
-        --font-weight-bold: 700;
-        --line-height: 1.5;
-
-        --font-size-h1: 2.25rem;
-        --font-size-h2: 1.75rem;
-        --font-size-h3: 1.5rem;
-        --font-size-body: 1rem;
-        --font-size-small: 0.875rem;
-
-        /* COLOR DEFAULTS */
-        --color-primary-hsl: 158 84% 39%;
-        --color-secondary-hsl: 204 85% 54%;
-        --color-bg-primary-hsl: 224 71% 4%;
-        --color-bg-secondary-hsl: 224 39% 10%;
-        --color-bg-tertiary-hsl: 240 10% 19%;
-        --color-text-primary-hsl: 240 8% 90%;
-        --color-text-secondary-hsl: 240 6% 65%;
-        --color-text-muted-hsl: 240 5% 50%;
-        --color-link-hsl: 202 90% 70%;
-        --color-link-hover-hsl: 202 80% 60%;
-        --color-border-hsl: 240 6% 30%;
-
-        /* COMPONENT DEFAULTS */
-        --button-radius: 0.5rem;
-        --input-bg-hsl: var(--color-bg-tertiary-hsl);
-        --input-border-hsl: var(--color-border-hsl);
-        --input-focus-ring-hsl: var(--color-primary-hsl);
-
-        /* NAVIGATION DEFAULTS */
-        --nav-header-bg-hsl: 224 39% 10%;
-        --nav-sidebar-bg-hsl: 224 71% 4%;
-
-        /* SHADOW DEFAULTS */
-        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.1);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.15), 0 2px 4px -2px rgb(0 0 0 / 0.15);
-        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.2);
-
-        /* ShadCN/UI Theme Variables - Derived */
-        --background: var(--color-bg-primary-hsl);
-        --foreground: var(--color-text-primary-hsl);
-        --card: var(--color-bg-secondary-hsl);
-        --card-foreground: var(--color-text-primary-hsl);
-        --popover: var(--color-bg-primary-hsl);
-        --popover-foreground: var(--color-text-primary-hsl);
-        --primary: var(--color-primary-hsl);
-        --primary-foreground: 210 40% 98%;
-        --secondary: var(--color-secondary-hsl);
-        --secondary-foreground: 210 40% 98%;
-        --muted: var(--color-bg-tertiary-hsl);
-        --muted-foreground: var(--color-text-muted-hsl);
-        --accent: var(--color-primary-hsl);
-        --accent-foreground: 210 40% 98%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 210 40% 98%;
-        --border: var(--color-border-hsl);
-        --input: var(--input-border-hsl);
-        --ring: var(--input-focus-ring-hsl);
-        --radius: var(--button-radius);
-      }
-
-      body {
-        font-family: var(--font-family-body);
-        font-size: var(--font-size-body);
-        font-weight: var(--font-weight-normal);
-        line-height: var(--line-height);
-        background-color: hsl(var(--background));
-        color: hsl(var(--foreground));
-      }
-      
-      body[data-theme] h1, 
-      body[data-theme] h2, 
-      body[data-theme] h3 {
-        font-family: var(--font-family-heading);
-        font-weight: var(--font-weight-bold);
-      }
-      body[data-theme] h1 { font-size: var(--font-size-h1); }
-      body[data-theme] h2 { font-size: var(--font-size-h2); }
-      body[data-theme] h3 { font-size: var(--font-size-h3); }
-      body[data-theme] p { color: hsl(var(--foreground)); }
-      body[data-theme] small { font-size: var(--font-size-small); color: hsl(var(--muted-foreground)); }
-      body[data-theme] label { color: hsl(var(--color-text-secondary-hsl)); }
-      body[data-theme] a { color: hsl(var(--color-link-hsl)); }
-      body[data-theme] a:hover { color: hsl(var(--color-link-hover-hsl)); }
-      
-      @keyframes fadeInOut {
-        0% { opacity: 0; transform: translateY(5px); }
-        10% { opacity: 1; transform: translateY(0); }
-        90% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(-5px); }
-      }
-      .saved-animation {
-        animation: fadeInOut 2s ease-in-out forwards;
-      }
-
-      @keyframes slide-in {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
-      }
-      @keyframes slide-out {
-        from { transform: translateX(0); }
-        to { transform: translateX(100%); }
-      }
-      .animate-in {
-        animation-name: slide-in;
-        animation-duration: 0.3s;
-        animation-timing-function: ease-out;
-      }
-      .animate-out {
-         animation-name: slide-out;
-         animation-duration: 0.2s;
-         animation-timing-function: ease-in;
-      }
-      
-      main.main-content {
-        transition: margin-left 0.3s ease-in-out;
-      }
-
-      @keyframes slow-pulse {
-        50% {
-          opacity: .6;
-        }
-      }
-      .animate-slow-pulse {
-        animation: slow-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^18.2.0",
-    "react-dom/": "https://esm.sh/react-dom@^18.2.0/",
-    "react-image-crop": "https://esm.sh/react-image-crop@^11.0.5",
-    "react-pdf": "https://esm.sh/react-pdf@9.1.0",
-    "pdfjs-dist/": "https://esm.sh/pdfjs-dist@4.4.168/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.9.0",
-    "emoji-picker-react": "https://esm.sh/emoji-picker-react@^4.13.1",
-    "vite": "https://esm.sh/vite@^7.0.4",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.6.0",
-    "framer-motion": "https://esm.sh/framer-motion@^11.2.10",
-    "class-variance-authority": "https://esm.sh/class-variance-authority@^0.7.0",
-    "clsx": "https://esm.sh/clsx@^2.1.1",
-    "tailwind-merge": "https://esm.sh/tailwind-merge@^2.3.0",
-    "@radix-ui/react-slot": "https://esm.sh/@radix-ui/react-slot@^1.0.2",
-    "lucide-react": "https://esm.sh/lucide-react@^0.395.0",
-    "@fullcalendar/core": "https://esm.sh/@fullcalendar/core@6.1.14",
-    "@fullcalendar/react": "https://esm.sh/@fullcalendar/react@6.1.14",
-    "@fullcalendar/daygrid": "https://esm.sh/@fullcalendar/daygrid@6.1.14",
-    "@fullcalendar/timegrid": "https://esm.sh/@fullcalendar/timegrid@6.1.14",
-    "@fullcalendar/interaction": "https://esm.sh/@fullcalendar/interaction@6.1.14",
-    "@fullcalendar/google-calendar": "https://esm.sh/@fullcalendar/google-calendar@6.1.14",
-    "@fullcalendar/resource-timegrid": "https://esm.sh/@fullcalendar/resource-timegrid@6.1.14",
-    "@fullcalendar/list": "https://esm.sh/@fullcalendar/list@6.1.14",
-    "@fullcalendar/rrule": "https://esm.sh/@fullcalendar/rrule@6.1.14",
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "@testing-library/jest-dom": "https://esm.sh/@testing-library/jest-dom@^6.7.0",
-    "@testing-library/react": "https://esm.sh/@testing-library/react@^16.3.0",
-    "@jest/globals": "https://esm.sh/@jest/globals@^30.0.5",
-    "src/": "https://esm.sh/src@^1.1.2/",
-    "foliate-js": "https://esm.sh/foliate-js@0.3.3"
-  }
+interface EpubReaderPanelProps {
+  quest: Quest;
 }
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
-</html>
+
+const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
+    const { setReadingQuest } = useUIDispatch();
+    const { currentUser } = useAuthState();
+    const { updateReadingProgress } = useQuestsDispatch();
+    const { quests } = useQuestsState();
+
+    const liveQuest = useMemo(() => quests.find(q => q.id === quest.id) || quest, [quests, quest]);
+
+    const viewerRef = useRef<HTMLDivElement>(null);
+    const readerRef = useRef<any>(null);
+
+    const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
+    const [bookTitle, setBookTitle] = useState('');
+    const [currentLocationCfi, setCurrentLocationCfi] = useState<string | null>(null);
+    
+    // On-screen logger state
+    const [logMessages, setLogMessages] = useState<string[]>([]);
+    const logContainerRef = useRef<HTMLDivElement>(null);
+
+    const addToLog = useCallback((message: string) => {
+        setLogMessages(prev => [...prev.slice(-10), message]);
+    }, []);
+
+    useEffect(() => {
+        if(logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+    }, [logMessages]);
+
+    // Time Tracking
+    const [sessionSeconds, setSessionSeconds] = useState(0);
+    const sessionStartTimeRef = useRef(Date.now());
+    const lastSyncTimeRef = useRef(Date.now());
+    
+    const userProgress = useMemo(() => {
+        if (!currentUser) return null;
+        return liveQuest.readingProgress?.[currentUser.id];
+    }, [liveQuest.readingProgress, currentUser]);
+
+    const totalSecondsRead = useMemo(() => (userProgress?.totalSeconds || 0) + sessionSeconds, [userProgress, sessionSeconds]);
+
+    useEffect(() => {
+        let isMounted = true;
+        
+        const initReader = async () => {
+            addToLog("Initializing EPUB Reader...");
+            if (!viewerRef.current) {
+                const err = "Reader element is not available.";
+                addToLog(`ERROR: ${err}`);
+                setError(err);
+                return;
+            }
+             if (!quest.epubUrl) {
+                addToLog("ERROR: EPUB URL is missing in quest data.");
+                setError("EPUB URL is missing.");
+                return;
+            }
+
+            addToLog(`Fetching EPUB file from: ${quest.epubUrl}`);
+            try {
+                const response = await fetch(quest.epubUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const bookData = await response.arrayBuffer();
+                addToLog(`EPUB file fetched successfully (${(bookData.byteLength / 1024).toFixed(1)} KB).`);
+
+                if (!isMounted) return;
+
+                addToLog("Instantiating Foliate Reader...");
+                // @ts-ignore Foliate is imported as a module
+                const reader = new Foliate(viewerRef.current);
+                readerRef.current = reader;
+
+                reader.on('relocated', (location: any) => {
+                    if (isMounted && location?.end?.percentage) {
+                        setProgress(Math.round(location.end.percentage * 100));
+                        setCurrentLocationCfi(location.start.cfi);
+                    }
+                });
+
+                addToLog("Opening book data...");
+                await reader.open(bookData);
+                if (!isMounted) return;
+
+                const metadata = await reader.book.getMetadata();
+                setBookTitle(metadata.title);
+                addToLog(`Book title: "${metadata.title}"`);
+
+                const savedLocation = userProgress?.locationCfi;
+                if (savedLocation) {
+                    addToLog(`Applying saved location: ${savedLocation}`);
+                    await reader.goTo(savedLocation);
+                }
+
+                addToLog("Reader is ready!");
+            } catch (err) {
+                 if (isMounted) {
+                    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+                    addToLog(`FATAL ERROR during reader init: ${errorMessage}`);
+                    setError(errorMessage);
+                }
+            }
+        };
+        
+        initReader();
+
+        return () => {
+            isMounted = false;
+            if (readerRef.current?.destroy) {
+                readerRef.current.destroy();
+            }
+        };
+    }, [quest.epubUrl, userProgress, addToLog]);
+    
+    const syncProgress = useCallback(async (forceSync = false) => {
+        if (!currentUser || !currentLocationCfi) return;
+        const now = Date.now();
+        const secondsToAdd = Math.round((now - lastSyncTimeRef.current) / 1000);
+
+        if (secondsToAdd > 0 || forceSync) {
+            try {
+                await updateReadingProgress(quest.id, currentUser.id, {
+                    secondsToAdd,
+                    locationCfi: currentLocationCfi,
+                });
+                lastSyncTimeRef.current = now;
+            } catch (e) {
+                console.error("EPUB Sync failed:", e);
+            }
+        }
+    }, [currentUser, quest.id, updateReadingProgress, currentLocationCfi]);
+
+    // Time & Progress Syncing
+    useEffect(() => {
+        sessionStartTimeRef.current = Date.now();
+        lastSyncTimeRef.current = Date.now();
+        setSessionSeconds(0);
+        const timer = setInterval(() => setSessionSeconds(Math.round((Date.now() - sessionStartTimeRef.current) / 1000)), 1000);
+        
+        const syncInterval = setInterval(() => syncProgress(false), 30000);
+        const handleUnload = () => syncProgress(true);
+        window.addEventListener('beforeunload', handleUnload);
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(syncInterval);
+            window.removeEventListener('beforeunload', handleUnload);
+            syncProgress(true);
+        };
+    }, [quest.id, syncProgress]);
+    
+    const handleNext = () => readerRef.current?.next();
+    const handlePrev = () => readerRef.current?.prev();
+
+    const formatTime = (totalSeconds: number) => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
+    };
+    
+    const isReady = !!bookTitle && !error;
+
+    return (
+        <div className="fixed inset-0 bg-stone-900 z-[80] flex flex-col">
+            <header className="p-3 flex justify-between items-center z-20 text-white bg-stone-800 flex-shrink-0">
+                <div className="truncate">
+                    <h3 className="font-bold text-lg truncate">{quest.title}</h3>
+                    <p className="text-sm text-stone-300 truncate">{bookTitle}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setReadingQuest(null)} title="Close Reader">
+                    <XCircleIcon className="w-6 h-6"/>
+                </Button>
+            </header>
+            
+            <div className="flex-grow relative min-h-0">
+                {!isReady && (
+                    <div className="absolute inset-0 bg-stone-900/90 z-40 flex flex-col items-center justify-center gap-4 p-8">
+                        <div ref={logContainerRef} className="w-full max-w-md h-64 bg-black/50 rounded-lg p-4 font-mono text-xs text-white overflow-y-auto scrollbar-hide">
+                            {logMessages.map((msg, index) => (
+                                <p key={index} className={`whitespace-pre-wrap ${msg.startsWith('ERROR') || msg.startsWith('FATAL') ? 'text-red-400' : msg.includes('Waiting') ? 'text-yellow-400 animate-pulse' : 'text-green-400'}`}>
+                                    {`> ${msg}`}
+                                </p>
+                            ))}
+                        </div>
+                        {!error && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400 mt-4"></div>}
+                    </div>
+                )}
+                <div ref={viewerRef} className="h-full w-full foliate-container" />
+            </div>
+
+            <footer className="p-3 flex justify-between items-center z-20 text-white bg-stone-800 text-sm flex-shrink-0">
+                <div className="w-1/4">
+                    <p>Total Time: {formatTime(Math.floor(totalSecondsRead))}</p>
+                </div>
+                <div className="flex-grow flex items-center justify-center gap-4">
+                    <Button onClick={handlePrev} disabled={!isReady}>
+                        <ChevronLeftIcon className="w-5 h-5"/> Prev
+                    </Button>
+                    <span className="font-semibold w-20 text-center">{isReady ? `${progress}%` : '--%'}</span>
+                     <Button onClick={handleNext} disabled={!isReady}>
+                        Next <ChevronRightIcon className="w-5 h-5"/>
+                    </Button>
+                </div>
+                <div className="w-1/4" />
+            </footer>
+        </div>
+    );
+};
+
+export default EpubReaderPanel;

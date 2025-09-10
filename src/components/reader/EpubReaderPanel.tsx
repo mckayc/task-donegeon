@@ -5,18 +5,24 @@ import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, MenuIcon, BookmarkIcon as BookmarkOutlineIcon } from '../user-interface/Icons';
+import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashIcon, BookmarkPlusIcon, ZoomIn, ZoomOut, MenuIcon, ChevronLeftIcon, ChevronRightIcon } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+
+declare global {
+  interface Window {
+    ePub: any;
+  }
+}
 
 interface EpubReaderPanelProps {
   quest: Quest;
 }
 
 interface TocItem {
-    title: string;
+    label: string;
     href: string;
-    children: TocItem[];
+    subitems: TocItem[];
 }
 
 const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
@@ -28,18 +34,16 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const liveQuest = useMemo(() => quests.find(q => q.id === quest.id) || quest, [quests, quest]);
 
-    const viewerRef = useRef<any>(null);
+    const bookRef = useRef<any>(null);
+    const renditionRef = useRef<any>(null);
     const viewerElementRef = useRef<HTMLDivElement>(null);
-    const isMountedRef = useRef(true);
-
-    const [logs, setLogs] = useState<string[]>([]);
-    const [errorLog, setErrorLog] = useState<string | null>(null);
-    const addLog = (message: string) => setLogs(prev => [...prev.slice(-10), message]);
 
     const [isViewerReady, setIsViewerReady] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const [toc, setToc] = useState<TocItem[]>([]);
-    const [currentLocation, setCurrentLocation] = useState<any>(null);
+    const [currentLocationCfi, setCurrentLocationCfi] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [bookTitle, setBookTitle] = useState('');
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -67,119 +71,96 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const totalSecondsRead = useMemo(() => (userProgress?.totalSeconds || 0) + sessionSeconds, [userProgress, sessionSeconds]);
 
     useEffect(() => {
-        isMountedRef.current = true;
-        return () => { isMountedRef.current = false; };
-    }, []);
-
-    // Wait for viewer library, then initialize
-    useEffect(() => {
-        if (!viewerElementRef.current || !quest.epubUrl) return;
-
-        const initViewer = async () => {
-            addLog('Initializing EPUB Reader...');
-            addLog('Waiting for viewer library to become available...');
-
-            while (!(window as any).WebpubViewer && isMountedRef.current) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-
-            if (!isMountedRef.current) {
-                addLog('Component unmounted while waiting for library.');
+        const initEpub = async () => {
+            if (!quest.epubUrl || !viewerElementRef.current || !window.ePub) {
+                if (!window.ePub) setError("EPUB.js library not found.");
                 return;
             }
-            
-            if (!(window as any).WebpubViewer) {
-                 const errorMsg = 'Could not load book file: WebpubViewer library failed to load. The script may be blocked.';
-                 setErrorLog(errorMsg);
-                 addLog(`ERROR: ${errorMsg}`);
-                 return;
-            }
-
-            addLog('Viewer library is available.');
 
             try {
-                addLog(`Fetching EPUB file from: ${quest.epubUrl}...`);
-                const response = await fetch(quest.epubUrl!);
-                if (!isMountedRef.current) return;
-                if (!response.ok) throw new Error(`Failed to fetch EPUB file (status: ${response.status})`);
-                
+                const response = await fetch(quest.epubUrl);
+                if (!response.ok) throw new Error('Failed to fetch EPUB file.');
                 const bookData = await response.arrayBuffer();
-                if (!isMountedRef.current) return;
-                const bookDataUint8 = new Uint8Array(bookData);
-                addLog('EPUB file fetched successfully.');
 
-                addLog('Instantiating viewer...');
-                const viewer = new (window as any).WebpubViewer(viewerElementRef.current, {
-                    bookData: bookDataUint8,
-                });
-                viewerRef.current = viewer;
+                const book = window.ePub(bookData);
+                bookRef.current = book;
 
-                viewer.on('location', (locationData: any) => {
-                    setCurrentLocation(locationData);
-                    setProgress(Math.round(locationData.progress * 100));
+                const rendition = book.renderTo(viewerElementRef.current, {
+                    width: '100%',
+                    height: '100%',
+                    flow: 'paginated',
+                    spread: 'auto',
                 });
-                viewer.on('toc', (tocData: TocItem[]) => setToc(tocData));
-                viewer.on('error', (error: any) => {
-                    console.error("[EpubReader] Viewer internal error:", error);
-                    setErrorLog(`Viewer error: ${error.message}`);
-                });
+                renditionRef.current = rendition;
 
-                addLog('Starting viewer...');
-                await viewer.start();
-                if (!isMountedRef.current) return;
-                addLog('Viewer started. Loading publication...');
-                
-                setBookTitle(viewer.publication.metadata.title);
-                
-                const savedLocation = userProgress?.locationCfi;
-                if (savedLocation) {
-                    addLog(`Navigating to saved location: ${savedLocation}`);
-                    viewer.goTo(savedLocation);
-                }
-                
+                await book.ready;
+                await book.locations.generate(1650); // Generate locations for progress calculation
+
+                setBookTitle(book.package.metadata.title);
+                setToc(book.navigation.toc);
                 setBookmarks(userProgress?.bookmarks || []);
-                setIsViewerReady(true);
-                addLog('Publication loaded. Reader is ready.');
+                
+                rendition.on('relocated', (location: any) => {
+                    setProgress(Math.round(book.locations.percentageFromCfi(location.start.cfi) * 100));
+                    setCurrentLocationCfi(location.start.cfi);
+                });
 
-            } catch (error) {
-                if (!isMountedRef.current) return;
-                const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-                console.error("[EpubReader] Initialization failed:", errorMessage);
-                setErrorLog(`Could not load book file: ${errorMessage}`);
+                if (userProgress?.locationCfi) {
+                    rendition.display(userProgress.locationCfi);
+                } else {
+                    rendition.display();
+                }
+
+                setIsViewerReady(true);
+            } catch (err) {
+                console.error("Error loading EPUB:", err);
+                setError(err instanceof Error ? err.message : "Failed to load book.");
+            } finally {
+                setIsLoading(false);
             }
         };
 
-        initViewer();
+        initEpub();
 
         return () => {
-            if (viewerRef.current) {
-                viewerRef.current.destroy();
-                viewerRef.current = null;
-            }
+            bookRef.current?.destroy();
         };
     }, [quest.epubUrl, userProgress]);
 
     useEffect(() => {
-        const viewer = viewerRef.current;
-        if (!viewer) return;
-        viewer.setProps({
-            theme: theme === 'dark' ? 'sepia-mode' : 'day-mode',
-            fontSize: `${fontSize}%`,
-        });
+        const rendition = renditionRef.current;
+        if (!rendition) return;
+
+        rendition.themes.register('dark', { 'body': { 'background-color': '#1c1917', 'color': '#e7e5e4' } });
+        rendition.themes.register('light', { 'body': { 'background-color': '#f5f5f4', 'color': '#1c1917' } });
+        rendition.themes.select(theme);
+        rendition.themes.fontSize(`${fontSize}%`);
+        
         localStorage.setItem('epubTheme', theme);
         localStorage.setItem('epubFontSize', String(fontSize));
     }, [theme, fontSize, isViewerReady]);
-
+    
+    // Time & Progress Syncing
     useEffect(() => {
         sessionStartTimeRef.current = Date.now();
         lastSyncTimeRef.current = Date.now();
         setSessionSeconds(0);
         const timer = setInterval(() => setSessionSeconds(Math.round((Date.now() - sessionStartTimeRef.current) / 1000)), 1000);
-        return () => clearInterval(timer);
+        
+        const syncInterval = setInterval(() => syncProgress(false), 30000);
+        const handleUnload = () => syncProgress(true);
+        window.addEventListener('beforeunload', handleUnload);
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(syncInterval);
+            window.removeEventListener('beforeunload', handleUnload);
+            syncProgress(true);
+        };
     }, [quest.id]);
 
     const syncProgress = useCallback(async (forceSync = false, bookmarksToSync: Bookmark[] = bookmarks) => {
-        if (!currentUser || !currentLocation) return;
+        if (!currentUser || !currentLocationCfi) return;
         const now = Date.now();
         const secondsToAdd = Math.round((now - lastSyncTimeRef.current) / 1000);
 
@@ -187,38 +168,25 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             try {
                 await updateReadingProgress(quest.id, currentUser.id, {
                     secondsToAdd,
-                    locationCfi: currentLocation.href,
+                    locationCfi: currentLocationCfi,
                     bookmarks: bookmarksToSync,
                 });
                 lastSyncTimeRef.current = now;
             } catch (e) {
-                console.error("Sync failed:", e);
+                console.error("EPUB Sync failed:", e);
             }
         }
-    }, [currentUser, quest.id, updateReadingProgress, currentLocation, bookmarks]);
-
-    useEffect(() => {
-        const intervalId = setInterval(() => syncProgress(false), 30000);
-        const handleUnload = () => syncProgress(true);
-        window.addEventListener('beforeunload', handleUnload);
-        return () => {
-            clearInterval(intervalId);
-            window.removeEventListener('beforeunload', handleUnload);
-            syncProgress(true);
-        };
-    }, [syncProgress]);
-
-    const handleClose = () => setReadingQuest(null);
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (viewerRef.current) viewerRef.current.goTo({ percentage: parseInt(e.target.value) / 100 });
-    };
+    }, [currentUser, quest.id, updateReadingProgress, currentLocationCfi, bookmarks]);
     
-    const isBookmarked = useMemo(() => !!(currentLocation && bookmarks.some(b => b.href === currentLocation.href)), [currentLocation, bookmarks]);
+    const isBookmarked = useMemo(() => !!(currentLocationCfi && bookmarks.some(b => b.cfi === currentLocationCfi)), [currentLocationCfi, bookmarks]);
 
     const addBookmark = async () => {
-        if (currentLocation && !isBookmarked && viewerRef.current) {
-            const label = await viewerRef.current.getLabel(currentLocation);
-            const newBookmark: Bookmark = { href: currentLocation.href, label: `Chapter: ${label}`, progress: Math.round(currentLocation.progress * 100) };
+        if (currentLocationCfi && !isBookmarked && bookRef.current) {
+            const newBookmark: Bookmark = { 
+                cfi: currentLocationCfi, 
+                label: `Page at ${progress}%`, 
+                progress: progress 
+            };
             const newBookmarks = [...bookmarks, newBookmark];
             setBookmarks(newBookmarks);
             syncProgress(false, newBookmarks);
@@ -226,30 +194,36 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         }
     };
 
-    const removeBookmark = (href: string) => {
-        const newBookmarks = bookmarks.filter(bm => bm.href !== href);
+    const removeBookmark = (cfi: string) => {
+        const newBookmarks = bookmarks.filter(bm => bm.cfi !== cfi);
         setBookmarks(newBookmarks);
         syncProgress(false, newBookmarks);
+    };
+
+    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const percentage = parseInt(e.target.value) / 100;
+        const cfi = bookRef.current.locations.cfiFromPercentage(percentage);
+        renditionRef.current.display(cfi);
+    };
+
+    const formatTime = (totalSeconds: number) => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
     };
 
     const TocComponent: React.FC<{ items: TocItem[] }> = ({ items }) => (
         <ul className="space-y-1">
             {items.map(item => (
                 <li key={item.href}>
-                    <button onClick={() => { viewerRef.current.goTo(item.href); setIsPanelOpen(false); }} className="w-full text-left p-2 rounded hover:bg-stone-700/50 text-stone-300">
-                        {item.title}
+                    <button onClick={() => { renditionRef.current.display(item.href); setIsPanelOpen(false); }} className="w-full text-left p-2 rounded hover:bg-stone-700/50 text-stone-300">
+                        {item.label}
                     </button>
-                    {item.children.length > 0 && <div className="pl-4"><TocComponent items={item.children} /></div>}
+                    {item.subitems.length > 0 && <div className="pl-4"><TocComponent items={item.subitems} /></div>}
                 </li>
             ))}
         </ul>
     );
-    
-    const formatTime = (totalSeconds: number) => {
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
-    };
     
     return (
         <div className="fixed inset-0 bg-black/80 z-[80] flex items-center justify-center epub-container">
@@ -267,29 +241,31 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                             {isBookmarked ? <BookmarkSolidIcon className="w-5 h-5 text-emerald-400" /> : <BookmarkPlusIcon className="w-5 h-5" />}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(p => !p)} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
-                        <Button variant="ghost" size="icon" onClick={handleClose} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setReadingQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
                     </div>
                 </header>
 
                 <div className="flex-grow relative min-h-0">
-                    {!isViewerReady && (
+                    {isLoading && (
                         <div className="absolute inset-0 bg-stone-900/80 z-40 flex flex-col items-center justify-center gap-4 p-8">
                             <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
-                            <div className="w-full max-w-lg mt-4 bg-black/30 p-4 rounded-lg font-mono text-xs text-left max-h-64 overflow-y-auto">
-                                {logs.map((log, index) => <p key={index} className="text-stone-300">{log}</p>)}
-                                {errorLog && <p className="text-red-400 font-bold mt-2">{errorLog}</p>}
-                            </div>
+                            <p className="text-white mt-4">{error || "Preparing Reader..."}</p>
                         </div>
                     )}
-                    <div ref={viewerElementRef} className="h-full w-full" />
+                    <div id="viewer" ref={viewerElementRef} className="h-full w-full" />
+
+                    <Button variant="secondary" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full" onClick={() => renditionRef.current?.prev()}>
+                        <ChevronLeftIcon />
+                    </Button>
+                    <Button variant="secondary" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full" onClick={() => renditionRef.current?.next()}>
+                        <ChevronRightIcon />
+                    </Button>
                 </div>
                 
                 <AnimatePresence>
                     {isPanelOpen && (
-                        <motion.div
-                            initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                            className="absolute top-0 left-0 bottom-0 w-80 bg-stone-800/95 border-r border-stone-700/60 z-30 flex flex-col shadow-2xl"
-                        >
+                        <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                            className="absolute top-0 left-0 bottom-0 w-80 bg-stone-800/95 border-r border-stone-700/60 z-30 flex flex-col shadow-2xl">
                             <div className="p-4 border-b border-stone-700/60 flex-shrink-0">
                                 <div className="flex p-1 bg-stone-700/50 rounded-lg">
                                     <button onClick={() => setPanelTab('toc')} className={`flex-1 p-2 rounded text-sm font-semibold ${panelTab === 'toc' ? 'bg-emerald-600 text-white' : 'text-stone-300'}`}>Table of Contents</button>
@@ -301,12 +277,12 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                                 {panelTab === 'bookmarks' && (
                                     <ul className="space-y-2">
                                         {bookmarks.map(bm => (
-                                            <li key={bm.href} className="text-sm hover:bg-stone-700/50 p-2 rounded-md flex justify-between items-center gap-2">
-                                                <button onClick={() => { viewerRef.current.goTo(bm.href); setIsPanelOpen(false); }} className="text-left flex-grow overflow-hidden">
+                                            <li key={bm.cfi} className="text-sm hover:bg-stone-700/50 p-2 rounded-md flex justify-between items-center gap-2">
+                                                <button onClick={() => { renditionRef.current.display(bm.cfi); setIsPanelOpen(false); }} className="text-left flex-grow overflow-hidden">
                                                     <p className="text-stone-300 flex-grow truncate">{bm.label}</p>
                                                     <span className="text-xs text-stone-400 mt-1 block">At {bm.progress}%</span>
                                                 </button>
-                                                <Button variant="ghost" size="icon" onClick={() => removeBookmark(bm.href)} className="h-6 w-6 text-red-400 hover:text-red-300 flex-shrink-0"><TrashIcon className="w-4 h-4"/></Button>
+                                                <Button variant="ghost" size="icon" onClick={() => removeBookmark(bm.cfi)} className="h-6 w-6 text-red-400 hover:text-red-300 flex-shrink-0"><TrashIcon className="w-4 h-4"/></Button>
                                             </li>
                                         ))}
                                     </ul>

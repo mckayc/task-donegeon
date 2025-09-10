@@ -54,7 +54,8 @@ export interface QuizState {
 
 // FIX: Define and export the Bookmark interface for use across components.
 export interface Bookmark {
-    href: string;
+    // FIX: Changed property from 'href' to 'cfi' to correctly represent an EPUB Canonical Fragment Identifier.
+    cfi: string;
     label: string;
     progress: number;
 }

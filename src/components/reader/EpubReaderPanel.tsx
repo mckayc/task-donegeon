@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // @ts-ignore
 import epub, { Book, Rendition, NavItem } from 'epubjs';
@@ -176,6 +175,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         let book: Book;
 
         const initializeReader = async () => {
+            setIsLoading(true);
             try {
                 let bookData = await getCachedBook(quest.epubUrl!);
                 if (!bookData) {
@@ -225,7 +225,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             bookRef.current?.destroy();
             renditionRef.current?.destroy();
         };
-    }, [quest.epubUrl, fontSize, theme, userProgress, addNotification]);
+    }, [quest.epubUrl]);
 
     const navigate = (direction: 'next' | 'prev') => renditionRef.current?.[direction]();
     const goTo = (href: string) => { renditionRef.current?.display(href); };
@@ -391,7 +391,6 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     )) : <p className="text-center text-stone-500 p-4">No bookmarks yet.</p>}
                 </div>
             </div>
-
         </div>
     );
 };

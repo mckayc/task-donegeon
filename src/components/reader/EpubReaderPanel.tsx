@@ -70,11 +70,25 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         let viewer: any;
 
         const init = async () => {
+            const waitForViewer = (timeout = 5000): Promise<void> => {
+                return new Promise((resolve, reject) => {
+                    const startTime = Date.now();
+                    const check = () => {
+                        if (typeof (window as any).WebpubViewer !== 'undefined') {
+                            resolve();
+                        } else if (Date.now() - startTime > timeout) {
+                            reject(new Error("WebpubViewer library failed to load in time."));
+                        } else {
+                            setTimeout(check, 100);
+                        }
+                    };
+                    check();
+                });
+            };
+
             try {
-                // Check if the viewer library is loaded before using it.
-                if (typeof (window as any).WebpubViewer === 'undefined') {
-                    throw new Error("WebpubViewer is not defined. The library may have failed to load.");
-                }
+                // Wait for the viewer library to be available on the window object
+                await waitForViewer();
 
                 // Fetch the book data manually
                 const response = await fetch(quest.epubUrl!);

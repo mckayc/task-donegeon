@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+// @ts-ignore
 import epub, { Book, Rendition, NavItem } from 'epubjs';
 import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon, ChevronLeftIcon, ChevronRightIcon, Sun, Moon, Plus, Minus, MenuIcon, Bookmark as BookmarkIcon, BookmarkPlus, TrashIcon, BookOpen } from '../user-interface/Icons';
+import { XCircleIcon, ChevronLeftIcon, ChevronRightIcon, Sun, Moon, PlusIcon, Minus, MenuIcon, Bookmark as BookmarkIcon, BookmarkPlus, TrashIcon, BookOpen } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -370,7 +371,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 <div className="flex items-center gap-2">
                     <Button variant="secondary" size="icon" onClick={() => changeFontSize(fontSize - 10)}><Minus className="w-5 h-5"/></Button>
                     <Input as="input" type="range" min="80" max="200" step="10" value={fontSize} onChange={(e) => changeFontSize(parseInt(e.target.value))} className="flex-grow" />
-                    <Button variant="secondary" size="icon" onClick={() => changeFontSize(fontSize + 10)}><Plus className="w-5 h-5"/></Button>
+                    <Button variant="secondary" size="icon" onClick={() => changeFontSize(fontSize + 10)}><PlusIcon className="w-5 h-5"/></Button>
                 </div>
             </div>
 

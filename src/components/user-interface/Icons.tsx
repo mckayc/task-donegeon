@@ -3,9 +3,13 @@ import React from 'react';
 // This resolves a large number of "module has no exported member" errors across the application.
 export { 
     ChevronsUpDown, Maximize, Minimize, Minus, ZoomIn, ZoomOut, Eye, EyeOff, Star, Sun, Moon, BookOpen, Bookmark, BookmarkPlus,
+    Trophy as TrophyIcon,
     ChevronDown as ChevronDownIcon, 
     ArrowLeft as ArrowLeftIcon, 
     ArrowRight as ArrowRightIcon, 
+    ChevronLeft as ChevronLeftIcon,
+    ChevronRight as ChevronRightIcon,
+    Plus as PlusIcon,
     Menu as MenuIcon, 
     Monitor as DeviceDesktopIcon, 
     Smartphone as DevicePhoneMobileIcon, 
@@ -32,11 +36,12 @@ export {
     MousePointerClick as MousePointerClickIcon, 
     MessageSquare as MessageSquareIcon,
     Copy as CopyIcon, 
-    CheckBadge as CheckBadgeIcon, 
+    // FIX: Changed import name from CheckBadge to BadgeCheck to match lucide-react library.
+    BadgeCheck as CheckBadgeIcon, 
     Database as DatabaseIcon,
     GripVertical as GrabHandleIcon,
     Users as UserGroupIcon,
-    Plus as PlusIcon
+    Plus
 } from 'lucide-react';
 
 const iconProps = {

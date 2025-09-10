@@ -4,7 +4,6 @@ import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-// FIX: Imported missing icons BookmarkPlusIcon and TrashIcon.
 import { XCircleIcon, ChevronLeftIcon, ChevronRightIcon, MenuIcon, SettingsIcon, BookmarkIcon, BookmarkSolidIcon, SunIcon, MoonIcon, BookmarkPlusIcon, TrashIcon } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 

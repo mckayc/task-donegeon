@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Quest, Bookmark } from '../../types';
@@ -71,20 +72,29 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const totalSecondsRead = useMemo(() => (userProgress?.totalSeconds || 0) + sessionSeconds, [userProgress, sessionSeconds]);
 
     useEffect(() => {
+        let intervalId: number | null = null;
+        let isMounted = true;
+        console.log('[EpubReader] Component mounted. Starting to check for EPUB.js library.');
+    
         const initEpub = async () => {
-            if (!quest.epubUrl || !viewerElementRef.current || !window.ePub) {
-                if (!window.ePub) setError("EPUB.js library not found.");
+            console.log('[EpubReader] Initializing EPUB...');
+            if (!quest.epubUrl || !viewerElementRef.current) {
+                setError("EPUB viewer element is not ready.");
+                console.error('[EpubReader] Viewer element ref or epubUrl is missing.');
+                setIsLoading(false);
                 return;
             }
-
+    
             try {
+                console.log('[EpubReader] Fetching EPUB file from:', quest.epubUrl);
                 const response = await fetch(quest.epubUrl);
-                if (!response.ok) throw new Error('Failed to fetch EPUB file.');
+                if (!response.ok) throw new Error(`Failed to fetch EPUB file (status: ${response.status}).`);
                 const bookData = await response.arrayBuffer();
-
+                console.log('[EpubReader] EPUB file fetched successfully.');
+    
                 const book = window.ePub(bookData);
                 bookRef.current = book;
-
+    
                 const rendition = book.renderTo(viewerElementRef.current, {
                     width: '100%',
                     height: '100%',
@@ -92,40 +102,69 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     spread: 'auto',
                 });
                 renditionRef.current = rendition;
-
+                console.log('[EpubReader] Rendition created.');
+    
                 await book.ready;
-                await book.locations.generate(1650); // Generate locations for progress calculation
-
+                console.log('[EpubReader] Book is ready.');
+                await book.locations.generate(1650);
+                console.log('[EpubReader] Locations generated.');
+    
+                if (!isMounted) return;
+    
                 setBookTitle(book.package.metadata.title);
                 setToc(book.navigation.toc);
                 setBookmarks(userProgress?.bookmarks || []);
                 
                 rendition.on('relocated', (location: any) => {
+                    if (!isMounted) return;
                     setProgress(Math.round(book.locations.percentageFromCfi(location.start.cfi) * 100));
                     setCurrentLocationCfi(location.start.cfi);
                 });
-
+    
                 if (userProgress?.locationCfi) {
+                    console.log('[EpubReader] Displaying from saved location:', userProgress.locationCfi);
                     rendition.display(userProgress.locationCfi);
                 } else {
+                    console.log('[EpubReader] Displaying from start.');
                     rendition.display();
                 }
-
+    
                 setIsViewerReady(true);
             } catch (err) {
-                console.error("Error loading EPUB:", err);
-                setError(err instanceof Error ? err.message : "Failed to load book.");
+                console.error("[EpubReader] Error during EPUB initialization:", err);
+                if (isMounted) {
+                    setError(err instanceof Error ? err.message : "Failed to load book.");
+                }
             } finally {
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         };
-
-        initEpub();
-
+    
+        const checkForLibrary = () => {
+            if (window.ePub) {
+                console.log('[EpubReader] EPUB.js library found. Initializing viewer.');
+                if (intervalId) clearInterval(intervalId);
+                initEpub();
+            } else {
+                console.log('[EpubReader] Waiting for EPUB.js library to load...');
+            }
+        };
+        
+        intervalId = window.setInterval(checkForLibrary, 100);
+        checkForLibrary();
+    
         return () => {
+            console.log('[EpubReader] Component unmounting. Cleaning up.');
+            isMounted = false;
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
             bookRef.current?.destroy();
         };
     }, [quest.epubUrl, userProgress]);
+
 
     useEffect(() => {
         const rendition = renditionRef.current;
@@ -140,25 +179,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         localStorage.setItem('epubFontSize', String(fontSize));
     }, [theme, fontSize, isViewerReady]);
     
-    // Time & Progress Syncing
-    useEffect(() => {
-        sessionStartTimeRef.current = Date.now();
-        lastSyncTimeRef.current = Date.now();
-        setSessionSeconds(0);
-        const timer = setInterval(() => setSessionSeconds(Math.round((Date.now() - sessionStartTimeRef.current) / 1000)), 1000);
-        
-        const syncInterval = setInterval(() => syncProgress(false), 30000);
-        const handleUnload = () => syncProgress(true);
-        window.addEventListener('beforeunload', handleUnload);
-
-        return () => {
-            clearInterval(timer);
-            clearInterval(syncInterval);
-            window.removeEventListener('beforeunload', handleUnload);
-            syncProgress(true);
-        };
-    }, [quest.id]);
-
+    // FIX: Moved syncProgress declaration above the useEffect that uses it.
     const syncProgress = useCallback(async (forceSync = false, bookmarksToSync: Bookmark[] = bookmarks) => {
         if (!currentUser || !currentLocationCfi) return;
         const now = Date.now();
@@ -177,6 +198,25 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             }
         }
     }, [currentUser, quest.id, updateReadingProgress, currentLocationCfi, bookmarks]);
+
+    // Time & Progress Syncing
+    useEffect(() => {
+        sessionStartTimeRef.current = Date.now();
+        lastSyncTimeRef.current = Date.now();
+        setSessionSeconds(0);
+        const timer = setInterval(() => setSessionSeconds(Math.round((Date.now() - sessionStartTimeRef.current) / 1000)), 1000);
+        
+        const syncInterval = setInterval(() => syncProgress(false), 30000);
+        const handleUnload = () => syncProgress(true);
+        window.addEventListener('beforeunload', handleUnload);
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(syncInterval);
+            window.removeEventListener('beforeunload', handleUnload);
+            syncProgress(true);
+        };
+    }, [quest.id, syncProgress]);
     
     const isBookmarked = useMemo(() => !!(currentLocationCfi && bookmarks.some(b => b.cfi === currentLocationCfi)), [currentLocationCfi, bookmarks]);
 

@@ -209,13 +209,12 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 const initialLocation = userProgress?.locationCfi || undefined;
                 await rendition.display(initialLocation);
 
-                setIsLoading(false);
-
             } catch (err) {
                 console.error("ePub reader error:", err);
                 const message = err instanceof Error ? err.message : "An unknown error occurred.";
                 setError(`Could not load eBook: ${message}`);
                 addNotification({ type: 'error', message: `Could not open eBook. It may be corrupted or in an unsupported format.`});
+            } finally {
                 setIsLoading(false);
             }
         };
@@ -308,7 +307,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     return (
         <div ref={panelRef} className="fixed inset-0 bg-stone-900 z-[80] flex flex-col">
             {/* Header */}
-            <header className={`absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-20 text-white bg-stone-800/80 backdrop-blur-sm transition-transform duration-300 ${!isImmersiveMode ? 'translate-y-0' : '-translate-y-full'}`}>
+            <header className={`absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-50 text-white bg-stone-800/80 backdrop-blur-sm transition-transform duration-300 ${!isImmersiveMode ? 'translate-y-0' : '-translate-y-full'}`}>
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" onClick={() => setIsTocOpen(p => !p)} title="Table of Contents"><MenuIcon className="w-5 h-5"/></Button>
                     <h3 className="font-bold text-lg truncate max-w-xs">{quest.title}</h3>
@@ -342,7 +341,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             </main>
 
             {/* Footer */}
-            <footer className={`absolute bottom-0 left-0 right-0 p-2 flex flex-col z-20 text-white bg-stone-800/80 backdrop-blur-sm transition-transform duration-300 ${!isImmersiveMode ? 'translate-y-0' : 'translate-y-full'}`}>
+            <footer className={`absolute bottom-0 left-0 right-0 p-2 flex flex-col z-50 text-white bg-stone-800/80 backdrop-blur-sm transition-transform duration-300 ${!isImmersiveMode ? 'translate-y-0' : 'translate-y-full'}`}>
                  <div className="flex items-center gap-4 text-xs font-mono w-full">
                     <span>{progressPercent.toFixed(1)}%</span>
                     <input type="range" min="0" max="100" step="0.1" value={progressPercent} onChange={handleProgressChange} className="flex-grow"/>

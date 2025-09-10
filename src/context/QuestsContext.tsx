@@ -55,7 +55,7 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; locationCfi?: string; bookmarks?: Bookmark[], pageNumber?: number }) => Promise<void>;
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);

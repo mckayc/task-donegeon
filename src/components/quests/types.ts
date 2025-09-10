@@ -1,4 +1,3 @@
-
 // Changed import from '../items/types' to '../users/types' to break circular dependency.
 import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -28,8 +27,8 @@ export enum QuestMediaType {
   AITeacher = 'AI_TEACHER',
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
-  EPUB = 'EPUB',
   PDF = 'PDF',
+  EPUB = 'EPUB',
 }
 
 export interface Checkpoint {
@@ -53,11 +52,10 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
-// FIX: Define and export the Bookmark interface for use across components.
 export interface Bookmark {
-    cfi: string;
-    label: string;
-    progress: number;
+  label: string;
+  cfi: string;
+  createdAt: string;
 }
 
 export interface Quest {
@@ -69,8 +67,8 @@ export interface Quest {
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
   videoUrl?: string | null;
-  epubUrl?: string | null;
   pdfUrl?: string | null;
+  epubUrl?: string | null;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
@@ -111,7 +109,8 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; locationCfi?: string; bookmarks?: Bookmark[]; pageNumber?: number; } };
+  // FIX: Added optional `theme` and `fontSize` properties to the reading progress tracker to support ePub reader settings and fix type errors.
+  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; theme?: 'light' | 'dark'; fontSize?: number; } };
   createdAt?: string;
   updatedAt?: string;
 }

@@ -1,11 +1,13 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { QuestGroup, Quest } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
-import { ChevronLeftIcon, ChevronRightIcon } from '../user-interface/Icons';
+// FIX: Removed unused and non-existent ChevronRightIcon import.
+import { ChevronLeftIcon } from '../user-interface/Icons';
 
 interface EditQuestGroupDialogProps {
     groupToEdit: QuestGroup | null;

@@ -24,7 +24,6 @@ export const useDashboardData = () => {
     const { 
         settings, scheduledEvents, adminAdjustments
     } = useSystemState();
-    // FIX: Add gameAssets to destructuring as it's needed for the 'myGoal' calculation.
     const { rewardTypes, gameAssets } = useEconomyState();
     const { guilds } = useCommunityState();
     const { quests, questCompletions } = useQuestsState();
@@ -152,7 +151,6 @@ export const useDashboardData = () => {
         return statsMap;
     }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
     
-    // FIX: Add logic to calculate 'myGoal' for the dashboard.
     const myGoal = useMemo(() => {
         if (!currentUser || !currentUser.wishlistAssetIds || currentUser.wishlistAssetIds.length === 0) {
             return { hasGoal: false, item: null, progress: [], isAffordable: false };
@@ -201,7 +199,6 @@ export const useDashboardData = () => {
             mostRecentTrophy: null,
             quickActionQuests: [],
             weeklyProgressData: [],
-            // FIX: Add myGoal to the return object for the case when there is no current user.
             myGoal: { hasGoal: false, item: null, progress: [], isAffordable: false },
             terminology: settings.terminology
         };
@@ -269,6 +266,7 @@ export const useDashboardData = () => {
     }, [currentUser.id, totalEarnedStatsByUser, rewardTypes]);
 
     const leaderboard = useMemo(() => {
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         return users.map(user => {
             const userStats = totalEarnedStatsByUser.get(user.id);
             const totalEarnedXp = userStats ? userStats.totalEarnedXp : 0;
@@ -368,7 +366,6 @@ export const useDashboardData = () => {
         mostRecentTrophy,
         quickActionQuests,
         weeklyProgressData,
-        // FIX: Add myGoal to the return object.
         myGoal,
         terminology
     };

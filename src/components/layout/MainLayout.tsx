@@ -1,3 +1,5 @@
+
+
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -13,12 +15,13 @@ import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
-import EpubReaderPanel from '../reader/EpubReaderPanel';
 import PdfReaderPanel from '../reader/PdfReaderPanel';
+// FIX: Changed import for EpubReaderPanel to a named import as it does not have a default export.
+import { EpubReaderPanel } from '../reader/EpubReaderPanel';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingQuest, readingPdfQuest } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest, readingEpubQuest } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
@@ -174,8 +177,8 @@ const MainLayout: React.FC = () => {
       </div>
       <ChatController />
       {isChatOpen && <ChatPanel />}
-      {readingQuest && <EpubReaderPanel quest={readingQuest} />}
       {readingPdfQuest && <PdfReaderPanel quest={readingPdfQuest} />}
+      {readingEpubQuest && <EpubReaderPanel quest={readingEpubQuest} />}
     </>
   );
 };

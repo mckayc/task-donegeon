@@ -16,11 +16,6 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of January 10, 2026 (v0.5.0):**
-    -   **eBook Reader Overhaul:** Replaced the legacy `epub.js` library with the modern ReadiumJS `web-pub-viewer` toolkit for a more robust, feature-rich, and stable reading experience.
-    -   **New Reader UI:** The eBook reader now features a completely redesigned, professional UI with a translucent header and footer, a slide-out side panel for Table of Contents and Bookmarks, and a dedicated settings popover for theme and font size control.
-    -   **Enhanced Functionality:** The new reader includes improved progress tracking, bookmark management, and seamless theme/font-size adjustments. It also proactively caches book files for faster loading and full offline access.
-
 -   **Week of January 3, 2026 (v0.4.93):**
     -   **PDF Reader Bug Fixes:** Implemented a series of fixes to the PDF reader for a more stable and intuitive experience. This includes resolving a bug that prevented page turning, correcting the total time read calculation, improving the fullscreen layout to properly fill the screen, and simplifying the page navigation controls.
 
@@ -31,10 +26,6 @@ Task Donegeon is a gamified task and chore management application designed for f
     -   **New "My Goal" Dashboard Card:** Introduced a new customizable card for the Dashboard that displays the first item from a user's new "Wishlist". This card shows the item's cost and the user's current progress towards affording it, providing a clear visual goal.
     -   **Wishlist Functionality:** Users can now add or remove items from their Wishlist directly from the Marketplace using a new star icon on each item card.
     -   **Dashboard Layout Stability Fix:** Resolved a critical logic error where certain cards like "My Pending Items" or newly added cards would either be duplicated across columns or disappear entirely after customization or an app update. The new layout system correctly handles all card states to prevent these issues.
-
--   **Week of November 29, 2025 (v0.4.78):**
-    -   **EPUB Reader Caching & Offline Support:** The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.
-    -   **Service Worker Update:** The service worker has been updated to enable this new caching strategy.
 
 -   **Week of November 22, 2025 (v0.4.77):**
     -   **The Grand Arcade Expansion:** Added six brand new minigames to the Arcade:
@@ -83,9 +74,6 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Week of September 13, 2025 (v0.4.66):**
     -   **Dashboard Customization UX Improvements:** Overhauled the "Customize Dashboard" dialog for better usability. The layout editor columns now have equal heights for a cleaner look. Cards can now be moved between main, side, and hidden columns using new arrow icons, providing an alternative to drag-and-drop. Fixed a bug where cards in the side column would disappear when switching to the "single-column" layout.
 
--   **Week of September 6, 2025 (v0.4.65):**
-    -   **EPUB Reader Fix:** Fixed a critical bug in the EPUB reader where the progress bar would incorrectly display 100% and not update upon navigation. The progress calculation is now more robust and accurately reflects the user's position within the book.
-
 -   **Week of September 6, 2025 (v0.4.64):**
     -   **Bug Bar Consolidation:** The bug recording bar has been consolidated into a more compact and responsive two-row layout to prevent controls from overflowing on smaller screens.
 
@@ -97,15 +85,6 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 -   **Week of November 24, 2025 (v0.4.52):**
     -   **Customizable Dashboard:** All cards on the Dashboard are now collapsible and can be reordered via drag-and-drop. Your preferred layout and collapsed states are saved automatically to your profile, allowing for a personalized view of your most important information.
-
--   **Week of November 17, 2025 (v0.4.46):**
-    -   **eBook Reader Redesign:** The EPUB reader has been completely overhauled with a new UI. It now features permanent, opaque top and bottom bars for controls, an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a dedicated "add bookmark" button, and a subtle page-turn animation.
-
--   **Week of November 10, 2025 (v0.4.45):**
-    -   **EPUB Reader Overhaul:** The eBook reader has been significantly upgraded with fullscreen mode, swipe controls, light/dark themes, improved bookmark display (with progress percentage), and database-backed progress syncing for a seamless experience across devices. Session and total time read are now also tracked and displayed.
-    -   **Media Library Enhancements:** Added the ability to create folders, fixed upload paths, and implemented drag-and-drop for files and folders in the media library.
-    -   **Bug Fixes:** Resolved an issue allowing users to complete daily duties multiple times and fixed a syntax error on the server.
-    -   **Quality of Life:** Added timestamps to the approvals page for better tracking.
 
 -   **November 3, 2025 (v0.4.28):**
     -   **The Arcade Expansion:** Five new minigames have been added: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.

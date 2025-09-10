@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../../context/SystemContext';
 import { useUIState } from '../../../../context/UIContext';
@@ -45,7 +44,6 @@ export const useDashboardData = () => {
                 
                 // Get filters from localStorage to match Chronicles page
                 const savedFilters = localStorage.getItem('chronicleFilters');
-                // FIX: Safely parse localStorage data to prevent runtime errors and ensure it is a string array.
                 let filterTypes = '';
                 if (savedFilters) {
                     try {

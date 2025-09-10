@@ -34,6 +34,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const viewerRef = useRef<any>(null);
     const viewerElementRef = useRef<HTMLDivElement>(null);
+    const isMountedRef = useRef(true);
 
     const [isLoading, setIsLoading] = useState(true);
     const [toc, setToc] = useState<TocItem[]>([]);
@@ -64,33 +65,37 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const totalSecondsRead = useMemo(() => (userProgress?.totalSeconds || 0) + sessionSeconds, [userProgress, sessionSeconds]);
 
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
     // Initialize Viewer
     useEffect(() => {
         if (!viewerElementRef.current || !quest.epubUrl) return;
         let viewer: any;
 
         const init = async () => {
-            const waitForViewer = (timeout = 5000): Promise<void> => {
+            const waitForViewer = (): Promise<void> => {
                 return new Promise((resolve, reject) => {
-                    const startTime = Date.now();
                     const check = () => {
-                        if (typeof (window as any).WebpubViewer !== 'undefined') {
-                            resolve();
-                        } else if (Date.now() - startTime > timeout) {
-                            reject(new Error("WebpubViewer library failed to load in time."));
-                        } else {
-                            setTimeout(check, 100);
+                        if (!isMountedRef.current) {
+                            return reject(new Error("Component unmounted while waiting for viewer."));
                         }
+                        if (typeof (window as any).WebpubViewer !== 'undefined') {
+                            return resolve();
+                        }
+                        setTimeout(check, 250); // Poll every 250ms
                     };
                     check();
                 });
             };
 
             try {
-                // Wait for the viewer library to be available on the window object
                 await waitForViewer();
 
-                // Fetch the book data manually
                 const response = await fetch(quest.epubUrl!);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch book: ${response.statusText}`);
@@ -98,7 +103,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 const bookData = await response.arrayBuffer();
                 const bookDataUint8 = new Uint8Array(bookData);
 
-                // Initialize the viewer with the raw data, accessing it from the window object.
                 viewer = new (window as any).WebpubViewer(viewerElementRef.current, {
                     bookData: bookDataUint8,
                 });
@@ -127,6 +131,10 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 setIsLoading(false);
 
             } catch (error) {
+                if ((error as Error).message.includes("Component unmounted")) {
+                    console.log("Reader initialization cancelled on unmount.");
+                    return;
+                }
                 console.error("Error initializing EPUB reader:", error);
                 addNotification({ type: 'error', message: `Could not load book file: ${error instanceof Error ? error.message : 'Unknown error'}`});
                 setReadingQuest(null);
@@ -136,8 +144,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         init();
 
         return () => {
-            if (viewer) {
-                viewer.destroy();
+            if (viewerRef.current) {
+                viewerRef.current.destroy();
+                viewerRef.current = null;
             }
         };
     }, [quest.epubUrl, userProgress, addNotification, setReadingQuest]);

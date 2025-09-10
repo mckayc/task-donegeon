@@ -9,7 +9,7 @@ import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 
 declare global {
   interface Window {
-    AEpubReader: any;
+    Foliate: any;
   }
 }
 
@@ -32,14 +32,14 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [bookTitle, setBookTitle] = useState('');
-    const [currentLocationHref, setCurrentLocationHref] = useState<string | null>(null);
+    const [currentLocationCfi, setCurrentLocationCfi] = useState<string | null>(null);
     
     // On-screen logger state
     const [logMessages, setLogMessages] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
 
     const addToLog = useCallback((message: string) => {
-        setLogMessages(prev => [...prev.slice(-10), message]); // Keep last 10 messages
+        setLogMessages(prev => [...prev.slice(-10), message]);
     }, []);
 
     useEffect(() => {
@@ -47,7 +47,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
         }
     }, [logMessages]);
-
 
     // Time Tracking
     const [sessionSeconds, setSessionSeconds] = useState(0);
@@ -65,7 +64,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         let isMounted = true;
         
         const initReader = async () => {
-            if (!viewerRef.current || !window.AEpubReader) {
+            if (!viewerRef.current || !window.Foliate) {
                 const err = "Reader element or library not ready for initialization.";
                 addToLog(`ERROR: ${err}`);
                 setError(err);
@@ -86,14 +85,14 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
                 if (!isMounted) return;
 
-                addToLog("Instantiating AEpubReader...");
-                const reader = new window.AEpubReader(viewerRef.current);
+                addToLog("Instantiating Foliate Reader...");
+                const reader = new window.Foliate(viewerRef.current);
                 readerRef.current = reader;
 
                 reader.on('relocated', (location: any) => {
                     if (isMounted && location?.end?.percentage) {
                         setProgress(Math.round(location.end.percentage * 100));
-                        setCurrentLocationHref(location.start.href);
+                        setCurrentLocationCfi(location.start.cfi);
                     }
                 });
 
@@ -108,7 +107,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 const savedLocation = userProgress?.locationCfi;
                 if (savedLocation) {
                     addToLog(`Applying saved location: ${savedLocation}`);
-                    reader.rendition.display(savedLocation);
+                    await reader.goTo(savedLocation);
                 }
 
                 addToLog("Reader is ready!");
@@ -123,13 +122,13 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         const pollForLibrary = () => {
             addToLog("Initializing EPUB Reader...");
-            addToLog("Waiting for viewer library to become available...");
+            addToLog("Waiting for Foliate.js library to become available...");
             
             pollerRef.current = window.setInterval(() => {
-                if (window.AEpubReader) {
+                if (window.Foliate) {
                     if (pollerRef.current) clearInterval(pollerRef.current);
                     if (isMounted) {
-                        addToLog("Viewer library found!");
+                        addToLog("Foliate.js library found!");
                         initReader();
                     }
                 }
@@ -140,7 +139,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         return () => {
             isMounted = false;
-            if (readerRef.current) {
+            if (readerRef.current?.destroy) {
                 readerRef.current.destroy();
             }
             if (pollerRef.current) {
@@ -150,7 +149,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     }, [quest.epubUrl, userProgress, addToLog]);
     
     const syncProgress = useCallback(async (forceSync = false) => {
-        if (!currentUser || !currentLocationHref) return;
+        if (!currentUser || !currentLocationCfi) return;
         const now = Date.now();
         const secondsToAdd = Math.round((now - lastSyncTimeRef.current) / 1000);
 
@@ -158,14 +157,14 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             try {
                 await updateReadingProgress(quest.id, currentUser.id, {
                     secondsToAdd,
-                    locationCfi: currentLocationHref,
+                    locationCfi: currentLocationCfi,
                 });
                 lastSyncTimeRef.current = now;
             } catch (e) {
                 console.error("EPUB Sync failed:", e);
             }
         }
-    }, [currentUser, quest.id, updateReadingProgress, currentLocationHref]);
+    }, [currentUser, quest.id, updateReadingProgress, currentLocationCfi]);
 
     // Time & Progress Syncing
     useEffect(() => {
@@ -210,7 +209,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             </header>
             
             <div className="flex-grow relative min-h-0">
-                {(!isReady) && (
+                {!isReady && (
                     <div className="absolute inset-0 bg-stone-900/90 z-40 flex flex-col items-center justify-center gap-4 p-8">
                         <div ref={logContainerRef} className="w-full max-w-md h-64 bg-black/50 rounded-lg p-4 font-mono text-xs text-white overflow-y-auto scrollbar-hide">
                             {logMessages.map((msg, index) => (
@@ -222,7 +221,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         {!error && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400 mt-4"></div>}
                     </div>
                 )}
-                <div ref={viewerRef} className="h-full w-full bg-white" />
+                <div ref={viewerRef} className="h-full w-full foliate-container" />
             </div>
 
             <footer className="p-3 flex justify-between items-center z-20 text-white bg-stone-800 text-sm flex-shrink-0">

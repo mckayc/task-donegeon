@@ -1,12 +1,17 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import Foliate from 'foliate-js';
 import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { XCircleIcon, ChevronLeftIcon, ChevronRightIcon } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
+
+declare global {
+    interface Window {
+        Foliate: any;
+    }
+}
 
 interface EpubReaderPanelProps {
   quest: Quest;
@@ -56,9 +61,28 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     useEffect(() => {
         let isMounted = true;
-        
+        let checkInterval: number;
+
         const initReader = async () => {
             addToLog("Initializing EPUB Reader...");
+
+            if (typeof window.Foliate === 'undefined') {
+                addToLog("Waiting for Foliate.js library to become available...");
+                
+                checkInterval = window.setInterval(async () => {
+                    if (typeof window.Foliate !== 'undefined') {
+                        clearInterval(checkInterval);
+                        addToLog("Foliate.js library is available.");
+                        await proceedWithInit();
+                    }
+                }, 100);
+            } else {
+                addToLog("Foliate.js library is available.");
+                await proceedWithInit();
+            }
+        };
+        
+        const proceedWithInit = async () => {
             if (!viewerRef.current) {
                 const err = "Reader element is not available.";
                 addToLog(`ERROR: ${err}`);
@@ -81,8 +105,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 if (!isMounted) return;
 
                 addToLog("Instantiating Foliate Reader...");
-                // @ts-ignore Foliate is imported as a module
-                const reader = new Foliate(viewerRef.current);
+                const reader = new window.Foliate(viewerRef.current);
                 readerRef.current = reader;
 
                 reader.on('relocated', (location: any) => {
@@ -120,6 +143,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         return () => {
             isMounted = false;
+            if (checkInterval) clearInterval(checkInterval);
             if (readerRef.current?.destroy) {
                 readerRef.current.destroy();
             }

@@ -34,7 +34,10 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const [logs, setLogs] = useState<string[]>([]);
     const [errorLog, setErrorLog] = useState<string | null>(null);
-    const addLog = (message: string) => setLogs(prev => [...prev, message]);
+    const addLog = (message: string) => setLogs(prev => [...prev.slice(-10), message]);
+
+    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+    const [isViewerReady, setIsViewerReady] = useState(false);
 
     const [toc, setToc] = useState<TocItem[]>([]);
     const [currentLocation, setCurrentLocation] = useState<any>(null);
@@ -71,9 +74,48 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         };
     }, []);
 
-    // Initialize Viewer
+    // Effect to dynamically load the viewer script
     useEffect(() => {
-        if (!viewerElementRef.current || !quest.epubUrl) {
+        addLog('Attempting to load web-pub-viewer script...');
+        if ((window as any).WebpubViewer) {
+            addLog('Viewer library already present.');
+            setIsScriptLoaded(true);
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/web-pub-viewer@1.0/build/webpub-viewer.js';
+        script.async = true;
+
+        const handleLoad = () => {
+            if (isMountedRef.current) {
+                addLog('Viewer library script loaded successfully.');
+                setIsScriptLoaded(true);
+            }
+        };
+
+        const handleError = (error: Event | string) => {
+            if (isMountedRef.current) {
+                const errorMessage = typeof error === 'string' ? error : (error instanceof ErrorEvent ? error.message : 'Unknown script load error');
+                const fullError = `Failed to load the EPUB viewer library script: ${errorMessage}`;
+                setErrorLog(fullError);
+                addLog(`ERROR: ${fullError}`);
+            }
+        };
+
+        script.addEventListener('load', handleLoad);
+        script.addEventListener('error', handleError);
+        document.body.appendChild(script);
+
+        return () => {
+            script.removeEventListener('load', handleLoad);
+            script.removeEventListener('error', handleError);
+        };
+    }, []);
+
+    // Initialize Viewer once the script is loaded
+    useEffect(() => {
+        if (!isScriptLoaded || !viewerElementRef.current || !quest.epubUrl) {
             return;
         }
         
@@ -82,22 +124,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const init = async () => {
             try {
                 addLog('Initializing EPUB Reader...');
-
-                const waitForViewer = (): Promise<void> => {
-                    return new Promise((resolve, reject) => {
-                        const check = () => {
-                            if (!isMountedRef.current) return reject(new Error("Component unmounted while waiting for viewer library."));
-                            if (typeof (window as any).WebpubViewer !== 'undefined') return resolve();
-                            setTimeout(check, 100);
-                        };
-                        addLog('Waiting for viewer library to become available...');
-                        check();
-                    });
-                };
-
-                await waitForViewer();
-                if (!isMountedRef.current) return;
-                addLog('Viewer library loaded successfully.');
 
                 addLog(`Fetching EPUB file from: ${quest.epubUrl}...`);
                 const response = await fetch(quest.epubUrl!);
@@ -139,12 +165,11 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 }
                 
                 setBookmarks(userProgress?.bookmarks || []);
+                setIsViewerReady(true);
                 addLog('Publication loaded. Reader is ready.');
 
             } catch (error) {
-                if (!isMountedRef.current) {
-                    return;
-                }
+                if (!isMountedRef.current) return;
                 const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
                 console.error("[EpubReader] Initialization failed:", errorMessage);
                 setErrorLog(`Could not load book file: ${errorMessage}`);
@@ -159,7 +184,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 viewerRef.current = null;
             }
         };
-    }, [quest.epubUrl, userProgress]);
+    }, [isScriptLoaded, quest.epubUrl, userProgress]);
 
 
     // Apply Theme & Font Size
@@ -256,9 +281,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
     };
-
-    const isReady = !errorLog && logs.length > 0 && logs[logs.length - 1].includes('Reader is ready');
-
+    
     return (
         <div className="fixed inset-0 bg-black/80 z-[80] flex items-center justify-center epub-container">
             <div className="w-full h-full bg-stone-800 shadow-2xl relative flex flex-col">
@@ -271,7 +294,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button variant="ghost" size="icon" onClick={addBookmark} title={isBookmarked ? "Already Bookmarked" : "Add Bookmark"} disabled={isBookmarked || !isReady}>
+                        <Button variant="ghost" size="icon" onClick={addBookmark} title={isBookmarked ? "Already Bookmarked" : "Add Bookmark"} disabled={isBookmarked || !isViewerReady}>
                             {isBookmarked ? <BookmarkSolidIcon className="w-5 h-5 text-emerald-400" /> : <BookmarkPlusIcon className="w-5 h-5" />}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(p => !p)} title="Settings"><SettingsIcon className="w-5 h-5"/></Button>
@@ -280,7 +303,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 </header>
 
                 <div className="flex-grow relative min-h-0">
-                    {!isReady && (
+                    {!isViewerReady && (
                         <div className="absolute inset-0 bg-stone-900/80 z-40 flex flex-col items-center justify-center gap-4 p-8">
                             <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
                             <div className="w-full max-w-lg mt-4 bg-black/30 p-4 rounded-lg font-mono text-xs text-left max-h-64 overflow-y-auto">
@@ -356,7 +379,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
                      </div>
                      <div className="flex-grow flex items-center gap-3 px-4">
-                        <input type="range" min="0" max="100" value={progress} onChange={handleSliderChange} className="epub-progress-slider w-full" disabled={!isReady} />
+                        <input type="range" min="0" max="100" value={progress} onChange={handleSliderChange} className="epub-progress-slider w-full" disabled={!isViewerReady} />
                         <span className="font-semibold w-12 text-right">{progress}%</span>
                      </div>
                      <div className="w-1/4" />

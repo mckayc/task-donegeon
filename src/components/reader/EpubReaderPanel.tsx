@@ -10,7 +10,8 @@ import { XCircleIcon, SettingsIcon, SunIcon, MoonIcon, BookmarkSolidIcon, TrashI
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
-declare var WebpubViewer: any;
+// The WebpubViewer is loaded from a script tag in index.html, so we expect it on the window object.
+// We no longer need `declare var WebpubViewer: any;` as we will access it via `window`.
 
 interface EpubReaderPanelProps {
   quest: Quest;
@@ -70,6 +71,11 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         const init = async () => {
             try {
+                // Check if the viewer library is loaded before using it.
+                if (typeof (window as any).WebpubViewer === 'undefined') {
+                    throw new Error("WebpubViewer is not defined. The library may have failed to load.");
+                }
+
                 // Fetch the book data manually
                 const response = await fetch(quest.epubUrl!);
                 if (!response.ok) {
@@ -78,8 +84,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 const bookData = await response.arrayBuffer();
                 const bookDataUint8 = new Uint8Array(bookData);
 
-                // Initialize the viewer with the raw data
-                viewer = new WebpubViewer(viewerElementRef.current, {
+                // Initialize the viewer with the raw data, accessing it from the window object.
+                viewer = new (window as any).WebpubViewer(viewerElementRef.current, {
                     bookData: bookDataUint8,
                 });
                 viewerRef.current = viewer;

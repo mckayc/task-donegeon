@@ -63,45 +63,36 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     useEffect(() => {
         let isMounted = true;
-        let libraryCheckInterval: number | null = null;
-        
-        addToLog("Initializing EPUB Reader...");
+        const SCRIPT_ID = 'awesome-epub-reader-script';
+        const SCRIPT_URL = 'https://unpkg.com/awesome-epub-reader@latest/dist/a-epub-reader.umd.js';
 
         const initReader = async () => {
-            if (!viewerRef.current) {
-                addToLog("ERROR: Reader element (viewerRef) not ready.");
-                setError("Reader component failed to mount.");
+            if (!viewerRef.current || !window.AEpubReader) {
+                const err = "Reader element or library not ready for initialization.";
+                addToLog(`ERROR: ${err}`);
+                setError(err);
                 setIsLoading(false);
                 return;
             }
-            if (!quest.epubUrl) {
+             if (!quest.epubUrl) {
                 addToLog("ERROR: EPUB URL is missing in quest data.");
                 setError("EPUB URL is missing.");
                 setIsLoading(false);
                 return;
             }
-            
-            addToLog("Reader element is ready.");
 
+            addToLog(`Fetching EPUB file from: ${quest.epubUrl}`);
             try {
-                addToLog(`Fetching EPUB file from: ${quest.epubUrl}`);
                 const response = await fetch(quest.epubUrl);
-                if (!response.ok) {
-                    addToLog(`ERROR: HTTP response not OK. Status: ${response.status} ${response.statusText}`);
-                    throw new Error(`Could not load book file: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const bookData = await response.arrayBuffer();
                 addToLog(`EPUB file fetched successfully (${(bookData.byteLength / 1024).toFixed(1)} KB).`);
 
-                if (!isMounted) {
-                    addToLog("Component unmounted during fetch. Aborting initialization.");
-                    return;
-                }
+                if (!isMounted) return;
 
                 addToLog("Instantiating AEpubReader...");
                 const reader = new window.AEpubReader(viewerRef.current);
                 readerRef.current = reader;
-                addToLog("AEpubReader instantiated.");
 
                 reader.on('relocated', (location: any) => {
                     if (isMounted && location?.end?.percentage) {
@@ -112,14 +103,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
                 addToLog("Opening book data...");
                 await reader.open(bookData);
-                addToLog("Book data opened.");
-                
-                if (!isMounted) {
-                    addToLog("Component unmounted during book open. Aborting.");
-                    return;
-                }
+                if (!isMounted) return;
 
-                addToLog("Fetching book metadata...");
                 const metadata = await reader.book.getMetadata();
                 setBookTitle(metadata.title);
                 addToLog(`Book title: "${metadata.title}"`);
@@ -128,37 +113,83 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 if (savedLocation) {
                     addToLog(`Applying saved location: ${savedLocation}`);
                     reader.rendition.display(savedLocation);
-                } else {
-                    addToLog("No saved location found.");
                 }
-                
+
                 addToLog("Reader is ready!");
                 setIsLoading(false);
-
             } catch (err) {
-                if (isMounted) {
+                 if (isMounted) {
                     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-                    addToLog(`FATAL ERROR: ${errorMessage}`);
+                    addToLog(`FATAL ERROR during reader init: ${errorMessage}`);
                     setError(errorMessage);
                     setIsLoading(false);
                 }
             }
         };
 
-        addToLog("Waiting for viewer library to become available...");
-        libraryCheckInterval = window.setInterval(() => {
+        const loadScript = () => {
+            addToLog("Initializing EPUB Reader...");
+
             if (window.AEpubReader) {
-                if (libraryCheckInterval) clearInterval(libraryCheckInterval);
-                addToLog("Viewer library found.");
+                addToLog("Viewer library already available.");
                 initReader();
+                return;
             }
-        }, 100);
+
+            const existingScript = document.getElementById(SCRIPT_ID);
+            if (existingScript) {
+                 addToLog("Script tag already exists, waiting for it to load...");
+                 existingScript.addEventListener('load', () => {
+                     if (isMounted) {
+                         addToLog("Existing script loaded successfully.");
+                         initReader();
+                     }
+                 });
+                 existingScript.addEventListener('error', () => {
+                      if (isMounted) {
+                        const err = "Failed to load the existing EPUB viewer script.";
+                        addToLog(`ERROR: ${err}`);
+                        setError(err);
+                        setIsLoading(false);
+                    }
+                 });
+                 return;
+            }
+            
+            addToLog("Attempting to load web-pub-viewer script...");
+            const script = document.createElement('script');
+            script.id = SCRIPT_ID;
+            script.src = SCRIPT_URL;
+            script.async = true;
+
+            script.onload = () => {
+                if (isMounted) {
+                    addToLog("Script loaded successfully.");
+                    initReader();
+                }
+            };
+
+            script.onerror = (event: Event | string) => {
+                if (isMounted) {
+                    let errorMessage = "Unknown script load error";
+                    if (event instanceof ErrorEvent) {
+                        errorMessage = event.message;
+                    }
+                    const err = `Failed to load the EPUB viewer library script: ${errorMessage}`;
+                    addToLog(`ERROR: ${err}`);
+                    setError(err);
+                    setIsLoading(false);
+                }
+            };
+
+            document.head.appendChild(script);
+        };
+
+        loadScript();
 
         return () => {
             isMounted = false;
-            if (libraryCheckInterval) clearInterval(libraryCheckInterval);
             if (readerRef.current) {
-                addToLog("Destroying reader instance.");
                 readerRef.current.destroy();
             }
         };
@@ -227,7 +258,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     <div className="absolute inset-0 bg-stone-900/90 z-40 flex flex-col items-center justify-center gap-4 p-8">
                         <div ref={logContainerRef} className="w-full max-w-md h-64 bg-black/50 rounded-lg p-4 font-mono text-xs text-white overflow-y-auto scrollbar-hide">
                             {logMessages.map((msg, index) => (
-                                <p key={index} className={`whitespace-pre-wrap ${msg.startsWith('ERROR') || msg.startsWith('FATAL') ? 'text-red-400' : 'text-green-400'}`}>
+                                <p key={index} className={`whitespace-pre-wrap ${msg.startsWith('ERROR') || msg.startsWith('FATAL') ? 'text-red-400' : msg.startsWith('Waiting') ? 'text-yellow-400' : 'text-green-400'}`}>
                                     {`> ${msg}`}
                                 </p>
                             ))}

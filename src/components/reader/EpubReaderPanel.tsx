@@ -11,8 +11,6 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
 
-const EPUB_CACHE_NAME = 'epub-cache-v1';
-
 interface EpubReaderPanelProps {
   quest: Quest;
 }
@@ -43,7 +41,6 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const [isLoading, setIsLoading] = useState(true);
     const [loadingMessage, setLoadingMessage] = useState('Initializing Reader...');
-    const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     
     const [locations, setLocations] = useState<any[]>([]);
@@ -121,54 +118,6 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         };
     }, [syncProgress]);
     
-    const getCachedBook = async (url: string) => {
-        try {
-            const cache = await caches.open(EPUB_CACHE_NAME);
-            const response = await cache.match(url);
-            if (response) {
-                return response.arrayBuffer();
-            }
-        } catch (e) {
-            console.warn("Could not access cache:", e);
-        }
-        return null;
-    };
-
-    const cacheBook = async (url: string) => {
-        setLoadingMessage('Downloading eBook for offline access...');
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to download eBook file.');
-
-        const contentLength = response.headers.get('content-length');
-        if (!contentLength) return response.arrayBuffer(); // No progress info
-
-        const total = parseInt(contentLength, 10);
-        let loaded = 0;
-        
-        const reader = response.body!.getReader();
-        const chunks = [];
-        
-        while(true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            loaded += value.length;
-            setDownloadProgress((loaded / total) * 100);
-        }
-        
-        const blob = new Blob(chunks);
-        const cacheResponse = new Response(blob, { headers: response.headers });
-        try {
-            const cache = await caches.open(EPUB_CACHE_NAME);
-            await cache.put(url, cacheResponse);
-        } catch (e) {
-            console.warn("Could not write to cache:", e);
-        }
-        
-        setDownloadProgress(null);
-        return blob.arrayBuffer();
-    };
-
     useEffect(() => {
         if (!quest.epubUrl || !viewerRef.current) return;
         const viewerElement = viewerRef.current;
@@ -177,13 +126,10 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const initializeReader = async () => {
             setIsLoading(true);
             try {
-                let bookData = await getCachedBook(quest.epubUrl!);
-                if (!bookData) {
-                    bookData = await cacheBook(quest.epubUrl!);
-                }
-
-                setLoadingMessage('Unpacking eBook...');
-                book = epub(bookData);
+                setLoadingMessage('Opening eBook...');
+                // Pass the URL directly to epubjs. This is more robust against CORS issues
+                // than manually fetching the arrayBuffer.
+                book = epub(quest.epubUrl!);
                 bookRef.current = book;
 
                 setLoadingMessage('Preparing pages...');
@@ -328,11 +274,6 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-stone-900/90">
                         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
                         <p className="text-xl font-semibold text-white">{loadingMessage}</p>
-                        {downloadProgress !== null && (
-                            <div className="w-64 bg-stone-700 rounded-full h-2.5">
-                                <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
-                            </div>
-                        )}
                     </div>
                 )}
                 {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl">{error}</div>}

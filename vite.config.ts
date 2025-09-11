@@ -17,4 +17,25 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        'react',
+        'react-image-crop',
+        'react-pdf',
+        'react-reader',
+        '@google/genai',
+        'emoji-picker-react',
+        'framer-motion',
+        'class-variance-authority',
+        'clsx',
+        'tailwind-merge',
+        '@radix-ui/react-slot',
+        'lucide-react',
+        /^react-dom\/.*/,
+        /^pdfjs-dist\/.*/,
+        /^@fullcalendar\/.*/,
+      ],
+    },
+  },
 })

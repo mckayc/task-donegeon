@@ -191,7 +191,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 {error && <div className="absolute inset-0 flex items-center justify-center text-red-400 text-xl p-4 text-center">{error}</div>}
                 {!isLoading && !error && epubData && (
                     // FIX: The type definitions for this library fork are incorrect. These props exist at runtime.
-                    // @ts-ignore
+                    // @ts-ignore: The type definitions for this library fork are incorrect. These props exist at runtime.
                     <ReactReader
                         url={epubData}
                         title={quest.title}

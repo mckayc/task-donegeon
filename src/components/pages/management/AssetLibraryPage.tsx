@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -5,7 +6,8 @@ import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution, Quest } f
 import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
 import Input from '../../user-interface/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
-import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
+// FIX: Changed to named import for AssetPackInstallDialog
+import { AssetPackInstallDialog } from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { bugLogger } from '../../../utils/bugLogger';

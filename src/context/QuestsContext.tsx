@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -36,27 +35,27 @@ export interface QuestsDispatch {
   addQuest: (questData: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<Quest | null>;
   updateQuest: (questData: Quest) => Promise<Quest | null>;
   cloneQuest: (questId: string) => Promise<Quest | null>;
-  updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void>;
-  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
-  deleteQuests: (questIds: string[]) => Promise<void>;
-  completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
-  approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void>;
-  rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void>;
-  markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
-  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
+  updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void | null>;
+  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void | null>;
+  deleteQuests: (questIds: string[]) => Promise<void | null>;
+  completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void | null>;
+  approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void | null>;
+  rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void | null>;
+  markQuestAsTodo: (questId: string, userId: string) => Promise<void | null>;
+  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void | null>;
   addQuestGroup: (groupData: Omit<QuestGroup, 'id'> & { questIds?: string[] }) => Promise<QuestGroup | null>;
   updateQuestGroup: (groupData: QuestGroup & { questIds?: string[] }) => Promise<QuestGroup | null>;
-  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
+  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void | null>;
   addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
   updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
   cloneRotation: (rotationId: string) => Promise<Rotation | null>;
-  runRotation: (rotationId: string) => Promise<void>;
-  completeCheckpoint: (questId: string, userId: string) => Promise<void>;
-  claimQuest: (questId: string, userId: string) => Promise<void>;
-  unclaimQuest: (questId: string, userId: string) => Promise<void>;
-  approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void>;
+  runRotation: (rotationId: string) => Promise<void | null>;
+  completeCheckpoint: (questId: string, userId: string) => Promise<void | null>;
+  claimQuest: (questId: string, userId: string) => Promise<void | null>;
+  unclaimQuest: (questId: string, userId: string) => Promise<void | null>;
+  approveClaim: (questId: string, userId: string, adminId: string) => Promise<void | null>;
+  rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void | null>;
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void | null>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);
@@ -188,17 +187,18 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
 
-        completeQuest: async (completionData) => {
-            const result = await apiAction(() => completeQuestAPI(completionData));
+        completeQuest: (completionData) => apiAction(async () => {
+            const result = await completeQuestAPI(completionData);
             if (result) {
                 const { updatedUser, newCompletion } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
                 if (newCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [newCompletion] } });
                 addNotification({ type: 'success', message: 'Quest completed!' });
             }
-        },
-        approveQuestCompletion: async (id, approverId, note) => {
-            const result = await apiAction(() => approveQuestCompletionAPI(id, approverId, note));
+            return null;
+        }),
+        approveQuestCompletion: (id, approverId, note) => apiAction(async () => {
+            const result = await approveQuestCompletionAPI(id, approverId, note);
             if (result) {
                 const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
@@ -207,14 +207,16 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
                 addNotification({ type: 'success', message: 'Quest approved!' });
             }
-        },
-        rejectQuestCompletion: async (id, rejecterId, note) => {
-            const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
+            return null;
+        }),
+        rejectQuestCompletion: (id, rejecterId, note) => apiAction(async () => {
+            const result = await rejectQuestCompletionAPI(id, rejecterId, note);
             if (result) {
                 const { updatedCompletion } = result as any;
                 if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
             }
-        },
+            return null;
+        }),
         markQuestAsTodo: async (questId, userId) => {
             const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
@@ -223,8 +225,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
-        completeCheckpoint: async (questId, userId) => {
-            const result = await apiAction(() => completeCheckpointAPI(questId, userId));
+        completeCheckpoint: (questId, userId) => apiAction(async () => {
+            const result = await completeCheckpointAPI(questId, userId);
             if (result) {
                 const { updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
@@ -238,7 +240,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                     : 'Checkpoint submitted for approval!';
                 addNotification({ type: 'success', message });
             }
-        },
+            return null;
+        }),
         claimQuest: async (questId, userId) => {
             const result = await apiAction(() => claimQuestAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
@@ -260,8 +263,6 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         updateReadingProgress: async (questId, userId, data) => {
-            // This is an optimistic update on the frontend for responsiveness.
-            // The API call is fire-and-forget. The periodic sync will handle the truth.
             dispatch({
                 type: 'UPDATE_QUESTS_DATA',
                 payload: {
@@ -271,7 +272,6 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                             [userId]: {
                                 ...state.quests.find(q => q.id === questId)?.readingProgress?.[userId],
                                 ...data,
-                                // Correctly accumulate total seconds
                                 totalSeconds: (state.quests.find(q => q.id === questId)?.readingProgress?.[userId]?.totalSeconds || 0) + (data.secondsToAdd || 0),
                             }
                         }
@@ -295,16 +295,17 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return result;
         },
         assignQuestGroupToUsers: (groupId, userIds) => {
-            if (!currentUser) return Promise.resolve();
+            if (!currentUser) return Promise.resolve(null);
             return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds, currentUser.id));
         },
         addRotation: (data) => apiAction(() => addRotationAPI(data)),
         updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
         cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
-        runRotation: async (id) => {
-            const result = await apiAction(() => runRotationAPI(id));
+        runRotation: (id) => apiAction(async () => {
+            const result = await runRotationAPI(id);
             if (result) addNotification({ type: 'success', message: (result as any).message });
-        },
+            return null;
+        }),
     }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch, state.quests]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);

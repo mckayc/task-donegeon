@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -58,6 +57,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           if (user) {
             localStorage.setItem('lastUserId', user.id);
+            // FIX: Ensure this is inside the `if (user)` block to prevent errors.
             setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
           } else {
             localStorage.removeItem('lastUserId');
@@ -70,8 +70,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     _setCurrentUser(null);
     localStorage.removeItem('lastUserId');
 
-    // On a kiosk device, logging out returns to the user selection screen (SharedLayout),
-    // which is still considered "unlocked". For normal devices, it goes to the AppLockScreen.
     if (localStorage.getItem('isKioskDevice') !== 'true') {
       _setAppUnlocked(false);
       localStorage.removeItem('isAppUnlocked');
@@ -123,7 +121,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
       }
       try {
-          // The current user must be the actor
           return await addUserAPI(userData, currentUser?.id);
       } catch (error) {
           addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to add user.' });
@@ -137,7 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
       }
       try {
-        await deleteUsersAPI(userIds, currentUser?.id);
+        await deleteUsersAPI(userIds, currentUser?.id || 'system');
         setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
       } catch (error) {
         addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to delete users.' });

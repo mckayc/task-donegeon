@@ -1,4 +1,8 @@
 
+
+
+
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -16,6 +20,7 @@ import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Reorder, useDragControls } from 'framer-motion';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import DashboardCustomizationDialog from '../dashboard/DashboardCustomizationDialog';
+// FIX: Moved isQuestAvailableForUser to its correct import from quests utils.
 import { getQuestLockStatus, ConditionDependencies } from '../../utils/conditions';
 import { isQuestAvailableForUser } from '../../utils/quests';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
@@ -49,11 +54,13 @@ interface GoalCardProps {
 }
 
 const ProgressBar: React.FC<{ progress: GoalProgress }> = ({ progress }) => {
+    // FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'.
     const percentage = Math.min(100, (progress.current / progress.amount) * 100);
     return (
         <div>
             <div className="flex justify-between items-center text-xs mb-1">
                 <span className="font-semibold text-stone-300 flex items-center gap-1">{progress.icon} {progress.name}</span>
+                {/* FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'. */}
                 <span className="font-mono">{progress.current} / {progress.amount}</span>
             </div>
             <div className="w-full bg-stone-700 rounded-full h-2.5">
@@ -150,7 +157,7 @@ const Dashboard: React.FC = () => {
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { activePageMeta, appMode, readingQuest, readingPdfQuest, readingEpubQuest } = useUIState();
+    const { activePageMeta, appMode, readingQuest, readingPdfQuest } = useUIState();
     const { quests } = useQuestsState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
 
@@ -252,11 +259,11 @@ const Dashboard: React.FC = () => {
         if (pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) {
             inactive.push('pendingApprovals');
         }
-        if (!readingQuest && !readingPdfQuest && !readingEpubQuest) {
+        if (!readingQuest && !readingPdfQuest) {
             inactive.push('readingActivity');
         }
         return inactive;
-    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest, readingEpubQuest]);
+    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest]);
 
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {

@@ -1,8 +1,7 @@
-
 {
-  "name": "Task Donegeon 2.0 - 0.6.1 - EPUB Type Declarations",
-  "version": "0.6.1",
-  "description": "Fixed a build error by adding TypeScript type declarations for the EPUB reader libraries (readk-it and jszip).",
+  "name": "Task Donegeon 2.0 - 0.5.02 - Removal of ePub",
+  "version": "0.5.02",
+  "description": "Maintenance release with minor version bump.",
   "requestFramePermissions": [
     "camera"
   ],

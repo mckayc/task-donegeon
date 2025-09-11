@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Market } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';

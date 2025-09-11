@@ -1,8 +1,5 @@
 
-
-import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode, QuestKind, ConditionSet } from '../../../types';
-// FIX: Corrected import path for isQuestScheduledForDay. It is exported from the main conditions utility file, not the types file.
-import { isQuestScheduledForDay } from '../../../utils/conditions';
+import { Quest, QuestCompletion, QuestCompletionStatus, User, QuestType, ScheduledEvent, AppMode } from '../../../types';
 
 /**
  * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
@@ -36,6 +33,72 @@ export const isVacationActiveOnDate = (date: Date, scheduledEvents: ScheduledEve
         // Date match
         return dateKey >= event.startDate && dateKey <= event.endDate;
     });
+};
+
+
+/**
+ * Checks if a quest is scheduled to appear on a specific day, based on its type and recurrence rules.
+ * This does not check for completion status, only if it's supposed to be on the calendar for that day.
+ */
+export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
+    if (quest.type === QuestType.Journey || quest.type === QuestType.Venture) {
+        // A Venture/Journey is "scheduled" for its due date range.
+        if (!quest.startDateTime) return false;
+        const startDate = toYMD(new Date(quest.startDateTime));
+        const endDate = quest.endDateTime ? toYMD(new Date(quest.endDateTime)) : startDate;
+        const checkDate = toYMD(day);
+        return checkDate >= startDate && checkDate <= endDate;
+    }
+    // It's a Duty
+    if (!quest.rrule) return false;
+
+    const rruleParts = quest.rrule.split(';');
+    const freq = rruleParts.find(p => p.startsWith('FREQ='))?.split('=')[1];
+
+    switch (freq) {
+        case 'DAILY': return true;
+        case 'WEEKLY': {
+            const byday = rruleParts.find(p => p.startsWith('BYDAY='))?.split('=')[1];
+            if (!byday) return true; 
+            const weekdays = byday.split(',').map(d => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(d));
+            return weekdays.includes(day.getDay());
+        }
+        case 'MONTHLY': {
+            const bymonthday = rruleParts.find(p => p.startsWith('BYMONTHDAY='))?.split('=')[1];
+            if (!bymonthday) return false;
+            const daysOfMonth = bymonthday.split(',').map(Number);
+            return daysOfMonth.includes(day.getDate());
+        }
+        default: return false;
+    }
+}
+
+/**
+ * Checks if a quest should be visible to a user in the current app mode.
+ * Verifies active status, guild scope, and user assignment, strictly separating personal and guild contexts.
+ */
+export const isQuestVisibleToUserInMode = (
+  quest: Quest,
+  userId: string,
+  appMode: AppMode
+): boolean => {
+  if (!quest.isActive) return false;
+
+  const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+
+  // Scope check first
+  if (quest.guildId) { // Guild quest
+    if (quest.guildId !== currentGuildId) return false;
+  } else { // Personal quest
+    if (appMode.mode !== 'personal') return false;
+  }
+  
+  // Assignment check - An empty list means it's not assigned to anyone yet.
+  if (quest.assignedUserIds.length === 0) {
+    return false;
+  }
+  
+  return quest.assignedUserIds.includes(userId);
 };
 
 
@@ -213,37 +276,6 @@ export const questSorter = (user: User, allCompletions: QuestCompletion[], sched
     return 0;
 };
 
-
-export const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
-    // This function provides a general status text. Specific user completion counts for limits are checked elsewhere.
-    if (quest.kind === QuestKind.GuildCollaborative) {
-        return `Contributions: ${quest.contributions?.length || 0} / ${quest.completionGoal || 'many'}`;
-    }
-    if (quest.totalCompletionsLimit && quest.totalCompletionsLimit > 0) {
-        return `Completed ${completionsCount} / ${quest.totalCompletionsLimit} times total`;
-    }
-    if (quest.dailyCompletionsLimit) {
-        if (quest.dailyCompletionsLimit === 1) return 'Completable Daily';
-        return `Completable ${quest.dailyCompletionsLimit} times daily`;
-    }
-    return quest.kind === QuestKind.Redemption ? 'Redemption Opportunity' : 'Available';
-};
-
-export const formatTimeRemaining = (deadline: Date, now: Date): string => {
-    const diff = deadline.getTime() - now.getTime();
-    if (diff <= 0) return '0m';
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((diff / 1000 / 60) % 60);
-
-    let result = '';
-    if (days > 0) result += `${days}d `;
-    if (hours > 0) result += `${hours}h `;
-    if (minutes > 0 || (days === 0 && hours === 0)) result += `${minutes}m`;
-
-    return result.trim();
-};
 
 export const getDueDateString = (quest: Quest): string | null => {
     if (quest.type === QuestType.Venture && quest.startDateTime) {

@@ -17,12 +17,4 @@ export default defineConfig({
       },
     },
   },
-  build: {
-    rollupOptions: {
-      external: [
-        'readk-it',
-        'jszip'
-      ]
-    }
-  }
 })

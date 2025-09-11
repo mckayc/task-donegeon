@@ -3,6 +3,7 @@
 import { RewardItem } from '../items/types';
 import { Page } from '../../types/app';
 
+// FIX: Defined and exported the 'SystemStatus' interface to provide a clear data structure for system health checks, resolving a missing type error.
 export interface SystemStatus {
     geminiConnected: boolean;
     database: {

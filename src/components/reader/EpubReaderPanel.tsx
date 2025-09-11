@@ -325,33 +325,37 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             {/* Main Content */}
             <main className={`absolute inset-0 transition-all duration-300 ${!isImmersiveMode ? 'pt-14 pb-20' : 'pt-0 pb-0'}`} onClick={() => {setIsTocOpen(false); setIsSettingsOpen(false); setIsBookmarksOpen(false);}}>
                 <div ref={viewerRef} className="w-full h-full" id="epub-viewer"/>
-                {isLoading && (
-                    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-stone-900/90">
-                        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
-                        <p className="text-xl font-semibold text-white">{loadingMessage}</p>
-                        {downloadProgress !== null && (
-                            <div className="w-64 bg-stone-700 rounded-full h-2.5">
-                                <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
-                            </div>
-                        )}
-                    </div>
-                )}
-                {error && (
+                {(isLoading || error) && (
                     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center p-8 text-center bg-stone-900/90">
-                        <XCircleIcon className="w-16 h-16 text-red-500 mb-4" />
-                        <h3 className="text-2xl font-bold text-red-400 mb-2">Error Loading eBook</h3>
-                        <p className="text-stone-300 max-w-md">{error.userMessage}</p>
-                        <p className="text-stone-400 text-sm mt-4">For the best compatibility, we recommend validating your ePub file with a tool like the
-                            <a href="https://www.w3.org/publishing/epubcheck/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline ml-1">
-                                official EPUBCheck validator
-                            </a>.
-                        </p>
-                        <details className="mt-4 text-left w-full max-w-md bg-stone-800/50 p-3 rounded-lg">
-                            <summary className="cursor-pointer text-stone-400 text-sm">Technical Details</summary>
-                            <pre className="mt-2 text-xs text-red-300 whitespace-pre-wrap font-mono">
-                                {error.technicalMessage}
-                            </pre>
-                        </details>
+                        {isLoading && (
+                            <>
+                                <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
+                                <p className="text-xl font-semibold text-white mt-4">{loadingMessage}</p>
+                                {downloadProgress !== null && (
+                                    <div className="w-64 mt-2 bg-stone-700 rounded-full h-2.5">
+                                        <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        {error && (
+                            <>
+                                <XCircleIcon className="w-16 h-16 text-red-500 mb-4" />
+                                <h3 className="text-2xl font-bold text-red-400 mb-2">Error Loading eBook</h3>
+                                <p className="text-stone-300 max-w-md">{error.userMessage}</p>
+                                <p className="text-stone-400 text-sm mt-4">For the best compatibility, we recommend validating your ePub file with a tool like the
+                                    <a href="https://www.w3.org/publishing/epubcheck/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline ml-1">
+                                        official EPUBCheck validator
+                                    </a>.
+                                </p>
+                                <details className="mt-4 text-left w-full max-w-md bg-stone-800/50 p-3 rounded-lg">
+                                    <summary className="cursor-pointer text-stone-400 text-sm">Technical Details</summary>
+                                    <pre className="mt-2 text-xs text-red-300 whitespace-pre-wrap font-mono">
+                                        {error.technicalMessage}
+                                    </pre>
+                                </details>
+                            </>
+                        )}
                     </div>
                 )}
                 <Button variant="ghost" onClick={() => navigate('prev')} className="absolute left-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-start p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronLeftIcon className="w-12 h-12"/></Button>

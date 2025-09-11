@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.12 - ePub Reader UX Overhaul",
-  "version": "0.5.12",
-  "description": "Overhauls the ePub reader with a new UI, immersive mode, fullscreen, and fixes for bookmarks, display settings, and navigation.",
+  "name": "Task Donegeon 2.0 - 0.6.0 - EPUB Reader Try again",
+  "version": "0.6.0",
+  "description": "Implemented a feature-rich EPUB reader using Readk.it for interactive reading quests.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -67,8 +67,8 @@ export interface Quest {
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
   videoUrl?: string | null;
-  pdfUrl?: string | null;
   epubUrl?: string | null;
+  pdfUrl?: string | null;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
@@ -109,8 +109,7 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  // FIX: Added optional `theme` and `fontSize` properties to the reading progress tracker to support ePub reader settings and fix type errors.
-  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; theme?: 'light' | 'dark'; fontSize?: number; } };
+  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
   createdAt?: string;
   updatedAt?: string;
 }

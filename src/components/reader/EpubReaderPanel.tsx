@@ -65,6 +65,7 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
         if (!liveQuest.epubUrl) return;
         setIsLoading(true);
         setLoadingMessage('Loading chapter...');
+        setError(null);
 
         const cache = await caches.open(EPUB_CACHE_NAME);
         const cacheUrl = `/api/epub/chapter?path=${encodeURIComponent(liveQuest.epubUrl)}&chapterId=${encodeURIComponent(chapterId)}`;
@@ -105,7 +106,6 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
                 const startChapter = userProgress?.epubChapter || data.toc[0]?.id;
                 if (startChapter) {
                     setCurrentChapterId(startChapter);
-                    await fetchAndCacheChapter(startChapter);
                 } else {
                     setError("Book has no chapters.");
                     setIsLoading(false);
@@ -116,7 +116,17 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
             }
         };
         fetchMetadata();
-    }, [liveQuest.epubUrl, fetchAndCacheChapter, userProgress?.epubChapter]);
+    }, [liveQuest.epubUrl, userProgress?.epubChapter]);
+
+    // Effect to fetch chapter content when the chapter ID changes
+    useEffect(() => {
+        if (currentChapterId) {
+            fetchAndCacheChapter(currentChapterId).catch(err => {
+                setError(err.message || 'Failed to load chapter.');
+                setIsLoading(false);
+            });
+        }
+    }, [currentChapterId, fetchAndCacheChapter]);
 
 
     useEffect(() => {

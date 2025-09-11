@@ -5,7 +5,7 @@ declare module 'react-reader' {
 
   // This is a partial definition to satisfy the compiler based on current usage.
   // The actual library may have more properties.
-  export const IReactReaderStyle: {
+  export const ReactReaderStyle: {
     container: React.CSSProperties;
     readerArea: React.CSSProperties;
     arrow: React.CSSProperties;
@@ -24,12 +24,13 @@ declare module 'react-reader' {
     location?: string | number;
     locationChanged?: (epubcifi: string) => void;
     tocChanged?: (toc: any[]) => void;
-    styles?: Partial<typeof IReactReaderStyle>;
+    styles?: Partial<typeof ReactReaderStyle>;
     showToc?: boolean;
     loadingView?: React.ReactNode;
     epubOptions?: object;
     getRendition?: (rendition: any) => void;
   }
 
-  export class ReactReader extends React.Component<ReactReaderProps> {}
+  const ReactReader: React.ComponentType<ReactReaderProps>;
+  export default ReactReader;
 }

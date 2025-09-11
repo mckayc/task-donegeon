@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ReactReader, IReactReaderStyle } from 'react-reader';
+import ReactReader, { ReactReaderStyle } from 'react-reader';
 import { Quest, Bookmark } from '../../types';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -9,42 +9,41 @@ import { XCircleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 
 // Custom styles to match the application's dark theme
-// FIX: Changed type from IReactReaderStyle to Partial<typeof IReactReaderStyle> to match the value type.
-const readerStyles: Partial<typeof IReactReaderStyle> = {
+const readerStyles: Partial<typeof ReactReaderStyle> = {
   container: {
-    ...IReactReaderStyle.container,
+    ...ReactReaderStyle.container,
     height: '100%',
   },
   readerArea: {
-    ...IReactReaderStyle.readerArea,
+    ...ReactReaderStyle.readerArea,
     backgroundColor: '#1c1917', // stone-900
   },
   arrow: {
-    ...IReactReaderStyle.arrow,
+    ...ReactReaderStyle.arrow,
     color: '#a8a29e', // stone-400
   },
   arrowHover: {
-    ...IReactReaderStyle.arrowHover,
+    ...ReactReaderStyle.arrowHover,
     color: '#e7e5e4', // stone-200
   },
   titleArea: {
-    ...IReactReaderStyle.titleArea,
+    ...ReactReaderStyle.titleArea,
     color: '#5eead4', // emerald-300
   },
   tocArea: {
-    ...IReactReaderStyle.tocArea,
+    ...ReactReaderStyle.tocArea,
     backgroundColor: '#292524', // stone-800
   },
   tocButton: {
-    ...IReactReaderStyle.tocButton,
+    ...ReactReaderStyle.tocButton,
     color: '#a8a29e',
   },
   tocButtonExpanded: {
-    ...IReactReaderStyle.tocButtonExpanded,
+    ...ReactReaderStyle.tocButtonExpanded,
     backgroundColor: '#44403c', // stone-700
   },
   loadingView: {
-    ...IReactReaderStyle.loadingView,
+    ...ReactReaderStyle.loadingView,
     color: '#a8a29e',
   },
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { GameAsset, TradeOffer, RewardItem, TradeStatus, RewardTypeDefinition, User } from '../../types';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
@@ -122,6 +123,7 @@ const TradeOfferPanel: React.FC<{
 const TradeDialog: React.FC<TradeDialogProps> = ({ tradeOffer, onClose }) => {
     const { users } = useAuthState();
     const { currentUser } = useAuthState();
+    // FIX: Add acceptTrade to destructuring
     const { updateTradeOffer, acceptTrade, cancelOrRejectTrade } = useEconomyDispatch();
     
     if (!currentUser || !tradeOffer) return null;

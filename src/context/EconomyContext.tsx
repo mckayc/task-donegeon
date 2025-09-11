@@ -49,6 +49,8 @@ export interface EconomyDispatch {
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void | null>;
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void | null>;
+  // FIX: Added acceptTrade to the interface.
+  acceptTrade: (tradeId: string) => Promise<void | null>;
   // FIX: Changed return type from Promise<TradeOffer | null> to Promise<void | null> to match implementation expectation.
   cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<void | null>;
   sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void | null>;
@@ -190,10 +192,20 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             return apiAction(() => proposeTradeAPI(recipientId, guildId, currentUser.id), 'Trade proposed!');
         },
         updateTradeOffer: (id, updates) => apiAction(() => updateTradeOfferAPI(id, updates)),
-        acceptTrade: (id) => apiAction(() => acceptTradeAPI(id)),
-        // FIX: Changed implementation to be async and not return a value, matching the updated interface.
+        acceptTrade: async (id) => {
+            const result = await apiAction(() => acceptTradeAPI(id));
+            if (result) {
+                if (result.updatedUser) updateUser(result.updatedUser.id, result.updatedUser);
+                if (result.otherUser) updateUser(result.otherUser.id, result.otherUser);
+                if (result.updatedTradeOffer) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [result.updatedTradeOffer] } });
+            }
+        },
+        // FIX: Changed implementation to be async and not return a value, matching the updated interface. Also added logic to update state.
         cancelOrRejectTrade: async (id, action) => {
-            await apiAction(() => cancelOrRejectTradeAPI(id, action));
+            const updatedTrade = await apiAction(() => cancelOrRejectTradeAPI(id, action));
+            if (updatedTrade) {
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [updatedTrade] } });
+            }
         },
         sendGift: (recipientId, assetId, guildId) => {
             if (!currentUser) return Promise.resolve(null);

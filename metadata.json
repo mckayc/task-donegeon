@@ -1,5 +1,5 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.13 - ePub React Reader Attempt",
+  "name": "Task Donegeon 2.0 - 0.5.12 - ePub Reader UX Overhaul",
   "version": "0.5.12",
   "description": "Overhauls the ePub reader with a new UI, immersive mode, fullscreen, and fixes for bookmarks, display settings, and navigation.",
   "requestFramePermissions": [

@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ReactReader, ReactReaderStyle } from 'react-reader';
-// FIX: Changed to a value import from a type-only import. This can help TypeScript resolve types when an ambient module declaration is interfering with proper type resolution.
-import { Book, Rendition, NavItem } from 'epubjs';
+// @ts-ignore
+import epub, { Book, Rendition, NavItem } from 'epubjs';
 import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
@@ -28,16 +27,6 @@ const formatTime = (totalSeconds: number) => {
     return `${minutes}m`;
 };
 
-// Hide the default UI of ReactReader so we can use our own
-const readerStyles = {
-  ...ReactReaderStyle,
-  arrow: { ...ReactReaderStyle.arrow, display: 'none' },
-  header: { ...ReactReaderStyle.header, display: 'none' },
-  footer: { ...ReactReaderStyle.footer, display: 'none' },
-  tocButton: { ...ReactReaderStyle.tocButton, display: 'none' },
-};
-
-
 export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const { setReadingEpubQuest } = useUIDispatch();
     const { currentUser } = useAuthState();
@@ -49,6 +38,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const userProgress = useMemo(() => currentUser ? liveQuest.readingProgress?.[currentUser.id] : undefined, [liveQuest, currentUser]);
     
     const panelRef = useRef<HTMLDivElement>(null);
+    const viewerRef = useRef<HTMLDivElement>(null);
     const bookRef = useRef<Book | null>(null);
     const renditionRef = useRef<Rendition | null>(null);
 
@@ -56,13 +46,12 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const [loadingMessage, setLoadingMessage] = useState('Initializing Reader...');
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [epubData, setEpubData] = useState<ArrayBuffer | null>(null);
     
     const [locations, setLocations] = useState<any[]>([]);
     const [toc, setToc] = useState<NavItem[]>([]);
     const [currentLocation, setCurrentLocation] = useState<any | null>(null);
 
-    const [theme, setTheme] = useState<'light' | 'dark'>(userProgress?.theme as 'light' | 'dark' || 'dark');
+    const [theme, setTheme] = useState<'light' | 'dark'>(userProgress?.theme as 'light' | 'dark' || 'light');
     const [fontSize, setFontSize] = useState(userProgress?.fontSize || 100);
 
     const [isImmersiveMode, setIsImmersiveMode] = useState(false);
@@ -87,59 +76,6 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     const debouncedLocation = useDebounce(currentLocation, 2000);
     const debouncedBookmarks = useDebounce(bookmarks, 5000);
-
-    const getCachedBook = useCallback(async (url: string): Promise<ArrayBuffer | null> => {
-        try {
-            const cache = await caches.open(EPUB_CACHE_NAME);
-            const response = await cache.match(url);
-            if (response) {
-                setLoadingMessage('Loading from cache...');
-                return await response.arrayBuffer();
-            }
-            return null;
-        } catch (err) {
-            console.warn('Cache API not available or error accessing it.', err);
-            return null;
-        }
-    }, []);
-
-    const cacheBook = useCallback(async (url: string): Promise<ArrayBuffer> => {
-        setLoadingMessage('Downloading eBook...');
-        setDownloadProgress(0);
-
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to download eBook: ${response.statusText}`);
-        }
-
-        const contentLength = response.headers.get('content-length');
-        const total = contentLength ? parseInt(contentLength, 10) : 0;
-        let loaded = 0;
-
-        const reader = response.body!.getReader();
-        const chunks: Uint8Array[] = [];
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                break;
-            }
-            chunks.push(value);
-            loaded += value.length;
-            if (total > 0) {
-                setDownloadProgress(Math.round((loaded / total) * 100));
-            }
-        }
-
-        // The Blob constructor can have typing issues with different TypeScript lib versions.
-        // Casting to `any` is a robust way to bypass this without altering tsconfig.
-        const blob = new Blob(chunks as any);
-        const cache = await caches.open(EPUB_CACHE_NAME);
-        await cache.put(url, new Response(blob));
-        setDownloadProgress(100);
-        setLoadingMessage('Preparing book...');
-        return blob.arrayBuffer();
-    }, []);
 
     const syncProgress = useCallback(async (forceSync = false) => {
         if (!currentUser || !debouncedLocation?.start?.cfi) return;
@@ -186,8 +122,58 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         };
     }, [syncProgress]);
     
+    const getCachedBook = async (url: string) => {
+        try {
+            const cache = await caches.open(EPUB_CACHE_NAME);
+            const response = await cache.match(url);
+            if (response) {
+                return response.arrayBuffer();
+            }
+        } catch (e) {
+            console.warn("Could not access cache:", e);
+        }
+        return null;
+    };
+
+    const cacheBook = async (url: string) => {
+        setLoadingMessage('Downloading eBook for offline access...');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to download eBook file.');
+
+        const contentLength = response.headers.get('content-length');
+        if (!contentLength) return response.arrayBuffer(); // No progress info
+
+        const total = parseInt(contentLength, 10);
+        let loaded = 0;
+        
+        const reader = response.body!.getReader();
+        const chunks = [];
+        
+        while(true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            loaded += value.length;
+            setDownloadProgress((loaded / total) * 100);
+        }
+        
+        const blob = new Blob(chunks);
+        const cacheResponse = new Response(blob, { headers: response.headers });
+        try {
+            const cache = await caches.open(EPUB_CACHE_NAME);
+            await cache.put(url, cacheResponse);
+        } catch (e) {
+            console.warn("Could not write to cache:", e);
+        }
+        
+        setDownloadProgress(null);
+        return blob.arrayBuffer();
+    };
+
     useEffect(() => {
-        if (!quest.epubUrl) return;
+        if (!quest.epubUrl || !viewerRef.current) return;
+        const viewerElement = viewerRef.current;
+        let book: Book;
 
         const initializeReader = async () => {
             try {
@@ -195,7 +181,35 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 if (!bookData) {
                     bookData = await cacheBook(quest.epubUrl!);
                 }
-                setEpubData(bookData);
+
+                setLoadingMessage('Unpacking eBook...');
+                book = epub(bookData);
+                bookRef.current = book;
+
+                setLoadingMessage('Preparing pages...');
+                const rendition = book.renderTo(viewerElement, {
+                    width: '100%', height: '100%', spread: 'auto', allowScriptedContent: true
+                });
+                renditionRef.current = rendition;
+
+                rendition.themes.register('light', { body: { color: '#333', 'background-color': '#fafafa' } });
+                rendition.themes.register('dark', { body: { color: '#fafafa', 'background-color': '#1c1917' } });
+                rendition.themes.select(theme);
+                rendition.themes.fontSize(`${fontSize}%`);
+
+                rendition.on('relocated', (location: any) => setCurrentLocation(location));
+                
+                await book.ready;
+                setLoadingMessage('Generating table of contents...');
+                if (book.navigation.toc) setToc(book.navigation.toc);
+                
+                setLoadingMessage('Calculating page locations...');
+                setLocations(await book.locations.generate(1024));
+                
+                const initialLocation = userProgress?.locationCfi || undefined;
+                await rendition.display(initialLocation);
+
+                setIsLoading(false);
 
             } catch (err) {
                 console.error("ePub reader error:", err);
@@ -207,31 +221,12 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         };
         
         initializeReader();
-    }, [quest.epubUrl, addNotification, getCachedBook, cacheBook]);
 
-    const handleRendition = useCallback((rendition: Rendition) => {
-        if (rendition) {
-            renditionRef.current = rendition;
-            bookRef.current = rendition.book;
-            
-            rendition.themes.register('light', { body: { color: '#333', 'background-color': '#fafafa' } });
-            rendition.themes.register('dark', { body: { color: '#fafafa', 'background-color': '#1c1917' } });
-            rendition.themes.select(theme);
-            rendition.themes.fontSize(`${fontSize}%`);
-
-            rendition.on('relocated', (location: any) => setCurrentLocation(location));
-            
-            rendition.ready.then(async () => {
-                setLoadingMessage('Generating table of contents...');
-                if (bookRef.current?.navigation.toc) setToc(bookRef.current.navigation.toc);
-                
-                setLoadingMessage('Calculating page locations...');
-                setLocations(await bookRef.current!.locations.generate(1024));
-                
-                setIsLoading(false);
-            });
-        }
-    }, [fontSize, theme]);
+        return () => {
+            bookRef.current?.destroy();
+            renditionRef.current?.destroy();
+        };
+    }, [quest.epubUrl, fontSize, theme, userProgress, addNotification]);
 
     const navigate = (direction: 'next' | 'prev') => renditionRef.current?.[direction]();
     const goTo = (href: string) => { renditionRef.current?.display(href); };
@@ -329,30 +324,19 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             
             {/* Main Content */}
             <main className={`absolute inset-0 transition-all duration-300 ${!isImmersiveMode ? 'pt-14 pb-20' : 'pt-0 pb-0'}`} onClick={() => {setIsTocOpen(false); setIsSettingsOpen(false); setIsBookmarksOpen(false);}}>
-                <div id="epub-viewer" className="w-full h-full">
-                    {(isLoading || !epubData) && (
-                         <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-stone-900/90">
-                            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
-                            <p className="text-xl font-semibold text-white">{loadingMessage}</p>
-                            {downloadProgress !== null && (
-                                <div className="w-64 bg-stone-700 rounded-full h-2.5">
-                                    <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl">{error}</div>}
-                    {epubData && (
-                        <ReactReader
-                            url={epubData}
-                            location={userProgress?.locationCfi}
-                            getRendition={handleRendition}
-                            showToc={false}
-                            styles={readerStyles}
-                            loadingView={<></>}
-                        />
-                    )}
-                </div>
+                <div ref={viewerRef} className="w-full h-full" id="epub-viewer"/>
+                {isLoading && (
+                    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-stone-900/90">
+                        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
+                        <p className="text-xl font-semibold text-white">{loadingMessage}</p>
+                        {downloadProgress !== null && (
+                            <div className="w-64 bg-stone-700 rounded-full h-2.5">
+                                <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl">{error}</div>}
                 <Button variant="ghost" onClick={() => navigate('prev')} className="absolute left-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-start p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronLeftIcon className="w-12 h-12"/></Button>
                 <Button variant="ghost" onClick={() => navigate('next')} className="absolute right-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-end p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronRightIcon className="w-12 h-12"/></Button>
             </main>
@@ -408,6 +392,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     )) : <p className="text-center text-stone-500 p-4">No bookmarks yet.</p>}
                 </div>
             </div>
+
         </div>
     );
 };

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.02 - Removal of ePub",
-  "version": "0.5.02",
-  "description": "Maintenance release with minor version bump.",
+  "name": "Task Donegeon 2.0 - 0.5.03 - Addition of ePub",
+  "version": "0.5.03",
+  "description": "Adds a server-side rendered ePub reader for quests.",
   "requestFramePermissions": [
     "camera"
   ],

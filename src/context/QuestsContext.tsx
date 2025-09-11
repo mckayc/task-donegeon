@@ -56,8 +56,7 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  // FIX: Removed missing 'Bookmark' type from signature and updated to match PDF reader functionality.
-  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void>;
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; epubChapter?: string; epubScroll?: number; bookmarks?: Bookmark[]; }) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);

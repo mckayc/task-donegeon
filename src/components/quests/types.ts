@@ -1,4 +1,3 @@
-
 // Changed import from '../items/types' to '../users/types' to break circular dependency.
 import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -53,9 +52,12 @@ export interface QuizState {
 }
 
 // FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
+// FIX: Added optional epubChapter and epubScroll for epub reader, and made cfi optional
 export interface Bookmark {
   label: string;
-  cfi: string;
+  cfi?: string;
+  epubChapter?: string;
+  epubScroll?: number;
   createdAt: string;
 }
 
@@ -68,6 +70,8 @@ export interface Quest {
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
   videoUrl?: string | null;
+  // FIX: Added epubUrl to support epub reader quests
+  epubUrl?: string | null;
   pdfUrl?: string | null;
   iconType: 'emoji' | 'image';
   icon: string;
@@ -109,7 +113,8 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
+  // FIX: Added epubChapter and epubScroll for epub reader progress
+  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; epubChapter?: string; epubScroll?: number; } };
   createdAt?: string;
   updatedAt?: string;
 }

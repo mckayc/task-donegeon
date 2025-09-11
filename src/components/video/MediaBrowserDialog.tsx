@@ -4,7 +4,7 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
-import { Folder, Video, ArrowUp, UploadCloud, FolderPlus, BookOpen, Trash } from 'lucide-react';
+import { Folder, Video, ArrowUp, UploadCloud, FolderPlus, BookOpen, TrashIcon as Trash, FileText } from 'lucide-react';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 
 interface MediaBrowserDialogProps {
@@ -327,8 +327,9 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             {filteredFiles.map((file) => {
                                 const fullPath = (`/media` + currentPath + (currentPath.endsWith('/') ? '' : '/') + file).replace(/\/+/g, '/');
                                 const isEpub = file.toLowerCase().endsWith('.epub');
-                                const Icon = isEpub ? BookOpen : Video;
-                                const iconColor = isEpub ? 'text-purple-400' : 'text-sky-400';
+                                const isPdf = file.toLowerCase().endsWith('.pdf');
+                                const Icon = isEpub ? BookOpen : isPdf ? FileText : Video;
+                                const iconColor = isEpub ? 'text-purple-400' : isPdf ? 'text-red-400' : 'text-sky-400';
                                 return (
                                 <button 
                                     key={file} 

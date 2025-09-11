@@ -38,7 +38,6 @@ const managementRouters = require('./routes/management.routes');
 const aiRouter = require('./routes/ai.routes');
 const systemRouter = require('./routes/system.routes');
 const chroniclesRouter = require('./routes/chronicles.routes');
-const proxyRouter = require('./routes/proxy.routes');
 
 
 const app = express();
@@ -303,7 +302,6 @@ app.use('/api/data', dataRouter);
 app.use('/api/system', systemRouter);
 app.use('/api/chronicles', chroniclesRouter);
 app.use('/api/ai', aiRouter);
-app.use('/api/proxy', proxyRouter);
 // Management routers from the management.routes.js file
 app.use('/api/asset-packs', managementRouters.assetPacksRouter);
 app.use('/api/image-packs', managementRouters.imagePacksRouter);

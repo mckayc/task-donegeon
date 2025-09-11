@@ -1,21 +1,41 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-// @ts-ignore - react-reader doesn't have great TS support for module imports via CDN
-import { ReactReader } from 'react-reader';
+import { ReactReader, ReactReaderStyle } from 'react-reader';
+import type { Book, Rendition, NavItem } from 'epubjs';
 import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon } from '../user-interface/Icons';
+import { XCircleIcon, ChevronLeftIcon, ChevronRightIcon, Sun, Moon, PlusIcon, Minus, MenuIcon, Bookmark as BookmarkIcon, BookmarkPlus, TrashIcon, BookOpen, Minimize, Maximize } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
+import Input from '../user-interface/Input';
 
 const EPUB_CACHE_NAME = 'epub-cache-v1';
 
 interface EpubReaderPanelProps {
   quest: Quest;
 }
+
+const formatTime = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    if (hours > 0) {
+        return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+    }
+    return `${minutes}m`;
+};
+
+// Hide the default UI of ReactReader so we can use our own
+const readerStyles = {
+  ...ReactReaderStyle,
+  arrow: { ...ReactReaderStyle.arrow, display: 'none' },
+  header: { ...ReactReaderStyle.header, display: 'none' },
+  footer: { ...ReactReaderStyle.footer, display: 'none' },
+  tocButton: { ...ReactReaderStyle.tocButton, display: 'none' },
+};
+
 
 export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const { setReadingEpubQuest } = useUIDispatch();
@@ -27,15 +47,31 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const liveQuest = useMemo(() => quests.find(q => q.id === quest.id) || quest, [quests, quest]);
     const userProgress = useMemo(() => currentUser ? liveQuest.readingProgress?.[currentUser.id] : undefined, [liveQuest, currentUser]);
     
-    const [epubData, setEpubData] = useState<ArrayBuffer | null>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const bookRef = useRef<Book | null>(null);
+    const renditionRef = useRef<Rendition | null>(null);
+
     const [isLoading, setIsLoading] = useState(true);
     const [loadingMessage, setLoadingMessage] = useState('Initializing Reader...');
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
-
-    const [location, setLocation] = useState<string | number | null>(userProgress?.locationCfi || null);
-    const [bookmarks, setBookmarks] = useState<Bookmark[]>(userProgress?.bookmarks || []);
+    const [epubData, setEpubData] = useState<ArrayBuffer | null>(null);
     
+    const [locations, setLocations] = useState<any[]>([]);
+    const [toc, setToc] = useState<NavItem[]>([]);
+    const [currentLocation, setCurrentLocation] = useState<any | null>(null);
+
+    const [theme, setTheme] = useState<'light' | 'dark'>(userProgress?.theme as 'light' | 'dark' || 'dark');
+    const [fontSize, setFontSize] = useState(userProgress?.fontSize || 100);
+
+    const [isImmersiveMode, setIsImmersiveMode] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [isTocOpen, setIsTocOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
+
+    const [bookmarks, setBookmarks] = useState<Bookmark[]>(userProgress?.bookmarks || []);
+
     // Time Tracking
     const [sessionSeconds, setSessionSeconds] = useState(0);
     const sessionStartTimeRef = useRef(Date.now());
@@ -45,18 +81,74 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     useEffect(() => {
         initialTotalSecondsRef.current = userProgress?.totalSeconds || 0;
     }, [quest.id, userProgress]);
-    
-    const debouncedLocation = useDebounce(location, 5000);
+
+    const totalSecondsRead = useMemo(() => initialTotalSecondsRef.current + sessionSeconds, [sessionSeconds]);
+
+    const debouncedLocation = useDebounce(currentLocation, 2000);
     const debouncedBookmarks = useDebounce(bookmarks, 5000);
 
+    // FIX: Implement getCachedBook and cacheBook functions to handle EPUB caching via the Cache API.
+    const getCachedBook = useCallback(async (url: string): Promise<ArrayBuffer | null> => {
+        try {
+            const cache = await caches.open(EPUB_CACHE_NAME);
+            const response = await cache.match(url);
+            if (response) {
+                setLoadingMessage('Loading from cache...');
+                return await response.arrayBuffer();
+            }
+            return null;
+        } catch (err) {
+            console.warn('Cache API not available or error accessing it.', err);
+            return null;
+        }
+    }, []);
+
+    const cacheBook = useCallback(async (url: string): Promise<ArrayBuffer> => {
+        setLoadingMessage('Downloading eBook...');
+        setDownloadProgress(0);
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to download eBook: ${response.statusText}`);
+        }
+
+        const contentLength = response.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        let loaded = 0;
+
+        const reader = response.body!.getReader();
+        const chunks: Uint8Array[] = [];
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            chunks.push(value);
+            loaded += value.length;
+            if (total > 0) {
+                setDownloadProgress(Math.round((loaded / total) * 100));
+            }
+        }
+
+        const blob = new Blob(chunks);
+        const cache = await caches.open(EPUB_CACHE_NAME);
+        await cache.put(url, new Response(blob));
+        setDownloadProgress(100);
+        setLoadingMessage('Preparing book...');
+        return blob.arrayBuffer();
+    }, []);
+
     const syncProgress = useCallback(async (forceSync = false) => {
-        if (!currentUser || !debouncedLocation) return;
+        if (!currentUser || !debouncedLocation?.start?.cfi) return;
         const now = Date.now();
         const secondsToAdd = Math.round((now - lastSyncTimeRef.current) / 1000);
         
         const dataToSync: any = {
-            locationCfi: debouncedLocation,
+            locationCfi: debouncedLocation.start.cfi,
             bookmarks: debouncedBookmarks,
+            fontSize,
+            theme,
             sessionSeconds,
         };
         if (secondsToAdd > 0) {
@@ -73,7 +165,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 console.error("ePub Sync failed, not updating lastSyncTimeRef", e);
             }
         }
-    }, [currentUser, quest.id, updateReadingProgress, debouncedLocation, debouncedBookmarks, sessionSeconds]);
+    }, [currentUser, quest.id, updateReadingProgress, debouncedLocation, debouncedBookmarks, fontSize, theme, sessionSeconds]);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -91,45 +183,9 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             syncProgress(true); // Final sync on close
         };
     }, [syncProgress]);
-
-    const getCachedBook = async (url: string) => {
-        try {
-            const cache = await caches.open(EPUB_CACHE_NAME);
-            const response = await cache.match(url);
-            if (response) {
-                return response.arrayBuffer();
-            }
-        } catch (e) { console.warn("Could not access cache:", e); }
-        return null;
-    };
     
-    const cacheBook = async (url: string) => {
-        setLoadingMessage('Downloading eBook for offline access...');
-        setDownloadProgress(0); // Show indeterminate progress bar
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to download eBook file.');
-
-        const cacheResponse = response.clone();
-        const bookData = await response.arrayBuffer();
-        
-        try {
-            const cache = await caches.open(EPUB_CACHE_NAME);
-            await cache.put(url, cacheResponse);
-            console.log('eBook cached successfully.');
-        } catch (e) {
-            console.warn("Could not write eBook to cache:", e);
-        }
-        
-        setDownloadProgress(null);
-        return bookData;
-    };
-
     useEffect(() => {
-        if (!quest.epubUrl) {
-            setError("No eBook file specified for this quest.");
-            setIsLoading(false);
-            return;
-        }
+        if (!quest.epubUrl) return;
 
         const initializeReader = async () => {
             try {
@@ -137,9 +193,8 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 if (!bookData) {
                     bookData = await cacheBook(quest.epubUrl!);
                 }
-                setLoadingMessage('Unpacking eBook...');
                 setEpubData(bookData);
-                setIsLoading(false);
+
             } catch (err) {
                 console.error("ePub reader error:", err);
                 const message = err instanceof Error ? err.message : "An unknown error occurred.";
@@ -150,61 +205,206 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         };
         
         initializeReader();
-    }, [quest.epubUrl, addNotification]);
+    }, [quest.epubUrl, addNotification, getCachedBook, cacheBook]);
 
-    const locationChanged = (epubcifi: string) => {
-        setLocation(epubcifi);
+    const handleRendition = useCallback((rendition: Rendition) => {
+        if (rendition) {
+            renditionRef.current = rendition;
+            bookRef.current = rendition.book;
+            
+            rendition.themes.register('light', { body: { color: '#333', 'background-color': '#fafafa' } });
+            rendition.themes.register('dark', { body: { color: '#fafafa', 'background-color': '#1c1917' } });
+            rendition.themes.select(theme);
+            rendition.themes.fontSize(`${fontSize}%`);
+
+            rendition.on('relocated', (location: any) => setCurrentLocation(location));
+            
+            rendition.ready.then(async () => {
+                setLoadingMessage('Generating table of contents...');
+                if (bookRef.current?.navigation.toc) setToc(bookRef.current.navigation.toc);
+                
+                setLoadingMessage('Calculating page locations...');
+                setLocations(await bookRef.current!.locations.generate(1024));
+                
+                setIsLoading(false);
+            });
+        }
+    }, [fontSize, theme]);
+
+    const navigate = (direction: 'next' | 'prev') => renditionRef.current?.[direction]();
+    const goTo = (href: string) => { renditionRef.current?.display(href); };
+    const changeFontSize = (newSize: number) => {
+        const clampedSize = Math.max(80, Math.min(200, newSize));
+        setFontSize(clampedSize);
+        renditionRef.current?.themes.fontSize(`${clampedSize}%`);
+    };
+    const changeTheme = (newTheme: 'light' | 'dark') => {
+        setTheme(newTheme);
+        renditionRef.current?.themes.select(newTheme);
     };
 
-    const handleAddBookmark = useCallback((cfi: string) => {
-        const newBookmark: Bookmark = {
-            label: `Bookmark`, // react-reader will generate its own label from the content
-            cfi: cfi,
-            createdAt: new Date().toISOString(),
-        };
-        setBookmarks(prev => [...prev.filter(b => b.cfi !== cfi), newBookmark]);
-        addNotification({ type: 'success', message: 'Bookmark added!' });
-    }, [addNotification]);
+    const handleAddBookmark = async () => {
+        if (!currentLocation || !bookRef.current) return;
+        const cfi = currentLocation.start.cfi;
+        const bookContent = bookRef.current.spine.get(cfi);
+        if (!bookContent) return;
 
-    const handleRemoveBookmark = useCallback((cfi: string) => {
-        setBookmarks(prev => prev.filter(b => b.cfi !== cfi));
+        try {
+            const doc = await bookContent.load(bookRef.current.load.bind(bookRef.current));
+            const textContent = doc.body.textContent?.trim().substring(0, 100) + '...';
+            const newBookmark: Bookmark = {
+                label: `Page ${currentLocation.start.displayed.page} - ${textContent}`,
+                cfi: cfi,
+                createdAt: new Date().toISOString(),
+            };
+            setBookmarks(prev => [...prev.filter(b => b.cfi !== cfi), newBookmark]);
+            addNotification({ type: 'success', message: 'Bookmark added!' });
+        } catch (error) {
+            console.error("Error creating bookmark:", error);
+            addNotification({ type: 'error', message: 'Could not create bookmark.' });
+        }
+    };
+    const handleRemoveBookmark = (cfi: string) => setBookmarks(prev => prev.filter(b => b.cfi !== cfi));
+    
+    const progressPercent = useMemo(() => {
+        if (!bookRef.current?.locations?.percentageFromCfi || !currentLocation || !locations.length) return 0;
+        return bookRef.current.locations.percentageFromCfi(currentLocation.start.cfi) * 100;
+    }, [currentLocation, locations]);
+
+    const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const percentage = parseFloat(e.target.value);
+        if (bookRef.current?.locations) {
+            const cfi = bookRef.current.locations.cfiFromPercentage(percentage / 100);
+            goTo(cfi);
+        }
+    };
+
+    const toggleFullscreen = () => {
+        const elem = panelRef.current;
+        if (!elem) return;
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => alert(`Error: ${err.message}`));
+        } else {
+            document.exitFullscreen();
+        }
+    };
+    
+    useEffect(() => {
+        const onFullscreenChange = () => setIsFullScreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, []);
     
-    // FIX: Cast the component to `any` to bypass incorrect type definitions in the forked library.
-    const ReaderWithAnyProps = ReactReader as any;
-
+    const renderToc = (items: NavItem[], level = 0) => (
+        <ul className={level > 0 ? 'pl-4' : ''}>
+            {items.map((item, index) => (
+                <li key={index}>
+                    <button onClick={() => { goTo(item.href); setTimeout(() => setIsTocOpen(false), 150); }} className="w-full text-left py-2 px-4 hover:bg-emerald-800/50 rounded-md">
+                        {item.label}
+                    </button>
+                    {item.subitems && item.subitems.length > 0 && renderToc(item.subitems, level + 1)}
+                </li>
+            ))}
+        </ul>
+    );
+    
     return (
-        <div className="fixed inset-0 bg-stone-900 z-[80] flex flex-col">
-            <div className="absolute top-0 right-0 z-[1001] p-2">
-                <Button variant="ghost" size="icon" onClick={() => setReadingEpubQuest(null)} title="Close Reader">
-                    <XCircleIcon className="w-8 h-8 text-white/70 hover:text-white"/>
-                </Button>
+        <div ref={panelRef} className="fixed inset-0 bg-stone-900 z-[80] flex flex-col">
+            {/* Header */}
+            <header className={`absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-20 text-white bg-stone-800/80 backdrop-blur-sm transition-transform duration-300 ${!isImmersiveMode ? 'translate-y-0' : '-translate-y-full'}`}>
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => setIsTocOpen(p => !p)} title="Table of Contents"><MenuIcon className="w-5 h-5"/></Button>
+                    <h3 className="font-bold text-lg truncate max-w-xs">{quest.title}</h3>
+                </div>
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => setIsImmersiveMode(p => !p)} title="Immersive Mode"><BookOpen className="w-5 h-5"/></Button>
+                    <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
+                    <Button variant="ghost" size="icon" onClick={() => setIsBookmarksOpen(p => !p)} title="Bookmarks"><BookmarkIcon className="w-5 h-5"/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(p => !p)} title="Settings"><span className="font-bold text-lg">Aa</span></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setReadingEpubQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
+                </div>
+            </header>
+            
+            {/* Main Content */}
+            <main className={`absolute inset-0 transition-all duration-300 ${!isImmersiveMode ? 'pt-14 pb-20' : 'pt-0 pb-0'}`} onClick={() => {setIsTocOpen(false); setIsSettingsOpen(false); setIsBookmarksOpen(false);}}>
+                <div id="epub-viewer" className="w-full h-full">
+                    {(isLoading || !epubData) && (
+                         <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-stone-900/90">
+                            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
+                            <p className="text-xl font-semibold text-white">{loadingMessage}</p>
+                            {downloadProgress !== null && (
+                                <div className="w-64 bg-stone-700 rounded-full h-2.5">
+                                    <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl">{error}</div>}
+                    {epubData && (
+                        <ReactReader
+                            url={epubData}
+                            location={userProgress?.locationCfi}
+                            getRendition={handleRendition}
+                            showToc={false}
+                            styles={readerStyles}
+                            loadingView={<></>}
+                        />
+                    )}
+                </div>
+                <Button variant="ghost" onClick={() => navigate('prev')} className="absolute left-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-start p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronLeftIcon className="w-12 h-12"/></Button>
+                <Button variant="ghost" onClick={() => navigate('next')} className="absolute right-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-end p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronRightIcon className="w-12 h-12"/></Button>
+            </main>
+
+            {/* Footer */}
+            <footer className={`absolute bottom-0 left-0 right-0 p-2 flex flex-col z-20 text-white bg-stone-800/80 backdrop-blur-sm transition-transform duration-300 ${!isImmersiveMode ? 'translate-y-0' : 'translate-y-full'}`}>
+                 <div className="flex items-center gap-4 text-xs font-mono w-full">
+                    <span>{progressPercent.toFixed(1)}%</span>
+                    <input type="range" min="0" max="100" step="0.1" value={progressPercent} onChange={handleProgressChange} className="flex-grow"/>
+                    <span>Page {currentLocation?.start?.displayed?.page || '?'} / {currentLocation?.start?.displayed?.total || '?'}</span>
+                </div>
+                <div className="text-center text-xs font-mono text-stone-400">
+                    Session: {formatTime(sessionSeconds)} | Total Read: {formatTime(totalSecondsRead)}
+                </div>
+            </footer>
+            
+            {/* Side Panels */}
+            {isTocOpen && <div className="absolute inset-0 bg-black/50 z-30" onClick={() => setIsTocOpen(false)} />}
+            <div className={`absolute top-0 left-0 h-full bg-stone-900 border-r border-stone-700/60 z-40 transition-transform duration-300 ${isTocOpen ? 'translate-x-0' : '-translate-x-full'} w-80 flex flex-col`}>
+                <h3 className="font-bold text-lg p-4 flex-shrink-0">Table of Contents</h3>
+                <div className="flex-grow overflow-y-auto text-stone-300">{renderToc(toc)}</div>
             </div>
-            <div className="w-full h-full relative">
-                {isLoading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-white bg-stone-900">
-                        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
-                        <p className="text-xl font-semibold">{loadingMessage}</p>
-                        {downloadProgress !== null && (
-                            <div className="w-64 bg-stone-700 rounded-full h-2.5 overflow-hidden">
-                                <div className="bg-emerald-500 h-2.5 w-full origin-left animate-pulse"></div>
+
+            {isSettingsOpen && <div className="absolute inset-0 bg-black/50 z-30" onClick={() => setIsSettingsOpen(false)} />}
+            <div className={`absolute top-0 right-0 h-full bg-stone-900 border-l border-stone-700/60 z-40 transition-transform duration-300 ${isSettingsOpen ? 'translate-x-0' : 'translate-x-full'} w-80 p-4 space-y-4`}>
+                <h3 className="font-bold text-lg">Display Settings</h3>
+                <div className="flex justify-around items-center">
+                    <Button variant={theme === 'light' ? 'default' : 'secondary'} onClick={() => changeTheme('light')}><Sun className="w-5 h-5 mr-2"/> Light</Button>
+                    <Button variant={theme === 'dark' ? 'default' : 'secondary'} onClick={() => changeTheme('dark')}><Moon className="w-5 h-5 mr-2"/> Dark</Button>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="icon" onClick={() => changeFontSize(fontSize - 10)}><Minus className="w-5 h-5"/></Button>
+                    <Input as="input" type="range" min="80" max="200" step="10" value={fontSize} onChange={(e) => changeFontSize(parseInt(e.target.value))} className="flex-grow" />
+                    <Button variant="secondary" size="icon" onClick={() => changeFontSize(fontSize + 10)}><PlusIcon className="w-5 h-5"/></Button>
+                </div>
+            </div>
+
+            {isBookmarksOpen && <div className="absolute inset-0 bg-black/50 z-30" onClick={() => setIsBookmarksOpen(false)} />}
+            <div className={`absolute top-0 right-0 h-full bg-stone-900 border-l border-stone-700/60 z-40 transition-transform duration-300 ${isBookmarksOpen ? 'translate-x-0' : 'translate-x-full'} w-80 flex flex-col`}>
+                <div className="p-4 flex justify-between items-center flex-shrink-0">
+                    <h3 className="font-bold text-lg">Bookmarks</h3>
+                    <Button size="sm" onClick={handleAddBookmark}><BookmarkPlus className="w-4 h-4 mr-2"/> Add</Button>
+                </div>
+                <div className="flex-grow overflow-y-auto text-stone-300">
+                     {bookmarks.length > 0 ? bookmarks.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(bm => (
+                        <div key={bm.cfi} className="group p-3 border-b border-stone-700/60">
+                            <button onClick={() => { goTo(bm.cfi); setIsBookmarksOpen(false); }} className="w-full text-left text-sm text-stone-300 hover:text-white truncate">{bm.label}</button>
+                            <div className="flex justify-between items-center text-xs text-stone-500 mt-1">
+                                <span>{new Date(bm.createdAt).toLocaleDateString()}</span>
+                                <Button variant="destructive" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveBookmark(bm.cfi)}><TrashIcon className="w-3 h-3"/></Button>
                             </div>
-                        )}
-                    </div>
-                )}
-                {error && <div className="absolute inset-0 flex items-center justify-center text-red-400 text-xl p-4 text-center">{error}</div>}
-                {!isLoading && !error && epubData && (
-                    <ReaderWithAnyProps
-                        url={epubData}
-                        title={quest.title}
-                        location={location as string | number}
-                        locationChanged={locationChanged}
-                        showToc={true}
-                        bookmarks={bookmarks.map(b => ({ cfi: b.cfi, label: b.label }))}
-                        addBookmark={handleAddBookmark}
-                        removeBookmark={handleRemoveBookmark}
-                    />
-                )}
+                        </div>
+                    )) : <p className="text-center text-stone-500 p-4">No bookmarks yet.</p>}
+                </div>
             </div>
         </div>
     );

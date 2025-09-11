@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // @ts-ignore - react-reader doesn't have great TS support for module imports via CDN
 import { ReactReader } from 'react-reader';
-import type { Rendition } from 'epubjs';
 import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';

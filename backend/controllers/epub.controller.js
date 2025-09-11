@@ -1,3 +1,4 @@
+
 const Epub = require("epub").Epub;
 const path = require('path');
 const fs = require('fs').promises;
@@ -13,8 +14,17 @@ const validatePath = async (relativePath) => {
     if (!relativePath || typeof relativePath !== 'string') {
         throw new Error('File path must be provided.');
     }
+    // Normalize the path by removing the expected prefix, regardless of leading slashes.
+    const pathPrefix = '/media/';
+    let cleanRelativePath = relativePath;
+    if (cleanRelativePath.startsWith(pathPrefix)) {
+        cleanRelativePath = cleanRelativePath.substring(pathPrefix.length);
+    } else if (cleanRelativePath.startsWith('media/')) {
+        cleanRelativePath = cleanRelativePath.substring('media/'.length);
+    }
+
     const resolvedMediaDir = path.resolve(MEDIA_DIR);
-    const requestedFullPath = path.join(resolvedMediaDir, relativePath);
+    const requestedFullPath = path.join(resolvedMediaDir, cleanRelativePath);
     const resolvedFullPath = path.resolve(requestedFullPath);
 
     if (!resolvedFullPath.startsWith(resolvedMediaDir)) {
@@ -26,7 +36,7 @@ const validatePath = async (relativePath) => {
         await fs.access(resolvedFullPath);
         return resolvedFullPath;
     } catch (error) {
-        throw new Error('EPUB file not found.');
+        throw new Error(`EPUB file not found on the server at path: ${relativePath}`);
     }
 };
 
@@ -38,22 +48,28 @@ const parseEpubMetadata = async (req, res) => {
         const epub = new Epub(fullPath);
         
         epub.on("end", () => {
-            res.json({
-                title: epub.title,
-                author: epub.author,
-                toc: epub.toc,
-            });
+            if (!res.headersSent) {
+                res.json({
+                    title: epub.title,
+                    author: epub.author,
+                    toc: epub.toc,
+                });
+            }
         });
 
         epub.on("error", (err) => {
             console.error("EPUB parsing error:", err);
-            res.status(500).json({ error: 'Failed to parse EPUB file.' });
+            if (!res.headersSent) {
+                res.status(500).json({ error: `Failed to parse EPUB file: ${err.message}` });
+            }
         });
 
         epub.parse();
 
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        if (!res.headersSent) {
+            res.status(400).json({ error: error.message });
+        }
     }
 };
 
@@ -71,7 +87,10 @@ const getEpubChapter = async (req, res) => {
             epub.getChapter(chapterId, (err, html) => {
                 if (err) {
                     console.error(`Error getting chapter ${chapterId}:`, err);
-                    return res.status(404).json({ error: 'Chapter not found.' });
+                    if (!res.headersSent) {
+                       return res.status(404).json({ error: `Chapter not found: ${err.message}` });
+                    }
+                    return;
                 }
                 const sanitizedHtml = DOMPurify.sanitize(html);
                 res.setHeader('Content-Type', 'text/html');
@@ -81,13 +100,17 @@ const getEpubChapter = async (req, res) => {
 
          epub.on("error", (err) => {
             console.error("EPUB parsing error:", err);
-            res.status(500).json({ error: 'Failed to parse EPUB file.' });
+            if (!res.headersSent) {
+                res.status(500).json({ error: `Failed to parse EPUB file: ${err.message}` });
+            }
         });
 
         epub.parse();
         
     } catch (error) {
-        res.status(400).json({ error: error.message });
+         if (!res.headersSent) {
+            res.status(400).json({ error: error.message });
+        }
     }
 };
 

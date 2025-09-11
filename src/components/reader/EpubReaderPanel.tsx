@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
@@ -38,6 +37,7 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
     const [currentChapterId, setCurrentChapterId] = useState<string | null>(null);
     const [chapterHtml, setChapterHtml] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [loadingMessage, setLoadingMessage] = useState('Initializing reader...');
     const [error, setError] = useState<string | null>(null);
     
     // UI State
@@ -64,6 +64,7 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
     const fetchAndCacheChapter = useCallback(async (chapterId: string) => {
         if (!liveQuest.epubUrl) return;
         setIsLoading(true);
+        setLoadingMessage('Loading chapter...');
 
         const cache = await caches.open(EPUB_CACHE_NAME);
         const cacheUrl = `/api/epub/chapter?path=${encodeURIComponent(liveQuest.epubUrl)}&chapterId=${encodeURIComponent(chapterId)}`;
@@ -76,7 +77,10 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
             }
         }
         
-        if (!response.ok) throw new Error('Failed to fetch chapter.');
+        if (!response.ok) {
+             const errorData = await response.json().catch(() => ({ error: 'Failed to load chapter content.' }));
+             throw new Error(errorData.error || 'Failed to fetch chapter.');
+        }
         
         const html = await response.text();
         setChapterHtml(html);
@@ -87,10 +91,14 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
         const fetchMetadata = async () => {
             if (!liveQuest.epubUrl) return;
             setIsLoading(true);
+            setLoadingMessage('Fetching book details...');
             setError(null);
             try {
                 const response = await fetch(`/api/epub/metadata?path=${encodeURIComponent(liveQuest.epubUrl)}`);
-                if (!response.ok) throw new Error('Failed to fetch book metadata.');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Could not communicate with the server.' }));
+                    throw new Error(errorData.error || 'Failed to fetch book metadata.');
+                }
                 const data: EpubMetadata = await response.json();
                 setMetadata(data);
 
@@ -100,19 +108,16 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
                     await fetchAndCacheChapter(startChapter);
                 } else {
                     setError("Book has no chapters.");
+                    setIsLoading(false);
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Unknown error');
+                setIsLoading(false);
             }
         };
         fetchMetadata();
     }, [liveQuest.epubUrl, fetchAndCacheChapter, userProgress?.epubChapter]);
 
-    useEffect(() => {
-        if (currentChapterId) {
-            fetchAndCacheChapter(currentChapterId);
-        }
-    }, [currentChapterId, fetchAndCacheChapter]);
 
     useEffect(() => {
         if (contentRef.current) {
@@ -225,9 +230,10 @@ const EpubReaderPanel: React.FC<{ quest: Quest }> = ({ quest }) => {
                     } as React.CSSProperties}
                 >
                     {(isLoading || error) && (
-                         <div className="flex flex-col items-center justify-center h-full gap-4">
+                         <div className="flex flex-col items-center justify-center h-full gap-4 p-4 text-center">
                             {isLoading && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>}
-                            <p className={`text-xl font-semibold ${error ? 'text-red-400' : ''}`}>{error ? error : 'Loading Chapter...'}</p>
+                            <p className={`text-xl font-semibold ${error ? 'text-red-400' : 'text-white'}`}>{error ? error : loadingMessage}</p>
+                            {error && <Button onClick={() => setReadingEpubQuest(null)}>Close Reader</Button>}
                         </div>
                     )}
                     <style>{`

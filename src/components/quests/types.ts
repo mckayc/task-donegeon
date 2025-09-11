@@ -28,6 +28,7 @@ export enum QuestMediaType {
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
   PDF = 'PDF',
+  EPUB = 'EPUB',
 }
 
 export interface Checkpoint {
@@ -51,8 +52,6 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
-// FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
-// FIX: Added optional epubChapter and epubScroll for epub reader, and made cfi optional
 export interface Bookmark {
   label: string;
   cfi?: string;
@@ -70,7 +69,6 @@ export interface Quest {
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
   videoUrl?: string | null;
-  // FIX: Added epubUrl to support epub reader quests
   epubUrl?: string | null;
   pdfUrl?: string | null;
   iconType: 'emoji' | 'image';
@@ -109,11 +107,11 @@ export interface Quest {
   groupIds?: string[];
   requiresApproval: boolean;
   claimedByUserIds: string[];
+  // FIX: Changed dismissals to be an array of objects to match usage and plural name.
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  // FIX: Added epubChapter and epubScroll for epub reader progress
   readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; epubChapter?: string; epubScroll?: number; } };
   createdAt?: string;
   updatedAt?: string;

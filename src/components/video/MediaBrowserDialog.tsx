@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -249,7 +248,7 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             ref={fileInputRef}
                             className="hidden"
                             onChange={handleFileUpload}
-                            accept="video/*,.epub,.pdf"
+                            accept="video/*,.pdf,.epub"
                             disabled={isUploading}
                         />
                         <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
@@ -326,8 +325,9 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             ))}
                             {filteredFiles.map((file) => {
                                 const fullPath = (`/media` + currentPath + (currentPath.endsWith('/') ? '' : '/') + file).replace(/\/+/g, '/');
-                                const isEpub = file.toLowerCase().endsWith('.epub');
-                                const isPdf = file.toLowerCase().endsWith('.pdf');
+                                const ext = file.split('.').pop()?.toLowerCase() || '';
+                                const isEpub = ext === 'epub';
+                                const isPdf = ext === 'pdf';
                                 const Icon = isEpub ? BookOpen : isPdf ? FileText : Video;
                                 const iconColor = isEpub ? 'text-purple-400' : isPdf ? 'text-red-400' : 'text-sky-400';
                                 return (

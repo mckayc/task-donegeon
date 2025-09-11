@@ -132,16 +132,22 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         const addLog = (message: string, status: LogEntry['status'], details?: any) => {
             const detailString = details ? (typeof details === 'string' ? details : JSON.stringify(details, null, 2)) : undefined;
-            setLogs(prev => [...prev, { message, status, details: detailString }]);
+            setLogs(prev => [...prev.slice(-20), { message, status, details: detailString }]);
         };
 
         const initializeReader = async () => {
             try {
                 addLog('Initializing Reader...', 'progress');
-                const proxyUrl = `/api/proxy/epub?url=${encodeURIComponent(quest.epubUrl!)}`;
-                addLog('Fetching eBook from server proxy...', 'progress', `URL: ${quest.epubUrl}`);
                 
-                book = epub(proxyUrl);
+                let bookUrl = quest.epubUrl!;
+                let fetchMessage = `Fetching eBook from local path...`;
+                if (bookUrl.startsWith('http')) {
+                    bookUrl = `/api/proxy/epub?url=${encodeURIComponent(quest.epubUrl!)}`;
+                    fetchMessage = 'Fetching eBook from server proxy...';
+                }
+                addLog(fetchMessage, 'progress', `URL: ${quest.epubUrl}`);
+                
+                book = epub(bookUrl);
                 bookRef.current = book;
                 addLog('eBook object created.', 'success');
 
@@ -195,7 +201,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             bookRef.current?.destroy();
             renditionRef.current?.destroy();
         };
-    }, [quest.epubUrl]);
+    }, [quest.epubUrl, theme, fontSize, userProgress?.locationCfi, addNotification]);
 
     const navigate = (direction: 'next' | 'prev') => renditionRef.current?.[direction]();
     const goTo = (href: string) => { renditionRef.current?.display(href); };

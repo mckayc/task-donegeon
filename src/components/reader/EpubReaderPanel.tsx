@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ReactReader, ReactReaderStyle } from 'react-reader';
-import type { Book, Rendition, NavItem } from 'epubjs';
+// FIX: Changed to a value import from a type-only import. This can help TypeScript resolve types when an ambient module declaration is interfering with proper type resolution.
+import { Book, Rendition, NavItem } from 'epubjs';
 import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
@@ -87,7 +88,6 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const debouncedLocation = useDebounce(currentLocation, 2000);
     const debouncedBookmarks = useDebounce(bookmarks, 5000);
 
-    // FIX: Implement getCachedBook and cacheBook functions to handle EPUB caching via the Cache API.
     const getCachedBook = useCallback(async (url: string): Promise<ArrayBuffer | null> => {
         try {
             const cache = await caches.open(EPUB_CACHE_NAME);
@@ -131,7 +131,9 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             }
         }
 
-        const blob = new Blob(chunks);
+        // The Blob constructor can have typing issues with different TypeScript lib versions.
+        // Casting to `any` is a robust way to bypass this without altering tsconfig.
+        const blob = new Blob(chunks as any);
         const cache = await caches.open(EPUB_CACHE_NAME);
         await cache.put(url, new Response(blob));
         setDownloadProgress(100);

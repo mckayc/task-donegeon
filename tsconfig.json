@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "baseUrl": ".",
@@ -18,7 +19,7 @@
     "jsx": "react-jsx",
     "types": ["jest", "@testing-library/jest-dom"]
   },
-  "include": ["src", "index.tsx"],
+  "include": ["src", "index.tsx", "src/types/declarations.d.ts"],
   "exclude": [
     "node_modules",
     "**/*.test.ts",

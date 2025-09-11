@@ -139,15 +139,12 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             try {
                 addLog('Initializing Reader...', 'progress');
                 
-                let bookUrl = quest.epubUrl!;
-                let fetchMessage = `Fetching eBook from local path...`;
-                if (bookUrl.startsWith('http')) {
-                    bookUrl = `/api/proxy/epub?url=${encodeURIComponent(quest.epubUrl!)}`;
-                    fetchMessage = 'Fetching eBook from server proxy...';
-                }
-                addLog(fetchMessage, 'progress', `URL: ${quest.epubUrl}`);
+                // ALWAYS use the proxy to handle CORS and normalize fetching for both local and remote files.
+                const proxiedUrl = `/api/proxy/epub?url=${encodeURIComponent(quest.epubUrl!)}`;
                 
-                book = epub(bookUrl);
+                addLog('Fetching eBook via server proxy...', 'progress', `Original URL: ${quest.epubUrl}`);
+                
+                book = epub(proxiedUrl);
                 bookRef.current = book;
                 addLog('eBook object created.', 'success');
 
@@ -190,7 +187,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 const message = err instanceof Error ? err.message : "An unknown error occurred.";
                 const finalError = `Could not load eBook. The file may be invalid, the source URL might be incorrect, or the server proxy failed.`;
                 setError(finalError);
-                addLog('A fatal error occurred.', 'error', `Details: ${message}`);
+                addLog('A critical error occurred.', 'error', `Details: ${message}`);
                 addNotification({ type: 'error', message: `Could not open eBook. It may be corrupted or in an unsupported format.`});
             }
         };

@@ -19,7 +19,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: [
-        'react-reader'
+        'react-reader',
+        'epubjs',
+        'styled-components'
       ]
     }
   }

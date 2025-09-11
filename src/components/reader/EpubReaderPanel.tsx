@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ReactReader, IReactReaderStyle } from 'react-reader';
 import { Quest, Bookmark } from '../../types';
@@ -10,7 +9,8 @@ import { XCircleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 
 // Custom styles to match the application's dark theme
-const readerStyles: IReactReaderStyle = {
+// FIX: Changed type from IReactReaderStyle to Partial<typeof IReactReaderStyle> to match the value type.
+const readerStyles: Partial<typeof IReactReaderStyle> = {
   container: {
     ...IReactReaderStyle.container,
     height: '100%',

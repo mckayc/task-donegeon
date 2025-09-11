@@ -1,5 +1,6 @@
 
 
+
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -16,8 +17,7 @@ import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
 import PdfReaderPanel from '../reader/PdfReaderPanel';
-// FIX: Changed import for EpubReaderPanel to a named import as it does not have a default export.
-import { EpubReaderPanel } from '../reader/EpubReaderPanel';
+import EpubReaderPanel from '../reader/EpubReaderPanel';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();

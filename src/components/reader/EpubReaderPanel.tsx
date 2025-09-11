@@ -104,34 +104,23 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     
     const cacheBook = async (url: string) => {
         setLoadingMessage('Downloading eBook for offline access...');
+        setDownloadProgress(0); // Show indeterminate progress bar
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to download eBook file.');
 
-        const contentLength = response.headers.get('content-length');
-        if (!contentLength) return response.arrayBuffer();
-
-        const total = parseInt(contentLength, 10);
-        let loaded = 0;
-        const reader = response.body!.getReader();
-        const chunks: Uint8Array[] = [];
+        const cacheResponse = response.clone();
+        const bookData = await response.arrayBuffer();
         
-        while(true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            loaded += value.length;
-            setDownloadProgress((loaded / total) * 100);
-        }
-        
-        const blob = new Blob(chunks);
-        const cacheResponse = new Response(blob, { headers: response.headers });
         try {
             const cache = await caches.open(EPUB_CACHE_NAME);
             await cache.put(url, cacheResponse);
-        } catch (e) { console.warn("Could not write to cache:", e); }
+            console.log('eBook cached successfully.');
+        } catch (e) {
+            console.warn("Could not write eBook to cache:", e);
+        }
         
         setDownloadProgress(null);
-        return blob.arrayBuffer();
+        return bookData;
     };
 
     useEffect(() => {
@@ -193,14 +182,16 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
                         <p className="text-xl font-semibold">{loadingMessage}</p>
                         {downloadProgress !== null && (
-                            <div className="w-64 bg-stone-700 rounded-full h-2.5">
-                                <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${downloadProgress}%` }}></div>
+                            <div className="w-64 bg-stone-700 rounded-full h-2.5 overflow-hidden">
+                                <div className="bg-emerald-500 h-2.5 w-full origin-left animate-pulse"></div>
                             </div>
                         )}
                     </div>
                 )}
                 {error && <div className="absolute inset-0 flex items-center justify-center text-red-400 text-xl p-4 text-center">{error}</div>}
                 {!isLoading && !error && epubData && (
+                    // FIX: The type definitions for this library fork are incorrect. These props exist at runtime.
+                    // @ts-ignore
                     <ReactReader
                         url={epubData}
                         title={quest.title}

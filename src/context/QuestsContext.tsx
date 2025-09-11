@@ -56,7 +56,6 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  // FIX: Removed missing 'Bookmark' type from signature and updated to match PDF reader functionality.
   updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void>;
 }
 
@@ -91,7 +90,23 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
                     const itemsToUpdate = action.payload[typedKey];
                     if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                        itemsToUpdate.forEach(newItem => {
+                            // Deep merge for quests to handle readingProgress
+                            if (typedKey === 'quests' && existingItems.has(newItem.id)) {
+                                const existingQuest = existingItems.get(newItem.id);
+                                const mergedQuest = { 
+                                    ...existingQuest, 
+                                    ...newItem,
+                                    readingProgress: {
+                                        ...existingQuest.readingProgress,
+                                        ...newItem.readingProgress
+                                    }
+                                };
+                                existingItems.set(newItem.id, mergedQuest);
+                            } else {
+                                existingItems.set(newItem.id, newItem);
+                            }
+                        });
                     }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
@@ -245,6 +260,24 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         updateReadingProgress: async (questId, userId, data) => {
+            // This is an optimistic update on the frontend for responsiveness.
+            // The API call is fire-and-forget. The periodic sync will handle the truth.
+            dispatch({
+                type: 'UPDATE_QUESTS_DATA',
+                payload: {
+                    quests: [{
+                        id: questId,
+                        readingProgress: {
+                            [userId]: {
+                                ...state.quests.find(q => q.id === questId)?.readingProgress?.[userId],
+                                ...data,
+                                // Correctly accumulate total seconds
+                                totalSeconds: (state.quests.find(q => q.id === questId)?.readingProgress?.[userId]?.totalSeconds || 0) + (data.secondsToAdd || 0),
+                            }
+                        }
+                    } as any]
+                }
+            });
             await apiAction(() => updateReadingProgressAPI(questId, userId, data));
         },
         addQuestGroup: async (data) => {
@@ -272,7 +305,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => runRotationAPI(id));
             if (result) addNotification({ type: 'success', message: (result as any).message });
         },
-    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch]);
+    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch, state.quests]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

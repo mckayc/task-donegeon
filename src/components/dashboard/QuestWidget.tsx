@@ -148,6 +148,7 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
             return `Checkpoint ${completed + 1} / ${total}`;
         }
         if (quest.kind === QuestKind.GuildCollaborative) {
+            // FIX: Added checks for optional properties to prevent runtime errors.
             return `Team Progress: ${(quest.contributions?.length || 0)} / ${quest.completionGoal || 1}`;
         }
         if (quest.requiresClaim) {

@@ -44,7 +44,7 @@ const useGameLoop = (callback: () => void, delay: number | null) => {
 
 type Piece = { x: number; y: number; shape: number[][]; color: number };
 
-const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
+export const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
     const holdCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -88,6 +88,20 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
         });
     };
 
+    const isValidMove = (piece: { x: number, y: number, shape: number[][] }) => {
+        return piece.shape.every((row, dy) => {
+            return row.every((value, dx) => {
+                if (value === 0) return true;
+                const newX = piece.x + dx;
+                const newY = piece.y + dy;
+                return (
+                    newX >= 0 && newX < COLS && newY < ROWS &&
+                    (boardRef.current[newY] && boardRef.current[newY][newX] === 0)
+                );
+            });
+        });
+    };
+
     const draw = useCallback(() => {
         const ctx = canvasRef.current?.getContext('2d');
         if (!ctx) return;
@@ -125,21 +139,7 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
             ctx.fillRect(p.x, p.y, 3, 3);
         });
 
-    }, []);
-    
-    const isValidMove = (piece: { x: number, y: number, shape: number[][] }) => {
-        return piece.shape.every((row, dy) => {
-            return row.every((value, dx) => {
-                if (value === 0) return true;
-                const newX = piece.x + dx;
-                const newY = piece.y + dy;
-                return (
-                    newX >= 0 && newX < COLS && newY < ROWS &&
-                    (boardRef.current[newY] && boardRef.current[newY][newX] === 0)
-                );
-            });
-        });
-    };
+    }, [isValidMove]);
     
     const mergeToBoard = () => {
         if (!pieceRef.current) return;
@@ -191,7 +191,7 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
             setGameState('game-over');
             submitScore('minigame-tetris', score);
         }
-    }, [generatePiece, score, submitScore]);
+    }, [generatePiece, score, submitScore, isValidMove]);
     
     const moveDown = useCallback(() => {
         if (!pieceRef.current) return;
@@ -204,7 +204,7 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
             spawnNewPiece();
         }
         draw();
-    }, [draw, spawnNewPiece]);
+    }, [draw, spawnNewPiece, isValidMove]);
     
     const gameSpeed = useMemo(() => Math.max(100, 1000 - level * 50), [level]);
     useGameLoop(moveDown, gameState === 'playing' ? gameSpeed : null);
@@ -303,7 +303,7 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [gameState, moveDown, resetGame]);
+    }, [gameState, moveDown, resetGame, draw, handleHold, hardDrop, rotate]);
 
     useEffect(() => setLevel(Math.floor(lines / 10)), [lines]);
     
@@ -330,76 +330,68 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
     // Draw side panels
     useEffect(() => {
         const drawSidePanel = (canvas: HTMLCanvasElement | null, piece: Piece | null) => {
-            if (!canvas || !piece) return;
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            ctx.clearRect(0, 0, NEXT_BOX_SIZE, NEXT_BOX_SIZE);
-            const centeredPiece = {
-                ...piece,
-                x: piece.shape.length === 2 ? 1 : 0.5,
-                y: piece.shape.length === 2 ? 1 : 0.5,
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0c0a09';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (piece) {
+                const shape = piece.shape;
+                const size = NEXT_BOX_SIZE / 4;
+                const x = (4 - shape[0].length) / 2;
+                const y = (4 - shape.length) / 2;
+                drawPiece(ctx, { ...piece, x, y }, 0, 0, size);
             }
-            drawPiece(ctx, centeredPiece, 0, 0, BLOCK_SIZE);
-        }
+        };
         drawSidePanel(nextCanvasRef.current, nextPieceRef.current);
         drawSidePanel(holdCanvasRef.current, holdPieceRef.current);
-    }, [nextPieceRef.current, holdPieceRef.current]);
+    }, [nextPieceRef.current, holdPieceRef.current, drawPiece]);
 
     return (
-        <div className="w-full h-full p-6 flex flex-col md:flex-row items-center justify-center gap-8">
-            <div className="order-2 md:order-1 relative">
-                <canvas ref={canvasRef} width={GAME_WIDTH} height={GAME_HEIGHT} className="bg-stone-900 border-2 border-emerald-500 rounded-lg"/>
+        <div className="w-full h-full flex flex-col md:flex-row items-center justify-center p-4 gap-8">
+            <div className="flex md:flex-col gap-4 order-2 md:order-1">
+                 <div className="text-white text-center">
+                    <h3 className="font-bold text-lg">HOLD (C)</h3>
+                    <canvas ref={holdCanvasRef} width={NEXT_BOX_SIZE} height={NEXT_BOX_SIZE} className="bg-black border-2 border-stone-600 rounded-lg mt-1"/>
+                </div>
+                 <div className="text-white text-center">
+                    <h3 className="font-bold text-lg">NEXT</h3>
+                    <canvas ref={nextCanvasRef} width={NEXT_BOX_SIZE} height={NEXT_BOX_SIZE} className="bg-black border-2 border-stone-600 rounded-lg mt-1"/>
+                </div>
+            </div>
+            <div className="relative order-1 md:order-2" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}>
+                <canvas ref={canvasRef} width={GAME_WIDTH} height={GAME_HEIGHT} className="bg-black border-2 border-emerald-500 rounded-lg w-full h-full" />
                 {gameState !== 'playing' && (
-                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white text-center">
-                        {gameState === 'pre-game' && <>
-                            <h2 className="text-4xl font-bold font-medieval text-emerald-400">Tetris</h2>
-                            <Button onClick={resetGame} className="mt-6">Start Game</Button>
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white text-center">
+                        {gameState === 'pre-game' && <Button onClick={resetGame}>Start Game</Button>}
+                        {gameState === 'game-over' && <>
+                           <h2 className="text-4xl font-bold font-medieval text-red-500">Game Over</h2>
+                           <p className="text-xl mt-2">Final Score: {score}</p>
+                           <Button onClick={resetGame} className="mt-6">Play Again</Button>
                         </>}
-                         {gameState === 'game-over' && <>
-                            <h2 className="text-4xl font-bold font-medieval text-red-500">Game Over</h2>
-                            <p className="text-xl mt-2">Final Score: {score}</p>
-                            <Button onClick={resetGame} className="mt-6">Play Again</Button>
-                         </>}
                     </div>
                 )}
             </div>
-            <div className="order-1 md:order-2 flex flex-row md:flex-col items-center gap-8">
-                <div className="flex gap-4">
-                    <div className="text-white text-center p-4 bg-stone-800/50 rounded-lg">
-                        <h3 className="font-bold text-lg text-stone-300">HOLD (C)</h3>
-                        <canvas ref={holdCanvasRef} width={NEXT_BOX_SIZE} height={NEXT_BOX_SIZE} className="mt-2 bg-stone-900/50 rounded" />
-                    </div>
-                    <div className="text-white text-center p-4 bg-stone-800/50 rounded-lg">
-                        <h3 className="font-bold text-lg text-stone-300">NEXT</h3>
-                        <canvas ref={nextCanvasRef} width={NEXT_BOX_SIZE} height={NEXT_BOX_SIZE} className="mt-2 bg-stone-900/50 rounded" />
-                    </div>
-                </div>
-                 <div className="text-white text-lg font-semibold space-y-2 p-4 bg-stone-800/50 rounded-lg w-full max-w-[230px]">
-                    <p>Score: <span className="font-bold text-amber-300">{score}</span></p>
-                    <p>Lines: <span className="font-bold text-sky-300">{lines}</span></p>
-                    <p>Level: <span className="font-bold text-emerald-300">{level}</span></p>
-                </div>
-                <div className="flex flex-col items-center gap-4">
-                    <ToggleSwitch enabled={isTabletMode} setEnabled={setIsTabletMode} label="Tablet Mode" />
-                    <Button variant="secondary" onClick={onClose}>Exit Game</Button>
-                </div>
+            <div className="flex md:flex-col gap-4 text-white text-lg font-bold order-3">
+                <div className="bg-stone-800 p-3 rounded-lg text-center">SCORE<br/>{score}</div>
+                <div className="bg-stone-800 p-3 rounded-lg text-center">LINES<br/>{lines}</div>
+                <div className="bg-stone-800 p-3 rounded-lg text-center">LEVEL<br/>{level}</div>
+                <Button variant="secondary" onClick={onClose} className="mt-4">Exit</Button>
             </div>
-            {isTabletMode && (
-                 <>
-                    <div className="fixed bottom-10 left-10 flex flex-col gap-4">
-                        <Button onClick={() => moveHorizontal(-1)} className="w-20 h-20 rounded-full"><ArrowLeft size={40}/></Button>
-                        <Button onClick={() => moveHorizontal(1)} className="w-20 h-20 rounded-full"><ArrowRight size={40}/></Button>
-                        <Button onClick={moveDown} className="w-20 h-20 rounded-full"><ArrowDown size={40}/></Button>
+             {isTabletMode && (
+                <div className="fixed bottom-10 left-10 right-10 flex justify-between items-end md:hidden">
+                    <div className="flex flex-col gap-2">
+                        <Button className="w-16 h-16" onTouchStart={() => moveHorizontal(-1)}><ArrowLeft /></Button>
+                        <Button className="w-16 h-16" onTouchStart={() => moveHorizontal(1)}><ArrowRight /></Button>
                     </div>
-                    <div className="fixed bottom-10 right-10 flex flex-col gap-4">
-                         <Button onClick={rotate} className="w-24 h-24 rounded-full"><RotateCcw size={50}/></Button>
-                         <Button onClick={hardDrop} className="w-24 h-24 rounded-full"><ChevronsDown size={50}/></Button>
-                         <Button onClick={handleHold} className="w-24 h-24 rounded-full font-bold text-2xl">HOLD</Button>
+                     <Button className="w-20 h-20" onTouchStart={hardDrop}><ChevronsDown /></Button>
+                    <div className="flex flex-col gap-2">
+                        <Button className="w-16 h-16" onTouchStart={rotate}><RotateCcw /></Button>
+                        <Button className="w-16 h-16" onTouchStart={moveDown}><ArrowDown /></Button>
                     </div>
-                 </>
+                </div>
             )}
         </div>
     );
 };
-
-export default TetrisGame;

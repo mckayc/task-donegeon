@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -20,7 +16,6 @@ import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Reorder, useDragControls } from 'framer-motion';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import DashboardCustomizationDialog from '../dashboard/DashboardCustomizationDialog';
-// FIX: Moved isQuestAvailableForUser to its correct import from quests utils.
 import { getQuestLockStatus, ConditionDependencies } from '../../utils/conditions';
 import { isQuestAvailableForUser } from '../../utils/quests';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
@@ -54,13 +49,11 @@ interface GoalCardProps {
 }
 
 const ProgressBar: React.FC<{ progress: GoalProgress }> = ({ progress }) => {
-    // FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'.
     const percentage = Math.min(100, (progress.current / progress.amount) * 100);
     return (
         <div>
             <div className="flex justify-between items-center text-xs mb-1">
                 <span className="font-semibold text-stone-300 flex items-center gap-1">{progress.icon} {progress.name}</span>
-                {/* FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'. */}
                 <span className="font-mono">{progress.current} / {progress.amount}</span>
             </div>
             <div className="w-full bg-stone-700 rounded-full h-2.5">
@@ -157,7 +150,7 @@ const Dashboard: React.FC = () => {
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { activePageMeta, appMode, readingQuest, readingPdfQuest } = useUIState();
+    const { activePageMeta, appMode, readingQuest, readingPdfQuest, readingEpubQuest } = useUIState();
     const { quests } = useQuestsState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
 
@@ -166,7 +159,6 @@ const Dashboard: React.FC = () => {
         return quests.find(q => q.id === selectedQuestId);
     }, [selectedQuestId, quests]);
 
-    // Dependencies for condition checking
     const progressionState = useProgressionState();
     const economyState = useEconomyState();
     const communityState = useCommunityState();
@@ -212,16 +204,13 @@ const Dashboard: React.FC = () => {
     
         const allCardIds = new Set(Object.keys(allCardComponents));
         
-        // Create a deep copy to avoid mutation issues
         const newLayout: DashboardLayout = JSON.parse(JSON.stringify(userLayout));
 
-        // Ensure all structural properties exist
         newLayout.columns = newLayout.columns || { main: { order: [], collapsed: [] }, side: { order: [], collapsed: [] } };
         newLayout.columns.main = newLayout.columns.main || { order: [], collapsed: [] };
         newLayout.columns.side = newLayout.columns.side || { order: [], collapsed: [] };
         newLayout.hidden = newLayout.hidden || [];
 
-        // Filter out any stale card IDs that no longer exist
         newLayout.columns.main.order = newLayout.columns.main.order.filter(id => allCardIds.has(id));
         newLayout.columns.side.order = newLayout.columns.side.order.filter(id => allCardIds.has(id));
         newLayout.hidden = newLayout.hidden.filter(id => allCardIds.has(id));
@@ -231,7 +220,6 @@ const Dashboard: React.FC = () => {
             ...newLayout.columns.side.order
         ]);
         
-        // Add any new cards from `allCardComponents` that aren't in the user's layout yet
         allCardIds.forEach(id => {
             if (!handledCardIds.has(id)) {
                 if (defaultLayout.columns.main.order.includes(id)) {
@@ -259,11 +247,11 @@ const Dashboard: React.FC = () => {
         if (pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) {
             inactive.push('pendingApprovals');
         }
-        if (!readingQuest && !readingPdfQuest) {
+        if (!readingQuest && !readingPdfQuest && !readingEpubQuest) {
             inactive.push('readingActivity');
         }
         return inactive;
-    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest]);
+    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest, readingEpubQuest]);
 
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {
@@ -289,10 +277,8 @@ const Dashboard: React.FC = () => {
         const fullOrder = newLayout.columns[column].order;
         const visibleCardsInColumn = fullOrder.filter((id: string) => !newLayout.hidden.includes(id));
     
-        // Create a copy to consume
         const newOrderCopy = [...newVisibleOrder];
         
-        // Reconstruct the full order array by replacing visible items with their new order
         const newFullOrder = fullOrder.map((cardId: string) => {
             if (visibleCardsInColumn.includes(cardId)) {
                 return newOrderCopy.shift()!;
@@ -380,7 +366,7 @@ const Dashboard: React.FC = () => {
             case 'inventory': cardProps.userCurrencies = userCurrencies; cardProps.userExperience = userExperience; cardProps.terminology = terminology; break;
             case 'leaderboard': cardProps.leaderboard = leaderboard; break;
             case 'pendingApprovals': cardProps.pendingData = pendingApprovals; cardProps.onQuestSelect = handleQuestSelect; break;
-            case 'readingActivity': break; // No extra props needed
+            case 'readingActivity': break;
         }
 
         return <CardComponent {...cardProps} />;

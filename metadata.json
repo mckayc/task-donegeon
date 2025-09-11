@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.6.01 - Re-implementation of ePub reader",
-  "version": "0.6.0",
-  "description": "Major feature release that re-introduces a robust, custom-built EPUB reader with full chapter support, theming, and offline caching.",
+  "name": "Task Donegeon 2.0 - 0.7.0 - EPUB Reader Implementation",
+  "version": "0.7.0",
+  "description": "Fixes a critical build error by implementing the EpubReaderPanel component. This major feature release introduces a robust, custom-built EPUB reader with full chapter support, theming, and offline caching.",
   "requestFramePermissions": [
     "camera"
   ],

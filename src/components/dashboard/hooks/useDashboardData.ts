@@ -1,3 +1,5 @@
+
+
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -269,6 +271,7 @@ export const useDashboardData = () => {
     }, [currentUser.id, totalEarnedStatsByUser, rewardTypes]);
 
     const leaderboard = useMemo(() => {
+        // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
         return users.map(user => {
             const userStats = totalEarnedStatsByUser.get(user.id);
             const totalEarnedXp = userStats ? userStats.totalEarnedXp : 0;

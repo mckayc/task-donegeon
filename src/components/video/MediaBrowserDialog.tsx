@@ -171,7 +171,6 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
         setCurrentPath(newPath);
     };
 
-    // --- Drag and Drop Handlers ---
     const handleDragStart = (e: React.DragEvent, name: string, type: 'folder' | 'file') => {
         e.dataTransfer.setData('application/json', JSON.stringify({ name, type, sourcePath: currentPath }));
         e.dataTransfer.effectAllowed = 'move';
@@ -229,7 +228,6 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
             addNotification({ type: 'error', message });
         }
     };
-
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70] p-4" onClick={onClose}>
@@ -326,9 +324,9 @@ const MediaBrowserDialog: React.FC<MediaBrowserDialogProps> = ({ onSelect, onClo
                             ))}
                             {filteredFiles.map((file) => {
                                 const fullPath = (`/media` + currentPath + (currentPath.endsWith('/') ? '' : '/') + file).replace(/\/+/g, '/');
-                                const isEpub = file.toLowerCase().endsWith('.epub');
-                                const Icon = isEpub ? BookOpen : Video;
-                                const iconColor = isEpub ? 'text-purple-400' : 'text-sky-400';
+                                const isEpubOrPdf = file.toLowerCase().endsWith('.epub') || file.toLowerCase().endsWith('.pdf');
+                                const Icon = isEpubOrPdf ? BookOpen : Video;
+                                const iconColor = isEpubOrPdf ? 'text-purple-400' : 'text-sky-400';
                                 return (
                                 <button 
                                     key={file} 

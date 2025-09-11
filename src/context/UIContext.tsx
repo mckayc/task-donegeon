@@ -38,7 +38,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activePage, _setActivePage] = useState<Page>('Dashboard');
   const [activePageMeta, setActivePageMeta] = useState<any>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
-    // Default to collapsed on mobile, respect storage on desktop
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       return true;
     }

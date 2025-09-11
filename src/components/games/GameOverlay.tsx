@@ -7,7 +7,8 @@ import RuneBreakerGame from './RuneBreakerGame';
 import DungeonDashGame from './DungeonDashGame';
 import { ForgeMasterGame } from './ForgeMasterGame';
 import ArchersFollyGame from './ArchersFollyGame';
-import TetrisGame from './TetrisGame';
+// FIX: Correct the import for TetrisGame to use a named import.
+import { TetrisGame } from './TetrisGame';
 import GemstoneMinesGame from './GemstoneMinesGame';
 import LabyrinthGame from './LabyrinthGame';
 import AlchemistsTrialGame from './AlchemistsTrialGame';

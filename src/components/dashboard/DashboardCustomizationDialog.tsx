@@ -1,4 +1,6 @@
 
+
+// FIX: Added `useMemo` to React import.
 import React, { useState, useCallback, useMemo } from 'react';
 import { DashboardLayout } from '../../types';
 import Button from '../user-interface/Button';

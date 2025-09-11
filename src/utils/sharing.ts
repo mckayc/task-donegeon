@@ -90,9 +90,10 @@ export const generateAssetPack = (
     // Add selected users, filtering out runtime/personal data to create a template
     assetPack.assets.users = allAssets.users
         .filter(u => selectedAssets.users.includes(u.id))
+        // FIX: Removed `profilePictureUrl` from destructuring to ensure it's included in the exported template, and added `wishlistAssetIds` to ensure it's excluded, aligning with the UserTemplate type.
         .map(({ 
-            personalPurse, personalExperience, guildBalances, profilePictureUrl, 
-            ownedAssetIds, ownedThemes, hasBeenOnboarded, ...userTemplate 
+            personalPurse, personalExperience, guildBalances, 
+            ownedAssetIds, ownedThemes, hasBeenOnboarded, wishlistAssetIds, ...userTemplate 
         }) => userTemplate);
         
     // Add filtered chronicles based on selected user IDs

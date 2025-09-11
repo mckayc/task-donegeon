@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // @ts-ignore - react-reader doesn't have great TS support for module imports via CDN
 import { ReactReader } from 'react-reader';
@@ -169,6 +170,9 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         setBookmarks(prev => prev.filter(b => b.cfi !== cfi));
     }, []);
     
+    // FIX: Cast the component to `any` to bypass incorrect type definitions in the forked library.
+    const ReaderWithAnyProps = ReactReader as any;
+
     return (
         <div className="fixed inset-0 bg-stone-900 z-[80] flex flex-col">
             <div className="absolute top-0 right-0 z-[1001] p-2">
@@ -190,9 +194,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 )}
                 {error && <div className="absolute inset-0 flex items-center justify-center text-red-400 text-xl p-4 text-center">{error}</div>}
                 {!isLoading && !error && epubData && (
-                    // FIX: The type definitions for this library fork are incorrect. These props exist at runtime.
-                    // @ts-ignore: The type definitions for this library fork are incorrect. These props exist at runtime.
-                    <ReactReader
+                    <ReaderWithAnyProps
                         url={epubData}
                         title={quest.title}
                         location={location as string | number}

@@ -16,6 +16,12 @@ interface EpubReaderPanelProps {
   quest: Quest;
 }
 
+interface LogEntry {
+  message: string;
+  status: 'progress' | 'success' | 'error';
+  details?: string;
+}
+
 const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -41,7 +47,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const renditionRef = useRef<Rendition | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
-    const [loadingMessage, setLoadingMessage] = useState('Initializing Reader...');
+    const [logs, setLogs] = useState<LogEntry[]>([]);
     const [error, setError] = useState<string | null>(null);
     
     const [locations, setLocations] = useState<any[]>([]);
@@ -124,46 +130,62 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const viewerElement = viewerRef.current;
         let book: Book;
 
+        const addLog = (message: string, status: LogEntry['status'], details?: any) => {
+            const detailString = details ? (typeof details === 'string' ? details : JSON.stringify(details, null, 2)) : undefined;
+            setLogs(prev => [...prev, { message, status, details: detailString }]);
+        };
+
         const initializeReader = async () => {
-            setIsLoading(true);
-            setError(null);
             try {
-                setLoadingMessage('Opening eBook...');
-                // Use the server proxy to fetch the ePub, avoiding CORS issues.
+                addLog('Initializing Reader...', 'progress');
                 const proxyUrl = `/api/proxy/epub?url=${encodeURIComponent(quest.epubUrl!)}`;
+                addLog('Fetching eBook from server proxy...', 'progress', `URL: ${quest.epubUrl}`);
+                
                 book = epub(proxyUrl);
                 bookRef.current = book;
+                addLog('eBook object created.', 'success');
 
-                setLoadingMessage('Preparing pages...');
+                addLog('Attaching to viewer...', 'progress');
                 const rendition = book.renderTo(viewerElement, {
                     width: '100%', height: '100%', spread: 'auto', allowScriptedContent: true
                 });
                 renditionRef.current = rendition;
-
+                addLog('Attached to viewer successfully.', 'success');
+                
                 rendition.themes.register('light', { body: { color: '#333', 'background-color': '#fafafa' } });
                 rendition.themes.register('dark', { body: { color: '#fafafa', 'background-color': '#1c1917' } });
                 rendition.themes.select(theme);
                 rendition.themes.fontSize(`${fontSize}%`);
-
+                
                 rendition.on('relocated', (location: any) => setCurrentLocation(location));
                 
+                addLog('Waiting for book to be ready...', 'progress');
                 await book.ready;
-                setLoadingMessage('Generating table of contents...');
-                if (book.navigation.toc) setToc(book.navigation.toc);
+                addLog('Book is ready.', 'success');
                 
-                setLoadingMessage('Calculating page locations...');
-                setLocations(await book.locations.generate(1024));
+                addLog('Generating table of contents...', 'progress');
+                if (book.navigation.toc) setToc(book.navigation.toc);
+                addLog('Table of contents generated.', 'success');
+                
+                addLog('Generating page locations (this might take a moment)...', 'progress');
+                const generatedLocations = await book.locations.generate(1024);
+                setLocations(generatedLocations);
+                addLog(`Generated ${generatedLocations.length} locations.`, 'success');
                 
                 const initialLocation = userProgress?.locationCfi || undefined;
+                addLog(initialLocation ? `Displaying from saved location...` : `Displaying from start...`, 'progress');
                 await rendition.display(initialLocation);
+                addLog('eBook displayed successfully!', 'success');
+                
+                setIsLoading(false);
 
             } catch (err) {
                 console.error("ePub reader error:", err);
                 const message = err instanceof Error ? err.message : "An unknown error occurred.";
-                setError(`Could not load eBook. The file may be invalid or the source server is preventing access.`);
+                const finalError = `Could not load eBook. The file may be invalid, the source URL might be incorrect, or the server proxy failed.`;
+                setError(finalError);
+                addLog('A fatal error occurred.', 'error', `Details: ${message}`);
                 addNotification({ type: 'error', message: `Could not open eBook. It may be corrupted or in an unsupported format.`});
-            } finally {
-                setIsLoading(false);
             }
         };
         
@@ -273,12 +295,32 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             <main className={`absolute inset-0 transition-all duration-300 ${!isImmersiveMode ? 'pt-14 pb-20' : 'pt-0 pb-0'}`} onClick={() => {setIsTocOpen(false); setIsSettingsOpen(false); setIsBookmarksOpen(false);}}>
                 <div ref={viewerRef} className="w-full h-full" id="epub-viewer"/>
                 {isLoading && (
-                    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-stone-900/90">
+                    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-stone-900/95 p-8">
                         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
-                        <p className="text-xl font-semibold text-white">{loadingMessage}</p>
+                        <p className="text-2xl font-medieval text-emerald-300 mt-4">Preparing your eBook...</p>
+                        <div className="mt-4 w-full max-w-2xl bg-black/30 p-4 rounded-lg h-64 overflow-y-auto font-mono text-xs scrollbar-hide">
+                            {logs.map((log, index) => (
+                                <div key={index} className={`flex items-start gap-2 py-0.5 ${log.status === 'error' ? 'text-red-400' : log.status === 'success' ? 'text-green-400' : 'text-stone-400'}`}>
+                                    <span className="flex-shrink-0 font-bold">
+                                        {log.status === 'progress' && '>>'}
+                                        {log.status === 'success' && '✓'}
+                                        {log.status === 'error' && '✗'}
+                                    </span>
+                                    <div className="flex-grow">
+                                        <p>{log.message}</p>
+                                        {log.details && <p className="opacity-60 whitespace-pre-wrap">{log.details}</p>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                         {error && (
+                            <div className="mt-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 w-full max-w-2xl">
+                                <h4 className="font-bold">A critical error occurred:</h4>
+                                <p>{error}</p>
+                            </div>
+                        )}
                     </div>
                 )}
-                {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl text-center p-8">{error}</div>}
                 <Button variant="ghost" onClick={() => navigate('prev')} className="absolute left-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-start p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronLeftIcon className="w-12 h-12"/></Button>
                 <Button variant="ghost" onClick={() => navigate('next')} className="absolute right-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-end p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronRightIcon className="w-12 h-12"/></Button>
             </main>

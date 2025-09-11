@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // @ts-ignore
 import epub, { Book, Rendition, NavItem } from 'epubjs';
@@ -125,11 +126,12 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         const initializeReader = async () => {
             setIsLoading(true);
+            setError(null);
             try {
                 setLoadingMessage('Opening eBook...');
-                // Pass the URL directly to epubjs. This is more robust against CORS issues
-                // than manually fetching the arrayBuffer.
-                book = epub(quest.epubUrl!);
+                // Use the server proxy to fetch the ePub, avoiding CORS issues.
+                const proxyUrl = `/api/proxy/epub?url=${encodeURIComponent(quest.epubUrl!)}`;
+                book = epub(proxyUrl);
                 bookRef.current = book;
 
                 setLoadingMessage('Preparing pages...');
@@ -158,7 +160,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             } catch (err) {
                 console.error("ePub reader error:", err);
                 const message = err instanceof Error ? err.message : "An unknown error occurred.";
-                setError(`Could not load eBook: ${message}`);
+                setError(`Could not load eBook. The file may be invalid or the source server is preventing access.`);
                 addNotification({ type: 'error', message: `Could not open eBook. It may be corrupted or in an unsupported format.`});
             } finally {
                 setIsLoading(false);
@@ -276,7 +278,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         <p className="text-xl font-semibold text-white">{loadingMessage}</p>
                     </div>
                 )}
-                {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl">{error}</div>}
+                {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl text-center p-8">{error}</div>}
                 <Button variant="ghost" onClick={() => navigate('prev')} className="absolute left-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-start p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronLeftIcon className="w-12 h-12"/></Button>
                 <Button variant="ghost" onClick={() => navigate('next')} className="absolute right-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-end p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronRightIcon className="w-12 h-12"/></Button>
             </main>

@@ -177,6 +177,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
         const initializeReader = async () => {
             try {
+                setLoadingMessage('Checking local cache...');
                 let bookData = await getCachedBook(quest.epubUrl!);
                 if (!bookData) {
                     bookData = await cacheBook(quest.epubUrl!);
@@ -207,6 +208,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 setLocations(await book.locations.generate(1024));
                 
                 const initialLocation = userProgress?.locationCfi || undefined;
+                setLoadingMessage('Rendering page...');
                 await rendition.display(initialLocation);
 
                 setIsLoading(false);

@@ -1,3 +1,4 @@
+
 // Changed import from '../items/types' to '../users/types' to break circular dependency.
 import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -52,11 +53,10 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
+// FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
 export interface Bookmark {
   label: string;
-  cfi?: string;
-  epubChapter?: string;
-  epubScroll?: number;
+  cfi: string;
   createdAt: string;
 }
 
@@ -107,12 +107,11 @@ export interface Quest {
   groupIds?: string[];
   requiresApproval: boolean;
   claimedByUserIds: string[];
-  // FIX: Changed dismissals to be an array of objects to match usage and plural name.
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; epubChapter?: string; epubScroll?: number; } };
+  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
   createdAt?: string;
   updatedAt?: string;
 }

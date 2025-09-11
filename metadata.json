@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.03 - Addition of ePub",
-  "version": "0.5.03",
-  "description": "Adds a server-side rendered ePub reader for quests.",
+  "name": "Task Donegeon 2.0 - 0.6.01 - Re-implementation of ePub reader",
+  "version": "0.6.0",
+  "description": "Major feature release that re-introduces a robust, custom-built EPUB reader with full chapter support, theming, and offline caching.",
   "requestFramePermissions": [
     "camera"
   ],

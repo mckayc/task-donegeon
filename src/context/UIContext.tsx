@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { AppMode, Page, Quest } from '../types';
 import { bugLogger } from '../utils/bugLogger';

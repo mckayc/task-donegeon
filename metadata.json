@@ -1,7 +1,8 @@
+
 {
-  "name": "Task Donegeon 2.0 - 0.6.0 - EPUB Reader Try again",
-  "version": "0.6.0",
-  "description": "Implemented a feature-rich EPUB reader using Readk.it for interactive reading quests.",
+  "name": "Task Donegeon 2.0 - 0.6.1 - EPUB Type Declarations",
+  "version": "0.6.1",
+  "description": "Fixed a build error by adding TypeScript type declarations for the EPUB reader libraries (readk-it and jszip).",
   "requestFramePermissions": [
     "camera"
   ],

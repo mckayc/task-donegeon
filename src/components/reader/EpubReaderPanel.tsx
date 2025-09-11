@@ -45,7 +45,7 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [loadingMessage, setLoadingMessage] = useState('Initializing Reader...');
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<{ userMessage: string; technicalMessage: string } | null>(null);
     
     const [locations, setLocations] = useState<any[]>([]);
     const [toc, setToc] = useState<NavItem[]>([]);
@@ -213,9 +213,9 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
             } catch (err) {
                 console.error("ePub reader error:", err);
-                const message = err instanceof Error ? err.message : "An unknown error occurred.";
-                setError(`Could not load eBook: ${message}`);
-                addNotification({ type: 'error', message: `Could not open eBook. It may be corrupted or in an unsupported format.`});
+                const technicalMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+                const userMessage = "This eBook could not be opened. It might be corrupted, use an unsupported format, or contain complex features the reader can't handle.";
+                setError({ userMessage, technicalMessage });
                 setIsLoading(false);
             }
         };
@@ -336,7 +336,24 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         )}
                     </div>
                 )}
-                {error && <div className="absolute inset-0 z-40 flex items-center justify-center text-red-400 text-xl">{error}</div>}
+                {error && (
+                    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center p-8 text-center bg-stone-900/90">
+                        <XCircleIcon className="w-16 h-16 text-red-500 mb-4" />
+                        <h3 className="text-2xl font-bold text-red-400 mb-2">Error Loading eBook</h3>
+                        <p className="text-stone-300 max-w-md">{error.userMessage}</p>
+                        <p className="text-stone-400 text-sm mt-4">For the best compatibility, we recommend validating your ePub file with a tool like the
+                            <a href="https://www.w3.org/publishing/epubcheck/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline ml-1">
+                                official EPUBCheck validator
+                            </a>.
+                        </p>
+                        <details className="mt-4 text-left w-full max-w-md bg-stone-800/50 p-3 rounded-lg">
+                            <summary className="cursor-pointer text-stone-400 text-sm">Technical Details</summary>
+                            <pre className="mt-2 text-xs text-red-300 whitespace-pre-wrap font-mono">
+                                {error.technicalMessage}
+                            </pre>
+                        </details>
+                    </div>
+                )}
                 <Button variant="ghost" onClick={() => navigate('prev')} className="absolute left-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-start p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronLeftIcon className="w-12 h-12"/></Button>
                 <Button variant="ghost" onClick={() => navigate('next')} className="absolute right-0 top-0 bottom-0 w-1/5 z-10 flex items-center justify-end p-4 text-white/20 hover:text-white/80 transition-colors"><ChevronRightIcon className="w-12 h-12"/></Button>
             </main>

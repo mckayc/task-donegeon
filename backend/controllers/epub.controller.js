@@ -1,5 +1,5 @@
 
-const Epub = require("epub").Epub;
+const Epub = require("epub");
 const path = require('path');
 const fs = require('fs').promises;
 const createDOMPurify = require('dompurify');

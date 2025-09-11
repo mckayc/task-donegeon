@@ -123,7 +123,6 @@ const TradeOfferPanel: React.FC<{
 const TradeDialog: React.FC<TradeDialogProps> = ({ tradeOffer, onClose }) => {
     const { users } = useAuthState();
     const { currentUser } = useAuthState();
-    // FIX: Add acceptTrade to destructuring
     const { updateTradeOffer, acceptTrade, cancelOrRejectTrade } = useEconomyDispatch();
     
     if (!currentUser || !tradeOffer) return null;

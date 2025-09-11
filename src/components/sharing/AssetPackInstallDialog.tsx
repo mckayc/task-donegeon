@@ -180,8 +180,8 @@ export const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ 
                                                     <p className="text-xs text-stone-500 capitalize">{settings.terminology[terminologyMap[res.type]] || res.type}</p>
                                                 </div>
                                                 <div className="md:col-span-2 flex items-center gap-2 flex-wrap">
-                                                    <Button variant={res.resolution === 'skip' ? 'primary' : 'secondary'} size="sm" onClick={() => handleResolutionChange(res.id, res.type, 'skip')} className="!text-xs">Skip</Button>
-                                                    <Button variant={res.resolution === 'rename' ? 'primary' : 'secondary'} size="sm" onClick={() => handleResolutionChange(res.id, res.type, 'rename')} className="!text-xs">Rename</Button>
+                                                    <Button variant={res.resolution === 'skip' ? 'default' : 'secondary'} size="sm" onClick={() => handleResolutionChange(res.id, res.type, 'skip')} className="!text-xs">Skip</Button>
+                                                    <Button variant={res.resolution === 'rename' ? 'default' : 'secondary'} size="sm" onClick={() => handleResolutionChange(res.id, res.type, 'rename')} className="!text-xs">Rename</Button>
                                                     {res.resolution === 'rename' && (
                                                         <Input 
                                                             value={res.newName || ''} 

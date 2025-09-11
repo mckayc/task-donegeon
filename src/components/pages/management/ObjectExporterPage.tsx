@@ -8,7 +8,6 @@ import { useAuthState } from '../../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-// FIX: Changed to named import for AssetPackInstallDialog
 import { AssetPackInstallDialog } from '../../sharing/AssetPackInstallDialog';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useEconomyState } from '../../../context/EconomyContext';

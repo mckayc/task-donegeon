@@ -30,7 +30,6 @@ export type EconomyAction =
   | { type: 'UPDATE_ECONOMY_DATA', payload: Partial<EconomyState> }
   | { type: 'REMOVE_ECONOMY_DATA', payload: { [key in keyof EconomyState]?: string[] } };
 
-// FIX: Update promise return types to allow for null and other specific types
 export interface EconomyDispatch {
   addMarket: (marketData: Omit<Market, 'id'>) => Promise<Market | null>;
   updateMarket: (marketData: Market) => Promise<Market | null>;
@@ -47,11 +46,10 @@ export interface EconomyDispatch {
   rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void | null>;
   cancelPurchaseRequest: (requestId: string) => Promise<void | null>;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void | null>;
+  // FIX: Corrected the return type for `proposeTrade` from `Promise<void | null>` to `Promise<TradeOffer | null>` to match its implementation and usage, which expects a `TradeOffer` object to be returned.
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void | null>;
-  // FIX: Added acceptTrade to the interface.
   acceptTrade: (tradeId: string) => Promise<void | null>;
-  // FIX: Changed return type from Promise<TradeOffer | null> to Promise<void | null> to match implementation expectation.
   cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<void | null>;
   sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void | null>;
   useItem: (assetId: string) => Promise<void | null>;
@@ -195,12 +193,11 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         acceptTrade: async (id) => {
             const result = await apiAction(() => acceptTradeAPI(id));
             if (result) {
-                if (result.updatedUser) updateUser(result.updatedUser.id, result.updatedUser);
-                if (result.otherUser) updateUser(result.otherUser.id, result.otherUser);
-                if (result.updatedTradeOffer) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [result.updatedTradeOffer] } });
+                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                if ((result as any).otherUser) updateUser((result as any).otherUser.id, (result as any).otherUser);
+                if ((result as any).updatedTradeOffer) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [(result as any).updatedTradeOffer] } });
             }
         },
-        // FIX: Changed implementation to be async and not return a value, matching the updated interface. Also added logic to update state.
         cancelOrRejectTrade: async (id, action) => {
             const updatedTrade = await apiAction(() => cancelOrRejectTradeAPI(id, action));
             if (updatedTrade) {

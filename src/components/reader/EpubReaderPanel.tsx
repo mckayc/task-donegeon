@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // @ts-ignore
 import epub, { Book, Rendition, NavItem } from 'epubjs';
@@ -139,17 +140,9 @@ export const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 addLog('Initializing Reader...', 'progress');
                 
                 const proxiedUrl = `/api/proxy/epub?url=${encodeURIComponent(quest.epubUrl!)}`;
-                
-                addLog('Fetching eBook from server proxy...', 'progress', `URL: ${proxiedUrl}`);
-                const response = await fetch(proxiedUrl);
-                if (!response.ok) {
-                    throw new Error(`Server proxy failed with status ${response.status}`);
-                }
-                const arrayBuffer = await response.arrayBuffer();
-                addLog(`Fetched ${arrayBuffer.byteLength} bytes.`, 'success');
+                addLog('Fetching & Parsing eBook...', 'progress', `URL: ${proxiedUrl}`);
 
-                addLog('Parsing eBook data...', 'progress');
-                book = epub(arrayBuffer);
+                book = epub(proxiedUrl);
                 bookRef.current = book;
                 addLog('eBook object created.', 'success');
 

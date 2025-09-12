@@ -16,6 +16,9 @@ declare module 'react-reader' {
     goTo: (href: string) => Promise<void>;
     themes: {
       override: (name: string, value: string) => void;
+      // FIX: Added missing methods to the themes object type definition.
+      register: (name: string, styles: object) => void;
+      select: (name: string) => void;
     };
   }
 

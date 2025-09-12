@@ -210,8 +210,21 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     tocChanged={handleTocChanged}
                     getRendition={(rendition) => {
                         renditionRef.current = rendition;
-                        rendition.themes.override('color', '#e7e5e4');
-                        rendition.themes.override('background', '#1c1917');
+                        // Define and apply a robust dark theme
+                        rendition.themes.register('dark-theme', {
+                            body: {
+                                background: '#1c1917', // stone-900
+                                color: '#e7e5e4',      // stone-200
+                            },
+                            'p, span, div, li, h1, h2, h3, h4, h5, h6': {
+                                color: '#e7e5e4 !important',
+                            },
+                            'a': {
+                                color: '#7dd3fc !important', // sky-300
+                                'text-decoration': 'underline !important',
+                            }
+                        });
+                        rendition.themes.select('dark-theme');
                     }}
                     epubViewStyles={{
                         view: {
@@ -220,7 +233,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                             }
                         }
                     }}
-                    // FIX: The `react-reader` component expects the `styles` prop, not `readerStyles`, for custom styling.
                     styles={readerStyles}
                     loadingView={
                         <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4">

@@ -47,9 +47,8 @@ export interface EconomyDispatch {
   cancelPurchaseRequest: (requestId: string) => Promise<void | null>;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void | null>;
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
-  updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void | null>;
+  updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<TradeOffer | null>;
   acceptTrade: (tradeId: string) => Promise<void | null>;
-  // FIX: Updated `cancelOrRejectTrade` to return `Promise<TradeOffer | null>` for type consistency.
   cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<TradeOffer | null>;
   sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void | null>;
   useItem: (assetId: string) => Promise<void | null>;
@@ -189,7 +188,13 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (!currentUser) return Promise.resolve(null);
             return apiAction(() => proposeTradeAPI(recipientId, guildId, currentUser.id), 'Trade proposed!');
         },
-        updateTradeOffer: (id, updates) => apiAction(() => updateTradeOfferAPI(id, updates)),
+        updateTradeOffer: async (id, updates) => {
+            const updatedTrade = await apiAction(() => updateTradeOfferAPI(id, updates));
+            if (updatedTrade) {
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [updatedTrade] } });
+            }
+            return updatedTrade;
+        },
         acceptTrade: async (id) => {
             const result = await apiAction(() => acceptTradeAPI(id));
             if (result) {

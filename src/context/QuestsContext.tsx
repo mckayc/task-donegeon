@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -92,7 +93,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
                     if (Array.isArray(itemsToUpdate)) {
                         itemsToUpdate.forEach(newItem => {
                             // Deep merge for quests to handle readingProgress
-                            if (typedKey === 'quests' && existingItems.has(newItem.id)) {
+                            if (typedKey === 'quests' && 'readingProgress' in newItem && newItem.readingProgress && existingItems.has(newItem.id)) {
                                 const existingQuest = existingItems.get(newItem.id);
                                 const mergedQuest = { 
                                     ...existingQuest, 

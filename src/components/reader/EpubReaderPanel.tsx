@@ -14,7 +14,8 @@ import {
     Bookmark as BookmarkIcon,
     Maximize,
     Minimize,
-} from '../user-interface/Icons';
+    Pipette, // Eyedropper icon
+} from 'lucide-react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
@@ -41,7 +42,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const liveQuest = quests.find(q => q.id === quest.id) || quest;
   
   const renditionRef = useRef<any>(null); // react-reader's rendition object
+  const viewRef = useRef<any>(null); // To store the iframe's view object
   const panelRef = useRef<HTMLDivElement>(null);
+  const highlightedElementRef = useRef<HTMLElement | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +60,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const [devLogs, setDevLogs] = useState<string[]>([]);
   const [isRendered, setIsRendered] = useState(false);
   const [isDevPanelCollapsed, setIsDevPanelCollapsed] = useState(true);
-  const [isInspectorOn, setIsInspectorOn] = useState(false);
+  const [isPickingElement, setIsPickingElement] = useState(false);
 
   const logDev = useCallback((message: string) => {
     if (settings.developerMode.enabled) {
@@ -70,16 +73,70 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     logDev(`Initializing reader for URL: ${quest.epubUrl}`);
   }, [quest.epubUrl, logDev]);
   
+  const stopPickingElement = useCallback(() => {
+      if (highlightedElementRef.current) {
+          highlightedElementRef.current.style.outline = '';
+          highlightedElementRef.current = null;
+      }
+      setIsPickingElement(false);
+  }, []);
+
+  // Effect to manage the element picker listeners inside the iframe
   useEffect(() => {
-    if (renditionRef.current) {
-        const outlineStyle = isInspectorOn ? '2px solid red !important' : 'none';
-        logDev(`CSS Inspector ${isInspectorOn ? 'ON' : 'OFF'}. Applying outline: ${outlineStyle}`);
-        // The themes object can be used to inject and override styles.
-        // We register a theme for all elements (*) and override the outline property.
-        renditionRef.current.themes.register('inspector', { '*': { outline: outlineStyle } });
-        renditionRef.current.themes.select('inspector');
+    const doc = viewRef.current?.document;
+    if (!doc || !isPickingElement) {
+        document.body.style.cursor = 'default';
+        return;
     }
-  }, [isInspectorOn, logDev]);
+
+    const highlight = (e: MouseEvent) => {
+        unhighlight();
+        const target = e.target as HTMLElement;
+        target.style.outline = '2px solid red';
+        highlightedElementRef.current = target;
+    };
+
+    const unhighlight = () => {
+        if (highlightedElementRef.current) {
+            highlightedElementRef.current.style.outline = '';
+            highlightedElementRef.current = null;
+        }
+    };
+
+    const inspect = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.target as HTMLElement;
+        
+        const styles = window.getComputedStyle(target);
+        const relevantStyles = {
+            color: styles.color,
+            backgroundColor: styles.backgroundColor,
+            fontSize: styles.fontSize,
+            display: styles.display,
+            visibility: styles.visibility,
+            opacity: styles.opacity,
+            width: styles.width,
+            height: styles.height
+        };
+        logDev(`INSPECTED ELEMENT:\n  - Tag: <${target.tagName.toLowerCase()}>\n  - ID: ${target.id || 'none'}\n  - Classes: ${target.className || 'none'}\n  - Styles: ${JSON.stringify(relevantStyles, null, 2)}`);
+        
+        stopPickingElement();
+    };
+
+    doc.body.addEventListener('mouseover', highlight);
+    doc.body.addEventListener('mouseout', unhighlight);
+    doc.body.addEventListener('click', inspect, { once: true }); // Automatically remove after one click
+    document.body.style.cursor = 'crosshair';
+
+    return () => {
+        doc.body.removeEventListener('mouseover', highlight);
+        doc.body.removeEventListener('mouseout', unhighlight);
+        doc.body.removeEventListener('click', inspect);
+        document.body.style.cursor = 'default';
+        unhighlight();
+    };
+  }, [isPickingElement, logDev, stopPickingElement]);
 
 
   const userProgress = useMemo(() => {
@@ -95,8 +152,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
 
   const closeReader = useCallback(() => {
+    stopPickingElement();
     setReadingEpubQuest(null);
-  }, [setReadingEpubQuest]);
+  }, [setReadingEpubQuest, stopPickingElement]);
 
   const handleLocationChanged = (cfi: string) => {
       setCurrentLocation(cfi);
@@ -112,20 +170,18 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
       logDev(`TOC loaded with ${newToc.length} items.`);
   };
   
-  // Timeout for fallback message
   useEffect(() => {
     const renderTimeout = setTimeout(() => {
         if (!isRendered && !error && isLoading) {
             logDev("Render timeout reached. Book content likely failed to display.");
-            setError("Book content failed to render. Enable CSS Inspector in Dev Tools for more info.");
+            setError("Book content failed to render. Please use the Element Inspector tool to investigate potential CSS issues.");
         }
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => clearTimeout(renderTimeout);
   }, [isRendered, error, isLoading, logDev]);
 
   
-  // Fullscreen handler
   useEffect(() => {
     const onFullscreenChange = () => setIsFullScreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFullscreenChange);
@@ -214,27 +270,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     return null;
   };
 
-  const readerStyles = {
-    ...ReactReaderStyle,
-    arrow: {
-        ...ReactReaderStyle.arrow,
-        color: 'black',
-        opacity: 0.3,
-        ':hover': {
-            ...ReactReaderStyle.arrow[':hover'],
-            opacity: 1,
-            backgroundColor: 'rgba(0,0,0,0.1)',
-        }
-    },
-    tocButton: {
-        ...ReactReaderStyle.tocButton,
-        display: 'none',
-    },
-  };
-  
   return (
     <>
-      <div ref={panelRef} className="fixed inset-0 bg-stone-900 z-[110] flex flex-col items-center justify-center epub-container">
+      <div ref={panelRef} data-bug-reporter-ignore className="fixed inset-0 bg-stone-900 z-[110] flex flex-col items-center justify-center epub-container">
         <header className="w-full p-2 flex justify-between items-center z-20 text-white bg-stone-800/80 flex-shrink-0">
             <h3 className="font-bold text-lg truncate flex-grow pl-2">{quest.title}</h3>
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -257,23 +295,16 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         logDev("Rendition object received.");
                         renditionRef.current = rendition;
                         rendition.on('started', () => logDev('Rendition started.'));
-                        rendition.on('rendered', (section: any) => {
+                        rendition.on('rendered', (section: any, view: any) => {
                             logDev(`Section rendered: ${section.href}`);
                             setIsRendered(true);
+                            viewRef.current = view; // Store the view for the inspector
                         });
                         rendition.on('displayError', (err: any) => {
                              logDev(`Display Error: ${err.message || err}`);
                              setError(`Display Error: ${err.message || 'Unknown render error.'}`);
                         });
                     }}
-                    epubViewStyles={{
-                        view: {
-                            '& > div:first-of-type': {
-                                display: 'none'
-                            }
-                        }
-                    }}
-                    styles={readerStyles}
                     loadingView={
                         <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4">
                             <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
@@ -292,7 +323,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 </div>
             )}
 
-            {/* Side Panel for TOC/Bookmarks */}
             <div className={`absolute top-0 bottom-0 left-0 w-72 bg-stone-800/95 backdrop-blur-sm z-40 transform transition-transform duration-300 ease-in-out overflow-y-auto ${activePanel ? 'translate-x-0' : '-translate-x-full'}`}>
                 <PanelContent />
             </div>
@@ -310,8 +340,14 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
               </div>
               {!isDevPanelCollapsed && (
                   <div className="p-2 border-t border-yellow-500/50 max-w-sm">
-                      <Button size="sm" variant="secondary" onClick={() => setIsInspectorOn(p => !p)} className="mb-2 w-full">
-                        Toggle CSS Inspector [{isInspectorOn ? 'ON' : 'OFF'}]
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        onClick={() => setIsPickingElement(p => !p)} 
+                        className="mb-2 w-full flex items-center gap-2"
+                      >
+                        <Pipette className="w-4 h-4"/>
+                        {isPickingElement ? 'Cancel Inspection' : 'Inspect Element'}
                       </Button>
                       <div className="max-h-60 overflow-y-auto">
                         <p><span className="font-semibold">URL:</span> <span className="text-cyan-400 break-all">{quest.epubUrl}</span></p>

@@ -14,6 +14,8 @@ declare module 'react-reader' {
     next: () => Promise<void>;
     prev: () => Promise<void>;
     goTo: (href: string) => Promise<void>;
+    // FIX: Added the 'on' method to the Rendition interface to support event listeners.
+    on(event: string, listener: (...args: any[]) => void): void;
     themes: {
       override: (name: string, value: string) => void;
       // FIX: Added missing methods to the themes object type definition.

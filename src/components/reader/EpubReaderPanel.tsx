@@ -17,6 +17,7 @@ import {
 } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import Input from '../user-interface/Input';
+import { useSystemState } from '../../context/SystemContext';
 
 // react-reader doesn't export NavItem type, so we define a minimal one.
 interface NavItem {
@@ -35,6 +36,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const { currentUser } = useAuthState();
   const { updateReadingProgress } = useQuestsDispatch();
   const { quests } = useQuestsState();
+  const { settings } = useSystemState();
 
   const liveQuest = quests.find(q => q.id === quest.id) || quest;
   
@@ -50,6 +52,21 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showAddBookmark, setShowAddBookmark] = useState(false);
   const [newBookmarkLabel, setNewBookmarkLabel] = useState('');
+  
+  // Dev Panel State
+  const [devLogs, setDevLogs] = useState<string[]>([]);
+  const [isRendered, setIsRendered] = useState(false);
+
+  const logDev = useCallback((message: string) => {
+    if (settings.developerMode.enabled) {
+        const timestamp = new Date().toLocaleTimeString();
+        setDevLogs(prev => [...prev.slice(-20), `${timestamp}: ${message}`]);
+    }
+  }, [settings.developerMode.enabled]);
+  
+  useEffect(() => {
+    logDev(`Initializing reader for URL: ${quest.epubUrl}`);
+  }, [quest.epubUrl, logDev]);
 
   const userProgress = useMemo(() => {
       if (!currentUser) return null;
@@ -69,6 +86,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
   const handleLocationChanged = (cfi: string) => {
       setCurrentLocation(cfi);
+      logDev(`Location changed to ${cfi}`);
       if (currentUser) {
           updateReadingProgress(quest.id, currentUser.id, { locationCfi: cfi });
       }
@@ -77,7 +95,21 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const handleTocChanged = (newToc: NavItem[]) => {
       setToc(newToc);
       setIsLoading(false);
+      logDev(`TOC loaded with ${newToc.length} items.`);
   };
+  
+  // Timeout for fallback message
+  useEffect(() => {
+    const renderTimeout = setTimeout(() => {
+        if (!isRendered && !error && isLoading) {
+            logDev("Render timeout reached. Book content likely failed to display.");
+            setError("Book content failed to render. Check the file or enable Developer Mode for more info.");
+        }
+    }, 10000); // 10 seconds
+
+    return () => clearTimeout(renderTimeout);
+  }, [isRendered, error, isLoading, logDev]);
+
   
   // Fullscreen handler
   useEffect(() => {
@@ -216,7 +248,17 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     locationChanged={handleLocationChanged}
                     tocChanged={handleTocChanged}
                     getRendition={(rendition) => {
+                        logDev("Rendition object received.");
                         renditionRef.current = rendition;
+                        rendition.on('started', () => logDev('Rendition started.'));
+                        rendition.on('rendered', (section: any) => {
+                            logDev(`Section rendered: ${section.href}`);
+                            setIsRendered(true);
+                        });
+                        rendition.on('displayError', (err: any) => {
+                             logDev(`Display Error: ${err.message || err}`);
+                             setError(`Display Error: ${err.message || 'Unknown render error.'}`);
+                        });
                         // A more aggressive dark theme to override book styles
                         rendition.themes.register('dark-theme', {
                             '*': {
@@ -263,6 +305,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                  <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4 text-center p-8">
                     <p className="text-2xl font-semibold text-red-400">Failed to load EPUB file.</p>
                     <div className="prose prose-sm prose-invert text-stone-300">
+                        <p>{error}</p>
                         <p>This can happen for a few reasons:</p>
                         <ul>
                             <li>The file might be corrupted. Please try opening it in another e-reader application to verify its integrity.</li>
@@ -281,6 +324,18 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
              {activePanel && <div onClick={() => setActivePanel(null)} className="absolute inset-0 bg-black/50 z-30" />}
         </div>
       </div>
+      
+      {settings.developerMode.enabled && (
+          <div className="fixed bottom-4 left-4 z-[95] bg-black/80 text-white p-4 rounded-lg max-w-sm max-h-60 overflow-y-auto font-mono text-xs border border-yellow-500" data-bug-reporter-ignore>
+              <h4 className="font-bold text-yellow-300 mb-2">EPUB Reader Dev Info</h4>
+              <p><span className="font-semibold">URL:</span> <span className="text-cyan-400 break-all">{quest.epubUrl}</span></p>
+              <p><span className="font-semibold">Location:</span> <span className="text-cyan-400">{currentLocation || 'N/A'}</span></p>
+              <hr className="my-2 border-stone-600"/>
+              <h5 className="font-semibold mb-1">Logs:</h5>
+              {devLogs.map((log, i) => <div key={i} className="whitespace-pre-wrap">{log}</div>)}
+          </div>
+      )}
+
       {showAddBookmark && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[90]">
               <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-xl p-6 max-w-sm w-full">

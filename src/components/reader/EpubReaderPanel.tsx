@@ -221,7 +221,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   
   return (
     <>
-      <div ref={panelRef} className="fixed inset-0 bg-stone-900 z-[80] flex flex-col items-center justify-center epub-container">
+      <div ref={panelRef} className="fixed inset-0 bg-stone-900 z-[110] flex flex-col items-center justify-center epub-container">
         <header className="w-full p-2 flex justify-between items-center z-20 text-white bg-stone-800/80 flex-shrink-0">
             <h3 className="font-bold text-lg truncate flex-grow pl-2">{quest.title}</h3>
             <div className="flex items-center gap-1 flex-shrink-0">

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -33,7 +32,7 @@ export type EconomyAction =
 export interface EconomyDispatch {
   addMarket: (marketData: Omit<Market, 'id'>) => Promise<Market | null>;
   updateMarket: (marketData: Market) => Promise<Market | null>;
-  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => Promise<void | null>;
+  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => Promise<void>;
   cloneMarket: (marketId: string) => Promise<Market | null>;
   addRewardType: (rewardTypeData: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<RewardTypeDefinition | null>;
   updateRewardType: (rewardTypeData: RewardTypeDefinition) => Promise<RewardTypeDefinition | null>;
@@ -41,18 +40,18 @@ export interface EconomyDispatch {
   addGameAsset: (assetData: Omit<GameAsset, 'id' | 'creatorId' | 'purchaseCount'>) => Promise<GameAsset | null>;
   updateGameAsset: (assetData: GameAsset) => Promise<GameAsset | null>;
   cloneGameAsset: (assetId: string) => Promise<GameAsset | null>;
-  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void | null>;
-  approvePurchaseRequest: (requestId: string, approverId: string) => Promise<void | null>;
-  rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void | null>;
-  cancelPurchaseRequest: (requestId: string) => Promise<void | null>;
-  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void | null>;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void>;
+  approvePurchaseRequest: (requestId: string, approverId: string) => Promise<void>;
+  rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void>;
+  cancelPurchaseRequest: (requestId: string) => Promise<void>;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
-  updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<TradeOffer | null>;
-  acceptTrade: (tradeId: string) => Promise<void | null>;
-  cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<TradeOffer | null>;
-  sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void | null>;
-  useItem: (assetId: string) => Promise<void | null>;
-  craftItem: (assetId: string) => Promise<void | null>;
+  updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
+  acceptTrade: (tradeId: string) => Promise<void>;
+  cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<void>;
+  sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void>;
+  useItem: (assetId: string) => Promise<void>;
+  craftItem: (assetId: string) => Promise<void>;
 }
 
 const EconomyStateContext = createContext<EconomyState | undefined>(undefined);
@@ -170,10 +169,22 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             return result;
         },
 
-        purchaseMarketItem: (assetId, marketId, user, costGroupIndex) => apiAction(() => purchaseMarketItemAPI(assetId, marketId, user, costGroupIndex)),
-        approvePurchaseRequest: (requestId, approverId) => apiAction(() => approvePurchaseRequestAPI(requestId, approverId)),
-        rejectPurchaseRequest: (requestId, rejecterId) => apiAction(() => rejectPurchaseRequestAPI(requestId, rejecterId)),
-        cancelPurchaseRequest: (requestId) => apiAction(() => cancelPurchaseRequestAPI(requestId)),
+        purchaseMarketItem: async (assetId, marketId, user, costGroupIndex) => {
+            const result = await apiAction(() => purchaseMarketItemAPI(assetId, marketId, user, costGroupIndex));
+            if (result) {
+                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
+                addNotification({ type: 'success', message: `Purchase successful!` });
+            }
+        },
+        approvePurchaseRequest: async (requestId, approverId) => {
+            await apiAction(() => approvePurchaseRequestAPI(requestId, approverId));
+        },
+        rejectPurchaseRequest: async (requestId, rejecterId) => {
+            await apiAction(() => rejectPurchaseRequestAPI(requestId, rejecterId));
+        },
+        cancelPurchaseRequest: async (requestId) => {
+             await apiAction(() => cancelPurchaseRequestAPI(requestId));
+        },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId));
             if (result && systemDispatch) {
@@ -188,30 +199,11 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (!currentUser) return Promise.resolve(null);
             return apiAction(() => proposeTradeAPI(recipientId, guildId, currentUser.id), 'Trade proposed!');
         },
-        updateTradeOffer: async (id, updates) => {
-            const updatedTrade = await apiAction(() => updateTradeOfferAPI(id, updates));
-            if (updatedTrade) {
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [updatedTrade] } });
-            }
-            return updatedTrade;
-        },
-        acceptTrade: async (id) => {
-            const result = await apiAction(() => acceptTradeAPI(id));
-            if (result) {
-                if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
-                if ((result as any).otherUser) updateUser((result as any).otherUser.id, (result as any).otherUser);
-                if ((result as any).updatedTradeOffer) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [(result as any).updatedTradeOffer] } });
-            }
-        },
-        cancelOrRejectTrade: async (id, action) => {
-            const updatedTrade = await apiAction(() => cancelOrRejectTradeAPI(id, action));
-            if (updatedTrade) {
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [updatedTrade] } });
-            }
-            return updatedTrade;
-        },
+        updateTradeOffer: (id, updates) => apiAction(() => updateTradeOfferAPI(id, updates)),
+        acceptTrade: (id) => apiAction(() => acceptTradeAPI(id)),
+        cancelOrRejectTrade: (id, action) => apiAction(() => cancelOrRejectTradeAPI(id, action)),
         sendGift: (recipientId, assetId, guildId) => {
-            if (!currentUser) return Promise.resolve(null);
+            if (!currentUser) return Promise.resolve();
             return apiAction(() => sendGiftAPI(recipientId, assetId, guildId, currentUser.id), 'Gift sent!');
         },
         useItem: async (assetId) => {

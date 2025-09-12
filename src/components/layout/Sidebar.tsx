@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role } from '../users/types';
 import { QuestCompletionStatus } from '../quests/types';

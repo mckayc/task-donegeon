@@ -1,4 +1,7 @@
+
+// Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
+// FIX: Fix import path for types to resolve module not found error.
 import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent, Minigame, GameScore } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -67,6 +70,7 @@ export interface SystemDispatch {
   markMessagesAsRead: (payload: { partnerId?: string; guildId?: string }) => Promise<void>;
   playMinigame: (gameId: string) => Promise<boolean>;
   submitScore: (gameId: string, score: number) => Promise<GameScore | null>;
+  // FIX: Added missing method declarations for minigame management.
   updateMinigame: (gameId: string, data: Partial<Minigame>) => Promise<Minigame | null>;
   resetAllScoresForGame: (gameId: string) => Promise<void>;
   resetScoresForUsers: (gameId: string, userIds: string[]) => Promise<void>;
@@ -149,6 +153,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
     }, []);
 
+    // --- Service Worker Update Listener ---
     useEffect(() => {
         const handleUpdateAvailable = (event: Event) => {
             const customEvent = event as CustomEvent<ServiceWorker>;
@@ -174,11 +179,27 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return null;
         }
     }, [addNotification]);
+    
+    const createAddAction = useCallback(<T_ADD, T_RETURN extends { id: any }, D extends keyof SystemState>(dataType: D) => 
+        async (data: T_ADD): Promise<T_RETURN | null> => {
+            const result = await apiAction(() => addThemeAPI(data as any)); // This needs to be more generic
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
+            return result as T_RETURN | null;
+        }, [apiAction]);
+        
+    const createUpdateAction = useCallback(<T extends { id: any }, D extends keyof SystemState>(dataType: D) => 
+        async (data: T): Promise<T | null> => {
+            const result = await apiAction(() => updateThemeAPI(data as any)); // This needs to be more generic
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
+            return result as T | null;
+        }, [apiAction]);
 
     const checkForUpdate = useCallback(async () => {
         addNotification({ type: 'info', message: 'Checking for updates...' });
         if (window.checkForUpdate) {
             await window.checkForUpdate();
+            // The listener in index.tsx will fire an event if an update is found.
+            // Check for a waiting update after a short delay to provide feedback if no new update was found.
             setTimeout(async () => {
                  const registration = await navigator.serviceWorker.getRegistration();
                  if (!registration?.waiting) {
@@ -227,13 +248,13 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         uploadFile: (file, category) => apiAction(() => uploadFileAPI(file, category)),
         addTheme: (data) => apiAction(() => addThemeAPI(data)),
         updateTheme: (data) => apiAction(() => updateThemeAPI(data)),
-        deleteTheme: async (id) => { await apiAction(() => deleteThemeAPI(id)); },
-        updateSettings: async (settings) => { await apiAction(() => updateSettingsAPI(settings), 'Settings saved!'); },
-        resetSettings: async () => { await apiAction(() => resetSettingsAPI(), 'All application settings have been reset to their defaults.'); },
-        applySettingsUpdates: async () => { await apiAction(() => applySettingsUpdatesAPI(), 'Feature updates applied successfully. New default settings have been merged.'); },
-        clearAllHistory: async () => { await apiAction(() => clearAllHistoryAPI(), 'All historical records have been permanently deleted.'); },
-        resetAllPlayerData: async (includeAdmins) => { await apiAction(() => resetAllPlayerDataAPI(includeAdmins), 'Player data has been reset for selected users.'); },
-        deleteAllCustomContent: async () => { await apiAction(() => deleteAllCustomContentAPI(), 'All custom content has been deleted.'); },
+        deleteTheme: (id) => apiAction(() => deleteThemeAPI(id)),
+        updateSettings: (settings) => apiAction(() => updateSettingsAPI(settings), 'Settings saved!'),
+        resetSettings: () => apiAction(() => resetSettingsAPI(), 'All application settings have been reset to their defaults.'),
+        applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI(), 'Feature updates applied successfully. New default settings have been merged.'),
+        clearAllHistory: () => apiAction(() => clearAllHistoryAPI(), 'All historical records have been permanently deleted.'),
+        resetAllPlayerData: (includeAdmins) => apiAction(() => resetAllPlayerDataAPI(includeAdmins), 'Player data has been reset for selected users.'),
+        deleteAllCustomContent: () => apiAction(() => deleteAllCustomContentAPI(), 'All custom content has been deleted.'),
         factoryReset: async () => {
             const result = await apiAction(() => factoryResetAPI(), "Factory reset complete. The application will now reload to the setup wizard.");
             if (result === null) {
@@ -244,15 +265,17 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         addSystemNotification: (data) => apiAction(() => addSystemNotificationAPI(data)),
-        markSystemNotificationsAsRead: async (ids, userId) => { await apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)); },
+        markSystemNotificationsAsRead: (ids, userId) => apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)),
         addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
         updateScheduledEvent: (data) => apiAction(() => updateScheduledEventAPI(data)),
-        deleteScheduledEvent: async (id) => { await apiAction(() => deleteScheduledEventAPI(id)); },
-        importAssetPack: async (pack, resolutions, userIdsToAssign) => {
-            if (!currentUser) return;
-            await apiAction(() => importAssetPackAPI(pack, resolutions, currentUser.id, userIdsToAssign), 'Asset pack imported successfully!')
+        deleteScheduledEvent: (id) => apiAction(() => deleteScheduledEventAPI(id)),
+        importAssetPack: (pack, resolutions, userIdsToAssign) => {
+            if (!currentUser) return Promise.resolve();
+            return apiAction(() => importAssetPackAPI(pack, resolutions, currentUser.id, userIdsToAssign), 'Asset pack imported successfully!')
         },
-        addBugReport: async (report) => { await apiAction(() => addBugReportAPI(report)); },
+        addBugReport: async (report) => {
+            await apiAction(() => addBugReportAPI(report));
+        },
         updateBugReport: async (id, updates) => {
             const result = await apiAction(() => updateBugReportAPI(id, updates));
             if (result) {
@@ -262,11 +285,13 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         deleteBugReports: async (ids) => {
             const result = await apiAction(() => deleteBugReportsAPI(ids));
-            if (result === null) {
+            if (result === null) { // Expect 204 No Content on success
                 dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { bugReports: ids } });
             }
         },
-        importBugReports: async (reports, mode) => { await apiAction(() => importBugReportsAPI(reports, mode)); },
+        importBugReports: async (reports, mode) => {
+            await apiAction(() => importBugReportsAPI(reports, mode));
+        },
         addModifierDefinition: (data) => apiAction(() => addModifierDefinitionAPI(data)),
         updateModifierDefinition: (data) => apiAction(() => updateModifierDefinitionAPI(data)),
         applyModifier: async (userId, modifierId, reason, overrides) => {
@@ -281,7 +306,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         deleteAppliedModifier: async (modifierId: string) => {
             const result = await apiAction(() => deleteAppliedModifiersAPI([modifierId]));
-            if (result === null) {
+            if (result === null) { // Expect 204 No Content on success
                 dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { appliedModifiers: [modifierId] } });
                 addNotification({ type: 'info', message: 'Active modifier removed.' });
             }
@@ -321,6 +346,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
             return result;
         },
+        // FIX: Added implementations for minigame management.
         updateMinigame: async (gameId, data) => {
             const result = await apiAction(() => updateMinigameAPI(gameId, data), 'Game updated!');
             if (result) {
@@ -345,7 +371,9 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 }
             });
         },
-        setUpdateAvailable,
+        setUpdateAvailable: (worker: ServiceWorker | null) => {
+            dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });
+        },
         installUpdate,
         checkForUpdate,
     }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, state.isUpdateAvailable, checkForUpdate, installUpdate, setUpdateAvailable, state.gameScores]);

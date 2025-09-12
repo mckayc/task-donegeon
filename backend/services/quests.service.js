@@ -747,9 +747,6 @@ const updateReadingProgress = async (questId, userId, progressData) => {
     if (progressData.bookmarks) {
         userProgress.bookmarks = progressData.bookmarks;
     }
-     if (progressData.pageNumber) {
-        userProgress.pageNumber = progressData.pageNumber;
-    }
 
     quest.readingProgress[userId] = userProgress;
     quest.readingProgress = { ...quest.readingProgress };

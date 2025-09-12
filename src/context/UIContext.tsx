@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { AppMode, Page, Quest } from '../types';
 import { bugLogger } from '../utils/bugLogger';
@@ -13,9 +12,9 @@ export interface UIState {
   activeMarketId: string | null;
   isKioskDevice: boolean;
   activeGame: string | null;
-  readingQuest: Quest | null;
-  readingPdfQuest: Quest | null;
   readingEpubQuest: Quest | null;
+  // FIX: Add state for tracking the quest being read in the PDF reader.
+  readingPdfQuest: Quest | null;
 }
 
 export interface UIDispatch {
@@ -26,9 +25,9 @@ export interface UIDispatch {
   setAppMode: (mode: AppMode) => void;
   setActiveMarketId: (marketId: string | null) => void;
   setActiveGame: (gameId: string | null) => void;
-  setReadingQuest: (quest: Quest | null) => void;
-  setReadingPdfQuest: (quest: Quest | null) => void;
   setReadingEpubQuest: (quest: Quest | null) => void;
+  // FIX: Add a dispatch function to set the quest for the PDF reader.
+  setReadingPdfQuest: (quest: Quest | null) => void;
 }
 
 const UIStateContext = createContext<UIState | undefined>(undefined);
@@ -38,6 +37,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activePage, _setActivePage] = useState<Page>('Dashboard');
   const [activePageMeta, setActivePageMeta] = useState<any>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    // Default to collapsed on mobile, respect storage on desktop
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       return true;
     }
@@ -54,9 +54,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       }
       return false;
   });
-  const [readingQuest, _setReadingQuest] = useState<Quest | null>(null);
-  const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
   const [readingEpubQuest, _setReadingEpubQuest] = useState<Quest | null>(null);
+  // FIX: Implement state for the PDF reader quest.
+  const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
 
   const setActivePage = (page: Page, meta?: any) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
@@ -106,16 +106,13 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       _setActiveGame(gameId);
   };
   
-  const setReadingQuest = (quest: Quest | null) => {
-      _setReadingQuest(quest);
-  };
-
-  const setReadingPdfQuest = (quest: Quest | null) => {
-      _setReadingPdfQuest(quest);
-  };
-
   const setReadingEpubQuest = (quest: Quest | null) => {
       _setReadingEpubQuest(quest);
+  };
+
+  // FIX: Implement the dispatch function for the PDF reader.
+  const setReadingPdfQuest = (quest: Quest | null) => {
+      _setReadingPdfQuest(quest);
   };
 
   const state = useMemo(() => ({
@@ -128,10 +125,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     activeMarketId,
     isKioskDevice,
     activeGame,
-    readingQuest,
-    readingPdfQuest,
     readingEpubQuest,
-  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest, readingEpubQuest]);
+    // FIX: Include the new PDF reader state in the context value.
+    readingPdfQuest,
+  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingEpubQuest, readingPdfQuest]);
 
   const dispatch: UIDispatch = {
     setActivePage,
@@ -141,9 +138,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setAppMode,
     setActiveMarketId,
     setActiveGame,
-    setReadingQuest,
-    setReadingPdfQuest,
     setReadingEpubQuest,
+    // FIX: Include the new PDF reader dispatch function in the context value.
+    setReadingPdfQuest,
   };
 
   return (

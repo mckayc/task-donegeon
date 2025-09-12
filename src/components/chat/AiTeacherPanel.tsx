@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-// FIX: Import QuizQuestion and QuizChoice types
 import { Quest, User, QuizQuestion, QuizChoice } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';

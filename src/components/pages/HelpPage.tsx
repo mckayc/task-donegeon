@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -118,14 +119,6 @@ const FunctionalSpecificationsContent: React.FC = () => (
                     <li><strong>Offline Caching:</strong> The reader now downloads and caches eBooks locally on the first open for significantly faster subsequent loads and full offline access. A progress bar displays the initial download status, ensuring a smooth user experience.</li>
                 </ul>
             </li>
-            <li>
-                <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and total time read *for this specific document*, allowing you to pick up where you left off.
-                <ul className="list-disc list-inside pl-6 mt-2">
-                    <li><strong>Navigation Stability Fix:</strong> Resolved a state synchronization bug that caused the page number to revert to its previously saved state immediately after navigating to a new page. The reading experience is now smooth and stable.</li>
-                    <li><strong>Large File Support:</strong> The PDF reader has been optimized for performance. It now uses progressive loading, allowing very large documents to open almost instantly without requiring the entire file to be downloaded first. This significantly reduces memory usage and prevents browser crashes with big files.</li>
-                    <li><strong>Total Time & UI Fixes:</strong> Corrected an issue where total read time was calculated incorrectly. The UI has been improved by simplifying page controls and ensuring the viewer properly fills the screen in fullscreen mode.</li>
-                </ul>
-            </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
         <p>The "Arcade" is a special market where users can spend "Game Tokens" to play minigames.</p>
@@ -201,13 +194,13 @@ const VersionHistoryContent: React.FC = () => (
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.81)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>PDF Reader Fix:</strong> Fixed a bug where the PDF reader page would revert immediately after navigation due to a state synchronization issue. Reading progress is now stable.</li>
+                <li><strong>EPUB Reader Fix:</strong> Fixed a bug where the EPUB reader page would revert immediately after navigation due to a state synchronization issue. Reading progress is now stable.</li>
             </ul>
         </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.80)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>New Media Type - PDF:</strong> Added a full-featured PDF reader. Quests can now include PDF documents, which users can read directly in the app. The reader includes page navigation, zoom, fullscreen mode, automatic progress saving, and offline caching.</li>
+                <li><strong>New Media Type - EPUB:</strong> Added a full-featured EPUB reader. Quests can now include EPUB documents, which users can read directly in the app. The reader includes page navigation, zoom, fullscreen mode, automatic progress saving, and offline caching.</li>
             </ul>
         </div>
         <div>

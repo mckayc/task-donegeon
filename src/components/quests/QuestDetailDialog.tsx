@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User, QuestMediaType } from '../../types';
 import Button from '../user-interface/Button';
@@ -32,7 +31,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { currentUser: loggedInUser } = useAuthState();
     const { completeCheckpoint, claimQuest, unclaimQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { setReadingPdfQuest, setReadingEpubQuest } = useUIDispatch();
+    const { setReadingEpubQuest } = useUIDispatch();
     
     const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
@@ -125,11 +124,6 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         unclaimQuest(quest.id, currentUser.id);
         onClose();
     };
-    const handleOpenPdfReader = () => {
-        setReadingPdfQuest(quest);
-        onClose();
-    };
-
     const handleOpenEpubReader = () => {
         setReadingEpubQuest(quest);
         onClose();
@@ -190,8 +184,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             {quest.mediaType === QuestMediaType.AITeacher && <Button variant="secondary" onClick={() => setIsAiTeacherOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />AI Teacher</Button>}
                             {quest.mediaType === QuestMediaType.AIStory && <Button variant="secondary" onClick={() => setIsAiStoryOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Read AI Story</Button>}
                             {quest.mediaType === QuestMediaType.Video && quest.videoUrl && <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>▶️ Watch Video</Button>}
-                            {quest.mediaType === QuestMediaType.PDF && quest.pdfUrl && <Button variant="secondary" onClick={handleOpenPdfReader}>📖 Read PDF</Button>}
-                            {quest.mediaType === QuestMediaType.EPUB && quest.epubUrl && <Button variant="secondary" onClick={handleOpenEpubReader}>📖 Read EPUB</Button>}
+                            {quest.mediaType === QuestMediaType.EPUB && quest.epubUrl && <Button variant="secondary" onClick={handleOpenEpubReader}>📖 Read Book</Button>}
                             {onToggleTodo && quest.type === QuestType.Venture && <ToggleSwitch enabled={!!isTodo} setEnabled={() => onToggleTodo()} label="To-Do"/>}
                             {renderActionButtons()}
                         </div>

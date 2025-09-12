@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus, QuestKind, ConditionSet } from '../../types';
 import { AppMode } from '../../types/app';

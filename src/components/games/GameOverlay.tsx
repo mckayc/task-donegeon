@@ -1,4 +1,3 @@
-
 import React from 'react';
 import SnakeGame from './SnakeGame';
 import DragonsDiceGame from './DragonsDiceGame';
@@ -8,8 +7,7 @@ import RuneBreakerGame from './RuneBreakerGame';
 import DungeonDashGame from './DungeonDashGame';
 import { ForgeMasterGame } from './ForgeMasterGame';
 import ArchersFollyGame from './ArchersFollyGame';
-// FIX: Correct the import for TetrisGame to use a named import.
-import { TetrisGame } from './TetrisGame';
+import TetrisGame from './TetrisGame';
 import GemstoneMinesGame from './GemstoneMinesGame';
 import LabyrinthGame from './LabyrinthGame';
 import AlchemistsTrialGame from './AlchemistsTrialGame';

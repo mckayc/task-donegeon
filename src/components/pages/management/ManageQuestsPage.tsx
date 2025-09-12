@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
@@ -247,10 +248,6 @@ const ManageQuestsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
     
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedQuests(e.target.checked ? pageQuestIds : []);
-    };
-
     const getConfirmationMessage = () => {
         if (!confirmation) return '';
         const count = confirmation.ids.length;
@@ -261,6 +258,10 @@ const ManageQuestsPage: React.FC = () => {
             case 'deactivate': return `Are you sure you want to mark ${count} ${item} as inactive?`;
             default: return 'Are you sure?';
         }
+    };
+    
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedQuests(e.target.checked ? pageQuestIds : []);
     };
 
     const headerActions = (
@@ -294,7 +295,7 @@ const ManageQuestsPage: React.FC = () => {
                         </Button>
                     )}
                     <div className="flex-grow overflow-hidden">
-                        <nav ref={scrollContainerRef as React.RefObject<HTMLDivElement>} className="-mb-px flex space-x-4 overflow-x-auto scrollbar-hide">
+                        <nav ref={scrollContainerRef} className="-mb-px flex space-x-4 overflow-x-auto scrollbar-hide">
                             {tabs.map(tab => (
                                 <button
                                     key={tab}

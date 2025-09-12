@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
@@ -8,7 +7,7 @@ import { useAuthState } from '../../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import { AssetPackInstallDialog } from '../../sharing/AssetPackInstallDialog';
+import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useEconomyState } from '../../../context/EconomyContext';
 import { useProgressionState } from '../../../context/ProgressionContext';

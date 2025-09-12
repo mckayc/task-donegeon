@@ -37,26 +37,27 @@ export interface QuestsDispatch {
   updateQuest: (questData: Quest) => Promise<Quest | null>;
   cloneQuest: (questId: string) => Promise<Quest | null>;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void>;
-  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void | null>;
+  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
   deleteQuests: (questIds: string[]) => Promise<void>;
-  completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void | null>;
-  approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void | null>;
-  rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void | null>;
-  markQuestAsTodo: (questId: string, userId: string) => Promise<void | null>;
-  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void | null>;
+  completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
+  approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void>;
+  rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void>;
+  markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
+  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
   addQuestGroup: (groupData: Omit<QuestGroup, 'id'> & { questIds?: string[] }) => Promise<QuestGroup | null>;
   updateQuestGroup: (groupData: QuestGroup & { questIds?: string[] }) => Promise<QuestGroup | null>;
-  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void | null>;
+  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
   addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
   updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
   cloneRotation: (rotationId: string) => Promise<Rotation | null>;
-  runRotation: (rotationId: string) => Promise<void | null>;
-  completeCheckpoint: (questId: string, userId: string) => Promise<void | null>;
-  claimQuest: (questId: string, userId: string) => Promise<void | null>;
-  unclaimQuest: (questId: string, userId: string) => Promise<void | null>;
-  approveClaim: (questId: string, userId: string, adminId: string) => Promise<void | null>;
-  rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void | null>;
-  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void | null>;
+  runRotation: (rotationId: string) => Promise<void>;
+  completeCheckpoint: (questId: string, userId: string) => Promise<void>;
+  claimQuest: (questId: string, userId: string) => Promise<void>;
+  unclaimQuest: (questId: string, userId: string) => Promise<void>;
+  approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
+  rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
+  // FIX: Removed missing 'Bookmark' type from signature and updated to match PDF reader functionality.
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);
@@ -90,23 +91,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
                     const itemsToUpdate = action.payload[typedKey];
                     if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => {
-                            // Deep merge for quests to handle readingProgress
-                            if (typedKey === 'quests' && 'readingProgress' in newItem && newItem.readingProgress && existingItems.has(newItem.id)) {
-                                const existingQuest = existingItems.get(newItem.id);
-                                const mergedQuest = { 
-                                    ...existingQuest, 
-                                    ...newItem,
-                                    readingProgress: {
-                                        ...(existingQuest.readingProgress || {}),
-                                        ...(newItem.readingProgress || {})
-                                    }
-                                };
-                                existingItems.set(newItem.id, mergedQuest);
-                            } else {
-                                existingItems.set(newItem.id, newItem);
-                            }
-                        });
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
                     }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
@@ -174,9 +159,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return apiAction(() => updateQuestAPI(data, currentUser.id), 'Quest updated!');
         },
         cloneQuest: (id) => apiAction(() => cloneQuestAPI(id), 'Quest cloned!'),
-        updateQuestsStatus: async (ids, isActive) => {
-            await apiAction(() => updateQuestsStatusAPI(ids, isActive));
-        },
+        updateQuestsStatus: (ids, isActive) => apiAction(() => updateQuestsStatusAPI(ids, isActive)),
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {
@@ -190,18 +173,17 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
 
-        completeQuest: (completionData) => apiAction(async () => {
-            const result = await completeQuestAPI(completionData);
+        completeQuest: async (completionData) => {
+            const result = await apiAction(() => completeQuestAPI(completionData));
             if (result) {
                 const { updatedUser, newCompletion } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
                 if (newCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [newCompletion] } });
                 addNotification({ type: 'success', message: 'Quest completed!' });
             }
-            return null;
-        }),
-        approveQuestCompletion: (id, approverId, note) => apiAction(async () => {
-            const result = await approveQuestCompletionAPI(id, approverId, note);
+        },
+        approveQuestCompletion: async (id, approverId, note) => {
+            const result = await apiAction(() => approveQuestCompletionAPI(id, approverId, note));
             if (result) {
                 const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
@@ -210,16 +192,14 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
                 addNotification({ type: 'success', message: 'Quest approved!' });
             }
-            return null;
-        }),
-        rejectQuestCompletion: (id, rejecterId, note) => apiAction(async () => {
-            const result = await rejectQuestCompletionAPI(id, rejecterId, note);
+        },
+        rejectQuestCompletion: async (id, rejecterId, note) => {
+            const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
             if (result) {
                 const { updatedCompletion } = result as any;
                 if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
             }
-            return null;
-        }),
+        },
         markQuestAsTodo: async (questId, userId) => {
             const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
@@ -228,8 +208,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
-        completeCheckpoint: (questId, userId) => apiAction(async () => {
-            const result = await completeCheckpointAPI(questId, userId);
+        completeCheckpoint: async (questId, userId) => {
+            const result = await apiAction(() => completeCheckpointAPI(questId, userId));
             if (result) {
                 const { updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
@@ -243,8 +223,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                     : 'Checkpoint submitted for approval!';
                 addNotification({ type: 'success', message });
             }
-            return null;
-        }),
+        },
         claimQuest: async (questId, userId) => {
             const result = await apiAction(() => claimQuestAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
@@ -266,21 +245,6 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         updateReadingProgress: async (questId, userId, data) => {
-            dispatch({
-                type: 'UPDATE_QUESTS_DATA',
-                payload: {
-                    quests: [{
-                        id: questId,
-                        readingProgress: {
-                            [userId]: {
-                                ...state.quests.find(q => q.id === questId)?.readingProgress?.[userId],
-                                ...data,
-                                totalSeconds: (state.quests.find(q => q.id === questId)?.readingProgress?.[userId]?.totalSeconds || 0) + (data.secondsToAdd || 0),
-                            }
-                        }
-                    } as any]
-                }
-            });
             await apiAction(() => updateReadingProgressAPI(questId, userId, data));
         },
         addQuestGroup: async (data) => {
@@ -298,18 +262,17 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return result;
         },
         assignQuestGroupToUsers: (groupId, userIds) => {
-            if (!currentUser) return Promise.resolve(null);
+            if (!currentUser) return Promise.resolve();
             return apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds, currentUser.id));
         },
         addRotation: (data) => apiAction(() => addRotationAPI(data)),
         updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
         cloneRotation: (id) => apiAction(() => cloneRotationAPI(id), 'Rotation cloned!'),
-        runRotation: (id) => apiAction(async () => {
-            const result = await runRotationAPI(id);
+        runRotation: async (id) => {
+            const result = await apiAction(() => runRotationAPI(id));
             if (result) addNotification({ type: 'success', message: (result as any).message });
-            return null;
-        }),
-    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch, state.quests]);
+        },
+    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

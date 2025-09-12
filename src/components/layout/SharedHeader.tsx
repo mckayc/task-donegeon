@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 // FIX: Corrected import path for types
-import { User } from '../users/types';
+import { User } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';

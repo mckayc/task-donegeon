@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { GameAsset, TradeOffer, RewardItem, TradeStatus, RewardTypeDefinition, User } from '../../types';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';

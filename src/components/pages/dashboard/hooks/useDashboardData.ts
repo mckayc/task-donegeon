@@ -23,9 +23,9 @@ interface PendingApprovals {
 
 export const useDashboardData = () => {
     const { 
-        settings, scheduledEvents, adminAdjustments
+        settings, scheduledEvents
     } = useSystemState();
-    const { rewardTypes, gameAssets } = useEconomyState();
+    const { rewardTypes } = useEconomyState();
     const { guilds } = useCommunityState();
     const { quests, questCompletions } = useQuestsState();
     const { ranks, userTrophies, trophies } = useProgressionState();
@@ -43,7 +43,9 @@ export const useDashboardData = () => {
             try {
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
                 
+                // Get filters from localStorage to match Chronicles page
                 const savedFilters = localStorage.getItem('chronicleFilters');
+                // FIX: Safely parse localStorage data to prevent runtime errors and ensure it is a string array.
                 let filterTypes = '';
                 if (savedFilters) {
                     try {
@@ -100,107 +102,18 @@ export const useDashboardData = () => {
         fetchPendingApprovals();
     }, [currentUser, appMode, questCompletions]);
 
-    const totalEarnedStatsByUser = useMemo(() => {
-        const statsMap = new Map<string, { totalEarnedXp: number; totalEarnedCurrencies: { [key: string]: number } }>();
-        if (!users || !quests || !questCompletions || !rewardTypes || !adminAdjustments) {
-            return statsMap;
-        }
-
-        const rewardTypeMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
-
-        users.forEach(user => {
-            let totalEarnedXp = 0;
-            const totalEarnedCurrencies: { [key: string]: number } = {};
-
-            const processRewards = (rewards: RewardItem[]) => {
-                (rewards || []).forEach(reward => {
-                    const rewardDef = rewardTypeMap.get(reward.rewardTypeId);
-                    if (rewardDef) {
-                        if (rewardDef.category === RewardCategory.XP) {
-                            totalEarnedXp += reward.amount;
-                        } else if (rewardDef.category === RewardCategory.Currency) {
-                            totalEarnedCurrencies[reward.rewardTypeId] = (totalEarnedCurrencies[reward.rewardTypeId] || 0) + reward.amount;
-                        }
-                    }
-                });
-            };
-
-            const userCompletions = questCompletions.filter(c => c.userId === user.id && c.status === QuestCompletionStatus.Approved);
-
-            userCompletions.forEach(completion => {
-                const quest = quests.find(q => q.id === completion.questId);
-                if (quest) {
-                    processRewards(quest.rewards);
-                    
-                    if (quest.type === QuestType.Journey && completion.checkpointId) {
-                        const checkpoint = (quest.checkpoints || []).find(cp => cp.id === completion.checkpointId);
-                        if (checkpoint) {
-                            processRewards(checkpoint.rewards);
-                        }
-                    }
-                }
-            });
-
-            const userAdjustments = adminAdjustments.filter(adj => adj.userId === user.id);
-            userAdjustments.forEach(adjustment => {
-                processRewards(adjustment.rewards);
-            });
-            
-            statsMap.set(user.id, { totalEarnedXp, totalEarnedCurrencies });
-        });
-
-        return statsMap;
-    }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
-    
-    const myGoal = useMemo(() => {
-        if (!currentUser || !currentUser.wishlistAssetIds || currentUser.wishlistAssetIds.length === 0) {
-            return { hasGoal: false, item: null, progress: [], isAffordable: false };
-        }
-        
-        const goalItemId = currentUser.wishlistAssetIds[0];
-        const goalItem = gameAssets.find(a => a.id === goalItemId);
-
-        if (!goalItem) {
-            return { hasGoal: false, item: null, progress: [], isAffordable: false };
-        }
-        
-        const balances = appMode.mode === 'personal'
-            ? { ...(currentUser.personalPurse || {}), ...(currentUser.personalExperience || {}) }
-            : { ...((currentUser.guildBalances || {})[appMode.guildId]?.purse || {}), ...((currentUser.guildBalances || {})[appMode.guildId]?.experience || {}) };
-
-        const costGroup = goalItem.costGroups[0] || [];
-        const progress: any[] = costGroup.map(cost => {
-            const rewardDef = rewardTypes.find(rt => rt.id === cost.rewardTypeId);
-            return {
-                rewardTypeId: cost.rewardTypeId,
-                amount: cost.amount,
-                current: balances[cost.rewardTypeId] || 0,
-                icon: rewardDef?.icon || '❓',
-                name: rewardDef?.name || 'Unknown'
-            };
-        });
-        
-        const isAffordable = progress.every(p => p.current >= p.amount);
-
-        return { hasGoal: true, item: goalItem, progress, isAffordable };
-
-    }, [currentUser, gameAssets, appMode, rewardTypes]);
-
     if (!currentUser) {
         return {
             currentUser: null,
             rankData: { totalXp: 0, currentRank: null, nextRank: null, progressPercentage: 0, currentLevel: 0, xpIntoCurrentRank: 0, xpForNextRank: 0 },
             userCurrencies: [],
             userExperience: [],
-            totalEarnedXp: 0,
-            totalEarnedCurrencies: [],
             recentActivities: [],
             pendingApprovals: { quests: [], purchases: [] },
             leaderboard: [],
             mostRecentTrophy: null,
             quickActionQuests: [],
             weeklyProgressData: [],
-            myGoal: { hasGoal: false, item: null, progress: [], isAffordable: false },
             terminology: settings.terminology
         };
     }
@@ -220,18 +133,17 @@ export const useDashboardData = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const userStats = totalEarnedStatsByUser.get(currentUser.id);
-        const totalEarnedXp = userStats ? userStats.totalEarnedXp : 0;
+        const totalXp = Object.values(currentBalances.experience).reduce<number>((sum, amount) => sum + Number(amount), 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         let nextRank: Rank | null = sortedRanks[1] || null;
 
         if (!currentRank) {
-            return { totalXp: totalEarnedXp, currentRank: null, nextRank: null, progressPercentage: 0, currentLevel: 0, xpIntoCurrentRank: 0, xpForNextRank: 0 };
+            return { totalXp, currentRank: null, nextRank: null, progressPercentage: 0, currentLevel: 0, xpIntoCurrentRank: 0, xpForNextRank: 0 };
         }
 
         for (let i = sortedRanks.length - 1; i >= 0; i--) {
-            if (totalEarnedXp >= sortedRanks[i].xpThreshold) {
+            if (totalXp >= sortedRanks[i].xpThreshold) {
                 currentRank = sortedRanks[i];
                 nextRank = sortedRanks[i + 1] || null;
                 break;
@@ -239,41 +151,42 @@ export const useDashboardData = () => {
         }
         
         const xpForNextRank = (currentRank && nextRank) ? nextRank.xpThreshold - currentRank.xpThreshold : 0;
-        const xpIntoCurrentRank = currentRank ? totalEarnedXp - currentRank.xpThreshold : 0;
+        const xpIntoCurrentRank = currentRank ? totalXp - currentRank.xpThreshold : 0;
         const clampedXpIntoRank = Math.max(0, xpIntoCurrentRank);
-        const progressPercentage = (nextRank && xpForNextRank > 0) ? Math.min(100, (clampedXpIntoRank / xpForNextRank) * 100) : 0;
+        const progressPercentage = (nextRank && xpForNextRank > 0) ? Math.min(100, (clampedXpIntoRank / xpForNextRank) * 100) : 100;
         const currentLevel = sortedRanks.findIndex(r => r.id === currentRank!.id) + 1;
         
-        return { totalXp: totalEarnedXp, currentRank, nextRank, progressPercentage, currentLevel, xpIntoCurrentRank: clampedXpIntoRank, xpForNextRank };
-    }, [ranks, currentUser.id, totalEarnedStatsByUser]);
+        return { totalXp, currentRank, nextRank, progressPercentage, currentLevel, xpIntoCurrentRank: clampedXpIntoRank, xpForNextRank };
+    }, [currentBalances.experience, ranks]);
 
     const userCurrencies = useMemo(() => {
         return rewardTypes
             .filter(rt => rt.category === RewardCategory.Currency)
-            .map(c => ({ ...c, amount: currentBalances.purse[c.id] || 0 }));
+            .map(c => ({ ...c, amount: currentBalances.purse[c.id] || 0 }))
+            .filter(c => c.amount > 0);
     }, [currentBalances.purse, rewardTypes]);
 
     const userExperience = useMemo(() => {
         return rewardTypes
             .filter(rt => rt.category === RewardCategory.XP)
-            .map(xp => ({ ...xp, amount: currentBalances.experience[xp.id] || 0 }));
+            .map(xp => ({ ...xp, amount: currentBalances.experience[xp.id] || 0 }))
+            .filter(xp => xp.amount > 0);
     }, [currentBalances.experience, rewardTypes]);
 
-    const totalEarnedCurrencies = useMemo(() => {
-        const totals = totalEarnedStatsByUser.get(currentUser.id)?.totalEarnedCurrencies || {};
-        return rewardTypes
-            .filter(rt => rt.category === RewardCategory.Currency)
-            .map(c => ({ ...c, amount: totals[c.id] || 0 }));
-    }, [currentUser.id, totalEarnedStatsByUser, rewardTypes]);
-
     const leaderboard = useMemo(() => {
-        // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         return users.map(user => {
-            const userStats = totalEarnedStatsByUser.get(user.id);
-            const totalEarnedXp = userStats ? userStats.totalEarnedXp : 0;
-            return { name: user.gameName, xp: totalEarnedXp };
+            let userTotalXp = 0;
+            if (currentGuildId) {
+                // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
+                userTotalXp = Object.values((user.guildBalances[currentGuildId]?.experience) || {}).reduce((sum, amount) => sum + Number(amount), 0);
+            } else {
+                // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
+                userTotalXp = Object.values(user.personalExperience || {}).reduce((sum, amount) => sum + Number(amount), 0);
+            }
+            return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);
-    }, [users, totalEarnedStatsByUser]);
+    }, [users, appMode]);
         
     const mostRecentTrophy = useMemo(() => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -299,23 +212,34 @@ export const useDashboardData = () => {
             return isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode)
         });
 
+        // Separate Duties from Ventures/Journeys
         const duties = completableQuests.filter(q => q.type === QuestType.Duty);
         const venturesAndJourneys = completableQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey);
 
+        // Prioritize Ventures & Journeys
         venturesAndJourneys.sort((a, b) => {
             const aIsTodo = a.todoUserIds?.includes(currentUser.id) ?? false;
             const bIsTodo = b.todoUserIds?.includes(currentUser.id) ?? false;
-            if (aIsTodo !== bIsTodo) return aIsTodo ? -1 : 1;
+            if (aIsTodo !== bIsTodo) return aIsTodo ? -1 : 1; // To-Dos first
+
             const aHasDeadline = !!a.endDateTime;
             const bHasDeadline = !!b.endDateTime;
-            if (aHasDeadline !== bHasDeadline) return aHasDeadline ? -1 : 1;
+            if (aHasDeadline !== bHasDeadline) return aHasDeadline ? -1 : 1; // Quests with deadlines first
+
             if (aHasDeadline && bHasDeadline && a.endDateTime && b.endDateTime) {
-                return new Date(a.endDateTime).getTime() - new Date(b.endDateTime).getTime();
+                const aDueDate = new Date(a.endDateTime).getTime();
+                const bDueDate = new Date(b.endDateTime).getTime();
+                if (aDueDate !== bDueDate) return aDueDate - bDueDate; // Earlier deadline first
             }
+
+            // Fallback sort by title
             return a.title.localeCompare(b.title);
         });
         
+        // Take the top 5 Ventures/Journeys
         const curatedVentures = venturesAndJourneys.slice(0, 5);
+
+        // Combine and sort everything with the main sorter for final display order
         const combinedQuests = [...duties, ...curatedVentures];
         const uniqueQuests = Array.from(new Map(combinedQuests.map(q => [q.id, q])).values());
         
@@ -352,22 +276,17 @@ export const useDashboardData = () => {
         return Object.entries(dataByDay).map(([date, value]) => ({ label: new Date(date + 'T00:00:00').toLocaleDateString('default', { weekday: 'short' }), value }));
     }, [currentUser.id, appMode, questCompletions, quests, rewardTypes]);
 
-    const totalEarnedXpForCurrentUser = totalEarnedStatsByUser.get(currentUser.id)?.totalEarnedXp || 0;
-
     return {
         currentUser,
         rankData,
         userCurrencies,
         userExperience,
-        totalEarnedXp: totalEarnedXpForCurrentUser,
-        totalEarnedCurrencies,
         recentActivities,
         pendingApprovals,
         leaderboard,
         mostRecentTrophy,
         quickActionQuests,
         weeklyProgressData,
-        myGoal,
         terminology
     };
 };

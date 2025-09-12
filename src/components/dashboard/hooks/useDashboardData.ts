@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
@@ -23,7 +22,7 @@ interface PendingApprovals {
 
 export const useDashboardData = () => {
     const { 
-        settings, scheduledEvents, adminAdjustments
+        settings, scheduledEvents
     } = useSystemState();
     // FIX: Add gameAssets to destructuring as it's needed for the 'myGoal' calculation.
     const { rewardTypes, gameAssets } = useEconomyState();
@@ -103,7 +102,7 @@ export const useDashboardData = () => {
 
     const totalEarnedStatsByUser = useMemo(() => {
         const statsMap = new Map<string, { totalEarnedXp: number; totalEarnedCurrencies: { [key: string]: number } }>();
-        if (!users || !quests || !questCompletions || !rewardTypes || !adminAdjustments) {
+        if (!users || !quests || !questCompletions || !rewardTypes) {
             return statsMap;
         }
 
@@ -141,17 +140,12 @@ export const useDashboardData = () => {
                     }
                 }
             });
-
-            const userAdjustments = adminAdjustments.filter(adj => adj.userId === user.id);
-            userAdjustments.forEach(adjustment => {
-                processRewards(adjustment.rewards);
-            });
             
             statsMap.set(user.id, { totalEarnedXp, totalEarnedCurrencies });
         });
 
         return statsMap;
-    }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
+    }, [users, quests, questCompletions, rewardTypes]);
     
     // FIX: Add logic to calculate 'myGoal' for the dashboard.
     const myGoal = useMemo(() => {
@@ -270,7 +264,6 @@ export const useDashboardData = () => {
     }, [currentUser.id, totalEarnedStatsByUser, rewardTypes]);
 
     const leaderboard = useMemo(() => {
-        // FIX: Removed explicit type annotations from `reduce` callback parameters to allow TypeScript to correctly infer them, resolving a type mismatch error where `any` could not be assigned to `number`.
         return users.map(user => {
             const userStats = totalEarnedStatsByUser.get(user.id);
             const totalEarnedXp = userStats ? userStats.totalEarnedXp : 0;

@@ -29,6 +29,13 @@ export enum QuestMediaType {
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
   PDF = 'PDF',
+  EPUB = 'EPUB',
+}
+
+export interface Bookmark {
+    cfi: string;
+    label: string;
+    createdAt: string;
 }
 
 export interface Checkpoint {
@@ -52,13 +59,6 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
-// FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
-export interface Bookmark {
-  label: string;
-  cfi: string;
-  createdAt: string;
-}
-
 export interface Quest {
   id: string;
   title: string;
@@ -69,6 +69,7 @@ export interface Quest {
   aiTutorSessionMinutes?: number;
   videoUrl?: string | null;
   pdfUrl?: string | null;
+  epubUrl?: string | null;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
@@ -109,7 +110,15 @@ export interface Quest {
   todoUserIds?: string[]; // Kept for Ventures
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
+  readingProgress?: {
+    [userId: string]: {
+      totalSeconds?: number;
+      sessionSeconds?: number;
+      pageNumber?: number; // For PDF
+      locationCfi?: string; // For EPUB
+      bookmarks?: Bookmark[]; // For EPUB
+    };
+  };
   createdAt?: string;
   updatedAt?: string;
 }

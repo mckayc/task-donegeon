@@ -1,4 +1,6 @@
 
+
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -45,6 +47,16 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>EPUB Reader</h3>
+        <p>
+            Quests can now include EPUB e-books as interactive media. The integrated reader allows users to read books directly within the application.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Responsive Viewing:</strong> The reader is fully responsive and supports a fullscreen mode for immersive reading.</li>
+            <li><strong>Navigation:</strong> Easily navigate with next/previous page buttons and a full Table of Contents.</li>
+            <li><strong>Progress Saving:</strong> The reader automatically saves your last read location, so you can always pick up where you left off.</li>
+            <li><strong>Bookmarks:</strong> Create custom bookmarks with labels to quickly jump back to important sections.</li>
+        </ul>
         <h3>Exchange Rate Clarity</h3>
         <p>To improve user understanding and transparency in the Exchange Post, the direct conversion rate between the two selected reward types is now prominently displayed.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -111,12 +123,6 @@ const FunctionalSpecificationsContent: React.FC = () => (
             </li>
             <li>
                 <strong>Video:</strong> Attach a video to a quest. You can use a URL from a service like YouTube or a video file uploaded to the Asset Manager. This is perfect for instructional videos or adding a multimedia element to a quest.
-            </li>
-            <li>
-                <strong>EPUB Reader:</strong> Attach <code>.epub</code> files to quests and read them in a full-featured reader. The interface includes controls for theme (light/dark), font size, bookmarks, and an immersive mode for distraction-free reading. A progress slider allows for quick navigation, and page turns are animated. All progress, including location, bookmarks, and total time read *for this specific book* is saved and synced across your devices. The current session time is also displayed.
-                <ul className="list-disc list-inside pl-6 mt-2">
-                    <li><strong>Offline Caching:</strong> The reader now downloads and caches eBooks locally on the first open for significantly faster subsequent loads and full offline access. A progress bar displays the initial download status, ensuring a smooth user experience.</li>
-                </ul>
             </li>
             <li>
                 <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and total time read *for this specific document*, allowing you to pick up where you left off.
@@ -218,13 +224,6 @@ const VersionHistoryContent: React.FC = () => (
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of November 29, 2025 (v0.4.78)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>EPUB Reader Caching & Offline Support:</strong> The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.</li>
-                <li><strong>Service Worker Update:</strong> The service worker has been updated to enable this new caching strategy.</li>
-            </ul>
-        </div>
-        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of November 22, 2025 (v0.4.77)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                  <li><strong>The Grand Arcade Expansion:</strong> Added six brand new minigames to the Arcade: Gemstone Mines, Labyrinth of the Minotaur, Alchemist's Trial, Goblin Ambush, River Crossing, and Wizard's Vortex.</li>
@@ -274,12 +273,6 @@ const VersionHistoryContent: React.FC = () => (
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of September 6, 2025 (v0.4.65)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>EPUB Reader Fix:</strong> Fixed a bug in the EPUB reader where the progress bar would incorrectly display 100% and not update. The progress calculation is now more robust, ensuring the slider accurately reflects the user's position in the book.</li>
-            </ul>
-        </div>
-        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 6, 2025 (v0.4.64)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Bug Bar Consolidation:</strong> The bug recording bar has been consolidated into a more compact and responsive two-row layout to prevent controls from overflowing on smaller screens.</li>
@@ -301,21 +294,6 @@ const VersionHistoryContent: React.FC = () => (
             <h4 className="text-lg font-bold text-stone-100">Week of November 24, 2025 (v0.4.52)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Customizable Dashboard:</strong> All cards on the Dashboard are now collapsible and can be reordered via drag-and-drop. Your preferred layout and collapsed states are saved automatically to your profile, allowing for a personalized view of your most important information.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of November 17, 2025 (v0.4.46)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>eBook Reader Redesign:</strong> The EPUB reader has been completely overhauled with a new UI. It now features permanent, opaque top and bottom bars for controls, an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a dedicated "add bookmark" button, and a subtle page-turn animation.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of November 10, 2025 (v0.4.45)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>EPUB Reader Overhaul:</strong> The eBook reader has been significantly upgraded with fullscreen mode, swipe controls, light/dark themes, improved bookmark display (with progress percentage), and database-backed progress syncing for a seamless experience across devices. Session and total time read are now also tracked and displayed.</li>
-                <li><strong>Media Library Enhancements:</strong> Added the ability to create folders, fixed upload paths, and implemented drag-and-drop for files and folders in the media library.</li>
-                <li><strong>Bug Fixes:</strong> Resolved an issue allowing users to complete daily duties multiple times and fixed a syntax error on the server.</li>
-                <li><strong>Quality of Life:</strong> Added timestamps to the approvals page for better tracking.</li>
             </ul>
         </div>
         <div>

@@ -1,3 +1,5 @@
+
+
 const { EntitySchema } = require("typeorm");
 
 // Placeholder classes for TypeORM entity schemas. This removes the dependency on a non-existent file.

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType } from '../quests/types';
@@ -56,8 +55,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         mediaType: undefined,
         aiTutorSessionMinutes: undefined,
         videoUrl: '',
-        // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
-        epubUrl: '',
+        pdfUrl: '',
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
@@ -272,8 +270,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         mediaType: formData.mediaType || undefined,
         aiTutorSessionMinutes: formData.mediaType === QuestMediaType.AITeacher ? formData.aiTutorSessionMinutes : undefined,
         videoUrl: formData.mediaType === QuestMediaType.Video ? formData.videoUrl : null,
-        // FIX: Replaced 'pdfUrl' with 'epubUrl' and 'QuestMediaType.PDF' with 'QuestMediaType.EPUB'.
-        epubUrl: formData.mediaType === QuestMediaType.EPUB ? formData.epubUrl : null,
+        pdfUrl: formData.mediaType === QuestMediaType.PDF ? formData.pdfUrl : null,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -339,9 +336,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const handleMediaSelect = (path: string) => {
       if (formData.mediaType === QuestMediaType.Video) {
           setFormData(p => ({...p, videoUrl: path}));
-      // FIX: Replaced 'QuestMediaType.PDF' with 'QuestMediaType.EPUB' and updated 'pdfUrl' to 'epubUrl'.
-      } else if (formData.mediaType === QuestMediaType.EPUB) {
-          setFormData(p => ({...p, epubUrl: path}));
+      } else if (formData.mediaType === QuestMediaType.PDF) {
+          setFormData(p => ({...p, pdfUrl: path}));
       }
       setIsMediaBrowserOpen(false);
   };
@@ -442,8 +438,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                   <option value={QuestMediaType.AITeacher}>AI Teacher</option>
                   <option value={QuestMediaType.AIStory}>AI Story</option>
                   <option value={QuestMediaType.Video}>Video</option>
-                  {/* FIX: Replaced 'QuestMediaType.PDF' with 'QuestMediaType.EPUB'. */}
-                  <option value={QuestMediaType.EPUB}>EPUB</option>
+                  <option value={QuestMediaType.PDF}>PDF</option>
               </Input>
               {formData.mediaType === QuestMediaType.AITeacher && (
                 <NumberInput 
@@ -470,21 +465,20 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                      <p className="text-xs text-stone-400">Enter a URL for a YouTube video or a local path to a video file in your media library (e.g., <code>/media/filename.mp4</code>).</p>
                 </div>
             )}
-             {/* FIX: Replaced 'QuestMediaType.PDF' with 'QuestMediaType.EPUB' and updated all related properties and labels. */}
-             {formData.mediaType === QuestMediaType.EPUB && (
+             {formData.mediaType === QuestMediaType.PDF && (
                 <div className="p-4 bg-stone-900/50 rounded-lg space-y-2">
                     <div className="flex items-end gap-2">
                         <Input 
-                            label="EPUB File Path" 
-                            name="epubUrl" 
-                            value={formData.epubUrl || ''} 
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, epubUrl: e.target.value}))} 
-                            placeholder="e.g., /media/document.epub"
+                            label="PDF File Path" 
+                            name="pdfUrl" 
+                            value={formData.pdfUrl || ''} 
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, pdfUrl: e.target.value}))} 
+                            placeholder="e.g., /media/document.pdf"
                             className="flex-grow"
                         />
                          <Button type="button" variant="secondary" onClick={() => setIsMediaBrowserOpen(true)}>Browse Library</Button>
                     </div>
-                     <p className="text-xs text-stone-400">Select an EPUB file from your media library.</p>
+                     <p className="text-xs text-stone-400">Select a PDF file from your media library.</p>
                 </div>
             )}
            <div>

@@ -1,6 +1,5 @@
 import React from 'react';
-// FIX: Add BookOpen and Settings to lucide-react exports to resolve import errors.
-export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut, Eye, EyeOff, Star, BookOpen, Settings } from 'lucide-react';
+export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut, Eye, EyeOff, Star } from 'lucide-react';
 
 const iconProps = {
   xmlns: "http://www.w3.org/2000/svg",

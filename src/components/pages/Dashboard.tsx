@@ -3,7 +3,6 @@
 
 
 
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -158,7 +157,7 @@ const Dashboard: React.FC = () => {
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { activePageMeta, appMode, readingEpubQuest } = useUIState();
+    const { activePageMeta, appMode, readingQuest, readingPdfQuest } = useUIState();
     const { quests } = useQuestsState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
 
@@ -260,11 +259,11 @@ const Dashboard: React.FC = () => {
         if (pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) {
             inactive.push('pendingApprovals');
         }
-        if (!readingEpubQuest) {
+        if (!readingQuest && !readingPdfQuest) {
             inactive.push('readingActivity');
         }
         return inactive;
-    }, [myGoal, mostRecentTrophy, pendingApprovals, readingEpubQuest]);
+    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest]);
 
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {

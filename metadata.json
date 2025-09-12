@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.6.0 - EPUB Reader Implementation",
-  "version": "0.6.0",
-  "description": "Replaced the PDF reader with a full-featured EPUB reader, including offline support, bookmarks, and progress syncing.",
+  "name": "Task Donegeon 2.0 - 0.5.02 - Removal of ePub (Working - Good starting point)",
+  "version": "0.5.02",
+  "description": "Maintenance release with minor version bump.",
   "requestFramePermissions": [
     "camera"
   ],

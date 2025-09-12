@@ -13,11 +13,11 @@ import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
-import EpubReaderPanel from '../reader/EpubReaderPanel';
+import PdfReaderPanel from '../reader/PdfReaderPanel';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingEpubQuest } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
@@ -173,7 +173,7 @@ const MainLayout: React.FC = () => {
       </div>
       <ChatController />
       {isChatOpen && <ChatPanel />}
-      {readingEpubQuest && <EpubReaderPanel quest={readingEpubQuest} />}
+      {readingPdfQuest && <PdfReaderPanel quest={readingPdfQuest} />}
     </>
   );
 };

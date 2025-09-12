@@ -729,7 +729,8 @@ const updateReadingProgress = async (questId, userId, progressData) => {
         quest.readingProgress = {};
     }
     if (!quest.readingProgress[userId] || typeof quest.readingProgress[userId] !== 'object') {
-        quest.readingProgress[userId] = { totalSeconds: 0, sessionSeconds: 0, bookmarks: [] };
+        const oldSeconds = typeof quest.readingProgress[userId] === 'number' ? quest.readingProgress[userId] : 0;
+        quest.readingProgress[userId] = { totalSeconds: oldSeconds };
     }
 
     const userProgress = quest.readingProgress[userId];
@@ -745,6 +746,9 @@ const updateReadingProgress = async (questId, userId, progressData) => {
     }
     if (progressData.bookmarks) {
         userProgress.bookmarks = progressData.bookmarks;
+    }
+     if (progressData.pageNumber) {
+        userProgress.pageNumber = progressData.pageNumber;
     }
 
     quest.readingProgress[userId] = userProgress;

@@ -1,7 +1,5 @@
 
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-// FIX: Added 'Bookmark' to the import to resolve a type error in the 'updateReadingProgress' method.
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { 

@@ -22,7 +22,7 @@ interface PendingApprovals {
 
 export const useDashboardData = () => {
     const { 
-        settings, scheduledEvents
+        settings, scheduledEvents, adminAdjustments
     } = useSystemState();
     // FIX: Add gameAssets to destructuring as it's needed for the 'myGoal' calculation.
     const { rewardTypes, gameAssets } = useEconomyState();
@@ -102,7 +102,7 @@ export const useDashboardData = () => {
 
     const totalEarnedStatsByUser = useMemo(() => {
         const statsMap = new Map<string, { totalEarnedXp: number; totalEarnedCurrencies: { [key: string]: number } }>();
-        if (!users || !quests || !questCompletions || !rewardTypes) {
+        if (!users || !quests || !questCompletions || !rewardTypes || !adminAdjustments) {
             return statsMap;
         }
 
@@ -140,12 +140,17 @@ export const useDashboardData = () => {
                     }
                 }
             });
+
+            const userAdjustments = adminAdjustments.filter(adj => adj.userId === user.id);
+            userAdjustments.forEach(adjustment => {
+                processRewards(adjustment.rewards);
+            });
             
             statsMap.set(user.id, { totalEarnedXp, totalEarnedCurrencies });
         });
 
         return statsMap;
-    }, [users, quests, questCompletions, rewardTypes]);
+    }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
     
     // FIX: Add logic to calculate 'myGoal' for the dashboard.
     const myGoal = useMemo(() => {

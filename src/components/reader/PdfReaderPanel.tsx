@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // FIX: PDFPageProxy is not directly exported from 'react-pdf' in this version.
 import { pdfjs, Document, Page } from 'react-pdf';
@@ -28,7 +27,8 @@ interface PdfReaderPanelProps {
 }
 
 const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
-  const { setReadingPdfQuest } = useUIDispatch();
+  // FIX: Replaced 'setReadingPdfQuest' with 'setReadingEpubQuest' to match the updated UI dispatch context.
+  const { setReadingEpubQuest } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { updateReadingProgress } = useQuestsDispatch();
   const { addNotification } = useNotificationsDispatch();
@@ -93,31 +93,38 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   }, []);
 
   useEffect(() => {
-    if (!currentUser || !liveQuest.pdfUrl || initialPageSetRef.current) return;
+    // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+    if (!currentUser || !liveQuest.epubUrl || initialPageSetRef.current) return;
     const initialPage = liveQuest.readingProgress?.[currentUser.id]?.pageNumber || 1;
     setPageNumber(initialPage);
     initialPageSetRef.current = true;
-  }, [currentUser, liveQuest.pdfUrl, liveQuest.readingProgress]);
+    // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+  }, [currentUser, liveQuest.epubUrl, liveQuest.readingProgress]);
 
   useEffect(() => {
     const initializeAndCachePdf = async () => {
-      if (!liveQuest.pdfUrl) return;
+      // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+      if (!liveQuest.epubUrl) return;
       setIsLoading(true);
       setError(null);
 
       // Immediately set the URL for react-pdf to start its progressive loading.
-      setPdfFile(liveQuest.pdfUrl);
+      // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+      setPdfFile(liveQuest.epubUrl);
 
       // In the background, ensure the file is in the cache for offline use.
       // This doesn't block rendering.
       try {
         const cache = await caches.open(PDF_CACHE_NAME);
-        const response = await cache.match(liveQuest.pdfUrl);
+        // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+        const response = await cache.match(liveQuest.epubUrl);
         if (!response) {
           console.log('PDF not in cache, fetching to prime for offline use...');
-          const fetchResponse = await fetch(liveQuest.pdfUrl);
+          // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+          const fetchResponse = await fetch(liveQuest.epubUrl);
           if (fetchResponse.ok) {
-            await cache.put(liveQuest.pdfUrl, fetchResponse.clone());
+            // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+            await cache.put(liveQuest.epubUrl, fetchResponse.clone());
             console.log('PDF cached successfully.');
           }
         }
@@ -127,7 +134,8 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
       }
     };
     initializeAndCachePdf();
-  }, [liveQuest.pdfUrl]);
+    // FIX: Replaced 'pdfUrl' with 'epubUrl' to match the Quest data model.
+  }, [liveQuest.epubUrl]);
 
   // --- Time & Progress Syncing ---
   useEffect(() => {
@@ -266,7 +274,8 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                 <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(3, z + 0.2))} title="Zoom In"><ZoomIn className="w-5 h-5" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} title="Zoom Out"><ZoomOut className="w-5 h-5" /></Button>
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
-                <Button variant="ghost" size="icon" onClick={() => setReadingPdfQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
+                {/* FIX: Replaced 'setReadingPdfQuest' with 'setReadingEpubQuest' to match the updated UI dispatch context. */}
+                <Button variant="ghost" size="icon" onClick={() => setReadingEpubQuest(null)} title="Close Reader"><XCircleIcon className="w-6 h-6"/></Button>
             </div>
         </header>
 

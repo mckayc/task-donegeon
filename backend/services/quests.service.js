@@ -729,8 +729,7 @@ const updateReadingProgress = async (questId, userId, progressData) => {
         quest.readingProgress = {};
     }
     if (!quest.readingProgress[userId] || typeof quest.readingProgress[userId] !== 'object') {
-        const oldSeconds = typeof quest.readingProgress[userId] === 'number' ? quest.readingProgress[userId] : 0;
-        quest.readingProgress[userId] = { totalSeconds: oldSeconds };
+        quest.readingProgress[userId] = { totalSeconds: 0, sessionSeconds: 0, bookmarks: [] };
     }
 
     const userProgress = quest.readingProgress[userId];

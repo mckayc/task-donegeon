@@ -13,8 +13,6 @@ export interface UIState {
   isKioskDevice: boolean;
   activeGame: string | null;
   readingEpubQuest: Quest | null;
-  // FIX: Add state for tracking the quest being read in the PDF reader.
-  readingPdfQuest: Quest | null;
 }
 
 export interface UIDispatch {
@@ -26,8 +24,6 @@ export interface UIDispatch {
   setActiveMarketId: (marketId: string | null) => void;
   setActiveGame: (gameId: string | null) => void;
   setReadingEpubQuest: (quest: Quest | null) => void;
-  // FIX: Add a dispatch function to set the quest for the PDF reader.
-  setReadingPdfQuest: (quest: Quest | null) => void;
 }
 
 const UIStateContext = createContext<UIState | undefined>(undefined);
@@ -55,8 +51,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       return false;
   });
   const [readingEpubQuest, _setReadingEpubQuest] = useState<Quest | null>(null);
-  // FIX: Implement state for the PDF reader quest.
-  const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
 
   const setActivePage = (page: Page, meta?: any) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
@@ -110,11 +104,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       _setReadingEpubQuest(quest);
   };
 
-  // FIX: Implement the dispatch function for the PDF reader.
-  const setReadingPdfQuest = (quest: Quest | null) => {
-      _setReadingPdfQuest(quest);
-  };
-
   const state = useMemo(() => ({
     activePage,
     activePageMeta,
@@ -126,9 +115,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     isKioskDevice,
     activeGame,
     readingEpubQuest,
-    // FIX: Include the new PDF reader state in the context value.
-    readingPdfQuest,
-  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingEpubQuest, readingPdfQuest]);
+  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingEpubQuest]);
 
   const dispatch: UIDispatch = {
     setActivePage,
@@ -139,8 +126,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setActiveMarketId,
     setActiveGame,
     setReadingEpubQuest,
-    // FIX: Include the new PDF reader dispatch function in the context value.
-    setReadingPdfQuest,
   };
 
   return (

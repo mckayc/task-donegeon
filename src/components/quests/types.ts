@@ -28,8 +28,6 @@ export enum QuestMediaType {
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
   EPUB = 'EPUB',
-  // FIX: Add PDF as a valid QuestMediaType.
-  PDF = 'PDF',
 }
 
 export interface Checkpoint {
@@ -53,7 +51,6 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
-// FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
 export interface Bookmark {
   label: string;
   cfi: string;
@@ -70,8 +67,6 @@ export interface Quest {
   aiTutorSessionMinutes?: number;
   videoUrl?: string | null;
   epubUrl?: string | null;
-  // FIX: Add pdfUrl to the Quest interface to support PDF attachments.
-  pdfUrl?: string | null;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;

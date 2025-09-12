@@ -56,7 +56,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   // Dev Panel State
   const [devLogs, setDevLogs] = useState<string[]>([]);
   const [isRendered, setIsRendered] = useState(false);
-  const [isDevPanelCollapsed, setIsDevPanelCollapsed] = useState(false);
+  const [isDevPanelCollapsed, setIsDevPanelCollapsed] = useState(true);
+  const [isInspectorOn, setIsInspectorOn] = useState(false);
 
   const logDev = useCallback((message: string) => {
     if (settings.developerMode.enabled) {
@@ -68,6 +69,18 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   useEffect(() => {
     logDev(`Initializing reader for URL: ${quest.epubUrl}`);
   }, [quest.epubUrl, logDev]);
+  
+  useEffect(() => {
+    if (renditionRef.current) {
+        const outlineStyle = isInspectorOn ? '2px solid red !important' : 'none';
+        logDev(`CSS Inspector ${isInspectorOn ? 'ON' : 'OFF'}. Applying outline: ${outlineStyle}`);
+        // The themes object can be used to inject and override styles.
+        // We register a theme for all elements (*) and override the outline property.
+        renditionRef.current.themes.register('inspector', { '*': { outline: outlineStyle } });
+        renditionRef.current.themes.select('inspector');
+    }
+  }, [isInspectorOn, logDev]);
+
 
   const userProgress = useMemo(() => {
       if (!currentUser) return null;
@@ -104,7 +117,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     const renderTimeout = setTimeout(() => {
         if (!isRendered && !error && isLoading) {
             logDev("Render timeout reached. Book content likely failed to display.");
-            setError("Book content failed to render. Check the file or enable Developer Mode for more info.");
+            setError("Book content failed to render. Enable CSS Inspector in Dev Tools for more info.");
         }
     }, 10000); // 10 seconds
 
@@ -270,18 +283,11 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     key={quest.epubUrl}
                 />
             </div>
-            {error && (
+            {error && !isRendered && (
                  <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4 text-center p-8">
                     <p className="text-2xl font-semibold text-red-400">Failed to load EPUB file.</p>
-                    <div className="prose prose-sm prose-invert text-stone-300">
+                     <div className="prose prose-sm prose-invert text-stone-300">
                         <p>{error}</p>
-                        <p>This can happen for a few reasons:</p>
-                        <ul>
-                            <li>The file might be corrupted. Please try opening it in another e-reader application to verify its integrity.</li>
-                            <li>The file may have DRM (Digital Rights Management) protection, which is not supported by this reader.</li>
-                            <li>The EPUB file may not be correctly formatted. Some files do not adhere to the standard EPUB specification.</li>
-                            <li>There could be a network issue. Please check your internet connection and try again.</li>
-                        </ul>
                     </div>
                 </div>
             )}
@@ -295,7 +301,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
       </div>
       
       {settings.developerMode.enabled && (
-          <div className="fixed bottom-4 left-4 z-[95] bg-black/80 text-white rounded-lg font-mono text-xs border border-yellow-500 transition-all duration-300" data-bug-reporter-ignore>
+          <div className="fixed bottom-4 left-4 z-[111] bg-black/80 text-white rounded-lg font-mono text-xs border border-yellow-500 transition-all duration-300" data-bug-reporter-ignore>
               <div className="flex justify-between items-center p-2">
                   <h4 className="font-bold text-yellow-300">EPUB Reader Dev Info</h4>
                   <button onClick={() => setIsDevPanelCollapsed(!isDevPanelCollapsed)} className="p-1 hover:bg-white/10 rounded-full w-6 h-6 flex items-center justify-center font-bold">
@@ -303,13 +309,18 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                   </button>
               </div>
               {!isDevPanelCollapsed && (
-                  <div className="p-2 border-t border-yellow-500/50 max-w-sm max-h-60 overflow-y-auto">
-                      <p><span className="font-semibold">URL:</span> <span className="text-cyan-400 break-all">{quest.epubUrl}</span></p>
-                      <p><span className="font-semibold">Location:</span> <span className="text-cyan-400">{currentLocation || 'N/A'}</span></p>
-                      <hr className="my-2 border-stone-600"/>
-                      <h5 className="font-semibold mb-1">Logs:</h5>
-                      <div className="space-y-1">
-                        {devLogs.map((log, i) => <div key={i} className="whitespace-pre-wrap">{log}</div>)}
+                  <div className="p-2 border-t border-yellow-500/50 max-w-sm">
+                      <Button size="sm" variant="secondary" onClick={() => setIsInspectorOn(p => !p)} className="mb-2 w-full">
+                        Toggle CSS Inspector [{isInspectorOn ? 'ON' : 'OFF'}]
+                      </Button>
+                      <div className="max-h-60 overflow-y-auto">
+                        <p><span className="font-semibold">URL:</span> <span className="text-cyan-400 break-all">{quest.epubUrl}</span></p>
+                        <p><span className="font-semibold">Location:</span> <span className="text-cyan-400">{currentLocation || 'N/A'}</span></p>
+                        <hr className="my-2 border-stone-600"/>
+                        <h5 className="font-semibold mb-1">Logs:</h5>
+                        <div className="space-y-1">
+                            {devLogs.map((log, i) => <div key={i} className="whitespace-pre-wrap">{log}</div>)}
+                        </div>
                       </div>
                   </div>
               )}
@@ -317,7 +328,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
       )}
 
       {showAddBookmark && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[90]">
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[120]">
               <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-xl p-6 max-w-sm w-full">
                 <h3 className="font-bold text-lg text-emerald-300 mb-4">Add Bookmark</h3>
                 <Input label="Bookmark Label (Optional)" value={newBookmarkLabel} onChange={(e) => setNewBookmarkLabel(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddBookmark()} autoFocus />

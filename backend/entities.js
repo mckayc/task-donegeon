@@ -451,7 +451,7 @@ const ChatMessageEntity = new EntitySchema({
         message: { type: "text" },
         timestamp: { type: "varchar" },
         readBy: { type: "simple-array" },
-        isAnnouncement: { type: "boolean", default: false },
+        isAnnouncement: { type: "boolean", default: false, nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     }

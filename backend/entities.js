@@ -165,7 +165,7 @@ const QuestEntity = new EntitySchema({
         groupIds: { type: "simple-array", nullable: true },
         requiresApproval: { type: "boolean" },
         claimedByUserIds: { type: "simple-array", nullable: true }, // DEPRECATED - but keep for migration
-        dismissals: { type: "simple-json" },
+        dismissals: { type: "simple-json", nullable: true },
         todoUserIds: { type: "simple-array", nullable: true },
         conditionSetIds: { type: "simple-array", nullable: true },
         isRedemptionFor: { type: "varchar", nullable: true },

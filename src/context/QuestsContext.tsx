@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -37,9 +36,9 @@ export interface QuestsDispatch {
   addQuest: (questData: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<Quest | null>;
   updateQuest: (questData: Quest) => Promise<Quest | null>;
   cloneQuest: (questId: string) => Promise<Quest | null>;
-  updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void | null>;
+  updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void>;
   bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void | null>;
-  deleteQuests: (questIds: string[]) => Promise<void | null>;
+  deleteQuests: (questIds: string[]) => Promise<void>;
   completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void | null>;
   approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void | null>;
   rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void | null>;
@@ -175,7 +174,9 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return apiAction(() => updateQuestAPI(data, currentUser.id), 'Quest updated!');
         },
         cloneQuest: (id) => apiAction(() => cloneQuestAPI(id), 'Quest cloned!'),
-        updateQuestsStatus: (ids, isActive) => apiAction(() => updateQuestsStatusAPI(ids, isActive)),
+        updateQuestsStatus: async (ids, isActive) => {
+            await apiAction(() => updateQuestsStatusAPI(ids, isActive));
+        },
         bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
         
         deleteQuests: async (questIds) => {

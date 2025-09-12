@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import Epub, { Book, Rendition, NavItem } from 'epubjs';
+import { ReactReader, ReactReaderStyle } from 'react-reader';
 import { Quest, Bookmark } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
@@ -18,6 +18,14 @@ import {
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import Input from '../user-interface/Input';
 
+// react-reader doesn't export NavItem type, so we define a minimal one.
+interface NavItem {
+    id: string;
+    href: string;
+    label: string;
+    subitems?: NavItem[];
+}
+
 interface EpubReaderPanelProps {
   quest: Quest;
 }
@@ -30,9 +38,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
   const liveQuest = quests.find(q => q.id === quest.id) || quest;
   
-  const bookRef = useRef<Book | null>(null);
-  const renditionRef = useRef<Rendition | null>(null);
-  const viewerRef = useRef<HTMLDivElement>(null);
+  const renditionRef = useRef<any>(null); // react-reader's rendition object
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -54,91 +60,21 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     setReadingEpubQuest(null);
   }, [setReadingEpubQuest]);
 
-  // Initialize and load the book
-  useEffect(() => {
-    if (!quest.epubUrl || !viewerRef.current || !currentUser) return;
-    
-    // Clear previous state
-    setActivePanel(null);
-    setToc([]);
-    setBookmarks([]);
-    
-    setIsLoading(true);
-    setError(null);
-    
-    const book = Epub(quest.epubUrl);
-    bookRef.current = book;
-    
-    const rendition = book.renderTo(viewerRef.current, {
-        width: "100%",
-        height: "100%",
-        spread: "auto",
-        allowScriptedContent: true, // For interactive epubs
-    });
-    renditionRef.current = rendition;
-
-    book.ready
-      .then(() => {
-        // Defensively load navigation to prevent errors with malformed EPUBs.
-        if (book.navigation) {
-          return book.navigation.load();
-        }
-        return Promise.resolve(null);
-      })
-      .then((nav) => {
-        // Ensure the table of contents is a valid array before setting it.
-        if (nav && Array.isArray(nav.toc)) {
-          setToc(nav.toc);
-        } else {
-          setToc([]); 
-        }
-
-        const savedLocation = userProgress?.locationCfi;
-        const savedBookmarks = userProgress?.bookmarks || [];
-        setBookmarks(savedBookmarks);
-
-        return rendition.display(savedLocation || undefined);
-      })
-      .then(() => {
-        setIsLoading(false);
-      })
-      .catch((err: Error) => {
-        console.error("EPUB Loading Error:", err); // Log the technical error for debugging.
-        // Provide a more user-friendly and informative error message.
-        setError(
-          `Failed to load EPUB. The file may be corrupt, DRM-protected, or in an unsupported format.`
-        );
-        setIsLoading(false);
-      });
-
-    rendition.on('relocated', (location: any) => {
-        const cfi = location.start.cfi;
-        setCurrentLocation(cfi);
-        if (currentUser) {
-             updateReadingProgress(quest.id, currentUser.id, { locationCfi: cfi });
-        }
-    });
-
-    return () => {
-        bookRef.current?.destroy();
-        bookRef.current = null;
-        renditionRef.current = null;
-    };
-  }, [quest.id, quest.epubUrl, currentUser, updateReadingProgress, userProgress]);
-
-  // Sync initial state from context after book loads
-  useEffect(() => {
-      if (!isLoading && userProgress) {
-          setBookmarks(userProgress.bookmarks || []);
-          // Note: Initial location is handled in the main useEffect to avoid race conditions.
+  const handleLocationChanged = (cfi: string) => {
+      setCurrentLocation(cfi);
+      if (currentUser) {
+          updateReadingProgress(quest.id, currentUser.id, { locationCfi: cfi });
       }
-  }, [isLoading, userProgress]);
+  };
 
+  const handleTocChanged = (newToc: NavItem[]) => {
+      setToc(newToc);
+      setIsLoading(false);
+  };
+  
   // Fullscreen handler
   useEffect(() => {
-    const onFullscreenChange = () => {
-        setIsFullScreen(!!document.fullscreenElement);
-    };
+    const onFullscreenChange = () => setIsFullScreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
@@ -151,13 +87,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         document.exitFullscreen();
     }
   };
-
-  const handleNav = (direction: 'next' | 'prev') => {
-    renditionRef.current?.[direction]();
-  };
   
   const handleTocClick = (href: string) => {
-    renditionRef.current?.display(href);
+    renditionRef.current?.goTo(href);
     setActivePanel(null);
   };
 
@@ -208,7 +140,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         return (
             <div className="p-4">
                 <h3 className="font-bold text-lg text-emerald-300 mb-2">Bookmarks</h3>
-                {bookmarks.length > 0 ? (
+                 {bookmarks.length > 0 ? (
                     <ul className="space-y-2">
                         {bookmarks.map(bm => (
                             <li key={bm.cfi} className="flex justify-between items-center bg-stone-700/50 p-2 rounded-md">
@@ -228,6 +160,32 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     }
     return null;
   };
+
+  const readerStyles = {
+    ...ReactReaderStyle,
+    readerArea: {
+      ...ReactReaderStyle.readerArea,
+      backgroundColor: '#1c1917', // stone-900
+    },
+    titleArea: {
+      ...ReactReaderStyle.titleArea,
+      color: '#e7e5e4' // stone-200
+    },
+    arrow: {
+        ...ReactReaderStyle.arrow,
+        color: 'white',
+        opacity: 0.3,
+        ':hover': {
+            ...ReactReaderStyle.arrow[':hover'],
+            opacity: 1,
+            backgroundColor: 'rgba(0,0,0,0.3)',
+        }
+    },
+    tocButton: {
+        ...ReactReaderStyle.tocButton,
+        display: 'none',
+    },
+  };
   
   return (
     <>
@@ -244,21 +202,50 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         </header>
 
         <div className="flex-grow w-full relative min-h-0">
-             {(isLoading || error) && (
-                 <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4">
-                    {isLoading && <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>}
-                    <p className={`text-xl font-semibold ${error ? 'text-red-400' : 'text-white'}`}>
-                        {error ? error : 'Summoning the Scribe...'}
-                    </p>
+            <div className="h-full">
+                <ReactReader
+                    url={quest.epubUrl!}
+                    location={userProgress?.locationCfi}
+                    locationChanged={handleLocationChanged}
+                    tocChanged={handleTocChanged}
+                    getRendition={(rendition) => {
+                        renditionRef.current = rendition;
+                        rendition.themes.override('color', '#e7e5e4');
+                        rendition.themes.override('background', '#1c1917');
+                    }}
+                    epubViewStyles={{
+                        view: {
+                            '& > div:first-of-type': {
+                                display: 'none'
+                            }
+                        }
+                    }}
+                    readerStyles={readerStyles}
+                    loadingView={
+                        <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4">
+                            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
+                            <p className="text-xl font-semibold text-white">Summoning the Scribe...</p>
+                        </div>
+                    }
+                    // This is a workaround for the library's error handling.
+                    // We render a custom error component on top if our loading fails.
+                    key={quest.epubUrl}
+                />
+            </div>
+            {error && (
+                 <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4 text-center p-8">
+                    <p className="text-2xl font-semibold text-red-400">Failed to load EPUB file.</p>
+                    <div className="prose prose-sm prose-invert text-stone-300">
+                        <p>This can happen for a few reasons:</p>
+                        <ul>
+                            <li>The file might be corrupted. Please try opening it in another e-reader application to verify its integrity.</li>
+                            <li>The file may have DRM (Digital Rights Management) protection, which is not supported by this reader.</li>
+                            <li>The EPUB file may not be correctly formatted. Some files do not adhere to the standard EPUB specification.</li>
+                            <li>There could be a network issue. Please check your internet connection and try again.</li>
+                        </ul>
+                    </div>
                 </div>
             )}
-            <div ref={viewerRef} id="viewer" className="h-full" />
-            <Button variant="ghost" onClick={() => handleNav('prev')} className="absolute left-2 top-1/2 -translate-y-1/2 z-30 h-16 w-16 !rounded-full bg-black/30 text-white hover:bg-black/50 opacity-20 hover:opacity-100 transition-opacity">
-                <ChevronLeftIcon className="w-8 h-8"/>
-            </Button>
-            <Button variant="ghost" onClick={() => handleNav('next')} className="absolute right-2 top-1/2 -translate-y-1/2 z-30 h-16 w-16 !rounded-full bg-black/30 text-white hover:bg-black/50 opacity-20 hover:opacity-100 transition-opacity">
-                <ChevronRightIcon className="w-8 h-8"/>
-            </Button>
 
             {/* Side Panel for TOC/Bookmarks */}
             <div className={`absolute top-0 bottom-0 left-0 w-72 bg-stone-800/95 backdrop-blur-sm z-40 transform transition-transform duration-300 ease-in-out overflow-y-auto ${activePanel ? 'translate-x-0' : '-translate-x-full'}`}>

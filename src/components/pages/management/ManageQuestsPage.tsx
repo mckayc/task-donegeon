@@ -251,7 +251,6 @@ const ManageQuestsPage: React.FC = () => {
         setSelectedQuests(e.target.checked ? pageQuestIds : []);
     };
 
-    // FIX: Add the missing getConfirmationMessage function.
     const getConfirmationMessage = () => {
         if (!confirmation) return '';
         const count = confirmation.ids.length;
@@ -295,7 +294,7 @@ const ManageQuestsPage: React.FC = () => {
                         </Button>
                     )}
                     <div className="flex-grow overflow-hidden">
-                        <nav ref={scrollContainerRef} className="-mb-px flex space-x-4 overflow-x-auto scrollbar-hide">
+                        <nav ref={scrollContainerRef as React.RefObject<HTMLDivElement>} className="-mb-px flex space-x-4 overflow-x-auto scrollbar-hide">
                             {tabs.map(tab => (
                                 <button
                                     key={tab}

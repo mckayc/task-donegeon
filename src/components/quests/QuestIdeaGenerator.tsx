@@ -148,7 +148,6 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                             as="select"
                             label="Quest Type"
                             value={questType}
-// FIX: Corrected the type for the select element's change event from `HTML.SelectElement` to `HTMLSelectElement`.
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setQuestType(e.target.value as QuestType)}
                             disabled={isLoading}
                         >
@@ -160,7 +159,6 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                             as="select"
                             label="Generate for User (Optional)"
                             value={selectedUserId}
-// FIX: Corrected the type for the select element's change event from `HTML.SelectElement` to `HTMLSelectElement`.
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
                             disabled={isLoading}
                         >

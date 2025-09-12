@@ -76,24 +76,29 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     });
     renditionRef.current = rendition;
 
-    rendition.display();
-
-    book.ready.then(() => {
-        book.navigation.load().then(nav => {
-            setToc(nav.toc);
-        });
+    // FIX: Correctly load the Table of Contents using book.navigation.load() which returns a promise.
+    book.ready
+      .then(() => book.navigation.load())
+      .then((nav) => {
+        if (nav && nav.toc) {
+          setToc(nav.toc);
+        }
 
         const savedLocation = userProgress?.locationCfi;
         const savedBookmarks = userProgress?.bookmarks || [];
         setBookmarks(savedBookmarks);
-        
-        rendition.display(savedLocation || undefined).then(() => {
-             setIsLoading(false);
-        });
-    }).catch((err: Error) => {
-        setError(`Failed to load EPUB: ${err.message}. The file may be corrupt or unsupported.`);
+
+        return rendition.display(savedLocation || undefined);
+      })
+      .then(() => {
         setIsLoading(false);
-    });
+      })
+      .catch((err: Error) => {
+        setError(
+          `Failed to load EPUB: ${err.message}. The file may be corrupt or unsupported.`
+        );
+        setIsLoading(false);
+      });
 
     rendition.on('relocated', (location: any) => {
         const cfi = location.start.cfi;
@@ -108,7 +113,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         bookRef.current = null;
         renditionRef.current = null;
     };
-  }, [quest.id, quest.epubUrl, currentUser, updateReadingProgress]);
+  }, [quest.id, quest.epubUrl, currentUser?.id]); // Removed updateReadingProgress from dependency array as it's stable
 
   // Sync initial state from context after book loads
   useEffect(() => {

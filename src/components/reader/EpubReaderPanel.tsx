@@ -56,6 +56,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   // Dev Panel State
   const [devLogs, setDevLogs] = useState<string[]>([]);
   const [isRendered, setIsRendered] = useState(false);
+  const [isDevPanelCollapsed, setIsDevPanelCollapsed] = useState(false);
 
   const logDev = useCallback((message: string) => {
     if (settings.developerMode.enabled) {
@@ -202,22 +203,14 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
   const readerStyles = {
     ...ReactReaderStyle,
-    readerArea: {
-      ...ReactReaderStyle.readerArea,
-      backgroundColor: '#1c1917', // stone-900
-    },
-    titleArea: {
-      ...ReactReaderStyle.titleArea,
-      color: '#e7e5e4' // stone-200
-    },
     arrow: {
         ...ReactReaderStyle.arrow,
-        color: 'white',
+        color: 'black',
         opacity: 0.3,
         ':hover': {
             ...ReactReaderStyle.arrow[':hover'],
             opacity: 1,
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: 'rgba(0,0,0,0.1)',
         }
     },
     tocButton: {
@@ -259,28 +252,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                              logDev(`Display Error: ${err.message || err}`);
                              setError(`Display Error: ${err.message || 'Unknown render error.'}`);
                         });
-                        // A more robust dark theme to improve compatibility
-                        rendition.themes.register('dark-theme', {
-                            'body': {
-                                'background-color': '#1c1917 !important', // stone-900
-                                'color': '#e7e5e4 !important', // stone-200
-                                'line-height': '1.6',
-                            },
-                            'p, div, span, li, h1, h2, h3, h4, h5, h6': {
-                                'background-color': 'transparent !important',
-                                'color': 'inherit !important',
-                            },
-                            'a': {
-                                'color': '#7dd3fc !important', // sky-300
-                                'text-decoration': 'underline !important',
-                            },
-                            'img': {
-                                'max-width': '100% !important',
-                                'height': 'auto !important',
-                                'object-fit': 'contain',
-                            }
-                        });
-                        rendition.themes.select('dark-theme');
                     }}
                     epubViewStyles={{
                         view: {
@@ -324,13 +295,24 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
       </div>
       
       {settings.developerMode.enabled && (
-          <div className="fixed bottom-4 left-4 z-[95] bg-black/80 text-white p-4 rounded-lg max-w-sm max-h-60 overflow-y-auto font-mono text-xs border border-yellow-500" data-bug-reporter-ignore>
-              <h4 className="font-bold text-yellow-300 mb-2">EPUB Reader Dev Info</h4>
-              <p><span className="font-semibold">URL:</span> <span className="text-cyan-400 break-all">{quest.epubUrl}</span></p>
-              <p><span className="font-semibold">Location:</span> <span className="text-cyan-400">{currentLocation || 'N/A'}</span></p>
-              <hr className="my-2 border-stone-600"/>
-              <h5 className="font-semibold mb-1">Logs:</h5>
-              {devLogs.map((log, i) => <div key={i} className="whitespace-pre-wrap">{log}</div>)}
+          <div className="fixed bottom-4 left-4 z-[95] bg-black/80 text-white rounded-lg font-mono text-xs border border-yellow-500 transition-all duration-300" data-bug-reporter-ignore>
+              <div className="flex justify-between items-center p-2">
+                  <h4 className="font-bold text-yellow-300">EPUB Reader Dev Info</h4>
+                  <button onClick={() => setIsDevPanelCollapsed(!isDevPanelCollapsed)} className="p-1 hover:bg-white/10 rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                      {isDevPanelCollapsed ? '+' : '-'}
+                  </button>
+              </div>
+              {!isDevPanelCollapsed && (
+                  <div className="p-2 border-t border-yellow-500/50 max-w-sm max-h-60 overflow-y-auto">
+                      <p><span className="font-semibold">URL:</span> <span className="text-cyan-400 break-all">{quest.epubUrl}</span></p>
+                      <p><span className="font-semibold">Location:</span> <span className="text-cyan-400">{currentLocation || 'N/A'}</span></p>
+                      <hr className="my-2 border-stone-600"/>
+                      <h5 className="font-semibold mb-1">Logs:</h5>
+                      <div className="space-y-1">
+                        {devLogs.map((log, i) => <div key={i} className="whitespace-pre-wrap">{log}</div>)}
+                      </div>
+                  </div>
+              )}
           </div>
       )}
 

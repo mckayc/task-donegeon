@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Epub, { Book, Rendition, NavItem } from 'epubjs';
 import { Quest, Bookmark } from '../../types';
@@ -76,13 +77,12 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     });
     renditionRef.current = rendition;
 
-    // FIX: Correctly load the Table of Contents using book.navigation.load() which returns a promise.
+    // Correctly load the Table of Contents. `book.navigation.load()` returns a promise
+    // that resolves with the navigation object, preventing errors from accessing `toc` before it's ready.
     book.ready
       .then(() => book.navigation.load())
       .then((nav) => {
-        if (nav && nav.toc) {
-          setToc(nav.toc);
-        }
+        setToc(nav?.toc || []);
 
         const savedLocation = userProgress?.locationCfi;
         const savedBookmarks = userProgress?.bookmarks || [];
@@ -113,7 +113,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         bookRef.current = null;
         renditionRef.current = null;
     };
-  }, [quest.id, quest.epubUrl, currentUser?.id]); // Removed updateReadingProgress from dependency array as it's stable
+  }, [quest.id, quest.epubUrl, currentUser, updateReadingProgress]);
 
   // Sync initial state from context after book loads
   useEffect(() => {

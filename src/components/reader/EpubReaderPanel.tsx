@@ -56,6 +56,13 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
       return liveQuest.readingProgress?.[currentUser.id];
   }, [liveQuest.readingProgress, currentUser]);
 
+  useEffect(() => {
+    if (userProgress?.bookmarks) {
+        setBookmarks(userProgress.bookmarks);
+    }
+  }, [userProgress]);
+
+
   const closeReader = useCallback(() => {
     setReadingEpubQuest(null);
   }, [setReadingEpubQuest]);
@@ -210,18 +217,25 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     tocChanged={handleTocChanged}
                     getRendition={(rendition) => {
                         renditionRef.current = rendition;
-                        // Define and apply a robust dark theme
+                        // A more aggressive dark theme to override book styles
                         rendition.themes.register('dark-theme', {
-                            body: {
-                                background: '#1c1917', // stone-900
-                                color: '#e7e5e4',      // stone-200
+                            '*': {
+                                'background-color': 'transparent !important',
+                                'color': '#e7e5e4 !important', // stone-200
+                                'line-height': '1.6 !important',
+                                'font-family': 'var(--font-family-body, sans-serif) !important',
                             },
-                            'p, span, div, li, h1, h2, h3, h4, h5, h6': {
-                                color: '#e7e5e4 !important',
+                            'body': {
+                                'background': '#1c1917', // stone-900
                             },
                             'a': {
-                                color: '#7dd3fc !important', // sky-300
+                                'color': '#7dd3fc !important', // sky-300
                                 'text-decoration': 'underline !important',
+                            },
+                            'img': {
+                                'max-width': '100% !important',
+                                'height': 'auto !important',
+                                'object-fit': 'contain',
                             }
                         });
                         rendition.themes.select('dark-theme');

@@ -171,18 +171,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   };
   
   useEffect(() => {
-    const renderTimeout = setTimeout(() => {
-        if (!isRendered && !error && isLoading) {
-            logDev("Render timeout reached. Book content likely failed to display.");
-            setError("Book content failed to render. Please use the Element Inspector tool to investigate potential CSS issues.");
-        }
-    }, 10000);
-
-    return () => clearTimeout(renderTimeout);
-  }, [isRendered, error, isLoading, logDev]);
-
-  
-  useEffect(() => {
     const onFullscreenChange = () => setIsFullScreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
@@ -314,7 +302,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     key={quest.epubUrl}
                 />
             </div>
-            {error && !isRendered && (
+            {error && (
                  <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4 text-center p-8">
                     <p className="text-2xl font-semibold text-red-400">Failed to load EPUB file.</p>
                      <div className="prose prose-sm prose-invert text-stone-300">

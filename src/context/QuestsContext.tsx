@@ -98,8 +98,8 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
                                     ...existingQuest, 
                                     ...newItem,
                                     readingProgress: {
-                                        ...existingQuest.readingProgress,
-                                        ...newItem.readingProgress
+                                        ...(existingQuest.readingProgress || {}),
+                                        ...(newItem.readingProgress || {})
                                     }
                                 };
                                 existingItems.set(newItem.id, mergedQuest);

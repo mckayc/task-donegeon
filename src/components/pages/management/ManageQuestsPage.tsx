@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
@@ -248,6 +247,11 @@ const ManageQuestsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
     
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedQuests(e.target.checked ? pageQuestIds : []);
+    };
+
+    // FIX: Add the missing getConfirmationMessage function.
     const getConfirmationMessage = () => {
         if (!confirmation) return '';
         const count = confirmation.ids.length;
@@ -258,10 +262,6 @@ const ManageQuestsPage: React.FC = () => {
             case 'deactivate': return `Are you sure you want to mark ${count} ${item} as inactive?`;
             default: return 'Are you sure?';
         }
-    };
-    
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedQuests(e.target.checked ? pageQuestIds : []);
     };
 
     const headerActions = (

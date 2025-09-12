@@ -46,11 +46,11 @@ export interface EconomyDispatch {
   rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void | null>;
   cancelPurchaseRequest: (requestId: string) => Promise<void | null>;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void | null>;
-  // FIX: Corrected the return type for `proposeTrade` from `Promise<void | null>` to `Promise<TradeOffer | null>` to match its implementation and usage, which expects a `TradeOffer` object to be returned.
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void | null>;
   acceptTrade: (tradeId: string) => Promise<void | null>;
-  cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<void | null>;
+  // FIX: Updated `cancelOrRejectTrade` to return `Promise<TradeOffer | null>` for type consistency.
+  cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<TradeOffer | null>;
   sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void | null>;
   useItem: (assetId: string) => Promise<void | null>;
   craftItem: (assetId: string) => Promise<void | null>;
@@ -203,6 +203,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (updatedTrade) {
                 dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { tradeOffers: [updatedTrade] } });
             }
+            return updatedTrade;
         },
         sendGift: (recipientId, assetId, guildId) => {
             if (!currentUser) return Promise.resolve(null);

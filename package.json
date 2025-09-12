@@ -31,6 +31,7 @@
     "react-dom": "^18.2.0",
     "react-image-crop": "^11.0.5",
     "react-pdf": "^9.1.0",
+    "react-reader": "^2.0.2",
     "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {

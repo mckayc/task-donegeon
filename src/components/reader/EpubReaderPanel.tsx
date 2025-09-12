@@ -77,12 +77,21 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     });
     renditionRef.current = rendition;
 
-    // Correctly load the Table of Contents. `book.navigation.load()` returns a promise
-    // that resolves with the navigation object, preventing errors from accessing `toc` before it's ready.
     book.ready
-      .then(() => book.navigation.load())
+      .then(() => {
+        // Defensively load navigation to prevent errors with malformed EPUBs.
+        if (book.navigation) {
+          return book.navigation.load();
+        }
+        return Promise.resolve(null);
+      })
       .then((nav) => {
-        setToc(nav?.toc || []);
+        // Ensure the table of contents is a valid array before setting it.
+        if (nav && Array.isArray(nav.toc)) {
+          setToc(nav.toc);
+        } else {
+          setToc([]); 
+        }
 
         const savedLocation = userProgress?.locationCfi;
         const savedBookmarks = userProgress?.bookmarks || [];
@@ -94,8 +103,10 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         setIsLoading(false);
       })
       .catch((err: Error) => {
+        console.error("EPUB Loading Error:", err); // Log the technical error for debugging.
+        // Provide a more user-friendly and informative error message.
         setError(
-          `Failed to load EPUB: ${err.message}. The file may be corrupt or unsupported.`
+          `Failed to load EPUB. The file may be corrupt, DRM-protected, or in an unsupported format.`
         );
         setIsLoading(false);
       });
@@ -113,7 +124,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         bookRef.current = null;
         renditionRef.current = null;
     };
-  }, [quest.id, quest.epubUrl, currentUser, updateReadingProgress]);
+  }, [quest.id, quest.epubUrl, currentUser, updateReadingProgress, userProgress]);
 
   // Sync initial state from context after book loads
   useEffect(() => {

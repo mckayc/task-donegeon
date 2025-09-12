@@ -259,16 +259,16 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                              logDev(`Display Error: ${err.message || err}`);
                              setError(`Display Error: ${err.message || 'Unknown render error.'}`);
                         });
-                        // A more aggressive dark theme to override book styles
+                        // A more robust dark theme to improve compatibility
                         rendition.themes.register('dark-theme', {
-                            '*': {
-                                'background-color': 'transparent !important',
-                                'color': '#e7e5e4 !important', // stone-200
-                                'line-height': '1.6 !important',
-                                'font-family': 'var(--font-family-body, sans-serif) !important',
-                            },
                             'body': {
-                                'background': '#1c1917', // stone-900
+                                'background-color': '#1c1917 !important', // stone-900
+                                'color': '#e7e5e4 !important', // stone-200
+                                'line-height': '1.6',
+                            },
+                            'p, div, span, li, h1, h2, h3, h4, h5, h6': {
+                                'background-color': 'transparent !important',
+                                'color': 'inherit !important',
                             },
                             'a': {
                                 'color': '#7dd3fc !important', // sky-300
@@ -296,8 +296,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                             <p className="text-xl font-semibold text-white">Summoning the Scribe...</p>
                         </div>
                     }
-                    // This is a workaround for the library's error handling.
-                    // We render a custom error component on top if our loading fails.
                     key={quest.epubUrl}
                 />
             </div>

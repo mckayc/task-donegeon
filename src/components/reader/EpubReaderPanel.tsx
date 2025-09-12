@@ -85,7 +85,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         renditionRef.current = rendition;
 
         const savedProgress = userProgress?.locationCfi;
-        rendition.display(savedProgress).catch(err => {
+        rendition.display(savedProgress).catch((err: any) => {
             console.error("Error displaying saved location:", err);
             rendition.display();
         });
@@ -99,7 +99,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             initialTotalSecondsRef.current = userProgress?.totalSeconds || 0;
             sessionStartTimeRef.current = Date.now();
             lastSyncTimeRef.current = Date.now();
-        }).catch(err => {
+        }).catch((err: any) => {
             setError(`Failed to load book: ${err.message}`);
             setIsLoading(false);
         });

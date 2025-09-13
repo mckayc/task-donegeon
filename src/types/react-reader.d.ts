@@ -1,4 +1,5 @@
 
+
 declare module 'react-reader' {
   import * as React from 'react';
 
@@ -34,6 +35,12 @@ declare module 'react-reader' {
     epubViewStyles?: object;
     loadingView?: React.ReactNode;
     getRendition?: (rendition: Rendition) => void;
+    // FIX: Added the missing 'epubOptions' property to support epub.js configuration.
+    epubOptions?: {
+      flow?: string;
+      manager?: string;
+      [key: string]: any;
+    }
   }
 
   export const ReactReader: React.FC<ReactReaderProps>;

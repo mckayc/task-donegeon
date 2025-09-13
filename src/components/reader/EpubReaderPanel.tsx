@@ -19,6 +19,7 @@ import {
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 // react-reader doesn't export NavItem type, so we define a minimal one.
 interface NavItem {
@@ -62,6 +63,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const [isRendered, setIsRendered] = useState(false);
   const [isDevPanelCollapsed, setIsDevPanelCollapsed] = useState(true);
   const [isPickingElement, setIsPickingElement] = useState(false);
+  const [compatibilityMode, setCompatibilityMode] = useState(false);
 
   const logDev = useCallback((message: string) => {
     if (settings.developerMode.enabled) {
@@ -72,7 +74,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   
   useEffect(() => {
     logDev(`Initializing reader for URL: ${quest.epubUrl}`);
-  }, [quest.epubUrl, logDev]);
+  }, [quest.epubUrl, logDev, compatibilityMode]); // Rerun on mode change
   
   const stopPickingElement = useCallback(() => {
       if (highlightedElementRef.current) {
@@ -283,10 +285,15 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         <div className="flex-grow w-full relative min-h-0">
             <div className="h-full">
                 <ReactReader
+                    key={compatibilityMode ? 'paginated' : 'scrolled'} // Force re-mount on mode change
                     url={quest.epubUrl!}
                     location={userProgress?.locationCfi}
                     locationChanged={handleLocationChanged}
                     tocChanged={handleTocChanged}
+                    epubOptions={{
+                        flow: compatibilityMode ? 'paginated' : 'scrolled-doc',
+                        manager: 'default'
+                    }}
                     getRendition={(rendition) => {
                         logDev("Rendition object received.");
                         renditionRef.current = rendition;
@@ -297,7 +304,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                             if (timeoutRef.current) clearTimeout(timeoutRef.current);
                             timeoutRef.current = window.setTimeout(() => {
                                 logDev("RENDERING TIMED OUT. The EPUB may be corrupted or contain unsupported formatting.");
-                                setError("Rendering timed out. This EPUB may be corrupted or contain unsupported formatting.");
+                                setError("Rendering timed out. The EPUB may be corrupted or contain unsupported formatting.");
                                 setReaderState('error');
                             }, 10000); // 10 second timeout
                         });
@@ -318,7 +325,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         });
                     }}
                     loadingView={<></>} // Hide default loader; we use our own.
-                    key={quest.epubUrl}
                 />
             </div>
 
@@ -358,17 +364,32 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
               </div>
               {!isDevPanelCollapsed && (
                   <div className="p-2 border-t border-yellow-500/50 max-w-sm">
-                      <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        onClick={() => setIsPickingElement(p => !p)} 
-                        className="mb-2 w-full flex items-center gap-2"
-                        disabled={!isRendered}
-                      >
-                        <Pipette className="w-4 h-4"/>
-                        {isPickingElement ? 'Cancel Inspection' : 'Inspect Element'}
-                      </Button>
-                      <div className="max-h-60 overflow-y-auto">
+                      <div className="space-y-2">
+                        <ToggleSwitch
+                            enabled={compatibilityMode}
+                            setEnabled={(enabled) => {
+                                logDev(`Switching to ${enabled ? 'Compatibility (Paginated)' : 'Standard (Scrolled)'} rendering mode.`);
+                                setCompatibilityMode(enabled);
+                                setReaderState('loading');
+                                setError(null);
+                                setDevLogs([]);
+                                setIsRendered(false);
+                            }}
+                            label="Compatibility Mode"
+                        />
+                        <p className="text-xs text-stone-500 -mt-2">If a book fails to display, try enabling this mode. It uses a different rendering method that may be more stable.</p>
+                        <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            onClick={() => setIsPickingElement(p => !p)} 
+                            className="w-full flex items-center gap-2"
+                            disabled={!isRendered}
+                        >
+                            <Pipette className="w-4 h-4"/>
+                            {isPickingElement ? 'Cancel Inspection' : 'Inspect Element'}
+                        </Button>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto mt-2">
                         <p><span className="font-semibold">URL:</span> <span className="text-cyan-400 break-all">{quest.epubUrl}</span></p>
                         <p><span className="font-semibold">Location:</span> <span className="text-cyan-400">{currentLocation || 'N/A'}</span></p>
                         <hr className="my-2 border-stone-600"/>

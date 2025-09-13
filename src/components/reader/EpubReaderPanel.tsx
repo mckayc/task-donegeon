@@ -83,17 +83,22 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
   // Effect to manage the element picker listeners inside the iframe
   useEffect(() => {
+    // This is the key fix: use viewRef.current?.document which is the iframe's document
     const doc = viewRef.current?.document;
     if (!doc || !isPickingElement) {
-        document.body.style.cursor = 'default';
+        if (document.body.style.cursor === 'crosshair') {
+            document.body.style.cursor = 'default';
+        }
         return;
     }
 
     const highlight = (e: MouseEvent) => {
         unhighlight();
         const target = e.target as HTMLElement;
-        target.style.outline = '2px solid red';
-        highlightedElementRef.current = target;
+        if (target) {
+            target.style.outline = '2px solid red';
+            highlightedElementRef.current = target;
+        }
     };
 
     const unhighlight = () => {
@@ -108,25 +113,28 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         e.stopPropagation();
         const target = e.target as HTMLElement;
         
-        const styles = window.getComputedStyle(target);
-        const relevantStyles = {
-            color: styles.color,
-            backgroundColor: styles.backgroundColor,
-            fontSize: styles.fontSize,
-            display: styles.display,
-            visibility: styles.visibility,
-            opacity: styles.opacity,
-            width: styles.width,
-            height: styles.height
-        };
-        logDev(`INSPECTED ELEMENT:\n  - Tag: <${target.tagName.toLowerCase()}>\n  - ID: ${target.id || 'none'}\n  - Classes: ${target.className || 'none'}\n  - Styles: ${JSON.stringify(relevantStyles, null, 2)}`);
+        if (target) {
+            const styles = window.getComputedStyle(target);
+            const relevantStyles = {
+                color: styles.color,
+                backgroundColor: styles.backgroundColor,
+                fontSize: styles.fontSize,
+                display: styles.display,
+                visibility: styles.visibility,
+                opacity: styles.opacity,
+                width: styles.width,
+                height: styles.height
+            };
+            logDev(`INSPECTED ELEMENT:\n  - Tag: <${target.tagName.toLowerCase()}>\n  - ID: ${target.id || 'none'}\n  - Classes: ${target.className || 'none'}\n  - Styles: ${JSON.stringify(relevantStyles, null, 2)}`);
+        }
         
         stopPickingElement();
     };
 
     doc.body.addEventListener('mouseover', highlight);
     doc.body.addEventListener('mouseout', unhighlight);
-    doc.body.addEventListener('click', inspect, { once: true }); // Automatically remove after one click
+    doc.body.addEventListener('click', inspect, { once: true });
+    // Apply crosshair to the main document body, as the cursor style propagates to the iframe unless overridden.
     document.body.style.cursor = 'crosshair';
 
     return () => {
@@ -333,6 +341,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                         variant="secondary" 
                         onClick={() => setIsPickingElement(p => !p)} 
                         className="mb-2 w-full flex items-center gap-2"
+                        disabled={!isRendered}
                       >
                         <Pipette className="w-4 h-4"/>
                         {isPickingElement ? 'Cancel Inspection' : 'Inspect Element'}

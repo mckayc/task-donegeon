@@ -45,8 +45,9 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const viewRef = useRef<any>(null); // To store the iframe's view object
   const panelRef = useRef<HTMLDivElement>(null);
   const highlightedElementRef = useRef<HTMLElement | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [readerState, setReaderState] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
   const [toc, setToc] = useState<NavItem[]>([]);
   const [currentLocation, setCurrentLocation] = useState<string>('');
@@ -174,7 +175,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
   const handleTocChanged = (newToc: NavItem[]) => {
       setToc(newToc);
-      setIsLoading(false);
       logDev(`TOC loaded with ${newToc.length} items.`);
   };
   
@@ -290,32 +290,54 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                     getRendition={(rendition) => {
                         logDev("Rendition object received.");
                         renditionRef.current = rendition;
-                        rendition.on('started', () => logDev('Rendition started.'));
+                        
+                        rendition.on('started', () => {
+                            logDev('Rendition started.');
+                            // Start a timeout to catch stalls
+                            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                            timeoutRef.current = window.setTimeout(() => {
+                                logDev("RENDERING TIMED OUT. The EPUB may be corrupted or contain unsupported formatting.");
+                                setError("Rendering timed out. This EPUB may be corrupted or contain unsupported formatting.");
+                                setReaderState('error');
+                            }, 10000); // 10 second timeout
+                        });
+
                         rendition.on('rendered', (section: any, view: any) => {
                             logDev(`Section rendered: ${section.href}`);
+                            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                            setReaderState('success');
                             setIsRendered(true);
-                            viewRef.current = view; // Store the view for the inspector
+                            viewRef.current = view;
                         });
+
                         rendition.on('displayError', (err: any) => {
                              logDev(`Display Error: ${err.message || err}`);
+                             if (timeoutRef.current) clearTimeout(timeoutRef.current);
                              setError(`Display Error: ${err.message || 'Unknown render error.'}`);
+                             setReaderState('error');
                         });
                     }}
-                    loadingView={
-                        <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4">
-                            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
-                            <p className="text-xl font-semibold text-white">Summoning the Scribe...</p>
-                        </div>
-                    }
+                    loadingView={<></>} // Hide default loader; we use our own.
                     key={quest.epubUrl}
                 />
             </div>
-            {error && (
+
+            {readerState !== 'success' && (
                  <div className="absolute inset-0 z-40 bg-stone-900 flex flex-col items-center justify-center gap-4 text-center p-8">
-                    <p className="text-2xl font-semibold text-red-400">Failed to load EPUB file.</p>
-                     <div className="prose prose-sm prose-invert text-stone-300">
-                        <p>{error}</p>
-                    </div>
+                    {readerState === 'loading' && (
+                        <>
+                            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
+                            <p className="text-xl font-semibold text-white">Summoning the Scribe...</p>
+                        </>
+                    )}
+                    {readerState === 'error' && (
+                        <>
+                            <p className="text-2xl font-semibold text-red-400">Failed to load EPUB file.</p>
+                            <div className="prose prose-sm prose-invert text-stone-300">
+                                <p>{error}</p>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 

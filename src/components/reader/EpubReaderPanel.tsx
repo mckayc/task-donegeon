@@ -1,54 +1,6 @@
-
-
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Quest } from '../../types';
-import { useUIDispatch } from '../../context/UIContext';
-import { useAuthState } from '../../context/AuthContext';
-import { useQuestsDispatch } from '../../context/QuestsContext';
-import { XCircleIcon } from '../user-interface/Icons';
-import Button from '../user-interface/Button';
-
-// Define the type for the custom element's instance methods
-interface FoliateViewElement extends HTMLElement {
-  open(url: string): Promise<void>;
-  goTo(location: string): Promise<void>;
-}
-
-interface EpubReaderPanelProps {
-  quest: Quest;
-}
-
-const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
-  const { setReadingQuest } = useUIDispatch();
-  const { currentUser } = useAuthState();
-  const { updateReadingProgress } = useQuestsDispatch();
-  const viewRef = useRef<FoliateViewElement>(null);
-  const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // 1. Dynamically import the library
-  useEffect(() => {
-    // As per user instructions, assuming foliate-js is available at this path.
-    // @ts-ignore - This is a dynamic import for a non-typed JS module.
-    import('/foliate-js/view.js')
-      .then(() => {
-        setIsLibraryLoaded(true);
-      })
-      .catch(err => {
-        console.error("Failed to load foliate-js library:", err);
-        setError("Could not load the e-book reader library.");
-      });
-  }, []);
-
-  // 2. Open the book when the component is ready
-  useEffect(() => {
-    // Capture the current values in constants to ensure TypeScript
-    // knows they are non-null within the async function's scope.
-    const viewElement = viewRef.current;
-    const epubUrl = quest.epubUrl;
-
-    if (isLibraryLoaded && viewElement && epubUrl) {
-      const openBook = async () => {
+import React, a
+  n
+    const openBook = async () => {
         try {
           await viewElement.open(epubUrl);
           const savedLocation = currentUser && quest.readingProgress?.[currentUser.id]?.locationCfi;

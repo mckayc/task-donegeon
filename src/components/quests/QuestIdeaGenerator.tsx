@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
@@ -170,18 +169,11 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                     </div>
                     <div className="flex gap-4">
                         <Input
-                            as="textarea"
-                            rows={3}
-                            label="Quest Theme / Topic"
-                            placeholder="e.g., 'Yard work for fall', 'Learning about space', 'Acts of kindness'"
+                            label="Quest Theme or Topic"
+                            placeholder="e.g., 'cleaning the kitchen', 'learning javascript'"
                             value={prompt}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
-                            onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleGenerate();
-                                }
-                            }}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                             className="flex-grow"
                             disabled={isLoading}
                         />
@@ -193,13 +185,13 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                     {isLoading && <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div><p className="mt-4 text-stone-300">The AI is thinking...</p></div>}
                     {generatedQuests.length > 0 && (
                         <div className="space-y-3 pt-4">
-                            {generatedQuests.map((idea, index) => (
+                            {generatedQuests.map((quest, index) => (
                                 <div key={index} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-center gap-4">
                                     <div>
-                                        <p className="font-bold text-stone-200">{idea.icon} {idea.title}</p>
-                                        <p className="text-sm text-stone-400">{idea.description}</p>
+                                        <p className="font-bold text-stone-200">{quest.icon} {quest.title}</p>
+                                        <p className="text-sm text-stone-400">{quest.description}</p>
                                     </div>
-                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea({ ...idea, type: questType })}>Use Idea</Button>
+                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea({ ...quest, type: questType })}>Use Idea</Button>
                                 </div>
                             ))}
                         </div>

@@ -56,7 +56,8 @@ export interface QuestsDispatch {
   unclaimQuest: (questId: string, userId: string) => Promise<void>;
   approveClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
   rejectClaim: (questId: string, userId: string, adminId: string) => Promise<void>;
-  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; locationCfi?: string; bookmarks?: Bookmark[] }) => Promise<void>;
+  // FIX: Removed missing 'Bookmark' type from signature and updated to match PDF reader functionality.
+  updateReadingProgress: (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; }) => Promise<void>;
 }
 
 const QuestsStateContext = createContext<QuestsState | undefined>(undefined);
@@ -245,27 +246,6 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         updateReadingProgress: async (questId, userId, data) => {
             await apiAction(() => updateReadingProgressAPI(questId, userId, data));
-            // Optimistic update of the quest in the local state
-            const questToUpdate = state.quests.find(q => q.id === questId);
-            if (questToUpdate) {
-                const existingProgress = questToUpdate.readingProgress?.[userId] || {};
-                const newProgress = {
-                    ...existingProgress,
-                    ...data,
-                    totalSeconds: (existingProgress.totalSeconds || 0) + (data.secondsToAdd || 0),
-                };
-                // Remove secondsToAdd as it's an action, not persistent state
-                delete (newProgress as any).secondsToAdd;
-
-                const updatedQuest = {
-                    ...questToUpdate,
-                    readingProgress: {
-                        ...(questToUpdate.readingProgress || {}),
-                        [userId]: newProgress,
-                    }
-                };
-                 dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [updatedQuest] } });
-            }
         },
         addQuestGroup: async (data) => {
             const result = await apiAction(() => addQuestGroupAPI(data), 'Quest group created!');
@@ -292,7 +272,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => runRotationAPI(id));
             if (result) addNotification({ type: 'success', message: (result as any).message });
         },
-    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch, state.quests]);
+    }), [addNotification, apiAction, currentUser, updateUser, progressionDispatch, systemDispatch, dispatch]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Minigame } from '../../../types';
 import Button from '../user-interface/Button';
@@ -35,7 +36,7 @@ const ConfirmPlayDialog: React.FC<ConfirmPlayDialogProps> = ({ game, onClose }) 
                 <p className="text-lg text-stone-200 mb-6">"{game.name}"</p>
                 <div className="space-y-4">
                     <p className="text-stone-300">
-                        This will cost <span className="font-bold text-amber-300">{game.cost} Game Token{game.cost === 1 ? '' : 's'} 🪙</span>. Are you ready to play?
+                        This will cost <span className="font-bold text-amber-300">1 Game Token 🪙</span>. Are you ready to play?
                     </p>
                 </div>
                 <div className="flex justify-end space-x-4 pt-6 mt-6 border-t border-stone-700/60">

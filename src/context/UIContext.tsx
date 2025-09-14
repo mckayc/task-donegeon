@@ -1,6 +1,5 @@
 
 
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { AppMode, Page, Quest } from '../types';
 import { bugLogger } from '../utils/bugLogger';
@@ -17,7 +16,6 @@ export interface UIState {
   activeGame: string | null;
   readingQuest: Quest | null;
   readingPdfQuest: Quest | null;
-  readingEpubQuest: Quest | null;
 }
 
 export interface UIDispatch {
@@ -30,7 +28,6 @@ export interface UIDispatch {
   setActiveGame: (gameId: string | null) => void;
   setReadingQuest: (quest: Quest | null) => void;
   setReadingPdfQuest: (quest: Quest | null) => void;
-  setReadingEpubQuest: (quest: Quest | null) => void;
 }
 
 const UIStateContext = createContext<UIState | undefined>(undefined);
@@ -59,7 +56,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   });
   const [readingQuest, _setReadingQuest] = useState<Quest | null>(null);
   const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
-  const [readingEpubQuest, _setReadingEpubQuest] = useState<Quest | null>(null);
 
   const setActivePage = (page: Page, meta?: any) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
@@ -117,10 +113,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       _setReadingPdfQuest(quest);
   };
 
-  const setReadingEpubQuest = (quest: Quest | null) => {
-      _setReadingEpubQuest(quest);
-  };
-
   const state = useMemo(() => ({
     activePage,
     activePageMeta,
@@ -133,8 +125,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     activeGame,
     readingQuest,
     readingPdfQuest,
-    readingEpubQuest,
-  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest, readingEpubQuest]);
+  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest]);
 
   const dispatch: UIDispatch = {
     setActivePage,
@@ -146,7 +137,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setActiveGame,
     setReadingQuest,
     setReadingPdfQuest,
-    setReadingEpubQuest,
   };
 
   return (

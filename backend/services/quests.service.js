@@ -741,6 +741,12 @@ const updateReadingProgress = async (questId, userId, progressData) => {
     if (typeof progressData.sessionSeconds === 'number') {
         userProgress.sessionSeconds = progressData.sessionSeconds;
     }
+    if (progressData.locationCfi) {
+        userProgress.locationCfi = progressData.locationCfi;
+    }
+    if (progressData.bookmarks) {
+        userProgress.bookmarks = progressData.bookmarks;
+    }
      if (progressData.pageNumber) {
         userProgress.pageNumber = progressData.pageNumber;
     }

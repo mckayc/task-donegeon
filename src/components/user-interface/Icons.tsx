@@ -1,5 +1,5 @@
 import React from 'react';
-export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut, Eye, EyeOff, Star, BookmarkPlus, List, Bookmark } from 'lucide-react';
+export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut, Eye, EyeOff, Star } from 'lucide-react';
 
 const iconProps = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -175,7 +175,7 @@ export const QuestsIcon: React.FC = () => (
 
 export const MarketplaceIcon: React.FC = () => (
     <svg {...iconProps}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.25a.75.75 0 01-.75-.75v-7.5a.75.75 0 01.75-.75h7.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75-.75zM13.5 8.25h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h.008v.008h-.008v-.008zm0 0H9.75m-1.5-1.5H1.5a.75.75 0 00-.75.75V21a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v4.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.25a.75.75 0 01-.75-.75v-7.5a.75.75 0 01.75-.75h7.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75zM13.5 8.25h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h.008v.008h-.008v-.008zm0 0H9.75m-1.5-1.5H1.5a.75.75 0 00-.75.75V21a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v4.5z" />
     </svg>
 );
 

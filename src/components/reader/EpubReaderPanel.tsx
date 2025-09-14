@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Quest } from '../../types';
 import { useUIDispatch } from '../../context/UIContext';
@@ -6,7 +7,7 @@ import { useQuestsDispatch } from '../../context/QuestsContext';
 import { XCircleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 
-// Define the custom element type for TypeScript
+// FIX: Declare the custom element type for TypeScript's JSX parser.
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -103,7 +104,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         </header>
         <div className="flex-grow w-full h-full relative bg-black">
           {isLibraryLoaded && !error && (
-            // FIX: This custom element JSX is now recognized due to the global declaration.
+            // This custom element JSX is now recognized due to the global declaration.
             <foliate-view ref={viewRef} style={{ width: '100%', height: '100%' }}></foliate-view>
           )}
           {!isLibraryLoaded && !error && (

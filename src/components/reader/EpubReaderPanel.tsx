@@ -7,6 +7,16 @@ import { useAuthState } from '../../context/AuthContext';
 import { XCircleIcon } from '../user-interface/Icons';
 import { useQuestsDispatch } from '../../context/QuestsContext';
 
+// FIX: Add global JSX declaration for the 'foliate-view' custom element.
+// This informs TypeScript about the custom web component, resolving the error.
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'foliate-view': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+    }
+  }
+}
+
 interface EpubReaderPanelProps {
   quest: Quest;
 }
@@ -28,9 +38,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     script.onload = () => setIsLibraryLoaded(true);
     script.onerror = () => setError('Failed to load the EPUB reader library.');
     document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+    return () => { document.body.removeChild(script); };
   }, []);
 
   // 2. Open the book when the library is ready
@@ -61,10 +69,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   const handleRelocate = useCallback((e: Event) => {
     if (!currentUser) return;
     const customEvent = e as CustomEvent;
-    // The detail object structure is { cfi, path, location, pages }
     const location = customEvent.detail?.cfi;
     if (location) {
-        // Only sending the location CFI, as foliate-js doesn't provide the other progress metrics
         updateReadingProgress(quest.id, currentUser.id, { locationCfi: location });
     }
   }, [currentUser, quest.id, updateReadingProgress]);
@@ -75,10 +81,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     
     viewElement.addEventListener('relocate', handleRelocate);
     
-    return () => {
-      viewElement.removeEventListener('relocate', handleRelocate);
-    };
-  }, [handleRelocate, isLibraryLoaded]); // Re-add listener if library reloads
+    return () => { viewElement.removeEventListener('relocate', handleRelocate); };
+  }, [handleRelocate, isLibraryLoaded]);
 
   return (
     <div className="fixed inset-0 bg-stone-900/90 z-[80] flex flex-col items-center justify-center backdrop-blur-sm">

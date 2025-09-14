@@ -30,6 +30,7 @@ export enum QuestMediaType {
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
   PDF = 'PDF',
+  EPUB = 'EPUB',
 }
 
 export interface Checkpoint {

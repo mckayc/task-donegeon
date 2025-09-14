@@ -31,7 +31,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { currentUser: loggedInUser } = useAuthState();
     const { completeCheckpoint, claimQuest, unclaimQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { setReadingPdfQuest } = useUIDispatch();
+    const { setReadingQuest, setReadingPdfQuest } = useUIDispatch();
     
     const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
@@ -129,6 +129,11 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         onClose();
     };
 
+    const handleOpenEpubReader = () => {
+        setReadingQuest(quest);
+        onClose();
+    };
+
     const renderActionButtons = () => {
         if (onComplete) {
             const isJourney = quest.type === QuestType.Journey;
@@ -185,6 +190,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             {quest.mediaType === QuestMediaType.AIStory && <Button variant="secondary" onClick={() => setIsAiStoryOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Read AI Story</Button>}
                             {quest.mediaType === QuestMediaType.Video && quest.videoUrl && <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>▶️ Watch Video</Button>}
                             {quest.mediaType === QuestMediaType.PDF && quest.pdfUrl && <Button variant="secondary" onClick={handleOpenPdfReader}>📖 Read PDF</Button>}
+                            {quest.mediaType === QuestMediaType.EPUB && quest.epubUrl && <Button variant="secondary" onClick={handleOpenEpubReader}>📖 Read eBook</Button>}
                             {onToggleTodo && quest.type === QuestType.Venture && <ToggleSwitch enabled={!!isTodo} setEnabled={() => onToggleTodo()} label="To-Do"/>}
                             {renderActionButtons()}
                         </div>

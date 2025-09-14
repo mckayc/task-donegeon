@@ -1,5 +1,4 @@
 
-
 import React, { useMemo } from 'react';
 import { Quest, User, ConditionSet, QuestCompletionStatus, QuestType } from '../../types';
 import Button from '../user-interface/Button';

@@ -3,8 +3,6 @@
 
 
 
-
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -412,7 +410,7 @@ const Dashboard: React.FC = () => {
                 <Reorder.Group
                     axis="y"
                     values={visibleMainCards}
-                    onReorder={newOrder => handleReorder('main', newOrder as string[])}
+                    onReorder={newOrder => handleReorder('main', newOrder)}
                     className={`${mainColClasses} space-y-6`}
                 >
                     {visibleMainCards.map(cardId => {
@@ -431,7 +429,7 @@ const Dashboard: React.FC = () => {
                     <Reorder.Group
                         axis="y"
                         values={visibleSideCards}
-                        onReorder={newOrder => handleReorder('side', newOrder as string[])}
+                        onReorder={newOrder => handleReorder('side', newOrder)}
                         className={`${sideColClasses} space-y-6`}
                     >
                         {visibleSideCards.map(cardId => {

@@ -1,6 +1,6 @@
 
-// v121
-const CACHE_NAME = 'task-donegeon-cache-v121';
+// v122
+const CACHE_NAME = 'task-donegeon-cache-v122';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -37,6 +37,24 @@ self.addEventListener('fetch', event => {
   // Prevent the service worker from intercepting API calls or file uploads
   if (event.request.url.includes('/api/') || event.request.url.includes('/uploads/')) {
     return;
+  }
+
+  // For EPUB files, cache on first access for offline reading
+  if (event.request.url.endsWith('.epub')) {
+      event.respondWith(
+          caches.open(CACHE_NAME).then(async (cache) => {
+              const response = await cache.match(event.request);
+              if (response) {
+                  return response;
+              }
+              const fetchResponse = await fetch(event.request);
+              if (fetchResponse.ok) {
+                  cache.put(event.request, fetchResponse.clone());
+              }
+              return fetchResponse;
+          })
+      );
+      return;
   }
 
   event.respondWith(

@@ -68,9 +68,17 @@ const SharedCalendarPage: React.FC = () => {
             
             quests.forEach(quest => {
                  if (!quest.isActive) return;
-                 // FIX: Pass user.id instead of the full user object to isQuestVisibleToUserInMode.
-                 if (!isQuestVisibleToUserInMode(quest, user.id, appMode)) return;
-
+                 let isAssigned = false;
+                 if (quest.assignedUserIds.length > 0) {
+                     isAssigned = quest.assignedUserIds.includes(user.id);
+                 } else if (quest.guildId) {
+                     isAssigned = guilds.find(g => g.id === quest.guildId)?.memberIds.includes(user.id) || false;
+                 } else {
+                     // This case may not be relevant if all quests have assignments, but as a fallback.
+                     isAssigned = true; 
+                 }
+                 if (!isAssigned) return;
+                 
                  const isDutyToday = quest.type === QuestType.Duty && isQuestScheduledForDay(quest, currentDate);
                  const isVentureDueToday = (quest.type === QuestType.Venture || quest.type === QuestType.Journey) && quest.startDateTime && toYMD(new Date(quest.startDateTime)) === dateKey;
                  const isTodoForUser = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
@@ -94,7 +102,7 @@ const SharedCalendarPage: React.FC = () => {
         });
 
         return questsMap;
-    }, [sharedUsers, quests, currentDate, questCompletions, scheduledEvents, appMode]);
+    }, [sharedUsers, quests, currentDate, questCompletions, guilds, scheduledEvents]);
     
     const dispatchQuickComplete = (quest: Quest, user: User) => {
         const completionData = {

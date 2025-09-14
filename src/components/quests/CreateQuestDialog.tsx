@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType } from '../quests/types';
@@ -443,7 +444,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                   <option value={QuestMediaType.AIStory}>AI Story</option>
                   <option value={QuestMediaType.Video}>Video</option>
                   <option value={QuestMediaType.PDF}>PDF</option>
-                  <option value={QuestMediaType.EPUB}>EPUB eBook</option>
+                  <option value={QuestMediaType.EPUB}>EPUB</option>
               </Input>
               {formData.mediaType === QuestMediaType.AITeacher && (
                 <NumberInput 
@@ -486,7 +487,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                      <p className="text-xs text-stone-400">Select a PDF file from your media library.</p>
                 </div>
             )}
-             {formData.mediaType === QuestMediaType.EPUB && (
+            {formData.mediaType === QuestMediaType.EPUB && (
                 <div className="p-4 bg-stone-900/50 rounded-lg space-y-2">
                     <div className="flex items-end gap-2">
                         <Input 

@@ -14,14 +14,12 @@ import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
-import EpubReaderPanel from '../reader/EpubReaderPanel';
-// FIX: Import PdfReaderPanel. It was missing.
 import PdfReaderPanel from '../reader/PdfReaderPanel';
+import EpubReaderPanel from '../reader/EpubReaderPanel';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  // FIX: Destructure readingQuest instead of readingEpubQuest from useUIState, as 'readingEpubQuest' does not exist on the type.
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingQuest, readingPdfQuest } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest, readingEpubQuest } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
@@ -177,8 +175,8 @@ const MainLayout: React.FC = () => {
       </div>
       <ChatController />
       {isChatOpen && <ChatPanel />}
-      {readingQuest && <EpubReaderPanel quest={readingQuest} />}
       {readingPdfQuest && <PdfReaderPanel quest={readingPdfQuest} />}
+      {readingEpubQuest && <EpubReaderPanel quest={readingEpubQuest} />}
     </>
   );
 };

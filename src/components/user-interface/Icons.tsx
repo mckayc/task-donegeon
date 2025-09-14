@@ -1,5 +1,7 @@
+
 import React from 'react';
-export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut, Eye, EyeOff, Star } from 'lucide-react';
+// FIX: Export BookOpen from lucide-react to be used in the EPUB reader.
+export { ChevronsUpDown, Maximize, Minimize, Plus, ZoomIn, ZoomOut, Eye, EyeOff, Star, BookOpen } from 'lucide-react';
 
 const iconProps = {
   xmlns: "http://www.w3.org/2000/svg",

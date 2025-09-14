@@ -6,6 +6,15 @@ import { useAuthState } from '../../context/AuthContext';
 import { XCircleIcon } from '../user-interface/Icons';
 import { useQuestsDispatch } from '../../context/QuestsContext';
 
+// FIX: Declared custom element 'foliate-view' locally to ensure TypeScript recognizes it during build.
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'foliate-view': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+    }
+  }
+}
+
 interface EpubReaderPanelProps {
   quest: Quest;
 }

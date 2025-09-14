@@ -8,12 +8,3 @@ declare module '*.md?raw' {
   const content: string;
   export default content;
 }
-
-// FIX: Declared custom element 'foliate-view' globally to allow its use in JSX without TypeScript errors.
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'foliate-view': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
-    }
-  }
-}

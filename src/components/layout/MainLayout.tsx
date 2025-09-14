@@ -1,3 +1,4 @@
+
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -19,8 +20,8 @@ import PdfReaderPanel from '../reader/PdfReaderPanel';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  // FIX: Destructure readingEpubQuest and readingPdfQuest from useUIState.
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingEpubQuest, readingPdfQuest } = useUIState();
+  // FIX: Destructure readingQuest instead of readingEpubQuest from useUIState, as 'readingEpubQuest' does not exist on the type.
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingQuest, readingPdfQuest } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
@@ -176,7 +177,7 @@ const MainLayout: React.FC = () => {
       </div>
       <ChatController />
       {isChatOpen && <ChatPanel />}
-      {readingEpubQuest && <EpubReaderPanel quest={readingEpubQuest} />}
+      {readingQuest && <EpubReaderPanel quest={readingQuest} />}
       {readingPdfQuest && <PdfReaderPanel quest={readingPdfQuest} />}
     </>
   );

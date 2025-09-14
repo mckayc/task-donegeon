@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Quest } from '../../types';
 import { useUIDispatch } from '../../context/UIContext';
@@ -6,15 +7,6 @@ import { useAuthState } from '../../context/AuthContext';
 import { useQuestsDispatch } from '../../context/QuestsContext';
 import { XCircleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
-
-// FIX: Declare the custom element type for TypeScript's JSX parser.
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'foliate-view': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
-    }
-  }
-}
 
 // Define the type for the custom element's instance methods
 interface FoliateViewElement extends HTMLElement {
@@ -27,7 +19,6 @@ interface EpubReaderPanelProps {
 }
 
 const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
-  // FIX: The correct dispatcher from UIContext is `setReadingQuest`, not `setReadingEpubQuest`.
   const { setReadingQuest } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { updateReadingProgress } = useQuestsDispatch();
@@ -51,13 +42,18 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
   // 2. Open the book when the component is ready
   useEffect(() => {
-    if (isLibraryLoaded && viewRef.current && quest.epubUrl) {
+    // Capture the current values in constants to ensure TypeScript
+    // knows they are non-null within the async function's scope.
+    const viewElement = viewRef.current;
+    const epubUrl = quest.epubUrl;
+
+    if (isLibraryLoaded && viewElement && epubUrl) {
       const openBook = async () => {
         try {
-          await viewRef.current.open(quest.epubUrl);
+          await viewElement.open(epubUrl);
           const savedLocation = currentUser && quest.readingProgress?.[currentUser.id]?.locationCfi;
           if (savedLocation) {
-            await viewRef.current.goTo(savedLocation);
+            await viewElement.goTo(savedLocation);
           }
         } catch (err) {
           console.error("Foliate: failed to open book", err);
@@ -65,7 +61,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         }
       };
       openBook();
-    } else if (isLibraryLoaded && !quest.epubUrl) {
+    } else if (isLibraryLoaded && !epubUrl) {
         setError("No EPUB file is associated with this quest.");
     }
   }, [isLibraryLoaded, quest.epubUrl, currentUser, quest.readingProgress]);
@@ -91,7 +87,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
     return () => {
       viewElement.removeEventListener('relocate', handleRelocate);
     };
-  }, [handleRelocate]);
+  }, [handleRelocate, isLibraryLoaded]); // Re-add listener if library reloads
 
   return (
     <div className="fixed inset-0 bg-stone-900/90 z-[80] flex flex-col items-center justify-center backdrop-blur-sm">
@@ -104,7 +100,6 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         </header>
         <div className="flex-grow w-full h-full relative bg-black">
           {isLibraryLoaded && !error && (
-            // This custom element JSX is now recognized due to the global declaration.
             <foliate-view ref={viewRef} style={{ width: '100%', height: '100%' }}></foliate-view>
           )}
           {!isLibraryLoaded && !error && (

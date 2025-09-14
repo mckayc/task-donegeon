@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Quest } from '../../types';
 import Button from '../user-interface/Button';
@@ -34,7 +32,7 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
   // 1. Load the Foliate library script
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://unpkg.com/foliate-js';
+    script.src = 'https://esm.sh/foliate-js';
     script.type = 'module';
     script.onload = () => setIsLibraryLoaded(true);
     script.onerror = () => setError('Failed to load the EPUB reader library.');

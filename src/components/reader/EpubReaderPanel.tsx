@@ -1,6 +1,45 @@
-import React, a
-  n
-    const openBook = async () => {
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Quest } from '../../types';
+import Button from '../user-interface/Button';
+import { useUIDispatch } from '../../context/UIContext';
+import { useAuthState } from '../../context/AuthContext';
+import { XCircleIcon } from '../user-interface/Icons';
+import { useQuestsDispatch } from '../../context/QuestsContext';
+
+interface EpubReaderPanelProps {
+  quest: Quest;
+}
+
+const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
+  const { setReadingQuest } = useUIDispatch();
+  const { currentUser } = useAuthState();
+  const { updateReadingProgress } = useQuestsDispatch();
+
+  const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const viewRef = useRef<HTMLElement & { open: (url: string) => Promise<void>; goTo: (cfi: string) => Promise<void> }>(null);
+
+  // 1. Load the Foliate library script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/foliate-js';
+    script.type = 'module';
+    script.onload = () => setIsLibraryLoaded(true);
+    script.onerror = () => setError('Failed to load the EPUB reader library.');
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // 2. Open the book when the library is ready
+  useEffect(() => {
+    const viewElement = viewRef.current;
+    const epubUrl = quest.epubUrl;
+
+    if (isLibraryLoaded && viewElement && epubUrl) {
+      const openBook = async () => {
         try {
           await viewElement.open(epubUrl);
           const savedLocation = currentUser && quest.readingProgress?.[currentUser.id]?.locationCfi;
@@ -16,7 +55,7 @@ import React, a
     } else if (isLibraryLoaded && !epubUrl) {
         setError("No EPUB file is associated with this quest.");
     }
-  }, [isLibraryLoaded, quest.epubUrl, currentUser, quest.readingProgress]);
+  }, [isLibraryLoaded, quest.epubUrl, currentUser, quest.readingProgress, quest.id]);
 
   // 3. Set up event listeners for saving progress
   const handleRelocate = useCallback((e: Event) => {
@@ -32,7 +71,7 @@ import React, a
   
   useEffect(() => {
     const viewElement = viewRef.current;
-    if (!viewElement) return;
+    if (!viewElement || !isLibraryLoaded) return;
     
     viewElement.addEventListener('relocate', handleRelocate);
     

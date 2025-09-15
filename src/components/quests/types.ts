@@ -1,4 +1,3 @@
-
 // Changed import from '../items/types' to '../users/types' to break circular dependency.
 import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -53,7 +52,6 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
-// FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
 export interface Bookmark {
   label: string;
   cfi: string;

@@ -56,7 +56,8 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
     // --- Book Initialization ---
      useEffect(() => {
-        if (!quest.epubUrl) {
+        const epubUrl = quest.epubUrl;
+        if (!epubUrl) {
             setError("No EPUB file URL provided.");
             addEpubLog({ type: 'ERROR', message: `No EPUB URL for quest "${quest.title}"` });
             return;
@@ -65,10 +66,10 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
         const loadBook = async () => {
             setIsLoading(true);
             setError(null);
-            addEpubLog({ type: 'INFO', message: `Starting to load EPUB: ${quest.epubUrl}` });
+            addEpubLog({ type: 'INFO', message: `Starting to load EPUB: ${epubUrl}` });
             
             try {
-                const response = await fetch(quest.epubUrl);
+                const response = await fetch(epubUrl);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

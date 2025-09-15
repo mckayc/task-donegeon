@@ -1,19 +1,14 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-// FIX: Import AnimatePresence from framer-motion to handle animations.
 import { motion, AnimatePresence } from 'framer-motion';
 import { Quest, Bookmark } from '../../types';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import Button from '../user-interface/Button';
-// FIX: Import BookOpen and TrashIcon to resolve missing component errors.
 import { XCircleIcon, ChevronLeftIcon, ChevronRightIcon, SunIcon, MoonIcon, BookOpen, BookmarkPlusIcon, BookmarkSolidIcon, ChevronsUpDown, Maximize, Minimize, TrashIcon } from '../user-interface/Icons';
 import { useDebounce } from '../../hooks/useDebounce';
-
-// Declare epubjs library which is loaded from a script tag in index.html
-declare var ePub: any;
-declare var Epub: any;
+import ePub from 'epubjs';
 
 interface EpubReaderPanelProps {
   quest: Quest;
@@ -213,17 +208,23 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
 
 
     return (
+        // FIX: Wrapped framer-motion props in a spread object to resolve a TypeScript type error.
         <motion.div
             ref={containerRef}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            {...{
+                initial:{ opacity: 0 },
+                animate:{ opacity: 1 },
+                exit:{ opacity: 0 },
+            }}
             className="fixed inset-0 bg-stone-900 z-[80] flex flex-col items-center justify-center pdf-container"
         >
             {/* Header */}
-            <motion.header 
-                animate={{ y: isImmersive ? -100 : 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            {/* FIX: Wrapped framer-motion props in a spread object to resolve a TypeScript type error. */}
+            <motion.header
+                {...{
+                    animate:{ y: isImmersive ? -100 : 0 },
+                    transition:{ type: 'spring', stiffness: 300, damping: 30 },
+                }}
                 className="w-full p-3 flex justify-between items-center z-20 text-white bg-stone-800/80 backdrop-blur-sm flex-shrink-0"
             >
                 <div className="flex items-center gap-2">
@@ -255,11 +256,14 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
                 {/* TOC / Bookmarks Panel */}
                  <AnimatePresence>
                     {isTocOpen && (
+                        // FIX: Wrapped framer-motion props in a spread object to resolve a TypeScript type error.
                         <motion.div
-                            initial={{ x: '-100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-100%' }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                            {...{
+                                initial:{ x: '-100%' },
+                                animate:{ x: 0 },
+                                exit:{ x: '-100%' },
+                                transition:{ type: 'spring', stiffness: 400, damping: 40 },
+                            }}
                             className="absolute top-0 left-0 bottom-0 w-80 bg-stone-800/90 backdrop-blur-sm border-r border-stone-700 z-30 flex flex-col"
                         >
                             <h3 className="p-4 font-bold text-lg text-white border-b border-stone-700 flex-shrink-0">Contents</h3>
@@ -284,9 +288,12 @@ const EpubReaderPanel: React.FC<EpubReaderPanelProps> = ({ quest }) => {
             </div>
             
             {/* Footer */}
-             <motion.footer 
-                animate={{ y: isImmersive ? 100 : 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+             {/* FIX: Wrapped framer-motion props in a spread object to resolve a TypeScript type error. */}
+             <motion.footer
+                {...{
+                    animate:{ y: isImmersive ? 100 : 0 },
+                    transition:{ type: 'spring', stiffness: 300, damping: 30 },
+                }}
                 className="w-full p-3 flex justify-between items-center gap-4 z-20 text-white bg-stone-800/80 backdrop-blur-sm flex-shrink-0 text-sm"
             >
                 <div className="flex gap-4 w-1/3">

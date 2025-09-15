@@ -49,11 +49,14 @@ const Notification = ({ notification, onDismiss }: NotificationProps) => {
     }, [notification.id, notification.duration, handleDismiss]);
   
     return (
+      // FIX: Wrapped framer-motion props in a spread object to resolve a TypeScript type error.
       <motion.div
-        layout
-        initial={{ opacity: 0, y: 50, scale: 0.3 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+        {...{
+          layout: true,
+          initial: { opacity: 0, y: 50, scale: 0.3 },
+          animate: { opacity: 1, y: 0, scale: 1 },
+          exit: { opacity: 0, scale: 0.5, transition: { duration: 0.2 } },
+        }}
         className="max-w-sm w-full bg-stone-800 shadow-2xl rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden"
       >
         <div className="p-4 border border-stone-700/80 rounded-lg">

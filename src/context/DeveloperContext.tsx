@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
-import { BugReport, BugReportLogEntry, BugReportStatus, BugReportType } from '../types';
+import { BugReport, BugReportLogEntry, BugReportStatus, BugReportType, LogEntry } from '../types';
 import { useSystemDispatch, useSystemState } from './SystemContext';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -11,6 +11,7 @@ interface DeveloperState {
   activeBugId: string | null;
   trackClicks: boolean;
   trackElementDetails: boolean;
+  epubLogs: LogEntry[];
 }
 
 // Dispatch
@@ -23,6 +24,8 @@ interface DeveloperDispatch {
   stopPickingElement: () => void;
   setTrackClicks: (enabled: boolean) => void;
   setTrackElementDetails: (enabled: boolean) => void;
+  addEpubLog: (log: Omit<LogEntry, 'timestamp'>) => void;
+  clearEpubLogs: () => void;
 }
 
 const DeveloperStateContext = createContext<DeveloperState | undefined>(undefined);
@@ -35,6 +38,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [activeBugId, setActiveBugId] = useState<string | null>(null);
   const [trackClicks, setTrackClicks] = useState(true);
   const [trackElementDetails, setTrackElementDetails] = useState(false);
+  const [epubLogs, setEpubLogs] = useState<LogEntry[]>([]);
 
   const onPickCallbackRef = useRef<((info: any) => void) | null>(null);
   const highlightedElementRef = useRef<HTMLElement | null>(null);
@@ -113,6 +117,14 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
     bugLogger.add(entry);
   }, []);
+  
+  const addEpubLog = useCallback((log: Omit<LogEntry, 'timestamp'>) => {
+    setEpubLogs(prev => [...prev, { ...log, timestamp: new Date().toISOString() }]);
+  }, []);
+
+  const clearEpubLogs = useCallback(() => {
+    setEpubLogs([]);
+  }, []);
 
   const startPickingElement = useCallback((onPick: (elementInfo: any) => void) => {
     setIsPickingElement(true);
@@ -179,7 +191,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, [isPickingElement, stopPickingElement]);
 
-  const state = useMemo(() => ({ isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails }), [isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails]);
+  const state = useMemo(() => ({ isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails, epubLogs }), [isRecording, isPickingElement, logs, activeBugId, trackClicks, trackElementDetails, epubLogs]);
 
   const dispatch = useMemo(() => ({
     startRecording,
@@ -189,8 +201,10 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     startPickingElement,
     stopPickingElement,
     setTrackClicks,
-    setTrackElementDetails
-  }), [startRecording, stopRecording, cancelRecording, addLogEntry, startPickingElement, stopPickingElement, setTrackClicks, setTrackElementDetails]);
+    setTrackElementDetails,
+    addEpubLog,
+    clearEpubLogs,
+  }), [startRecording, stopRecording, cancelRecording, addLogEntry, startPickingElement, stopPickingElement, setTrackClicks, setTrackElementDetails, addEpubLog, clearEpubLogs]);
 
   return (
     <DeveloperStateContext.Provider value={state}>

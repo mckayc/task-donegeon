@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.02 - Removal of ePub (Working - Good starting point)",
-  "version": "0.5.02",
+  "name": "Task Donegeon 2.0 - 0.5.03 - PDF Reader Two-Page View",
+  "version": "0.5.03",
   "description": "Maintenance release with minor version bump.",
   "requestFramePermissions": [
     "camera"

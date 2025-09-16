@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -116,6 +114,8 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li>
                 <strong>PDF Reader:</strong> Attach <code>.pdf</code> files to quests. The integrated reader allows users to view documents directly in the app. It includes controls for page navigation, zooming, and fullscreen mode. The reader automatically saves the user's last viewed page and total time read *for this specific document*, allowing you to pick up where you left off.
                 <ul className="list-disc list-inside pl-6 mt-2">
+                    <li><strong>PDF Persistence Fix:</strong> Resolved a critical bug where the `pdfUrl` for a quest was not being saved to the database. PDF attachments are now correctly persisted.</li>
+                    <li><strong>Two-Page View:</strong> A new "book view" mode has been added to the reader, allowing users to view two pages side-by-side, mimicking a real book. This is ideal for documents designed as spreads. The reader intelligently handles the cover page.</li>
                     <li><strong>Navigation Stability Fix:</strong> Resolved a state synchronization bug that caused the page number to revert to its previously saved state immediately after navigating to a new page. The reading experience is now smooth and stable.</li>
                     <li><strong>Large File Support:</strong> The PDF reader has been optimized for performance. It now uses progressive loading, allowing very large documents to open almost instantly without requiring the entire file to be downloaded first. This significantly reduces memory usage and prevents browser crashes with big files.</li>
                     <li><strong>Total Time & UI Fixes:</strong> Corrected an issue where total read time was calculated incorrectly. The UI has been improved by simplifying page controls and ensuring the viewer properly fills the screen in fullscreen mode.</li>

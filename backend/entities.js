@@ -134,7 +134,6 @@ const QuestEntity = new EntitySchema({
         mediaType: { type: "varchar", nullable: true },
         aiTutorSessionMinutes: { type: "integer", nullable: true },
         videoUrl: { type: "varchar", nullable: true },
-        epubUrl: { type: "varchar", nullable: true },
         pdfUrl: { type: "varchar", nullable: true },
         iconType: { type: "varchar" },
         icon: { type: "varchar" },

@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -44,6 +45,11 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>Application Shell & PWA</h3>
+        <p>Details about the app's shell and progressive web app features.</p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Favicon Fix:</strong> Resolved an issue where the application's browser tab icon (favicon) was missing. The castle icon has been restored.</li>
+        </ul>
         <h3>Exchange Rate Clarity</h3>
         <p>To improve user understanding and transparency in the Exchange Post, the direct conversion rate between the two selected reward types is now prominently displayed.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">

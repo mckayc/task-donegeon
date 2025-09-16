@@ -1,6 +1,7 @@
+
 {
-  "name": "Task Donegeon 2.0 - 0.5.03 - PDF Reader Two-Page View",
-  "version": "0.5.03",
+  "name": "Task Donegeon 2.0 - 0.5.04 - Favicon Fix",
+  "version": "0.5.04",
   "description": "Maintenance release with minor version bump.",
   "requestFramePermissions": [
     "camera"

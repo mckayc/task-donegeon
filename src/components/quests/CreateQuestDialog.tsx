@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType } from '../quests/types';
+import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig } from '../quests/types';
 import { RewardCategory } from '../users/types';
 import { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -75,6 +75,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         pendingClaims: [],
         approvedClaims: [],
         conditionSetIds: undefined,
+        timerConfig: undefined,
     };
 
     // Mode: Edit
@@ -90,6 +91,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         dailyCompletionsLimit: questToEdit.dailyCompletionsLimit ?? 1,
         totalCompletionsLimit: questToEdit.totalCompletionsLimit ?? 0,
         conditionSetIds: questToEdit.conditionSetIds || undefined,
+        timerConfig: questToEdit.timerConfig || undefined,
       };
     }
 
@@ -300,6 +302,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         pendingClaims: formData.pendingClaims || [],
         approvedClaims: formData.approvedClaims || [],
         conditionSetIds: formData.conditionSetIds?.length ? formData.conditionSetIds : undefined,
+        timerConfig: formData.timerConfig || undefined,
     };
 
     if (onSave) {
@@ -538,6 +541,60 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             <ToggleSwitch enabled={formData.requiresApproval} setEnabled={(val: boolean) => setFormData(p => ({...p, requiresApproval: val}))} label="Requires Approval" />
           </div>
           
+          <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+            <h3 className="font-semibold text-lg text-stone-200">Timer</h3>
+            <ToggleSwitch
+                enabled={!!formData.timerConfig}
+                setEnabled={(enabled) => {
+                    if (enabled) {
+                        setFormData(p => ({ ...p, timerConfig: { mode: 'stopwatch' } }));
+                    } else {
+                        setFormData(p => ({ ...p, timerConfig: undefined }));
+                    }
+                }}
+                label="Enable Timer for this Quest"
+            />
+            {formData.timerConfig && (
+                <div className="pl-6 border-l-2 border-stone-700 space-y-4 pt-4">
+                    <div>
+                        <label className="block text-sm font-medium text-stone-300 mb-1">Timer Mode</label>
+                        <div className="flex gap-4 p-2 bg-stone-700/50 rounded-md">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    value="stopwatch"
+                                    name="timerMode"
+                                    checked={formData.timerConfig.mode === 'stopwatch'}
+                                    onChange={() => setFormData(p => ({ ...p, timerConfig: { ...p.timerConfig!, mode: 'stopwatch' } }))}
+                                    className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500"
+                                />
+                                <span>Stopwatch (Counts up)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    value="countdown"
+                                    name="timerMode"
+                                    checked={formData.timerConfig.mode === 'countdown'}
+                                    onChange={() => setFormData(p => ({ ...p, timerConfig: { ...p.timerConfig!, mode: 'countdown', durationSeconds: p.timerConfig?.durationSeconds || 600 } }))}
+                                    className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500"
+                                />
+                                <span>Countdown (Counts down)</span>
+                            </label>
+                        </div>
+                    </div>
+                    {formData.timerConfig.mode === 'countdown' && (
+                        <NumberInput
+                            label="Required Duration (Minutes)"
+                            value={Math.round((formData.timerConfig.durationSeconds || 0) / 60)}
+                            onChange={(newVal) => setFormData(p => ({ ...p, timerConfig: { ...p.timerConfig!, durationSeconds: newVal * 60 } }))}
+                            min={1}
+                        />
+                    )}
+                </div>
+            )}
+        </div>
+
           {(formData.type === QuestType.Venture || formData.type === QuestType.Journey) && (
               <div className="pt-4 border-t border-stone-700/60">
                 <h3 className="font-semibold text-lg text-stone-200 mb-2">Claiming</h3>

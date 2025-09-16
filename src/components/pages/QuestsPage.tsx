@@ -221,6 +221,9 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                 <div className="flex items-center gap-2 text-xs text-stone-400 overflow-hidden">
                     <span title={questGroup ? questGroup.name : 'Uncategorized'}>{questGroup ? questGroup.icon : '📂'}</span>
                     <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
+                    {quest.timerConfig && (
+                        <span title="Timed Quest" className="text-lg">⏱️</span>
+                    )}
                 </div>
                 <div title={absoluteDueDateString || 'No due date'} className="text-right">
                     <span className={`font-semibold text-sm ${timeStatusColor}`}>{timeStatusText}</span>

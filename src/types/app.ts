@@ -136,6 +136,12 @@ export interface AppSettings {
         autoExit: boolean;
         autoExitMinutes: number;
         userIds: string[];
+        showBattery?: boolean;
+        autoDim?: boolean;
+        autoDimStartTime?: string;
+        autoDimStopTime?: string;
+        autoDimInactivitySeconds?: number;
+        autoDimLevel?: number;
     };
     automatedBackups: {
         enabled: boolean;

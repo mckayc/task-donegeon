@@ -178,32 +178,66 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     };
 
     const renderActionButtons = () => {
-        if (quest.timerConfig) return null; // Timer buttons will be rendered instead
         if (onComplete) {
-            const isJourney = quest.type === QuestType.Journey;
-            const isAiQuest = quest.mediaType === QuestMediaType.AITeacher;
-            const canCompleteAiQuest = isAiQuest && isQuizPassed;
-
-            const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
-            
-            let buttonText = 'Complete';
-            if(isJourney) buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
-            else if (isAiQuest) buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Pass Quiz to Complete';
-
-            return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
+            if (quest.timerConfig) {
+                // Logic for TIMED quests that can be completed
+                if (thisQuestsTimer) {
+                    // Timer is active: Button should stop timer and complete.
+                    // Countdown quests can now be completed at any time.
+                    return (
+                        <Button onClick={handleStopAndComplete}>
+                            Stop & Complete
+                        </Button>
+                    );
+                } else {
+                    // Timer is NOT active: Button for manual completion.
+                    // We need to check for Journey/AI logic here too.
+                    const isJourney = quest.type === QuestType.Journey;
+                    const isAiQuest = quest.mediaType === QuestMediaType.AITeacher;
+                    const canCompleteAiQuest = isAiQuest && isQuizPassed;
+                    const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
+                    
+                    let buttonText = 'Complete Manually';
+                    if (isJourney) {
+                        buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
+                    } else if (isAiQuest) {
+                        buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Pass Quiz to Complete';
+                    }
+    
+                    return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
+                }
+            } else {
+                // Logic for NON-TIMED quests that can be completed
+                const isJourney = quest.type === QuestType.Journey;
+                const isAiQuest = quest.mediaType === QuestMediaType.AITeacher;
+                const canCompleteAiQuest = isAiQuest && isQuizPassed;
+                const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
+                
+                let buttonText = 'Complete';
+                if (isJourney) {
+                    buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
+                } else if (isAiQuest) {
+                    buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Pass Quiz to Complete';
+                }
+    
+                return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
+            }
         }
+    
+        // Logic for claimable quests (when onComplete is not provided)
         if (!currentUser || userForView) return null;
         const isClaimableType = quest.type === QuestType.Venture || quest.type === QuestType.Journey;
         if (quest.requiresClaim && isClaimableType) {
             const userPendingClaim = quest.pendingClaims?.find(c => c.userId === currentUser.id);
             const userApprovedClaim = quest.approvedClaims?.find(c => c.userId === currentUser.id);
             const isClaimLimitReached = (quest.approvedClaims?.length || 0) >= (quest.claimLimit || 1);
-
+    
             if (userPendingClaim) return <><Button variant="secondary" onClick={handleCancelClaim}>Cancel Claim</Button><Button disabled>Claim Pending</Button></>;
             if (userApprovedClaim) return <><Button variant="secondary" onClick={handleUnclaim}>Unclaim</Button><Button onClick={handleComplete}>Complete Quest</Button></>;
             if (isClaimLimitReached && !userApprovedClaim) return <Button disabled>Claim Limit Reached</Button>;
             return <Button onClick={handleClaim}>Claim Quest</Button>;
         }
+        
         return null;
     };
 
@@ -248,16 +282,6 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             {quest.pdfUrl && <Button variant="secondary" onClick={handleOpenPdfReader}>📖 Read PDF</Button>}
                             {onToggleTodo && quest.type === QuestType.Venture && <ToggleSwitch enabled={!!isTodo} setEnabled={() => onToggleTodo()} label="To-Do"/>}
                             {renderActionButtons()}
-                             {onComplete && quest.timerConfig && (() => {
-                                const isCountdown = quest.timerConfig.mode === 'countdown';
-                                const isCountdownFinished = isCountdown && displaySeconds <= 0;
-                                const canComplete = !isCountdown || isCountdownFinished;
-                                return (
-                                    <Button onClick={handleStopAndComplete} disabled={!thisQuestsTimer || !canComplete}>
-                                        {isCountdown && !isCountdownFinished ? 'Complete' : 'Stop & Complete'}
-                                    </Button>
-                                );
-                            })()}
                         </div>
                     </div>
                 </div>

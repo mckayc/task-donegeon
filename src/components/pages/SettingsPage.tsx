@@ -1,4 +1,5 @@
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -197,7 +198,7 @@ export const SettingsPage: React.FC = () => {
     const getAccentStyle = (theme: ThemeDefinition) => ({
         backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
     });
-
+    
     return (
         <div className="space-y-8 relative">
              <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
@@ -284,6 +285,22 @@ export const SettingsPage: React.FC = () => {
                                 <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'autoExit', val)} label="Auto-exit after inactivity" />
                                 {formState.sharedMode.autoExit && (
                                     <Input label="Auto-exit timer (minutes)" type="number" value={formState.sharedMode.autoExitMinutes} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoExitMinutes', Number(e.target.value))} />
+                                )}
+                                <div className="pt-4 border-t border-stone-700/60" />
+                                <ToggleSwitch enabled={formState.sharedMode.showBattery || false} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'showBattery', val)} label="Show Battery Status" />
+                                <ToggleSwitch enabled={formState.sharedMode.autoDim || false} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'autoDim', val)} label="Enable Auto-Dimming" />
+                                {formState.sharedMode.autoDim && (
+                                    <div className="pl-6 border-l-2 border-stone-700/60 space-y-4 pt-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input label="Dimming Start Time" type="time" value={formState.sharedMode.autoDimStartTime || '21:00'} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimStartTime', e.target.value)} />
+                                            <Input label="Dimming Stop Time" type="time" value={formState.sharedMode.autoDimStopTime || '06:00'} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimStopTime', e.target.value)} />
+                                        </div>
+                                        <Input label="Dim after inactivity (seconds)" type="number" value={formState.sharedMode.autoDimInactivitySeconds || 30} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimInactivitySeconds', Number(e.target.value))} />
+                                        <div>
+                                            <label className="block text-sm font-medium text-stone-300 mb-1">Dimness Level ({Math.round((formState.sharedMode.autoDimLevel || 0.5) * 100)}%)</label>
+                                            <input type="range" min="0.2" max="0.8" step="0.05" value={formState.sharedMode.autoDimLevel || 0.5} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimLevel', Number(e.target.value))} className="w-full" />
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         )}

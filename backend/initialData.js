@@ -91,6 +91,12 @@ const INITIAL_SETTINGS = {
         autoExit: false,
         autoExitMinutes: 2,
         userIds: [],
+        showBattery: false,
+        autoDim: false,
+        autoDimStartTime: '21:00',
+        autoDimStopTime: '06:00',
+        autoDimInactivitySeconds: 30,
+        autoDimLevel: 0.5,
     },
     automatedBackups: {
         enabled: false,

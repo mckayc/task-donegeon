@@ -16,10 +16,11 @@ import BugReporter from './components/dev/BugReporter';
 import { useDeveloperState } from './context/DeveloperContext';
 import GameOverlay from './components/games/GameOverlay';
 import { Role } from './components/users/types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
     const { currentUser, isFirstRun, isAppUnlocked, isSwitchingUser, users } = useAuthState();
-    const { isKioskDevice, appMode, activeGame } = useUIState();
+    const { isKioskDevice, appMode, activeGame, isScreenDimmed } = useUIState();
     const { setActiveGame } = useUIDispatch();
     const { settings, themes, isUpdateAvailable } = useSystemState();
     const { installUpdate, setUpdateAvailable } = useSystemDispatch();
@@ -78,6 +79,16 @@ const App: React.FC = () => {
                 )}
                 {settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster && <BugReporter />}
                 {activeGame && <GameOverlay gameId={activeGame} onClose={() => setActiveGame(null)} />}
+                <AnimatePresence>
+                    {isScreenDimmed && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 pointer-events-none z-[9998]"
+                        />
+                    )}
+                </AnimatePresence>
             </div>
         </ErrorBoundary>
     );

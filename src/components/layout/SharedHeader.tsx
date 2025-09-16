@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 // FIX: Corrected import path for types
@@ -8,6 +9,7 @@ import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { SwitchUserIcon, ChartBarIcon, CalendarDaysIcon, ArrowDownTrayIcon } from '../user-interface/Icons';
 import { SharedView } from './SharedLayout';
+import BatteryStatus from '../user-interface/BatteryStatus';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -62,6 +64,7 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({ activeView, setActiveView }
         </div>
         {/* Right Group */}
         <div className="flex items-center gap-3">
+          {settings.sharedMode.showBattery && <BatteryStatus />}
           <Clock />
           <FullscreenToggle />
           

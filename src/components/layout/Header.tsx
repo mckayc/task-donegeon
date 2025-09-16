@@ -16,6 +16,7 @@ import { useQuestsState } from '../../context/QuestsContext';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import LiveTimerWidget from './LiveTimerWidget';
+import BatteryStatus from '../user-interface/BatteryStatus';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];
@@ -70,8 +71,8 @@ const Header: React.FC = () => {
   const { settings, isUpdateAvailable } = useSystemState();
   const { installUpdate } = useSystemDispatch();
   const { guilds } = useCommunityState();
-  const { appMode, isMobileView, isKioskDevice } = useUIState();
-  const { setAppMode, toggleSidebar, setActivePage } = useUIDispatch();
+  const { appMode, isMobileView, isKioskDevice, isScreenDimmed } = useUIState();
+  const { setAppMode, toggleSidebar, setActivePage, toggleScreenDim } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { logout, setIsSwitchingUser } = useAuthDispatch();
   const { quests } = useQuestsState();
@@ -220,6 +221,7 @@ const Header: React.FC = () => {
       
       {/* Right Group */}
       <div className="flex items-center gap-2 md:gap-4">
+        {isMobileView && <BatteryStatus />}
         <ViewModeToggle />
         <FullscreenToggle />
         {isKioskDevice && (
@@ -302,6 +304,15 @@ const Header: React.FC = () => {
                         <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
                         <a href="#" onClick={(e) => { e.preventDefault(); setActivePage('Dashboard', { from: 'header-customize-dashboard' }); }} data-log-id="header-profile-link-customize-dashboard" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Customize Dashboard</a>
                         <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
+                    </div>
+                     <div className="py-2 border-t border-stone-700">
+                        <div className="px-4">
+                             <ToggleSwitch
+                                enabled={isScreenDimmed}
+                                setEnabled={toggleScreenDim}
+                                label="Dim Screen"
+                            />
+                        </div>
                     </div>
                     {currentUser.role === Role.DonegeonMaster && settings.sharedMode.enabled && (
                         <div className="py-2 border-t border-stone-700">

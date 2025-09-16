@@ -1,7 +1,6 @@
-
 # Task Donegeon
 
-**Version:** 0.5.0
+**Version:** 0.5.6
 
 ---
 
@@ -16,16 +15,32 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of January 3, 2026 (v0.4.93):**
-    -   **PDF Reader Bug Fixes:** Implemented a series of fixes to the PDF reader for a more stable and intuitive experience. This includes resolving a bug that prevented page turning, correcting the total time read calculation, improving the fullscreen layout to properly fill the screen, and simplifying the page navigation controls.
+-   **Week of January 17, 2026 (v0.5.6):**
+    -   **Kiosk Mode Enhancements:** Added new administrative controls for shared devices.
+    -   **Battery Display:** Admins can now enable a battery level indicator in the Kiosk Mode header, perfect for managing shared tablets.
+    -   **Auto-Dimming:** A new feature allows admins to configure automatic screen dimming during specific hours (e.g., at night). The screen will dim after a set period of inactivity and instantly brighten on touch, saving power and reducing screen burn-in.
 
--   **Week of December 27, 2025 (v0.4.92):**
-    -   **PDF Reader Performance Upgrade:** Overhauled the PDF reader to use progressive loading. Large PDF files now load significantly faster and use less memory, preventing crashes and long wait times for big documents. Caching for offline access is now handled in the background without blocking the initial view.
+-   **Week of January 10, 2026 (v0.5.5):**
+    -   **Quest Timers:** Implemented a new feature allowing administrators to add timers to quests. This includes a "Stopwatch" mode for tracking time spent and a "Countdown" mode for tasks requiring a minimum duration (e.g., reading for 20 minutes).
+    -   **Persistent Timer Widget:** When a timed quest is started, a persistent widget appears in the header, allowing users to navigate the app while keeping track of their active quest. Clicking the widget returns the user to the quest details.
+    -   **Timer in Approvals:** The time recorded for a completed timed quest is now displayed on the Approvals page for administrators to review.
 
--   **Week of December 20, 2025 (v0.4.91):**
-    -   **New "My Goal" Dashboard Card:** Introduced a new customizable card for the Dashboard that displays the first item from a user's new "Wishlist". This card shows the item's cost and the user's current progress towards affording it, providing a clear visual goal.
-    -   **Wishlist Functionality:** Users can now add or remove items from their Wishlist directly from the Marketplace using a new star icon on each item card.
-    -   **Dashboard Layout Stability Fix:** Resolved a critical logic error where certain cards like "My Pending Items" or newly added cards would either be duplicated across columns or disappear entirely after customization or an app update. The new layout system correctly handles all card states to prevent these issues.
+-   **Week of December 13, 2025 (v0.4.82):**
+    -   **Quest Group Exemptions:** Added the ability to exempt entire Quest Groups from "Global" Condition Sets, allowing admins to create categories of quests that will always be available regardless of other global rules.
+
+-   **Week of December 13, 2025 (v0.4.81):**
+    -   **PDF Reader Fix:** Fixed a bug where the PDF reader page would revert immediately after navigation due to a state synchronization issue. Reading progress is now stable.
+
+-   **Week of December 13, 2025 (v0.4.80):**
+    -   **New Media Type - PDF:** Added a full-featured PDF reader. Quests can now include PDF documents, which users can read directly in the app. The reader includes page navigation, zoom, fullscreen mode, automatic progress saving, and offline caching.
+
+-   **Week of December 6, 2025 (v0.4.79):**
+    -   **Data Import/Export Fixes:** Fixed critical bugs preventing user imports from blueprints and causing failures in JSON/SQLite database restores. Data portability is now reliable.
+    -   **Service Worker Update:** Made a minor change to the service worker to ensure update prompts are triggered correctly.
+
+-   **Week of November 29, 2025 (v0.4.78):**
+    -   **EPUB Reader Caching & Offline Support:** The EPUB reader now downloads and caches book files locally. This provides instant loading times on subsequent opens and allows for full offline reading. A progress bar has been added to show the download status on the first open.
+    -   **Service Worker Update:** The service worker has been updated to enable this new caching strategy.
 
 -   **Week of November 22, 2025 (v0.4.77):**
     -   **The Grand Arcade Expansion:** Added six brand new minigames to the Arcade:
@@ -146,7 +161,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Blueprint System:** Export your own custom content as a "Blueprint" file to share with others or back up your creations.
 -   **Dynamic Rules Engine:** Create powerful "Condition Sets" to control when {tasks} and {stores} become available based on player progress, time of day, or items owned.
 -   **User Management:** Easily manage members, assign roles, and make manual adjustments to player accounts.
--   **Shared / Kiosk Mode:** Configure a device for shared family use with a quick-login screen and optional PIN protection.
+-   **Shared / Kiosk Mode:** Configure a device for shared family use with a quick-login screen and optional PIN protection. This mode now includes configurable options for displaying battery status and automatically dimming the screen after a period of inactivity.
 -   **In-Depth Theming:** Customize the application's entire look and feel, from fonts and colors to button shapes, using the Theme Editor.
 -   **Robust Data Management:** Create manual or automated backups of your entire application data (in JSON or SQLite format) and restore from them at any time.
 

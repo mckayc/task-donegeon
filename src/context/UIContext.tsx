@@ -45,6 +45,8 @@ export interface UIDispatch {
   // FIX: Added setTimedQuestDetail to UIDispatch to show/hide the timer dialog.
   setTimedQuestDetail: (quest: Quest | null) => void;
   // FIX: Added timer controls to UIDispatch.
+  startTimer: (questId: string, userId: string) => void;
+  stopTimer: () => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
 }
@@ -140,6 +142,20 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     _setTimedQuestDetail(quest);
   };
 
+  const startTimer = useCallback((questId: string, userId: string) => {
+    _setActiveTimer({
+        questId,
+        userId,
+        startTime: Date.now(),
+        isPaused: false,
+        pausedTime: 0,
+    });
+  }, []);
+  
+  const stopTimer = useCallback(() => {
+    _setActiveTimer(null);
+  }, []);
+
   // FIX: Added implementation for pausing the timer.
   const pauseTimer = useCallback(() => {
     _setActiveTimer(prev => {
@@ -196,6 +212,8 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setReadingPdfQuest,
     // FIX: Added timer dispatch functions to context value.
     setTimedQuestDetail,
+    startTimer,
+    stopTimer,
     pauseTimer,
     resumeTimer,
   };

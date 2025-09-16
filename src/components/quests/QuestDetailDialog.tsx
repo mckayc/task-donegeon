@@ -12,17 +12,23 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import AiTeacherPanel from '../chat/AiTeacherPanel';
 import AiStoryPanel from '../chat/AiStoryPanel';
 import VideoPlayerOverlay from '../video/VideoPlayerOverlay';
-import { useUIDispatch } from '../../context/UIContext';
+import { useUIDispatch, useUIState } from '../../context/UIContext';
 
 interface QuestDetailDialogProps {
   quest: Quest;
   onClose: () => void;
-  onComplete?: () => void;
+  onComplete?: (duration?: number) => void;
   onToggleTodo?: () => void;
   isTodo?: boolean;
   dialogTitle?: string;
   userForView?: User;
 }
+
+const formatTime = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle, userForView }) => {
     const { settings } = useSystemState();
@@ -31,14 +37,43 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { currentUser: loggedInUser } = useAuthState();
     const { completeCheckpoint, claimQuest, unclaimQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { setReadingPdfQuest } = useUIDispatch();
+    const { setReadingPdfQuest, startTimer, stopTimer, pauseTimer, resumeTimer } = useUIDispatch();
+    const { activeTimer } = useUIState();
     
     const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
     const [isQuizPassed, setIsQuizPassed] = useState(false);
     const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
+    const [displaySeconds, setDisplaySeconds] = useState(0);
 
     const currentUser = userForView || loggedInUser;
+
+    const thisQuestsTimer = useMemo(() => {
+        if (!currentUser) return null;
+        return (activeTimer && activeTimer.questId === quest.id && activeTimer.userId === currentUser.id) ? activeTimer : null;
+    }, [activeTimer, quest.id, currentUser]);
+
+    useEffect(() => {
+        if (!quest.timerConfig) return;
+
+        const isCountdown = quest.timerConfig.mode === 'countdown';
+        const duration = quest.timerConfig.durationSeconds || 0;
+
+        if (thisQuestsTimer && !thisQuestsTimer.isPaused) {
+            const interval = setInterval(() => {
+                const elapsed = (Date.now() - thisQuestsTimer.startTime + thisQuestsTimer.pausedTime) / 1000;
+                const remaining = duration - elapsed;
+                setDisplaySeconds(isCountdown ? Math.max(0, remaining) : elapsed);
+            }, 1000);
+            return () => clearInterval(interval);
+        } else if (thisQuestsTimer && thisQuestsTimer.isPaused) {
+            const elapsed = (thisQuestsTimer.pauseStartTime! - thisQuestsTimer.startTime + thisQuestsTimer.pausedTime) / 1000;
+            const remaining = duration - elapsed;
+            setDisplaySeconds(isCountdown ? Math.max(0, remaining) : elapsed);
+        } else {
+            setDisplaySeconds(isCountdown ? duration : 0);
+        }
+    }, [thisQuestsTimer, quest.timerConfig]);
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -108,6 +143,19 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         const total = quest.checkpoints?.length || 0;
         return { completed: completedCount, total, currentIdx: completedCount };
     }, [quest.type, quest.checkpoints, currentUser, completedCount]);
+    
+    const handleStopAndComplete = () => {
+        if (thisQuestsTimer && onComplete) {
+            const now = Date.now();
+            const elapsed = thisQuestsTimer.isPaused
+                ? thisQuestsTimer.pauseStartTime! - thisQuestsTimer.startTime + thisQuestsTimer.pausedTime
+                : now - thisQuestsTimer.startTime + thisQuestsTimer.pausedTime;
+            
+            const finalDurationSeconds = Math.round(elapsed / 1000);
+            stopTimer();
+            onComplete(finalDurationSeconds);
+        }
+    };
 
     const handleClaim = () => {
         if (!currentUser) return;
@@ -130,6 +178,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     };
 
     const renderActionButtons = () => {
+        if (quest.timerConfig) return null; // Timer buttons will be rendered instead
         if (onComplete) {
             const isJourney = quest.type === QuestType.Journey;
             const isAiQuest = quest.mediaType === QuestMediaType.AITeacher;
@@ -173,6 +222,18 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         </div>
                     </div>
                     <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
+                        {quest.timerConfig && currentUser && (
+                            <div className="p-4 bg-black/30 rounded-lg text-center space-y-3">
+                                <div className="font-mono text-5xl font-bold text-emerald-300">
+                                    {formatTime(Math.round(displaySeconds))}
+                                </div>
+                                <div className="flex justify-center gap-3">
+                                    {!thisQuestsTimer && <Button onClick={() => startTimer(quest.id, currentUser.id)}>Start Timer</Button>}
+                                    {thisQuestsTimer && !thisQuestsTimer.isPaused && <Button onClick={pauseTimer}>Pause</Button>}
+                                    {thisQuestsTimer && thisQuestsTimer.isPaused && <Button onClick={resumeTimer}>Resume</Button>}
+                                </div>
+                            </div>
+                        )}
                         <p className="text-stone-300 whitespace-pre-wrap">{quest.description || 'No description provided.'}</p>
                         {(quest.startDateTime || quest.startTime || quest.endDateTime || quest.endTime) && <div className="space-y-2 pt-4 border-t border-white/10"><p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Deadlines</p><div className="text-sm space-y-1 text-stone-200">{quest.startDateTime && <p><span className="font-semibold text-green-400">Starts:</span> {new Date(quest.startDateTime).toLocaleString()}</p>}{quest.startTime && <p><span className="font-semibold text-green-400">Due:</span> Daily at {new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>}{quest.endDateTime && <p><span className="font-semibold text-red-400">Due:</span> {new Date(quest.endDateTime).toLocaleString()}</p>}{quest.endTime && <p><span className="font-semibold text-amber-400">Incomplete at:</span> Daily at {new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>}</div></div>}
                         {quest.type === QuestType.Journey && quest.checkpoints && <div className="space-y-3 pt-4 border-t border-white/10"><h3 className="font-bold text-lg text-stone-200">Checkpoints ({journeyProgress.completed}/{journeyProgress.total})</h3>{quest.checkpoints.map((cp, idx) => { const isCompleted = idx < journeyProgress.completed; const isCurrent = idx === journeyProgress.currentIdx; const isObfuscated = isCurrent && hasPendingCompletion; return <div key={cp.id} className={`p-3 rounded-lg border-l-4 transition-all duration-300 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}><div className="flex items-center gap-2">{isCompleted && <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />}<p className={`font-semibold ${isCompleted ? 'text-stone-400 line-through' : 'text-stone-200'}`}>Checkpoint {idx + 1}</p></div><p className={`text-sm text-stone-300 mt-1 transition-all duration-300 ${isObfuscated ? 'filter blur-sm select-none' : ''}`}>{isObfuscated ? 'Awaiting approval...' : cp.description}</p><div className="mt-2">{renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', isObfuscated)}</div></div>; })}</div>}
@@ -187,6 +248,16 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             {quest.pdfUrl && <Button variant="secondary" onClick={handleOpenPdfReader}>📖 Read PDF</Button>}
                             {onToggleTodo && quest.type === QuestType.Venture && <ToggleSwitch enabled={!!isTodo} setEnabled={() => onToggleTodo()} label="To-Do"/>}
                             {renderActionButtons()}
+                             {onComplete && quest.timerConfig && (() => {
+                                const isCountdown = quest.timerConfig.mode === 'countdown';
+                                const isCountdownFinished = isCountdown && displaySeconds <= 0;
+                                const canComplete = !isCountdown || isCountdownFinished;
+                                return (
+                                    <Button onClick={handleStopAndComplete} disabled={!thisQuestsTimer || !canComplete}>
+                                        {isCountdown && !isCountdownFinished ? 'Complete' : 'Stop & Complete'}
+                                    </Button>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>

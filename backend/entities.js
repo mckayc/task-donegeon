@@ -1,3 +1,4 @@
+
 const { EntitySchema } = require("typeorm");
 
 // Placeholder classes for TypeORM entity schemas. This removes the dependency on a non-existent file.
@@ -165,6 +166,7 @@ const QuestEntity = new EntitySchema({
         pendingClaims: { type: "simple-json", nullable: true },
         approvedClaims: { type: "simple-json", nullable: true },
         conditionSetIds: { type: "simple-array", nullable: true },
+        timerConfig: { type: "simple-json", nullable: true },
         readingProgress: { type: "simple-json", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },

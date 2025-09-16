@@ -18,7 +18,75 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import QuestConditionStatusDialog from '../quests/QuestConditionStatusDialog';
 // FIX: Import useUIState to get appMode for condition checking.
-import { useUIState } from '../../context/UIContext';
+import { useUIState, useUIDispatch, ActiveTimer } from '../../context/UIContext';
+
+const formatTimer = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+const KioskTimerWidget: React.FC<{
+    user: User;
+    quest: Quest;
+    timer: ActiveTimer;
+    onPause: () => void;
+    onResume: () => void;
+    onStopComplete: (duration: number) => void;
+    onViewDetails: () => void;
+}> = ({ user, quest, timer, onPause, onResume, onStopComplete, onViewDetails }) => {
+    const [displaySeconds, setDisplaySeconds] = useState(0);
+
+    useEffect(() => {
+        const isCountdown = quest.timerConfig?.mode === 'countdown';
+        const duration = quest.timerConfig?.durationSeconds || 0;
+
+        if (!timer.isPaused) {
+            const calculateTime = () => {
+                const elapsed = (Date.now() - timer.startTime + timer.pausedTime) / 1000;
+                setDisplaySeconds(isCountdown ? Math.max(0, duration - elapsed) : elapsed);
+            };
+            calculateTime(); // Initial update
+            const interval = setInterval(calculateTime, 1000);
+            return () => clearInterval(interval);
+        } else {
+            const elapsed = (timer.pauseStartTime! - timer.startTime + timer.pausedTime) / 1000;
+            setDisplaySeconds(isCountdown ? Math.max(0, duration - elapsed) : elapsed);
+        }
+    }, [timer, quest.timerConfig]);
+
+    const handleStop = () => {
+        const now = Date.now();
+        const elapsed = timer.isPaused
+            ? timer.pauseStartTime! - timer.startTime + timer.pausedTime
+            : now - timer.startTime + timer.pausedTime;
+        
+        const finalDurationSeconds = Math.round(elapsed / 1000);
+        onStopComplete(finalDurationSeconds);
+    };
+
+    return (
+        <div className="mt-2 bg-emerald-900/50 border border-emerald-700/60 rounded-lg p-3 space-y-3">
+            <button onClick={onViewDetails} className="w-full text-left flex items-center gap-2">
+                <span className="text-xl">{quest.icon}</span>
+                <span className="text-sm font-semibold text-stone-200 truncate">{quest.title}</span>
+            </button>
+            <div className="font-mono text-4xl font-bold text-center text-emerald-300 flex items-center justify-center gap-3">
+                {formatTimer(Math.round(displaySeconds))}
+                {timer.isPaused && <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>}
+            </div>
+            <div className="flex justify-center gap-2">
+                {timer.isPaused ? (
+                    <Button size="sm" variant="secondary" onClick={onResume}>Resume</Button>
+                ) : (
+                    <Button size="sm" variant="secondary" onClick={onPause}>Pause</Button>
+                )}
+                <Button size="sm" onClick={handleStop}>Stop & Complete</Button>
+            </div>
+        </div>
+    );
+};
+
 
 const SharedCalendarPage: React.FC = () => {
     const systemState = useSystemState();
@@ -32,11 +100,12 @@ const SharedCalendarPage: React.FC = () => {
     const progressionState = useProgressionState();
     const economyState = useEconomyState();
     const communityState = useCommunityState();
-    const { appMode } = useUIState();
+    const { appMode, activeTimer } = useUIState();
+    const { setTimedQuestDetail, stopTimer, pauseTimer, resumeTimer } = useUIDispatch();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
-    const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
+    const [completingQuest, setCompletingQuest] = useState<{ quest: Quest; user: User; duration?: number; } | null>(null);
     const [selectedQuestDetailsId, setSelectedQuestDetailsId] = useState<{ questId: string; userId: string } | null>(null);
     const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<{ quest: Quest; user: User } | null>(null);
 
@@ -117,9 +186,9 @@ const SharedCalendarPage: React.FC = () => {
         addNotification({ type: 'success', message: `"${quest.title}" completed for ${user.gameName}!` });
     };
     
-    const proceedWithCompletion = (quest: Quest, user: User) => {
-        if (quest.requiresApproval) {
-            setQuestForNoteCompletion({ quest, user });
+    const proceedWithCompletion = (quest: Quest, user: User, duration?: number) => {
+        if (quest.requiresApproval || duration !== undefined) {
+            setCompletingQuest({ quest, user, duration });
         } else {
             dispatchQuickComplete(quest, user);
         }
@@ -285,46 +354,71 @@ const SharedCalendarPage: React.FC = () => {
     return (
         <div className="overflow-x-auto scrollbar-hide p-4 md:p-8 h-full">
             <div className="flex space-x-6 min-w-max h-full">
-                {sharedUsers.map(user => (
-                    <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
-                        <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-                            <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
-                            <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
+                {sharedUsers.map(user => {
+                    const userTimer = (activeTimer && activeTimer.userId === user.id) ? activeTimer : null;
+                    const timerQuest = userTimer ? quests.find(q => q.id === userTimer.questId) : null;
+
+                    return (
+                        <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
+                            <div className="flex items-center gap-3 mb-2 flex-shrink-0">
+                                <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
+                                <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
+                            </div>
+                            {userTimer && timerQuest && (
+                                <KioskTimerWidget
+                                    user={user}
+                                    quest={timerQuest}
+                                    timer={userTimer}
+                                    onPause={pauseTimer}
+                                    onResume={resumeTimer}
+                                    onStopComplete={(duration) => {
+                                        stopTimer();
+                                        proceedWithCompletion(timerQuest, user, duration);
+                                    }}
+                                    onViewDetails={() => setTimedQuestDetail(timerQuest)}
+                                />
+                            )}
+                            <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide mt-2">
+                                {(() => {
+                                    const userQuests = questsByUser.get(user.id);
+                                    if (!userQuests || (userQuests.duties.length === 0 && userQuests.ventures.length === 0)) {
+                                        return <p className="text-center text-stone-500 pt-16">No quests scheduled for today.</p>
+                                    }
+                                    return (
+                                        <>
+                                            {userQuests.duties.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <h4 className="font-bold text-lg text-stone-300">Duties</h4>
+                                                    {userQuests.duties.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
+                                                </div>
+                                            )}
+                                            {userQuests.ventures.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <h4 className="font-bold text-lg text-stone-300 mt-4">Ventures</h4>
+                                                    {userQuests.ventures.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
+                                                </div>
+                                            )}
+                                        </>
+                                    )
+                                })()}
+                            </div>
                         </div>
-                        <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
-                            {(() => {
-                                const userQuests = questsByUser.get(user.id);
-                                if (!userQuests || (userQuests.duties.length === 0 && userQuests.ventures.length === 0)) {
-                                    return <p className="text-center text-stone-500 pt-16">No quests scheduled for today.</p>
-                                }
-                                return (
-                                    <>
-                                        {userQuests.duties.length > 0 && (
-                                            <div className="space-y-2">
-                                                <h4 className="font-bold text-lg text-stone-300">Duties</h4>
-                                                {userQuests.duties.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
-                                            </div>
-                                        )}
-                                        {userQuests.ventures.length > 0 && (
-                                            <div className="space-y-2">
-                                                <h4 className="font-bold text-lg text-stone-300 mt-4">Ventures</h4>
-                                                {userQuests.ventures.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
-                                            </div>
-                                        )}
-                                    </>
-                                )
-                            })()}
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {verifyingQuest && (
                 <PinEntryDialog user={verifyingQuest.user} onClose={() => setVerifyingQuest(null)} onSuccess={onPinSuccess} />
             )}
 
-            {questForNoteCompletion && (
-                <CompleteQuestDialog quest={questForNoteCompletion.quest} user={questForNoteCompletion.user} onClose={() => setQuestForNoteCompletion(null)} completionDate={currentDate} />
+            {completingQuest && (
+                <CompleteQuestDialog 
+                    quest={completingQuest.quest} 
+                    user={completingQuest.user} 
+                    onClose={() => setCompletingQuest(null)} 
+                    completionDate={currentDate} 
+                    duration={completingQuest.duration}
+                />
             )}
 
             {selectedQuestDetails && (

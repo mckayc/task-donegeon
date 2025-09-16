@@ -148,7 +148,6 @@ export interface QuestCompletion {
   actedById?: string;
   actedAt?: string;
   checkpointId?: string;
-  // FIX: Added duration for timed quests.
   timerDurationSeconds?: number;
   createdAt?: string;
   updatedAt?: string;

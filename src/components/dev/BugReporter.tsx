@@ -9,7 +9,7 @@ import { useAuthState } from '../../context/AuthContext';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 const BugReporter: React.FC = () => {
-    const { isRecording, startRecording, stopRecording, cancelRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId, trackClicks, setTrackClicks, trackElementDetails, setTrackElementDetails, epubLogs, clearEpubLogs } = useDeveloper();
+    const { isRecording, startRecording, stopRecording, cancelRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId, trackClicks, setTrackClicks, trackElementDetails, setTrackElementDetails } = useDeveloper();
     const { bugReports } = useSystemState();
     const { currentUser } = useAuthState();
 
@@ -17,7 +17,6 @@ const BugReporter: React.FC = () => {
     const [note, setNote] = useState('');
     const [reportType, setReportType] = useState<BugReportType>(BugReportType.Bug);
     const [isLogVisible, setIsLogVisible] = useState(false);
-    const [logViewTab, setLogViewTab] = useState<'main' | 'epub'>('main');
     const [isMinimized, setIsMinimized] = useState(true);
     const [activeTab, setActiveTab] = useState<'create' | 'continue'>('create');
     const logContainerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +37,7 @@ const BugReporter: React.FC = () => {
         if (isLogVisible && logContainerRef.current) {
             logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
         }
-    }, [logs, isLogVisible, logViewTab]);
+    }, [logs, isLogVisible]);
     
     useEffect(() => {
         // Cleanup interval on unmount
@@ -176,34 +175,18 @@ const BugReporter: React.FC = () => {
         return (
              <div data-bug-reporter-ignore className="fixed bottom-0 left-0 right-0 bg-red-900/80 border-t-2 border-red-600 shadow-2xl z-[99] backdrop-blur-sm flex flex-col transition-all duration-300">
                 {isLogVisible && (
-                    <div className="h-48 bg-black/30 text-stone-300 flex flex-col">
-                        <div className="flex-shrink-0 bg-black/20 p-1 flex items-center justify-between">
-                            <div className="flex gap-1">
-                                <button onClick={() => setLogViewTab('main')} className={`px-2 py-1 text-xs rounded ${logViewTab === 'main' ? 'bg-red-700' : 'bg-red-900/50'}`}>Main Log</button>
-                                <button onClick={() => setLogViewTab('epub')} className={`px-2 py-1 text-xs rounded ${logViewTab === 'epub' ? 'bg-red-700' : 'bg-red-900/50'}`}>EPUB Log</button>
+                    <div ref={logContainerRef} className="h-48 bg-black/30 p-4 overflow-y-auto font-mono text-xs text-stone-300 scrollbar-hide">
+                        {logs.map((log, index) => (
+                            <div key={index} className="border-b border-red-800/50 py-1">
+                                <span className="text-red-300/70 mr-2">{new Date(log.timestamp).toLocaleTimeString()} [{log.type}]</span>
+                                <span className="text-stone-200 whitespace-pre-wrap">{log.message}</span>
+                                {log.element && (
+                                    <div className="pl-4 text-sky-300 text-xs">
+                                        <p>&lt;{log.element.tag} id="{log.element.id || ''}" class="{log.element.classes || ''}"&gt;</p>
+                                    </div>
+                                )}
                             </div>
-                            {logViewTab === 'epub' && <Button variant="ghost" size="sm" className="!text-xs !py-0 !px-2 !h-auto" onClick={clearEpubLogs}>Clear EPUB Logs</Button>}
-                        </div>
-                        <div ref={logContainerRef} className="flex-grow overflow-y-auto font-mono text-xs p-2 scrollbar-hide">
-                            {logViewTab === 'main' && logs.map((log, index) => (
-                                <div key={index} className="border-b border-red-800/50 py-1">
-                                    <span className="text-red-300/70 mr-2">{new Date(log.timestamp).toLocaleTimeString()} [{log.type}]</span>
-                                    <span className="text-stone-200 whitespace-pre-wrap">{log.message}</span>
-                                    {log.element && (
-                                        <div className="pl-4 text-sky-300 text-xs">
-                                            <p>&lt;{log.element.tag} id="{log.element.id || ''}" class="{log.element.classes || ''}"&gt;</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                            {logViewTab === 'epub' && epubLogs.map((log, index) => (
-                                <div key={index} className="border-b border-red-800/50 py-1">
-                                    <span className="text-stone-500 mr-2">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                                    <span className={`font-bold ${log.type === 'ERROR' ? 'text-red-400' : 'text-sky-300'}`}>[{log.type}]</span>
-                                    <span className="text-stone-200 ml-2 whitespace-pre-wrap">{log.message}</span>
-                                </div>
-                            ))}
-                        </div>
+                        ))}
                     </div>
                 )}
                  <div className="p-3 flex flex-col gap-2">

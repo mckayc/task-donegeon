@@ -38,10 +38,3 @@ export interface BugReportTemplate {
   title: string;
   text: string;
 }
-
-// Log entry for general-purpose debugging, like the EPUB reader panel.
-export interface LogEntry {
-  timestamp: string;
-  type: 'INFO' | 'ERROR' | 'WARN' | 'DEBUG' | 'METADATA';
-  message: string;
-}

@@ -1,3 +1,4 @@
+
 // Changed import from '../items/types' to '../users/types' to break circular dependency.
 import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -28,7 +29,6 @@ export enum QuestMediaType {
   AIStory = 'AI_STORY',
   Video = 'VIDEO',
   PDF = 'PDF',
-  EPUB = 'EPUB',
 }
 
 export interface Checkpoint {
@@ -52,6 +52,7 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
+// FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
 export interface Bookmark {
   label: string;
   cfi: string;
@@ -67,7 +68,6 @@ export interface Quest {
   mediaType?: QuestMediaType;
   aiTutorSessionMinutes?: number;
   videoUrl?: string | null;
-  epubUrl?: string | null;
   pdfUrl?: string | null;
   iconType: 'emoji' | 'image';
   icon: string;

@@ -69,13 +69,10 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
   };
 
   return (
-    // FIX: Wrapped framer-motion props in a spread object to resolve a TypeScript type error.
     <motion.div
-        {...{
-            initial:{ opacity: 0 },
-            animate:{ opacity: 1 },
-            exit:{ opacity: 0 },
-        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         className="fixed inset-0 bg-stone-900 z-[100]"
         data-bug-reporter-ignore
     >

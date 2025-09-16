@@ -30,13 +30,10 @@ const VideoPlayerOverlay: React.FC<VideoPlayerOverlayProps> = ({ videoUrl, onClo
     const embedUrl = getYouTubeEmbedUrl(videoUrl);
 
     return (
-        // FIX: Wrapped framer-motion props in a spread object to resolve a TypeScript type error.
         <motion.div
-            {...{
-                initial:{ opacity: 0 },
-                animate:{ opacity: 1 },
-                exit:{ opacity: 0 },
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100] p-4"
             data-bug-reporter-ignore
             onClick={onClose}

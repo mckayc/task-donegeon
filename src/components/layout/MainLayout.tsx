@@ -1,4 +1,3 @@
-
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -15,11 +14,10 @@ import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
 import PdfReaderPanel from '../reader/PdfReaderPanel';
-import EpubReaderPanel from '../reader/EpubReaderPanel';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest, readingEpubQuest } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage, toggleSidebar } = useUIDispatch();
@@ -176,7 +174,6 @@ const MainLayout: React.FC = () => {
       <ChatController />
       {isChatOpen && <ChatPanel />}
       {readingPdfQuest && <PdfReaderPanel quest={readingPdfQuest} />}
-      {readingEpubQuest && <EpubReaderPanel quest={readingEpubQuest} />}
     </>
   );
 };

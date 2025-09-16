@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 // FIX: PDFPageProxy is not directly exported from 'react-pdf' in this version.
 import { pdfjs, Document, Page } from 'react-pdf';
@@ -7,7 +5,7 @@ import { Quest } from '../../types';
 import Button from '../user-interface/Button';
 import { useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
-import { XCircleIcon, ZoomIn, ZoomOut, Minimize, Maximize, ChevronLeftIcon, ChevronRightIcon } from '../user-interface/Icons';
+import { XCircleIcon, ZoomIn, ZoomOut, Minimize, Maximize, ChevronLeftIcon, ChevronRightIcon, Book, BookOpen } from '../user-interface/Icons';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -48,6 +46,8 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
   const [containerSize, setContainerSize] = useState<{ width?: number, height?: number }>({});
   const initialPageSetRef = useRef(false);
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [isBookView, setIsBookView] = useState(false);
+  const [pageInput, setPageInput] = useState('1');
 
   const debouncedPageNumber = useDebounce(pageNumber, 1000);
   
@@ -238,31 +238,88 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
       return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
   };
 
-  const pageProps: any = {
-    pageNumber: pageNumber,
+  const getPageLabel = useCallback(() => {
+    if (!numPages) return String(pageNumber);
+    if (isBookView) {
+        if (pageNumber === 1) return '1';
+        const left = pageNumber % 2 === 0 ? pageNumber : pageNumber - 1;
+        const right = left + 1;
+        if (right > numPages) return `${left}`;
+        return `${left}-${right}`;
+    }
+    return String(pageNumber);
+  }, [pageNumber, numPages, isBookView]);
+
+  useEffect(() => {
+    setPageInput(getPageLabel());
+  }, [pageNumber, isBookView, numPages, getPageLabel]);
+
+  const handlePageInputSubmit = () => {
+    const val = parseInt(pageInput.split('-')[0], 10);
+    if (!isNaN(val)) {
+        handlePageChange(val);
+    } else {
+        setPageInput(getPageLabel());
+    }
+  };
+
+
+  const singlePageProps: any = {
     renderAnnotationLayer: false,
     renderTextLayer: false,
     onLoadSuccess: onPageLoadSuccess,
   };
 
   if (zoom !== 1) {
-      pageProps.scale = zoom;
+      singlePageProps.scale = zoom;
   } else {
-      // Smart fit-to-view logic for both fullscreen and initial load
       if (isPortrait) {
-          pageProps.height = containerSize.height ? containerSize.height - (isFullScreen ? 0 : 40) : undefined;
-          pageProps.width = undefined; // Unset width to maintain aspect ratio
-      } else { // Landscape
-          pageProps.width = containerSize.width ? containerSize.width - 20 : undefined;
-          pageProps.height = undefined; // Unset height to maintain aspect ratio
+          singlePageProps.height = containerSize.height ? containerSize.height - (isFullScreen ? 0 : 40) : undefined;
+          singlePageProps.width = undefined; 
+      } else {
+          singlePageProps.width = containerSize.width ? containerSize.width - 20 : undefined;
+          singlePageProps.height = undefined;
       }
   }
+  
+  const renderBookView = () => {
+    if (!numPages) return null;
+
+    const bookPageProps = { ...singlePageProps };
+    delete bookPageProps.scale; // Let width/height control scaling
+
+    if (isPortrait) {
+        bookPageProps.height = singlePageProps.height;
+        bookPageProps.width = undefined;
+    } else {
+        bookPageProps.width = containerSize.width ? (containerSize.width / 2) - 20 : undefined;
+        bookPageProps.height = undefined;
+    }
+
+    if (pageNumber === 1) {
+      return <Page key="page_1" pageNumber={1} {...singlePageProps} />;
+    }
+    
+    const leftPageNumber = pageNumber % 2 === 0 ? pageNumber : pageNumber - 1;
+    const rightPageNumber = leftPageNumber + 1;
+
+    return (
+      <div className="flex justify-center items-start gap-4">
+        <Page key={`page_${leftPageNumber}`} pageNumber={leftPageNumber} {...bookPageProps} />
+        {rightPageNumber <= numPages && (
+          <Page key={`page_${rightPageNumber}`} pageNumber={rightPageNumber} {...bookPageProps} />
+        )}
+      </div>
+    );
+  };
+
 
   return (
     <div ref={containerRef} className="fixed inset-0 bg-stone-900/90 z-[80] flex flex-col items-center justify-center pdf-container backdrop-blur-sm">
         <header className="w-full p-3 flex justify-between items-center z-20 text-white bg-stone-800/80 flex-shrink-0">
             <h3 className="font-bold text-lg truncate">{quest.title}</h3>
             <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={() => setIsBookView(p => !p)} title={isBookView ? "Single Page View" : "Book View"}>{isBookView ? <BookOpen className="w-5 h-5"/> : <Book className="w-5 h-5"/>}</Button>
                 <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(3, z + 0.2))} title="Zoom In"><ZoomIn className="w-5 h-5" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} title="Zoom Out"><ZoomOut className="w-5 h-5" /></Button>
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen} title="Fullscreen">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</Button>
@@ -285,9 +342,9 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                     onLoadSuccess={onDocumentLoadSuccess} 
                     onLoadError={onDocumentLoadError}
                     loading={<></>} // Hide default loader
-                    className="flex justify-center"
+                    className="flex justify-center items-start p-2"
                 >
-                    {!isLoading && <Page {...pageProps} />}
+                    {!isLoading && (isBookView ? renderBookView() : <Page pageNumber={pageNumber} {...singlePageProps} />)}
                 </Document>
             )}
         </div>
@@ -298,30 +355,25 @@ const PdfReaderPanel: React.FC<PdfReaderPanelProps> = ({ quest }) => {
                 <div title="Total Time Read"><span className="font-semibold">Total:</span> {formatTime(Math.floor(totalSecondsRead))}</div>
             </div>
             <div className="flex-grow flex justify-center items-center gap-4">
-                <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber - 1)} disabled={pageNumber <= 1}><ChevronLeftIcon className="w-5 h-5"/></Button>
+                <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber - (isBookView ? 2 : 1))} disabled={pageNumber <= 1}><ChevronLeftIcon className="w-5 h-5"/></Button>
                 <div className="flex items-center gap-2">
                     <Input
-                        type="number"
-                        value={pageNumber}
-                        onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            if (!isNaN(val)) setPageNumber(val);
-                        }}
-                        onBlur={() => handlePageChange(pageNumber)}
+                        type="text"
+                        value={pageInput}
+                        onChange={(e) => setPageInput(e.target.value)}
+                        onBlur={handlePageInputSubmit}
                         onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                             if (e.key === 'Enter') {
-                                handlePageChange(pageNumber);
+                                handlePageInputSubmit();
                                 (e.target as HTMLInputElement).blur();
                             }
                         }}
                         className="w-20 text-center no-spinner"
-                        min={1}
-                        max={numPages || 1}
                         disabled={!numPages}
                     />
                     <span className="text-stone-400">of {numPages || '...'}</span>
                 </div>
-                <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber + 1)} disabled={!numPages || pageNumber >= numPages}><ChevronRightIcon className="w-5 h-5"/></Button>
+                <Button variant="secondary" size="icon" onClick={() => handlePageChange(pageNumber + (isBookView ? 2 : 1))} disabled={!numPages || pageNumber >= numPages}><ChevronRightIcon className="w-5 h-5"/></Button>
             </div>
             <div className="w-1/3" />
         </footer>

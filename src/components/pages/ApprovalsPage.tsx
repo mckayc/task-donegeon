@@ -11,6 +11,14 @@ import { useCommunityState } from '../../context/CommunityContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useUIState } from '../../context/UIContext';
 
+// --- Helpers ---
+const formatDuration = (totalSeconds: number) => {
+    if (totalSeconds < 60) return `${totalSeconds}s`;
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+};
+
 // --- Desktop View Components ---
 
 const QuestApprovalTable: React.FC<{
@@ -30,8 +38,7 @@ const QuestApprovalTable: React.FC<{
                 <tr>
                     <th className="p-4 font-semibold">User</th>
                     <th className="p-4 font-semibold">Quest</th>
-                    <th className="p-4 font-semibold">Scope</th>
-                    <th className="p-4 font-semibold">Submitted At</th>
+                    <th className="p-4 font-semibold">Time Taken</th>
                     <th className="p-4 font-semibold">User Note</th>
                     <th className="p-4 font-semibold w-1/4">Admin Note</th>
                     <th className="p-4 font-semibold">Actions</th>
@@ -50,8 +57,9 @@ const QuestApprovalTable: React.FC<{
                                     </button>
                                 ) : 'Unknown Quest'}
                             </td>
-                            <td className="p-4 text-stone-400">{getGuildName(c.guildId)}</td>
-                            <td className="p-4 text-stone-400">{new Date(c.completedAt).toLocaleString()}</td>
+                             <td className="p-4 text-stone-400 font-mono">
+                                {c.timerDurationSeconds ? formatDuration(c.timerDurationSeconds) : 'N/A'}
+                            </td>
                             <td className="p-4 text-stone-400 italic truncate max-w-xs" title={c.note}>"{c.note || 'None'}"</td>
                             <td className="p-4">
                                 <Input 
@@ -305,6 +313,9 @@ const MobileQuestApprovalCard: React.FC<any> = ({ completion, notes, handleNoteC
                     <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(completion.guildId)}</span>
                 </p>
                 <p className="text-stone-400 text-sm">{completion.note ? `Note: "${completion.note}"` : 'No note provided.'}</p>
+                 {completion.timerDurationSeconds && (
+                    <p className="text-sm font-semibold text-sky-300">Time Taken: {formatDuration(completion.timerDurationSeconds)}</p>
+                )}
                 <p className="text-xs text-stone-500">Submitted: {new Date(completion.completedAt).toLocaleString()}</p>
             </button>
             <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-stone-700/60">

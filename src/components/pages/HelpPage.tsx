@@ -45,6 +45,27 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>Quest Timers</h3>
+        <p>
+            Certain quests can now be configured with timers, ideal for tasks where duration is a key component, such as reading, practicing an instrument, or screen time.
+        </p>
+         <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Stopwatch Mode:</strong> When a user starts a stopwatch quest, the timer begins counting up. The user can stop it at any time to complete the quest, and the total elapsed time is recorded for approval.
+            </li>
+             <li>
+                <strong>Countdown Mode:</strong> Admins can set a required duration (e.g., 20 minutes of reading). The user starts the timer, and it counts down. The quest can only be marked as complete once the timer has finished.
+            </li>
+             <li>
+                <strong>Persistent Timer Widget:</strong> While a timed quest is active, a small, persistent timer widget appears in the main header. This allows users to navigate away to other parts of the app without losing track of their time. Clicking the widget instantly brings them back to the quest detail view.
+            </li>
+             <li>
+                <strong>Smart Pausing:</strong> The timer automatically pauses if a user switches accounts in Kiosk Mode and resumes when they log back in, ensuring accurate time tracking in shared environments.
+            </li>
+             <li>
+                <strong>Approval Context:</strong> The final time recorded by the timer is displayed on the Approvals page, giving Donegeon Masters clear context to verify the completion.
+            </li>
+        </ul>
         <h3>Application Shell & PWA</h3>
         <p>Details about the app's shell and progressive web app features.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
@@ -193,6 +214,14 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of January 10, 2026 (v0.5.5)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Quest Timers:</strong> Implemented a new feature allowing administrators to add timers to quests. This includes a "Stopwatch" mode for tracking time spent and a "Countdown" mode for tasks requiring a minimum duration (e.g., reading for 20 minutes).</li>
+                <li><strong>Persistent Timer Widget:</strong> When a timed quest is started, a persistent widget appears in the header, allowing users to navigate the app while keeping track of their active quest. Clicking the widget returns the user to the quest details.</li>
+                <li><strong>Timer in Approvals:</strong> The time recorded for a completed timed quest is now displayed on the Approvals page for administrators to review.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.82)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
@@ -361,14 +390,14 @@ const VersionHistoryContent: React.FC = () => (
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of September 29, 2025 (v0.1.96 - v0.3.0)</h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 29, 2025 (v0.1.96 - v0.3.0):</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Kiosk Mode Overhaul:</strong> Re-architected Kiosk Mode to be a more stable URL-based system (`/kiosk`), patching critical security and login flow bugs.</li>
                 <li><strong>AI Foundations:</strong> Implemented the backend foundation for the AI Teacher feature with stateful chat sessions.</li>
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of September 22, 2025 (v0.1.90 - v0.1.95)</h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of September 22, 2025 (v0.1.90 - v0.1.95):</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Dashboard & Notifications:</strong> Introduced new dashboard widgets and header notifications for pending user items.</li>
                 <li><strong>Responsive Approvals:</strong> Made the Approvals page fully responsive for mobile devices.</li>

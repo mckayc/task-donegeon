@@ -1,8 +1,7 @@
-
 {
-  "name": "Task Donegeon 2.0 - 0.5.04 - Favicon Fix",
-  "version": "0.5.04",
-  "description": "Maintenance release with minor version bump.",
+  "name": "Task Donegeon 2.0 - 0.5.5 - Quest Timers",
+  "version": "0.5.5",
+  "description": "Adds stopwatch and countdown timers to quests, with a persistent timer widget and approval reporting.",
   "requestFramePermissions": [
     "camera"
   ],

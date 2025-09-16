@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } fr
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { Role } from '../users/types';
-import { Page } from '../../types/app';
+import { Page, Quest, QuestCompletionStatus } from '../../types';
 import { SystemNotification } from '../system/types';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -14,18 +14,25 @@ import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
 import PdfReaderPanel from '../reader/PdfReaderPanel';
+import QuestDetailDialog from '../quests/QuestDetailDialog';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
-  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest } = useUIState();
+  const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest, activeTimer, timedQuestDetail } = useUIState();
   const { currentUser } = useAuthState();
+  const { quests, questCompletions } = useQuestsState();
+  const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
   const { addNotification } = useNotificationsDispatch();
-  const { setActivePage, toggleSidebar } = useUIDispatch();
+  const { setActivePage, toggleSidebar, setTimedQuestDetail, pauseTimer, resumeTimer } = useUIDispatch();
   const { logout } = useAuthDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
+  const [completingQuest, setCompletingQuest] = useState<{quest: Quest, duration?: number} | null>(null);
   const prevUserIdRef = useRef<string | undefined>(undefined);
   const timerRef = useRef<number | null>(null);
+  const activeTimerUserId = useRef<string | undefined>(undefined);
   
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
@@ -43,6 +50,31 @@ const MainLayout: React.FC = () => {
         n.senderId !== currentUser.id // Don't show popups for your own announcements
     );
   }, [systemNotifications, currentUser]);
+  
+  useEffect(() => {
+    if (activeTimer && !activeTimer.isPaused) {
+        activeTimerUserId.current = activeTimer.userId;
+    }
+    
+    // When the user logs out or switches away
+    if (prevUserIdRef.current && prevUserIdRef.current !== currentUser?.id) {
+        // If there was a timer running for the user who is now gone
+        if (activeTimer && !activeTimer.isPaused && activeTimer.userId === prevUserIdRef.current) {
+            pauseTimer();
+        }
+    }
+    
+    // When a user logs in or switches back
+    if (currentUser && prevUserIdRef.current !== currentUser.id) {
+        // If there is a paused timer that belongs to this user
+        if (activeTimer && activeTimer.isPaused && activeTimer.userId === currentUser.id) {
+            resumeTimer();
+        }
+    }
+
+    prevUserIdRef.current = currentUser?.id;
+  }, [currentUser, activeTimer, pauseTimer, resumeTimer]);
+
 
   useEffect(() => {
     // When the user changes, reset the session flag so the popup can show for the new user.
@@ -132,6 +164,25 @@ const MainLayout: React.FC = () => {
       </div>
   );
 
+  const handleStartCompletion = (duration?: number) => {
+    if (timedQuestDetail) {
+      setCompletingQuest({ quest: timedQuestDetail, duration });
+      setTimedQuestDetail(null);
+    }
+  };
+
+  const handleToggleTodo = () => {
+      if (!timedQuestDetail || !currentUser) return;
+      const quest = quests.find(q => q.id === timedQuestDetail.id);
+      if (!quest) return;
+      const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
+      if (isCurrentlyTodo) {
+          unmarkQuestAsTodo(quest.id, currentUser.id);
+      } else {
+          markQuestAsTodo(quest.id, currentUser.id);
+      }
+  };
+
   return (
     <>
       {showLoginNotifications && currentUser && (
@@ -174,6 +225,16 @@ const MainLayout: React.FC = () => {
       <ChatController />
       {isChatOpen && <ChatPanel />}
       {readingPdfQuest && <PdfReaderPanel quest={readingPdfQuest} />}
+      {timedQuestDetail && currentUser && (
+        <QuestDetailDialog
+          quest={timedQuestDetail}
+          onClose={() => setTimedQuestDetail(null)}
+          onComplete={handleStartCompletion}
+          onToggleTodo={handleToggleTodo}
+          isTodo={timedQuestDetail.todoUserIds?.includes(currentUser.id)}
+        />
+      )}
+      {completingQuest && <CompleteQuestDialog quest={completingQuest.quest} duration={completingQuest.duration} onClose={() => setCompletingQuest(null)} />}
     </>
   );
 };

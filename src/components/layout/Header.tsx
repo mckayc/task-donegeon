@@ -15,6 +15,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState } from '../../context/QuestsContext';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
+import LiveTimerWidget from './LiveTimerWidget';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];
@@ -209,6 +210,7 @@ const Header: React.FC = () => {
 
       {/* Center Group */}
       <div className="flex-grow flex items-center justify-center mx-2 md:mx-4 min-w-0">
+          <LiveTimerWidget />
           <div className="border-l border-stone-600/80 h-6 flex-shrink-0 hidden md:block" />
           <div className="overflow-x-auto scrollbar-hide mx-2 py-2">
             <RewardDisplay />

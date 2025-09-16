@@ -4,6 +4,16 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { AppMode, Page, Quest } from '../types';
 import { bugLogger } from '../utils/bugLogger';
 
+// FIX: Added ActiveTimer interface for the new quest timer feature.
+export interface ActiveTimer {
+    questId: string;
+    userId: string;
+    startTime: number; // timestamp
+    isPaused: boolean;
+    pausedTime: number; // total time spent paused in ms
+    pauseStartTime?: number; // timestamp when pause began
+}
+
 export interface UIState {
   activePage: Page;
   activePageMeta: any;
@@ -16,6 +26,10 @@ export interface UIState {
   activeGame: string | null;
   readingQuest: Quest | null;
   readingPdfQuest: Quest | null;
+  // FIX: Added activeTimer to UIState for live quest timing.
+  activeTimer: ActiveTimer | null;
+  // FIX: Added timedQuestDetail to UIState to manage the timer detail dialog.
+  timedQuestDetail: Quest | null;
 }
 
 export interface UIDispatch {
@@ -28,6 +42,11 @@ export interface UIDispatch {
   setActiveGame: (gameId: string | null) => void;
   setReadingQuest: (quest: Quest | null) => void;
   setReadingPdfQuest: (quest: Quest | null) => void;
+  // FIX: Added setTimedQuestDetail to UIDispatch to show/hide the timer dialog.
+  setTimedQuestDetail: (quest: Quest | null) => void;
+  // FIX: Added timer controls to UIDispatch.
+  pauseTimer: () => void;
+  resumeTimer: () => void;
 }
 
 const UIStateContext = createContext<UIState | undefined>(undefined);
@@ -56,6 +75,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   });
   const [readingQuest, _setReadingQuest] = useState<Quest | null>(null);
   const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
+  // FIX: Added state for timed quests.
+  const [timedQuestDetail, _setTimedQuestDetail] = useState<Quest | null>(null);
+  const [activeTimer, _setActiveTimer] = useState<ActiveTimer | null>(null);
 
   const setActivePage = (page: Page, meta?: any) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
@@ -113,6 +135,38 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       _setReadingPdfQuest(quest);
   };
 
+  // FIX: Added implementation for timed quest detail dialog.
+  const setTimedQuestDetail = (quest: Quest | null) => {
+    _setTimedQuestDetail(quest);
+  };
+
+  // FIX: Added implementation for pausing the timer.
+  const pauseTimer = useCallback(() => {
+    _setActiveTimer(prev => {
+        if (!prev || prev.isPaused) return prev;
+        return {
+            ...prev,
+            isPaused: true,
+            pauseStartTime: Date.now()
+        };
+    });
+  }, []);
+  
+  // FIX: Added implementation for resuming the timer.
+  const resumeTimer = useCallback(() => {
+    _setActiveTimer(prev => {
+        if (!prev || !prev.isPaused || !prev.pauseStartTime) return prev;
+        const newPausedTime = prev.pausedTime + (Date.now() - prev.pauseStartTime);
+        return {
+            ...prev,
+            isPaused: false,
+            pausedTime: newPausedTime,
+            pauseStartTime: undefined
+        };
+    });
+  }, []);
+
+
   const state = useMemo(() => ({
     activePage,
     activePageMeta,
@@ -125,7 +179,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     activeGame,
     readingQuest,
     readingPdfQuest,
-  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest]);
+    // FIX: Added timer state to context value.
+    activeTimer,
+    timedQuestDetail,
+  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest, activeTimer, timedQuestDetail]);
 
   const dispatch: UIDispatch = {
     setActivePage,
@@ -137,6 +194,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setActiveGame,
     setReadingQuest,
     setReadingPdfQuest,
+    // FIX: Added timer dispatch functions to context value.
+    setTimedQuestDetail,
+    pauseTimer,
+    resumeTimer,
   };
 
   return (

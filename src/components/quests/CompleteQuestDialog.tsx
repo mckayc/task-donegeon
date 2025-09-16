@@ -9,9 +9,10 @@ interface CompleteQuestDialogProps {
   onClose: () => void;
   completionDate?: Date;
   user?: User; // Optional user for shared mode
+  duration?: number; // Optional duration in seconds for timed quests
 }
 
-const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user }) => {
+const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user, duration }) => {
   const { completeQuest } = useQuestsDispatch();
   const { currentUser } = useAuthState();
   const [note, setNote] = useState('');
@@ -27,12 +28,19 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
       completedAt: (completionDate || new Date()).toISOString(),
       status: quest.requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
       note: note || undefined,
-      guildId: quest.guildId
+      guildId: quest.guildId,
+      timerDurationSeconds: duration,
     };
 
     completeQuest(completionData);
     onClose();
   };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -40,6 +48,12 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
         <h2 className="text-3xl font-medieval text-emerald-400 mb-2">Complete Quest</h2>
         <p className="text-lg text-stone-200 mb-6">"{quest.title}"</p>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {duration !== undefined && (
+            <div className="p-3 bg-stone-900/50 rounded-md text-center">
+              <p className="text-sm font-semibold text-stone-300">Time Taken</p>
+              <p className="text-2xl font-bold font-mono text-emerald-400">{formatDuration(duration)}</p>
+            </div>
+          )}
           <div>
             <label htmlFor="quest-note" className="block text-sm font-medium text-stone-300 mb-1">
               Add a comment (optional)

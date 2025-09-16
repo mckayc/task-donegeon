@@ -58,6 +58,12 @@ export interface Bookmark {
   createdAt: string;
 }
 
+// FIX: Added timer configuration for quests.
+export interface QuestTimerConfig {
+    mode: 'stopwatch' | 'countdown';
+    durationSeconds?: number;
+}
+
 export interface Quest {
   id: string;
   title: string;
@@ -106,6 +112,8 @@ export interface Quest {
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[]; // Kept for Ventures
+  // FIX: Added timer configuration.
+  timerConfig?: QuestTimerConfig;
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
   readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
@@ -140,6 +148,8 @@ export interface QuestCompletion {
   actedById?: string;
   actedAt?: string;
   checkpointId?: string;
+  // FIX: Added duration for timed quests.
+  timerDurationSeconds?: number;
   createdAt?: string;
   updatedAt?: string;
 }

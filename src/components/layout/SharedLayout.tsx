@@ -3,6 +3,7 @@ import SharedHeader from './SharedHeader';
 import SharedCalendarPage from '../pages/SharedCalendarPage';
 import SharedLeaderboardPage from '../pages/SharedLeaderboardPage';
 import { useSystemState } from '../../context/SystemContext';
+import { useUIDispatch } from '../../context/UIContext';
 
 export type SharedView = 'calendar' | 'leaderboard';
 
@@ -17,13 +18,13 @@ interface WakeLockSentinel extends EventTarget {
 
 const SharedLayout: React.FC = () => {
     const { settings } = useSystemState();
+    const { setScreenDimmed } = useUIDispatch();
     const [activeView, setActiveView] = useState<SharedView>('calendar');
     const wakeLock = useRef<WakeLockSentinel | null>(null);
 
-    const [isScreenDimmed, setIsScreenDimmed] = useState(false);
     const inactivityTimerRef = useRef<number | null>(null);
 
-    const { autoDim, autoDimStartTime, autoDimStopTime, autoDimInactivitySeconds, autoDimLevel } = settings.sharedMode;
+    const { autoDim, autoDimStartTime, autoDimStopTime, autoDimInactivitySeconds } = settings.sharedMode;
 
     const isWithinDimmingTime = useCallback(() => {
         if (!autoDimStartTime || !autoDimStopTime) return false;
@@ -46,9 +47,7 @@ const SharedLayout: React.FC = () => {
     }, [autoDimStartTime, autoDimStopTime]);
 
     const resetDimTimer = useCallback(() => {
-        if (isScreenDimmed) {
-            setIsScreenDimmed(false);
-        }
+        setScreenDimmed(false);
         
         if (inactivityTimerRef.current) {
             clearTimeout(inactivityTimerRef.current);
@@ -56,10 +55,10 @@ const SharedLayout: React.FC = () => {
 
         if (autoDim && isWithinDimmingTime()) {
             inactivityTimerRef.current = window.setTimeout(() => {
-                setIsScreenDimmed(true);
+                setScreenDimmed(true);
             }, (autoDimInactivitySeconds || 30) * 1000);
         }
-    }, [isScreenDimmed, autoDim, isWithinDimmingTime, autoDimInactivitySeconds]);
+    }, [autoDim, isWithinDimmingTime, autoDimInactivitySeconds, setScreenDimmed]);
 
     useEffect(() => {
         if (autoDim) {
@@ -74,9 +73,10 @@ const SharedLayout: React.FC = () => {
                 if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
                 clearInterval(timeCheckInterval);
                 events.forEach(event => window.removeEventListener(event, resetDimTimer));
+                setScreenDimmed(false); // Ensure screen isn't left dimmed
             };
         }
-    }, [autoDim, resetDimTimer]);
+    }, [autoDim, resetDimTimer, setScreenDimmed]);
 
 
     // --- Screen Wake Lock API Implementation ---
@@ -131,12 +131,6 @@ const SharedLayout: React.FC = () => {
             <main className="absolute top-20 left-0 right-0 bottom-0" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
                 {activeView === 'calendar' ? <SharedCalendarPage /> : <SharedLeaderboardPage />}
             </main>
-            {isScreenDimmed && (
-                <div 
-                    className="fixed inset-0 bg-black z-[999] pointer-events-none" 
-                    style={{ opacity: autoDimLevel || 0.5 }} 
-                />
-            )}
         </div>
     );
 };

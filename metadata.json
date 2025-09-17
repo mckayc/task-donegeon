@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.7 - Statistics Page",
-  "version": "0.5.7",
-  "description": "Adds a new Statistics page for administrators to view aggregated data, such as the most completed quests and most purchased items.",
+  "name": "Task Donegeon 2.0 - 0.5.8 - Kiosk Mode Enhancements",
+  "version": "0.5.8",
+  "description": "Enhances Kiosk Mode with more reliable auto-dimming, a configurable dimness level, and a preview feature.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -41,7 +41,7 @@ export interface UIDispatch {
   setActiveGame: (gameId: string | null) => void;
   setReadingQuest: (quest: Quest | null) => void;
   setReadingPdfQuest: (quest: Quest | null) => void;
-  toggleScreenDim: () => void;
+  setScreenDimmed: (dimmed: boolean) => void;
   // FIX: Added setTimedQuestDetail to UIDispatch to show/hide the timer dialog.
   setTimedQuestDetail: (quest: Quest | null) => void;
   // FIX: Added timer controls to UIDispatch.
@@ -77,7 +77,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   });
   const [readingQuest, _setReadingQuest] = useState<Quest | null>(null);
   const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
-  const [isScreenDimmed, setIsScreenDimmed] = useState<boolean>(() => localStorage.getItem('isScreenDimmed') === 'true');
+  const [isScreenDimmed, setIsScreenDimmed] = useState<boolean>(false);
   // FIX: Added state for timed quests.
   const [timedQuestDetail, _setTimedQuestDetail] = useState<Quest | null>(null);
   const [activeTimer, _setActiveTimer] = useState<ActiveTimer | null>(null);
@@ -105,13 +105,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       setIsChatOpen(prev => !prev);
   };
 
-  const toggleScreenDim = () => {
-    setIsScreenDimmed(prev => {
-        const newState = !prev;
-        localStorage.setItem('isScreenDimmed', String(newState));
-        return newState;
-    });
-  };
+  const setScreenDimmed = useCallback((dimmed: boolean) => {
+    setIsScreenDimmed(dimmed);
+  }, []);
 
   const setAppMode = (mode: AppMode) => {
     if (bugLogger.isRecording()) {
@@ -220,7 +216,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setActiveGame,
     setReadingQuest,
     setReadingPdfQuest,
-    toggleScreenDim,
+    setScreenDimmed,
     // FIX: Added timer dispatch functions to context value.
     setTimedQuestDetail,
     startTimer,

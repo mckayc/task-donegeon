@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.7
+**Version:** 0.5.8
 
 ---
 
@@ -14,6 +14,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of January 31, 2026 (v0.5.8):**
+    -   **Kiosk Mode Enhancements:** Overhauled the auto-dimming feature for shared devices. It is now exclusively active in Kiosk Mode, uses the globally-managed screen dimming overlay for reliability, and respects the dimness level set in the admin settings.
+    -   **Dimness Preview:** Added a "Preview" button in the Kiosk Mode settings, allowing administrators to test the configured dimness level for 5 seconds.
+    -   **UI Cleanup:** Removed the redundant manual "Dim Screen" toggle from the user profile dropdown.
 
 -   **Week of January 24, 2026 (v0.5.7):**
     -   **New Statistics Page:** Added a dedicated "Statistics" page under System Tools for administrators.
@@ -92,6 +97,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 -   **Week of September 13, 2025 (v0.4.66):**
     -   **Dashboard Customization UX Improvements:** Overhauled the "Customize Dashboard" dialog for better usability. The layout editor columns now have equal heights for a cleaner look. Cards can now be moved between main, side, and hidden columns using new arrow icons, providing an alternative to drag-and-drop. Fixed a bug where cards in the side column would disappear when switching to the "single-column" layout.
+
+-   **Week of September 6, 2025 (v0.4.65):**
+    -   **EPUB Reader Fix:** Fixed a bug in the EPUB reader where the progress bar would incorrectly display 100% and not update. The progress calculation is now more robust, ensuring the slider accurately reflects the user's position in the book.
 
 -   **Week of September 6, 2025 (v0.4.64):**
     -   **Bug Bar Consolidation:** The bug recording bar has been consolidated into a more compact and responsive two-row layout to prevent controls from overflowing on smaller screens.
@@ -177,10 +185,4 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
 -   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
 -   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
--   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
--   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.
--   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
-
-### Phase 2: Core Gameplay & Personalization
--   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward Rework:** Overhaul the reward system to allow for more complex and interesting rewards, such as items that grant temporary bonuses or unlock special abilities.
+-   **Showcase Page:--- END OF FILE ---

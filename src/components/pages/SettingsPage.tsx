@@ -17,6 +17,7 @@ import UserMultiSelect from '../user-interface/UserMultiSelect';
 import { version } from '../../../package.json';
 import ServiceWorkerLogger from '../settings/ServiceWorkerLogger';
 import CollapsibleSection from '../user-interface/CollapsibleSection';
+import { useUIDispatch } from '../../context/UIContext';
 
 
 const DangerZoneAction: React.FC<{
@@ -120,6 +121,7 @@ export const SettingsPage: React.FC = () => {
     const { users } = useAuthState();
     const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset, installUpdate, checkForUpdate } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
+    const { setScreenDimmed } = useUIDispatch();
     
     // Create a local copy of settings for form manipulation
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
@@ -127,6 +129,7 @@ export const SettingsPage: React.FC = () => {
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState<{ general: boolean, chat: boolean }>({ general: false, chat: false });
     const [editingSchedule, setEditingSchedule] = useState<BackupSchedule | null>(null);
     const [includeAdminsInReset, setIncludeAdminsInReset] = useState(false);
+    const [previewingDim, setPreviewingDim] = useState(false);
 
     const handleSettingChange = (section: keyof AppSettings, key: any, value: any) => {
         setFormState(prev => {
@@ -186,6 +189,15 @@ export const SettingsPage: React.FC = () => {
         const updatedSchedules = formState.automatedBackups.schedules.filter(s => s.id !== deletingSchedule.id);
         updateSettings({ ...formState, automatedBackups: { ...formState.automatedBackups, schedules: updatedSchedules } });
         setDeletingSchedule(null);
+    };
+
+    const handlePreviewDim = () => {
+        setScreenDimmed(true);
+        setPreviewingDim(true);
+        setTimeout(() => {
+            setScreenDimmed(false);
+            setPreviewingDim(false);
+        }, 5000);
     };
 
     const [deletingSchedule, setDeletingSchedule] = useState<BackupSchedule | null>(null);
@@ -297,9 +309,14 @@ export const SettingsPage: React.FC = () => {
                                             <Input label="Dimming Stop Time" type="time" value={formState.sharedMode.autoDimStopTime || '06:00'} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimStopTime', e.target.value)} />
                                         </div>
                                         <Input label="Dim after inactivity (seconds)" type="number" value={formState.sharedMode.autoDimInactivitySeconds || 30} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimInactivitySeconds', Number(e.target.value))} />
-                                        <div>
-                                            <label className="block text-sm font-medium text-stone-300 mb-1">Dimness Level ({Math.round((formState.sharedMode.autoDimLevel || 0.5) * 100)}%)</label>
-                                            <input type="range" min="0.2" max="0.8" step="0.05" value={formState.sharedMode.autoDimLevel || 0.5} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimLevel', Number(e.target.value))} className="w-full" />
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex-grow">
+                                                <label className="block text-sm font-medium text-stone-300 mb-1">Dimness Level ({Math.round((formState.sharedMode.autoDimLevel || 0.5) * 100)}%)</label>
+                                                <input type="range" min="0.2" max="0.9" step="0.05" value={formState.sharedMode.autoDimLevel || 0.5} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimLevel', Number(e.target.value))} className="w-full" />
+                                            </div>
+                                             <Button type="button" variant="secondary" size="sm" onClick={handlePreviewDim} className="self-end" disabled={previewingDim}>
+                                                {previewingDim ? 'Previewing...' : 'Preview'}
+                                            </Button>
                                         </div>
                                     </div>
                                 )}

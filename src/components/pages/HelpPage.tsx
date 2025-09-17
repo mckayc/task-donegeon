@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -45,6 +46,21 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>Shared / Kiosk Mode</h3>
+        <p>
+            Kiosk mode is designed for shared devices, like a family tablet. It provides a simplified interface focused on user switching and at-a-glance information.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Auto-Dimming:</strong> To save power and reduce screen burn-in on devices that are always on, Kiosk Mode now supports automatic screen dimming.
+                <ul className="list-disc list-inside pl-6 mt-2">
+                    <li>Admins can enable this feature and set a specific time window (e.g., 9 PM to 6 AM) during which it will be active.</li>
+                    <li>After a configurable period of inactivity, the screen will dim to a specified level.</li>
+                    <li>Touching the screen at any time will immediately restore full brightness.</li>
+                    <li>The dimness level can be previewed in the settings page for 5 seconds.</li>
+                </ul>
+            </li>
+        </ul>
         <h3>Quest Timers</h3>
         <p>
             Certain quests can now be configured with timers, ideal for tasks where duration is a key component, such as reading, practicing an instrument, or screen time.
@@ -214,6 +230,29 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of January 31, 2026 (v0.5.8)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode Enhancements:</strong> Overhauled the auto-dimming feature for shared devices. It is now exclusively active in Kiosk Mode, uses the globally-managed screen dimming overlay for reliability, and respects the dimness level set in the admin settings.</li>
+                <li><strong>Dimness Preview:</strong> Added a "Preview" button in the Kiosk Mode settings, allowing administrators to test the configured dimness level for 5 seconds.</li>
+                <li><strong>UI Cleanup:</strong> Removed the redundant manual "Dim Screen" toggle from the user profile dropdown.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of January 24, 2026 (v0.5.7)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New Statistics Page:</strong> Added a dedicated "Statistics" page under System Tools for administrators.</li>
+                <li><strong>Quest & Item Analytics:</strong> The new page includes widgets that display the top 10 most-completed quests and the top 10 most-purchased items, providing valuable insight into user engagement and the in-game economy.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of January 17, 2026 (v0.5.6)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode Enhancements:</strong> Added new administrative controls for shared devices.</li>
+                <li><strong>Battery Display:</strong> Admins can now enable a battery level indicator in the Kiosk Mode header, perfect for managing shared tablets.</li>
+                <li><strong>Auto-Dimming:</strong> A new feature allows admins to configure automatic screen dimming during specific hours (e.g., at night). The screen will dim after a set period of inactivity and instantly brighten on touch, saving power and reducing screen burn-in.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of January 10, 2026 (v0.5.5)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

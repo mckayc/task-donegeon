@@ -141,6 +141,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   
   // System Tools Section
   { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: Role.DonegeonMaster, isVisible: true },
+  { type: 'link', id: 'Statistics', emoji: '📈', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_statistics' },
   { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_asset_manager' },
   { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_backup_import' },
   { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_object_exporter' },
@@ -279,6 +280,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_test_cases: 'Test Cases',
       link_manage_condition_sets: 'Manage Condition Sets',
       link_manage_minigames: 'Manage Minigames',
+      link_statistics: 'Statistics',
     },
     enableAiFeatures: false,
     rewardValuation: {

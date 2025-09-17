@@ -16,7 +16,8 @@ export type Page =
   | 'Manage Ranks' | 'Manage Trophies' | 'Manage Events' | 'Triumphs & Trials'
   | 'Suggestion Engine' | 'Object Exporter' | 'Asset Manager' | 'Backup & Import'
   | 'Asset Library' | 'Appearance' | 'Settings' | 'About' | 'Help Guide' | 'Themes'
-  | 'Bug Tracker' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames';
+  | 'Bug Tracker' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames'
+  | 'Statistics';
 
 export interface Terminology {
   appName: string;
@@ -91,6 +92,7 @@ export interface Terminology {
   link_themes: string;
   link_test_cases: string;
   link_manage_minigames: string;
+  link_statistics: string;
 }
 
 export type SidebarConfigItem = 

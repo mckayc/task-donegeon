@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.6
+**Version:** 0.5.7
 
 ---
 
@@ -14,6 +14,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of January 24, 2026 (v0.5.7):**
+    -   **New Statistics Page:** Added a dedicated "Statistics" page under System Tools for administrators.
+    -   **Quest & Item Analytics:** The new page includes widgets that display the top 10 most-completed quests and the top 10 most-purchased items, providing valuable insight into user engagement and the in-game economy.
 
 -   **Week of January 17, 2026 (v0.5.6):**
     -   **Kiosk Mode Enhancements:** Added new administrative controls for shared devices.

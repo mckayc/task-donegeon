@@ -1,4 +1,3 @@
-
 import { lazy } from 'react';
 import { Page } from '../../types/app';
 
@@ -43,4 +42,5 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
     'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),
     'Manage Minigames': lazy(() => import('../pages/management/ManageMinigamesPage')),
+    'Statistics': lazy(() => import('../pages/management/StatsPage')),
 };

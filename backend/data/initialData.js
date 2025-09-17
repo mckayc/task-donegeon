@@ -42,6 +42,8 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
   
   // System Tools Section
   { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: 'Donegeon Master', isVisible: true },
+  // FIX: Add missing 'Statistics' link to the sidebar config.
+  { type: 'link', id: 'Statistics', emoji: '📈', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_statistics' },
   { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_asset_manager' },
   { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_backup_import' },
   { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_object_exporter' },
@@ -91,6 +93,12 @@ const INITIAL_SETTINGS = {
         autoExit: false,
         autoExitMinutes: 2,
         userIds: [],
+        showBattery: false,
+        autoDim: false,
+        autoDimStartTime: '21:00',
+        autoDimStopTime: '06:00',
+        autoDimInactivitySeconds: 30,
+        autoDimLevel: 0.5,
     },
     automatedBackups: {
         enabled: false,
@@ -179,6 +187,8 @@ const INITIAL_SETTINGS = {
       link_themes: 'Themes',
       link_test_cases: 'Test Cases',
       link_manage_minigames: 'Manage Minigames',
+      // FIX: Add missing 'link_statistics' property to match the frontend Terminology type.
+      link_statistics: 'Statistics',
     },
     enableAiFeatures: false,
     rewardValuation: {
@@ -218,15 +228,15 @@ const INITIAL_QUEST_GROUPS = [
 ];
 
 const INITIAL_REWARD_TYPES = [
-    { id: 'core-gold', name: 'Gold Coins', category: 'Currency', description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 0.20, isExchangeable: true },
-    { id: 'core-gems', name: 'Gems', category: 'Currency', description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 1.00, isExchangeable: true },
-    { id: 'core-crystal', name: 'Crystals', category: 'Currency', description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.10, isExchangeable: true },
-    { id: 'core-token', name: 'Game Token', category: 'Currency', description: 'Used to play minigames in The Arcade.', isCore: true, iconType: 'emoji', icon: '🪙', baseValue: 0.25, isExchangeable: true },
-    { id: 'core-strength', name: 'Strength', category: 'XP', description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.05, isExchangeable: true },
-    { id: 'core-diligence', name: 'Diligence', category: 'XP', description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.05, isExchangeable: true },
-    { id: 'core-wisdom', name: 'Wisdom', category: 'XP', description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.05, isExchangeable: true },
-    { id: 'core-skill', name: 'Skill', category: 'XP', description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯', baseValue: 0.05, isExchangeable: true },
-    { id: 'core-creative', name: 'Creativity', category: 'XP', description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨', baseValue: 0.05, isExchangeable: true },
+    { id: 'core-gold', name: 'Gold Coins', category: 'Currency', description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 0.20 },
+    { id: 'core-gems', name: 'Gems', category: 'Currency', description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 1.00 },
+    { id: 'core-crystal', name: 'Crystals', category: 'Currency', description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.10 },
+    { id: 'core-token', name: 'Game Token', category: 'Currency', description: 'Used to play minigames in The Arcade.', isCore: true, iconType: 'emoji', icon: '🪙', baseValue: 0.25 },
+    { id: 'core-strength', name: 'Strength', category: 'XP', description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.05 },
+    { id: 'core-diligence', name: 'Diligence', category: 'XP', description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.05 },
+    { id: 'core-wisdom', name: 'Wisdom', category: 'XP', description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.05 },
+    { id: 'core-skill', name: 'Skill', category: 'XP', description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯', baseValue: 0.05 },
+    { id: 'core-creative', name: 'Creativity', category: 'XP', description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨', baseValue: 0.05 },
 ];
 
 const rankNames = [
@@ -293,12 +303,12 @@ export const createInitialQuestCompletions = (users: User[], quests: Quest[]): Q
 };
 
 export const INITIAL_TROPHIES: Trophy[] = [
-    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] },
+    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },
     { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] },
     { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] },
     { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] },
-    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]},
+    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: 'ACHIEVE_RANK', value: 'rank-2', count: 1}]},
     { id: 'trophy-bday-5', name: 'Happy 5th Birthday!', description: 'Awarded for celebrating a 5th birthday.', iconType: 'emoji', icon: '5️⃣', isManual: true, requirements: [] },
     { id: 'trophy-bday-6', name: 'Happy 6th Birthday!', description: 'Awarded for celebrating a 6th birthday.', iconType: 'emoji', icon: '6️⃣', isManual: true, requirements: [] },
     { id: 'trophy-bday-7', name: 'Happy 7th Birthday!', description: 'Awarded for celebrating a 7th birthday.', iconType: 'emoji', icon: '7️⃣', isManual: true, requirements: [] },

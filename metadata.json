@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.6 - Kiosk Mode Enhancements",
-  "version": "0.5.6",
-  "description": "Adds new administrative controls for Kiosk Mode, including battery display and automatic screen dimming with configurable timers and levels.",
+  "name": "Task Donegeon 2.0 - 0.5.7 - Statistics Page",
+  "version": "0.5.7",
+  "description": "Adds a new Statistics page for administrators to view aggregated data, such as the most completed quests and most purchased items.",
   "requestFramePermissions": [
     "camera"
   ],

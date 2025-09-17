@@ -1,5 +1,6 @@
 
 
+
 import React, { useEffect, useMemo } from 'react';
 import { useAuthState } from './context/AuthContext';
 import { useUIState, useUIDispatch } from './context/UIContext';
@@ -22,7 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
     const { currentUser, isFirstRun, isAppUnlocked, isSwitchingUser, users } = useAuthState();
-    const { isKioskDevice, appMode, activeGame, isScreenDimmed } = useUIState();
+    const { isKioskDevice, appMode, activeGame, isScreenDimmed, screenDimOverride } = useUIState();
     const { setActiveGame } = useUIDispatch();
     const { settings, themes, isUpdateAvailable } = useSystemState();
     const { installUpdate, setUpdateAvailable } = useSystemDispatch();
@@ -85,7 +86,8 @@ const App: React.FC = () => {
                     {isScreenDimmed && (
                         <motion.div
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: settings.sharedMode.autoDimLevel || 0.8 }}
+                            // FIX: Replaced mixed '??' and '||' operators with consistent '??' to fix syntax error and potential logic bug where an opacity of 0 would be ignored.
+                            animate={{ opacity: screenDimOverride ?? settings.sharedMode.autoDimLevel ?? 0.8 }}
                             exit={{ opacity: 0 }}
                             className="fixed inset-0 bg-black pointer-events-none z-[9998]"
                         />

@@ -25,6 +25,7 @@ export interface UIState {
   readingQuest: Quest | null;
   readingPdfQuest: Quest | null;
   isScreenDimmed: boolean;
+  screenDimOverride: number | null;
   // FIX: Added activeTimer to UIState for live quest timing.
   activeTimer: ActiveTimer | null;
   // FIX: Added timedQuestDetail to UIState to manage the timer detail dialog.
@@ -41,7 +42,7 @@ export interface UIDispatch {
   setActiveGame: (gameId: string | null) => void;
   setReadingQuest: (quest: Quest | null) => void;
   setReadingPdfQuest: (quest: Quest | null) => void;
-  setScreenDimmed: (dimmed: boolean) => void;
+  setScreenDimmed: (dimmed: boolean, level?: number) => void;
   // FIX: Added setTimedQuestDetail to UIDispatch to show/hide the timer dialog.
   setTimedQuestDetail: (quest: Quest | null) => void;
   // FIX: Added timer controls to UIDispatch.
@@ -78,6 +79,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [readingQuest, _setReadingQuest] = useState<Quest | null>(null);
   const [readingPdfQuest, _setReadingPdfQuest] = useState<Quest | null>(null);
   const [isScreenDimmed, setIsScreenDimmed] = useState<boolean>(false);
+  const [screenDimOverride, setScreenDimOverride] = useState<number | null>(null);
   // FIX: Added state for timed quests.
   const [timedQuestDetail, _setTimedQuestDetail] = useState<Quest | null>(null);
   const [activeTimer, _setActiveTimer] = useState<ActiveTimer | null>(null);
@@ -105,8 +107,13 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       setIsChatOpen(prev => !prev);
   };
 
-  const setScreenDimmed = useCallback((dimmed: boolean) => {
+  const setScreenDimmed = useCallback((dimmed: boolean, level?: number) => {
     setIsScreenDimmed(dimmed);
+    if (dimmed && level !== undefined) {
+        setScreenDimOverride(level);
+    } else if (!dimmed) {
+        setScreenDimOverride(null);
+    }
   }, []);
 
   const setAppMode = (mode: AppMode) => {
@@ -201,10 +208,11 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     readingQuest,
     readingPdfQuest,
     isScreenDimmed,
+    screenDimOverride,
     // FIX: Added timer state to context value.
     activeTimer,
     timedQuestDetail,
-  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest, isScreenDimmed, activeTimer, timedQuestDetail]);
+  }), [activePage, activePageMeta, isSidebarCollapsed, isChatOpen, isMobileView, appMode, activeMarketId, isKioskDevice, activeGame, readingQuest, readingPdfQuest, isScreenDimmed, screenDimOverride, activeTimer, timedQuestDetail]);
 
   const dispatch: UIDispatch = {
     setActivePage,

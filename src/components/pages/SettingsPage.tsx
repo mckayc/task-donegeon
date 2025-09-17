@@ -3,6 +3,7 @@
 
 
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -195,7 +196,7 @@ export const SettingsPage: React.FC = () => {
     };
 
     const handlePreviewDim = () => {
-        setScreenDimmed(true);
+        setScreenDimmed(true, formState.sharedMode.autoDimLevel);
         setPreviewingDim(true);
         setTimeout(() => {
             setScreenDimmed(false);

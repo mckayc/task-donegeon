@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -57,7 +59,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li>Admins can enable this feature and set a specific time window (e.g., 9 PM to 6 AM) during which it will be active.</li>
                     <li>After a configurable period of inactivity, the screen will dim. Touching the screen at any time will immediately restore full brightness.</li>
-                    <li>The dimming level is controlled by a <strong>Screen Brightness</strong> slider. A lower percentage results in a dimmer screen (a more opaque black overlay).</li>
+                    <li>The dimming level is controlled by a <strong>Dimness Level</strong> slider. A higher percentage results in a dimmer screen (a more opaque black overlay).</li>
                     <li>The brightness level can be previewed in the settings page for 5 seconds.</li>
                 </ul>
             </li>
@@ -232,6 +234,12 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of February 14, 2026 (v0.5.10)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Dimness Logic Refactor:</strong> Refactored the Kiosk Mode dimming feature to use a more intuitive "Dimness Level" control. The percentage now directly corresponds to the screen overlay's opacity, fixing a bug where different levels looked the same and providing more predictable control for administrators.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of February 7, 2026 (v0.5.9)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Kiosk Mode Dimness Fix:</strong> Reworked the Kiosk Mode dimming control to be more intuitive. It now uses a "Screen Brightness" slider where lower values correctly result in a dimmer screen (higher opacity), addressing user confusion about the dimness level's effect.</li>
@@ -308,7 +316,7 @@ const VersionHistoryContent: React.FC = () => (
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of October 25, 2025 (v0.4.73)</h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 25, 2025 (v0.4.74)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Bug Reporter Visibility Fix:</strong> Fixed a bug where the Bug Reporter tool was visible to all users. It is now correctly restricted to Donegeon Masters (admins) only.</li>
             </ul>

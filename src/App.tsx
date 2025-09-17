@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useMemo } from 'react';
 import { useAuthState } from './context/AuthContext';
 import { useUIState, useUIDispatch } from './context/UIContext';
@@ -84,7 +85,7 @@ const App: React.FC = () => {
                     {isScreenDimmed && (
                         <motion.div
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 - (settings.sharedMode.autoDimBrightness || 0.7) }}
+                            animate={{ opacity: settings.sharedMode.autoDimLevel || 0.8 }}
                             exit={{ opacity: 0 }}
                             className="fixed inset-0 bg-black pointer-events-none z-[9998]"
                         />

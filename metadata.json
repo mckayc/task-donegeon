@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.9 - Kiosk Mode Dimness Fix",
-  "version": "0.5.9",
-  "description": "Fixes the Kiosk Mode screen dimming logic to be more intuitive by controlling screen brightness instead of opacity.",
+  "name": "Task Donegeon 2.0 - 0.5.10 - Kiosk Dimness Logic Refactor",
+  "version": "0.5.10",
+  "description": "Refactors the Kiosk Mode screen dimming logic to a direct 'Dimness Level' control for improved accuracy and intuitive use.",
   "requestFramePermissions": [
     "camera"
   ],

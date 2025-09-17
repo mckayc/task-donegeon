@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.9
+**Version:** 0.5.10
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of February 14, 2026 (v0.5.10):**
+    -   **Kiosk Dimness Logic Refactor:** Refactored the Kiosk Mode dimming feature to use a more intuitive "Dimness Level" control. The percentage now directly corresponds to the screen overlay's opacity, fixing a bug where different levels looked the same and providing more predictable control for administrators.
 
 -   **Week of February 7, 2026 (v0.5.9):**
     -   **Kiosk Mode Dimness Fix:** Reworked the Kiosk Mode dimming control to be more intuitive. It now uses a "Screen Brightness" slider where lower values correctly result in a dimmer screen (higher opacity), addressing user confusion about the dimness level's effect.

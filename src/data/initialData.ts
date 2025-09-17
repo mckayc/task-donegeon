@@ -105,7 +105,7 @@ export const INITIAL_SETTINGS: AppSettings = {
         autoDimStartTime: '21:00',
         autoDimStopTime: '06:00',
         autoDimInactivitySeconds: 30,
-        autoDimBrightness: 0.7,
+        autoDimLevel: 0.8,
     },
     automatedBackups: {
         enabled: false,

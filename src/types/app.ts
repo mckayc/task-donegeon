@@ -143,7 +143,7 @@ export interface AppSettings {
         autoDimStartTime?: string;
         autoDimStopTime?: string;
         autoDimInactivitySeconds?: number;
-        autoDimLevel?: number;
+        autoDimBrightness?: number;
     };
     automatedBackups: {
         enabled: boolean;

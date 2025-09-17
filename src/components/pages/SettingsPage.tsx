@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -311,8 +312,9 @@ export const SettingsPage: React.FC = () => {
                                         <Input label="Dim after inactivity (seconds)" type="number" value={formState.sharedMode.autoDimInactivitySeconds || 30} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimInactivitySeconds', Number(e.target.value))} />
                                         <div className="flex items-center gap-4">
                                             <div className="flex-grow">
-                                                <label className="block text-sm font-medium text-stone-300 mb-1">Dimness Level ({Math.round((formState.sharedMode.autoDimLevel || 0.5) * 100)}%)</label>
-                                                <input type="range" min="0.2" max="0.9" step="0.05" value={formState.sharedMode.autoDimLevel || 0.5} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimLevel', Number(e.target.value))} className="w-full" />
+                                                <label className="block text-sm font-medium text-stone-300 mb-1">Screen Brightness ({Math.round((formState.sharedMode.autoDimBrightness || 0.7) * 100)}%)</label>
+                                                <input type="range" min="0.1" max="0.8" step="0.05" value={formState.sharedMode.autoDimBrightness || 0.7} onChange={(e: ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoDimBrightness', Number(e.target.value))} className="w-full" />
+                                                <p className="text-xs text-stone-400 mt-1">Lower percentage means a dimmer screen (higher overlay opacity).</p>
                                             </div>
                                              <Button type="button" variant="secondary" size="sm" onClick={handlePreviewDim} className="self-end" disabled={previewingDim}>
                                                 {previewingDim ? 'Previewing...' : 'Preview'}

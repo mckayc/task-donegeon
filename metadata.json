@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.8 - Kiosk Mode Enhancements",
-  "version": "0.5.8",
-  "description": "Enhances Kiosk Mode with more reliable auto-dimming, a configurable dimness level, and a preview feature.",
+  "name": "Task Donegeon 2.0 - 0.5.9 - Kiosk Mode Dimness Fix",
+  "version": "0.5.9",
+  "description": "Fixes the Kiosk Mode screen dimming logic to be more intuitive by controlling screen brightness instead of opacity.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -1,5 +1,6 @@
 
 
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -55,9 +56,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Auto-Dimming:</strong> To save power and reduce screen burn-in on devices that are always on, Kiosk Mode now supports automatic screen dimming.
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li>Admins can enable this feature and set a specific time window (e.g., 9 PM to 6 AM) during which it will be active.</li>
-                    <li>After a configurable period of inactivity, the screen will dim to a specified level.</li>
-                    <li>Touching the screen at any time will immediately restore full brightness.</li>
-                    <li>The dimness level can be previewed in the settings page for 5 seconds.</li>
+                    <li>After a configurable period of inactivity, the screen will dim. Touching the screen at any time will immediately restore full brightness.</li>
+                    <li>The dimming level is controlled by a <strong>Screen Brightness</strong> slider. A lower percentage results in a dimmer screen (a more opaque black overlay).</li>
+                    <li>The brightness level can be previewed in the settings page for 5 seconds.</li>
                 </ul>
             </li>
         </ul>
@@ -230,6 +231,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of February 7, 2026 (v0.5.9)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Kiosk Mode Dimness Fix:</strong> Reworked the Kiosk Mode dimming control to be more intuitive. It now uses a "Screen Brightness" slider where lower values correctly result in a dimmer screen (higher opacity), addressing user confusion about the dimness level's effect.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of January 31, 2026 (v0.5.8)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

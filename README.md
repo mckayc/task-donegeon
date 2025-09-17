@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.8
+**Version:** 0.5.9
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of February 7, 2026 (v0.5.9):**
+    -   **Kiosk Mode Dimness Fix:** Reworked the Kiosk Mode dimming control to be more intuitive. It now uses a "Screen Brightness" slider where lower values correctly result in a dimmer screen (higher opacity), addressing user confusion about the dimness level's effect.
 
 -   **Week of January 31, 2026 (v0.5.8):**
     -   **Kiosk Mode Enhancements:** Overhauled the auto-dimming feature for shared devices. It is now exclusively active in Kiosk Mode, uses the globally-managed screen dimming overlay for reliability, and respects the dimness level set in the admin settings.
@@ -183,6 +186,4 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 
 ### Phase 1: Foundational Features & Quality of Life
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
--   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
--   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
--   **Showcase Page:--- END OF FILE ---
+-   **Enhanced Security:

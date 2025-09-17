@@ -293,6 +293,10 @@ const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
   styles: styles,
 }));
 
+const createInitialQuestCompletions = (users, quests) => {
+    return [];
+};
+
 const INITIAL_TROPHIES = [
     { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },

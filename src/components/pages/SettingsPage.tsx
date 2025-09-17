@@ -109,7 +109,6 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_themes: 'Sidebar: Themes',
   link_test_cases: 'Sidebar: Test Cases',
   link_manage_minigames: 'Sidebar: Manage Minigames',
-  // FIX: Add missing 'link_statistics' property to satisfy the Terminology type.
   link_statistics: 'Sidebar: Statistics',
 };
 

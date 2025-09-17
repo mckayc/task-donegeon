@@ -1,3 +1,4 @@
+
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -292,10 +293,6 @@ const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
   isCustom: false,
   styles: styles,
 }));
-
-const createInitialQuestCompletions = (users, quests) => {
-    return [];
-};
 
 const INITIAL_TROPHIES = [
     { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },

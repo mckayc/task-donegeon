@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.10
+**Version:** 0.5.11
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of February 21, 2026 (v0.5.11):**
+    -   **New Feature - AI Tutor:** Merged the "AI Teacher" feature into a more robust "AI Tutor". Administrators can now set a minimum session duration for these educational quests. The final quiz to complete the quest remains locked until the timer is complete, encouraging focused learning. The AI's persona has also been updated to be more tutor-like.
 
 -   **Week of February 14, 2026 (v0.5.10):**
     -   **Kiosk Dimness Logic Refactor:** Refactored the Kiosk Mode dimming feature to use a more intuitive "Dimness Level" control. The percentage now directly corresponds to the screen overlay's opacity, fixing a bug where different levels looked the same and providing more predictable control for administrators.

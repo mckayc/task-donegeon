@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.10 - Kiosk Dimness Logic Refactor",
-  "version": "0.5.10",
-  "description": "Refactors the Kiosk Mode screen dimming logic to a direct 'Dimness Level' control for improved accuracy and intuitive use.",
+  "name": "Task Donegeon 2.0 - 0.5.11 - AI Tutor with Timed Sessions",
+  "version": "0.5.11",
+  "description": "Introduces the AI Tutor feature, an interactive learning tool for quests. Admins can now set a minimum session duration, ensuring users engage with the material for a set amount of time before the final quiz unlocks.",
   "requestFramePermissions": [
     "camera"
   ],

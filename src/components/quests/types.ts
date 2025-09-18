@@ -1,7 +1,5 @@
-// Changed import from '../users/types' to '../rewards/types' to break circular dependency.
 import type { RewardItem } from '../rewards/types';
 import { Role } from '../users/types';
-// FIX: Use `import type` to potentially resolve circular dependency issues with the main types barrel file.
 import type { AITutorSessionLog } from '../tutors/types';
 
 export enum QuestType {
@@ -53,7 +51,6 @@ export interface QuizState {
     questions: QuizQuestion[];
 }
 
-// FIX: Defined and exported the 'Bookmark' interface to resolve a missing type error.
 export interface Bookmark {
   label: string;
   cfi: string;

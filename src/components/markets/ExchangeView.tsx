@@ -1,11 +1,11 @@
 
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
-import { RewardTypeDefinition, Market, RewardItem } from '../items/types';
-import { RewardCategory } from '../rewards/types';
-import { ScheduledEvent } from '../events/types';
+// FIX: Corrected type imports to use the main types barrel file.
+import { RewardTypeDefinition, Market, RewardItem, RewardCategory, ScheduledEvent } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';

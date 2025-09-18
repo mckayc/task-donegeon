@@ -1,5 +1,5 @@
 import { User, Role } from '../components/users/types';
-import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
+import { RewardTypeDefinition, RewardCategory } from '../types';
 import { Rank } from '../components/ranks/types';
 import { Trophy, TrophyRequirementType } from '../components/trophies/types';
 import { QuestType, Quest, QuestGroup, QuestCompletion } from '../components/quests/types';

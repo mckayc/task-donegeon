@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
-import { GameAsset, RewardItem } from '../items/types';
-import { RewardCategory } from '../rewards/types';
-import { ScheduledEvent } from '../events/types';
+// FIX: Corrected type imports to use the main types barrel file.
+import { GameAsset, RewardItem, RewardCategory, ScheduledEvent } from '../../types';
 import Button from '../user-interface/Button';
 import { getFinalCostGroups } from './utils/markets';
 import { useUIState } from '../../context/UIContext';

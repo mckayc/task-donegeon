@@ -1,5 +1,7 @@
 import { Quest, QuestGroup } from '../quests/types';
-import { RewardTypeDefinition, GameAsset, Market } from '../items/types';
+// FIX: Corrected type imports to avoid circular dependency.
+import { RewardTypeDefinition } from '../rewards/types';
+import { GameAsset, Market } from '../items/types';
 import { Rank } from '../ranks/types';
 import { Trophy } from '../trophies/types';
 import { UserTemplate, Role } from '../users/types';

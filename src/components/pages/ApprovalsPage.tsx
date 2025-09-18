@@ -6,7 +6,6 @@ import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
 import TradeDialog from '../trading/TradeDialog';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
-// FIX: Corrected import for useEconomyState and useEconomyDispatch hooks.
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -462,40 +461,34 @@ const ApprovalsPage = () => {
                 claimedAt: claim.claimedAt,
             }))
         ).filter(c => c.user);
-        
-        return { pendingCompletions: pc, pendingPurchases: pp, pendingTrades: pt, pendingClaims: claims };
 
-    }, [currentUser, users, questCompletions, quests, purchaseRequests, tradeOffers]);
+        return { pendingCompletions: pc, pendingPurchases: pp, pendingTrades: pt, pendingClaims: claims };
+    }, [users, quests, questCompletions, purchaseRequests, tradeOffers, currentUser]);
     
-    if (!currentUser) return null;
+    const handleNoteChange = (completionId: string, text: string) => {
+        setNotes(prev => ({ ...prev, [completionId]: text }));
+    };
 
     const getUserName = (id: string) => users.find(u => u.id === id)?.gameName || 'Unknown User';
     const getQuest = (id: string) => quests.find(q => q.id === id);
-    const getGuildName = (id?: string) => id ? (guilds.find(g => g.id === id)?.name || 'Guild Scope') : 'Personal Scope';
-    const handleNoteChange = (id: string, text: string) => setNotes(prev => ({...prev, [id]: text}));
+    const getGuildName = (id?: string) => id ? guilds.find(g => g.id === id)?.name || 'Guild Scope' : 'Personal Scope';
 
-    const viewProps = {
+    if (!currentUser) return null;
+
+    const props = {
         pendingCompletions, pendingPurchases, pendingTrades, pendingClaims, notes,
         handleNoteChange, approveQuestCompletion, rejectQuestCompletion,
         approvePurchaseRequest, rejectPurchaseRequest, setTradeToView,
         getQuest, getUserName, getGuildName, rewardTypes, currentUser,
-        approveClaim, rejectClaim, setViewingQuest,
+        approveClaim, rejectClaim, setViewingQuest
     };
-    
-    return (
-        <div>
-            {isMobileView ? <MobileApprovalsView {...viewProps} /> : <DesktopApprovalsView {...viewProps} />}
-            
-            {tradeToView && <TradeDialog tradeOffer={tradeToView} onClose={() => setTradeToView(null)} />}
 
-            {viewingQuest && (
-                <QuestDetailDialog
-                    quest={viewingQuest}
-                    onClose={() => setViewingQuest(null)}
-                    dialogTitle={`Details for "${viewingQuest.title}"`}
-                />
-            )}
-        </div>
+    return (
+        <>
+            {isMobileView ? <MobileApprovalsView {...props} /> : <DesktopApprovalsView {...props} />}
+            {tradeToView && <TradeDialog tradeOffer={tradeToView} onClose={() => setTradeToView(null)} />}
+            {viewingQuest && <QuestDetailDialog quest={viewingQuest} onClose={() => setViewingQuest(null)} />}
+        </>
     );
 };
 

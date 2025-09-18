@@ -31,15 +31,17 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Suggestion Engine': lazy(() => import('../pages/SuggestionEnginePage')),
     // FIX: Corrected lazy import syntax for named exports.
     'Approvals': lazy(() => import('../pages/ApprovalsPage')),
+    // FIX: Corrected lazy import syntax for named exports.
     'Settings': lazy(() => import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage }))),
     'Appearance': lazy(() => import('../pages/AppearancePage')),
     'Object Exporter': lazy(() => import('../pages/management/ObjectExporterPage')),
     'Asset Manager': lazy(() => import('../pages/management/AssetManagerPage')),
+    // FIX: Corrected lazy import syntax for named exports.
     'Backup & Import': lazy(() => import('../pages/management/BackupAndImportPage').then(module => ({ default: module.BackupAndImportPage }))),
     'Asset Library': lazy(() => import('../pages/management/AssetLibraryPage')),
     'Profile': lazy(() => import('../pages/ProfilePage')),
-    'About': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.HelpPage }))),
-    'Help Guide': lazy(() => import('../pages/HelpPage').then(module => ({ default: module.HelpPage }))),
+    'About': lazy(() => import('../pages/HelpPage')),
+    'Help Guide': lazy(() => import('../pages/HelpPage')),
     'Bug Tracker': lazy(() => import('../dev/BugTrackingPage')),
     'Test Cases': lazy(() => import('../dev/TestCasesPage')),
     'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),

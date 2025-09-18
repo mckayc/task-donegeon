@@ -1,4 +1,3 @@
-// Changed to `import type` to break a circular dependency with quests/types.ts
 import type { Quest } from '../quests/types';
 import { Rank } from '../ranks/types';
 import { ConditionSet, Condition } from '../conditions/types';

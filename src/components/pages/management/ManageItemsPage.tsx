@@ -3,7 +3,8 @@ import { GameAsset } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
+// FIX: Changed import to a named import.
+import { EditGameAssetDialog } from '../../admin/EditGameAssetDialog';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
 import Input from '../../user-interface/Input';
 import ImagePreviewDialog from '../../user-interface/ImagePreviewDialog';

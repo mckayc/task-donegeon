@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Rank } from '../../types';
 import Button from '../user-interface/Button';
@@ -13,7 +14,7 @@ interface EditRankDialogProps {
   onClose: () => void;
 }
 
-const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
+export const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
   const { ranks } = useProgressionState();
   const { setRanks } = useProgressionDispatch();
   const [formData, setFormData] = useState({ 
@@ -59,7 +60,7 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
         <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="rank-form" onSubmit={handleSubmit} className="space-y-4">
           <Input 
             label="Rank Name" 
             value={formData.name} 
@@ -94,4 +95,39 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
                   onClick={() => setIsEmojiPickerOpen(prev => !prev)}
                   className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2"
                 >
-                  <span className="text
+                  <span className="text-2xl">{formData.icon}</span>
+                  <span className="text-stone-300">Click to change</span>
+                </button>
+                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+              </div>
+            </div>
+          ) : (
+             <div>
+              <label className="block text-sm font-medium text-stone-300 mb-1">Image Icon</label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-stone-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <DynamicIcon iconType={formData.iconType} icon={formData.icon} imageUrl={formData.imageUrl} className="w-full h-full text-4xl" altText="Selected icon" />
+                </div>
+                <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)}>Select Image</Button>
+              </div>
+            </div>
+          )}
+        </form>
+         <div className="flex justify-end space-x-4 pt-4 mt-4 border-t border-stone-700/60">
+            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button type="submit" form="rank-form">{rank ? 'Save Changes' : 'Create Rank'}</Button>
+        </div>
+      </div>
+    </div>
+    {isGalleryOpen && (
+      <ImageSelectionDialog 
+        onSelect={(url: string) => {
+          setFormData(p => ({...p, imageUrl: url}));
+          setIsGalleryOpen(false);
+        }}
+        onClose={() => setIsGalleryOpen(false)}
+      />
+    )}
+    </>
+  );
+};

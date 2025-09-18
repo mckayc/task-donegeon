@@ -7,7 +7,6 @@ import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { useQuestsState } from '../../context/QuestsContext';
-// FIX: Corrected import for useEconomyDispatch hook.
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
@@ -153,52 +152,72 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                   </div>
                 </div>
             )}
-            <Input as="select" label="Scope" name="guildId" value={formData.guildId} onChange={handleChange}>
-              <option value="">Personal</option>
+            <Input as="select" label="Guild Scope" name="guildId" value={formData.guildId} onChange={handleChange}>
+              <option value="">Personal Market</option>
               {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </Input>
-            <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-              <h3 className="font-semibold text-lg text-stone-200">Market Status</h3>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'open'} onChange={() => handleStatusChange({type: 'open'})} /> <span className="ml-2">Open</span></label>
-                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'closed'} onChange={() => handleStatusChange({type: 'closed'})} /> <span className="ml-2">Closed</span></label>
-                <label className="flex items-center"><input type="radio" name="status" checked={formData.status.type === 'conditional'} onChange={() => handleStatusChange({type: 'conditional', conditionSetIds: formData.status.type === 'conditional' ? formData.status.conditionSetIds : []})} /> <span className="ml-2">Conditionally Open</span></label>
-              </div>
-               {formData.status.type === 'conditional' && (
-                  <div className="space-y-4 pt-4 border-t border-stone-700/60">
-                      <h4 className="font-semibold text-stone-300">Conditions for Opening</h4>
-                      <p className="text-xs text-stone-400">Select one or more Condition Sets. The market will only be open if ALL selected sets are met.</p>
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                          {allConditionSets.map(set => (
-                              <label key={set.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
-                                  <input 
-                                      type="checkbox"
-                                      checked={formData.status.type === 'conditional' && !!formData.status.conditionSetIds?.includes(set.id)}
-                                      onChange={() => handleConditionSetToggle(set.id)}
-                                      className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
-                                  <div>
-                                      <span className="text-sm font-semibold text-stone-200">{set.name}</span>
-                                      <p className="text-xs text-stone-400">{set.description}</p>
-                                  </div>
-                              </label>
-                          ))}
-                          {allConditionSets.length === 0 && (
-                              <p className="text-xs text-stone-500 text-center">No Condition Sets have been created yet. You can create them in Settings.</p>
-                          )}
-                      </div>
+            
+             <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                 <h3 className="font-semibold text-stone-200">Market Status</h3>
+                 <div className="flex gap-2">
+                     <Button type="button" variant={formData.status.type === 'open' ? 'default' : 'secondary'} onClick={() => handleStatusChange({type: 'open'})}>Open</Button>
+                     <Button type="button" variant={formData.status.type === 'closed' ? 'destructive' : 'secondary'} onClick={() => handleStatusChange({type: 'closed'})}>Closed</Button>
+                     <Button type="button" variant={formData.status.type === 'conditional' ? 'default' : 'secondary'} onClick={() => handleStatusChange({type: 'conditional', conditionSetIds: []})}>Conditional</Button>
+                 </div>
+                 {formData.status.type === 'conditional' && (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                      {allConditionSets.map(set => (
+                          <label key={set.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
+                              <input 
+                                  type="checkbox"
+                                  // FIX: Correctly check that market status is 'conditional' before attempting to access 'conditionSetIds' to resolve a type error where the property might not exist on other status types.
+                                  checked={formData.status.type === 'conditional' && formData.status.conditionSetIds?.includes(set.id)}
+                                  onChange={() => handleConditionSetToggle(set.id)}
+                                  className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500"/>
+                              <div>
+                                  <span className="text-sm font-semibold text-stone-200">{set.name}</span>
+                                  <p className="text-xs text-stone-400">{set.description}</p>
+                              </div>
+                          </label>
+                      ))}
+                      {allConditionSets.length === 0 && (
+                          <p className="text-xs text-stone-500 text-center">No Condition Sets have been created yet. You can create them in Settings.</p>
+                      )}
                   </div>
-                )}
+                 )}
             </div>
           </form>
-          <div className="p-6 border-t border-stone-700/60">
-            <div className="flex justify-end space-x-4">
-              <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-              <Button type="submit" form="market-form">{market ? 'Save Changes' : 'Create Market'}</Button>
-            </div>
+          <div className="p-6 border-t border-stone-700/60 mt-auto">
+            {mode === 'ai-creation' ? (
+                 <div className="w-full flex justify-between items-center">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <div className="flex items-center gap-4">
+                        {onTryAgain && (
+                          <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                              {isGenerating ? 'Generating...' : 'Try Again'}
+                          </Button>
+                        )}
+                        <Button type="submit" form="market-form">Create Market</Button>
+                    </div>
+                </div>
+            ) : (
+                 <div className="flex justify-end space-x-4">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <Button type="submit" form="market-form">{market ? 'Save Changes' : 'Create Market'}</Button>
+                </div>
+            )}
           </div>
         </div>
       </div>
-       {isGalleryOpen && <ImageSelectionDialog onSelect={(url: string) => { setFormData(p => ({...p, imageUrl: url})); setIsGalleryOpen(false); }} onClose={() => setIsGalleryOpen(false)} />}
+       {isGalleryOpen && (
+        <ImageSelectionDialog 
+          onSelect={(url: string) => {
+            setFormData(p => ({...p, imageUrl: url, iconType: 'image'}));
+            setIsGalleryOpen(false);
+          }}
+          onClose={() => setIsGalleryOpen(false)}
+        />
+      )}
     </>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect, useContext } from 'react';
 import { Rank } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -129,7 +130,7 @@ const ManageRanksPage: React.FC = () => {
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedRanks.length} selected</span>
                         <Button size="sm" variant="secondary" onClick={() => handleEdit(sortedRanks.find(r => r.id === selectedRanks[0])!)} disabled={selectedRanks.length !== 1}>Edit</Button>
-                        <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedRanks)}>Delete</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(selectedRanks)}>Delete</Button>
                     </div>
                 )}
                 {isMobileView ? (
@@ -166,7 +167,7 @@ const ManageRanksPage: React.FC = () => {
                 onClose={() => setDeletingIds([])}
                 onConfirm={handleConfirmDelete}
                 title={`Delete ${deletingIds.length > 1 ? settings.terminology.levels : settings.terminology.level}`}
-                message={`Are you sure you want to delete ${deletingIds.length} ${deletingIds.length > 1 ? settings.terminology.levels.toLowerCase() : settings.terminology.level.toLowerCase()}? This is permanent.`}
+                message={`Are you sure you want to delete ${deletingIds.length > 1 ? `${deletingIds.length} ${settings.terminology.levels.toLowerCase()}` : `this ${settings.terminology.level.toLowerCase()}`}? This is permanent.`}
             />
         </div>
     );

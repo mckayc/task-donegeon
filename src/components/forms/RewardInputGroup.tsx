@@ -1,10 +1,8 @@
 import React from 'react';
-// FIX: Corrected import paths for Reward types.
 import { RewardCategory, RewardItem } from '../../types';
 import Input from '../user-interface/Input';
 import Button from '../user-interface/Button';
 import { useRewardValue } from '../rewards/hooks/useRewardValue';
-// FIX: Corrected import for useEconomyState hook.
 import { useEconomyState } from '../../context/EconomyContext';
 import NumberInput from '../user-interface/NumberInput';
 

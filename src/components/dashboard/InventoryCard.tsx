@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from '../user-interface/Card';
-import { RewardTypeDefinition } from '../items/types';
+// FIX: Corrected type import for RewardTypeDefinition.
+import { RewardTypeDefinition } from '../../types';
 import { Terminology } from '../../types/app';
 import { useRewardValue } from '../../hooks/useRewardValue';
 

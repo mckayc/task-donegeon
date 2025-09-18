@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -170,4 +171,104 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         },
 
         purchaseMarketItem: async (assetId, marketId, user, costGroupIndex) => {
-            const result = await apiAction(()
+            const result = await apiAction(() => purchaseMarketItemAPI(assetId, marketId, user, costGroupIndex));
+            if (result) {
+                const { updatedUser, newPurchaseRequest } = result as any;
+                updateUser(updatedUser.id, updatedUser);
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [newPurchaseRequest] } });
+            }
+        },
+        approvePurchaseRequest: async (id, approverId) => {
+            const result = await apiAction(() => approvePurchaseRequestAPI(id, approverId), 'Purchase approved!');
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result as any;
+                updateUser(updatedUser.id, updatedUser);
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
+        },
+        rejectPurchaseRequest: async (id, rejecterId) => {
+            const result = await apiAction(() => rejectPurchaseRequestAPI(id, rejecterId), 'Purchase rejected.');
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result as any;
+                updateUser(updatedUser.id, updatedUser);
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
+        },
+         cancelPurchaseRequest: async (id) => {
+            if (!currentUser) return;
+            const result = await apiAction(() => cancelPurchaseRequestAPI(id), 'Purchase cancelled.');
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result as any;
+                updateUser(updatedUser.id, updatedUser);
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
+        },
+        executeExchange: async (userId, payItem, receiveItem, guildId) => {
+            const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId), 'Exchange successful!');
+            if (result) {
+                const { updatedUser } = result as any;
+                updateUser(updatedUser.id, updatedUser);
+            }
+        },
+        proposeTrade: (recipientId, guildId) => {
+            if (!currentUser) return Promise.resolve(null);
+            return apiAction(() => proposeTradeAPI(recipientId, guildId, currentUser.id), 'Trade offer sent!');
+        },
+        updateTradeOffer: (id, updates) => apiAction(() => updateTradeOfferAPI(id, updates)),
+        acceptTrade: (id) => apiAction(() => acceptTradeAPI(id), 'Trade accepted!'),
+        cancelOrRejectTrade: (id, action) => apiAction(() => cancelOrRejectTradeAPI(id, action)),
+        sendGift: (recipientId, assetId, guildId) => {
+            if (!currentUser) return Promise.resolve();
+            return apiAction(() => sendGiftAPI(recipientId, assetId, guildId, currentUser.id), 'Gift sent!');
+        },
+        useItem: async (id) => {
+            if (!currentUser) return;
+            const result = await apiAction(() => useItemAPI(id, currentUser.id), 'Item used!');
+            if (result) {
+                const { updatedUser, updatedAsset } = result as any;
+                updateUser(updatedUser.id, updatedUser);
+                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { gameAssets: [updatedAsset] } });
+            }
+        },
+        craftItem: async (id) => {
+            if (!currentUser) return;
+            const result = await apiAction(() => craftItemAPI(id, currentUser.id), 'Item crafted!');
+            if (result) {
+                const { updatedUser } = result as any;
+                updateUser(updatedUser.id, updatedUser);
+            }
+        },
+    }), [addNotification, apiAction, currentUser, updateUser]);
+
+    const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
+
+    return (
+        <EconomyStateContext.Provider value={state}>
+            <EconomyDispatchContext.Provider value={contextValue}>
+                {children}
+            </EconomyDispatchContext.Provider>
+        </EconomyStateContext.Provider>
+    );
+};
+
+export const useEconomyState = (): EconomyState => {
+    const context = useContext(EconomyStateContext);
+    if (context === undefined) throw new Error('useEconomyState must be used within an EconomyProvider');
+    return context;
+};
+
+export const useEconomyDispatch = (): EconomyDispatch => {
+    const context = useContext(EconomyDispatchContext);
+    if (context === undefined) throw new Error('useEconomyDispatch must be used within an EconomyProvider');
+    return context.actions;
+};
+
+// This hook provides direct access to the reducer's dispatch function.
+// It's useful for optimistic UI updates from other contexts/pages.
+export const useEconomyReducerDispatch = (): React.Dispatch<EconomyAction> => {
+    const context = useContext(EconomyDispatchContext);
+    if (context === undefined) {
+        throw new Error('useEconomyReducerDispatch must be used within a EconomyProvider');
+    }
+    return context.dispatch;
+};

@@ -1,11 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { Role, QuestCompletionStatus, PurchaseRequestStatus, Page, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestsState } from '../../context/QuestsContext';
-// FIX: Corrected import for useEconomyState hook.
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';
@@ -24,7 +22,6 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
                      <a
                         key={item.id}
                         href="#"
-                        // FIX: Add a type guard to prevent passing "Chat" to setActivePage which expects a Page type.
                         onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { setActivePage(item.id as Page); } }}
                         className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700"
                         data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
@@ -58,7 +55,6 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, onNavigate: (page
           href="#"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          // FIX: Add a type guard to prevent passing "Chat" to onNavigate which expects a Page type.
           onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { onNavigate(item.id as Page); } }}
           data-log-id={`sidebar-link-${item.id.toLowerCase().replace(' ', '-')}`}
           className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'pl-12' : 'px-4'} ${ isCollapsed ? 'justify-center' : ''} ${
@@ -81,281 +77,144 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, onNavigate: (page
     );
 };
 
-interface CollapsibleNavGroupProps {
-    header: SidebarHeader;
-    childItems: SidebarLink[];
-    activePage: Page;
-    badgeCount: number;
-    isCollapsed: boolean;
-    totalApprovals: number;
-    onNavigate: (page: Page) => void;
-}
-
-const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, childItems, activePage, badgeCount, isCollapsed, totalApprovals, onNavigate }) => {
-    const isGroupActive = childItems.some(child => child.id === activePage);
-    const [isOpen, setIsOpen] = useState(isGroupActive);
-    const [isHovered, setIsHovered] = useState(false);
-
+const NavHeader: React.FC<{ item: SidebarHeader, isCollapsed: boolean, onToggle: () => void, isOpen: boolean }> = ({ item, isCollapsed, onToggle, isOpen }) => {
     if (isCollapsed) {
         return (
-            <div 
-                className="border-t border-stone-700/60 my-2 pt-2 relative"
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-            >
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    data-log-id={`sidebar-group-toggle-collapsed-${header.id}`}
-                    className="relative w-full flex flex-col items-center justify-center py-2 text-lg rounded-lg text-stone-400 hover:bg-stone-700/50 hover:text-white"
-                    title={header.title}
-                >
-                    {header.emoji && <span className="text-2xl">{header.emoji}</span>}
-                    <ChevronDownIcon className={`w-4 h-4 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    {(badgeCount ?? 0) > 0 && !isOpen && (
-                         <span className="absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full top-1 right-1">
-                            {badgeCount > 9 ? '9+' : badgeCount}
-                        </span>
-                    )}
-                </button>
-                 {isOpen && (
-                    <div className="mt-1 space-y-1">
-                        {childItems.map(item => (
-                            <NavLink 
-                                key={item.id} 
-                                item={item} 
-                                activePage={activePage} 
-                                onNavigate={onNavigate}
-                                isCollapsed={true} 
-                                badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
-                            />
-                        ))}
-                    </div>
-                )}
-                 <FlyoutPanel title={header.title} items={childItems} isVisible={isHovered && !isOpen} totalApprovals={totalApprovals} />
+            <div className="flex justify-center my-4">
+                <span className="text-xl">{item.emoji}</span>
             </div>
-        );
+        )
     }
-
     return (
-        <div className="border-t border-stone-700/60 my-2 pt-2">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                data-log-id={`sidebar-group-toggle-${header.id}`}
-                className="w-full flex items-center justify-between px-4 py-3 text-lg rounded-lg text-stone-300 hover:bg-stone-700/50 hover:text-white"
-            >
-                <div className="flex items-center">
-                    {header.emoji && <span className="text-xl mr-3">{header.emoji}</span>}
-                    <span className="font-semibold text-accent-light">{header.title}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    {(badgeCount ?? 0) > 0 && !isOpen ? (
-                         <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
-                            {badgeCount > 9 ? '9+' : badgeCount}
-                        </span>
-                    ) : null}
-                    <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                </div>
-            </button>
-            {isOpen && (
-                <div className="mt-1 space-y-1">
-                    {childItems.map(item => (
-                        <NavLink 
-                            key={item.id} 
-                            item={item} 
-                            activePage={activePage} 
-                            onNavigate={onNavigate}
-                            isCollapsed={false}
-                            badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
-                        />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+        <button onClick={onToggle} className="w-full flex items-center justify-between text-left px-4 py-2 mt-4 text-stone-400 hover:text-white transition-colors">
+            <span className="font-bold uppercase text-sm tracking-wider">{item.title}</span>
+            <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+    )
 };
 
-
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages, isUpdateAvailable } = useSystemState();
-  const { guilds } = useCommunityState();
-  const { purchaseRequests, tradeOffers } = useEconomyState();
-  const { quests, questCompletions } = useQuestsState();
-  const { activePage, isSidebarCollapsed, isChatOpen, isMobileView } = useUIState();
-  const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
-  const { currentUser } = useAuthState();
-  const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
-  
-  if (!currentUser) return null;
-
-  const handleNavigate = (page: Page) => {
-    setActivePage(page);
-    if (isMobileView) {
-      // Use a small timeout to allow the navigation to register before the sidebar closes
-      setTimeout(() => toggleSidebar(), 150);
-    }
-  };
-
-  const handleChatToggle = () => {
-    toggleChat();
-    if (isMobileView) {
-      setTimeout(() => toggleSidebar(), 150);
-    }
-  }
-
-  const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
-    if (!link.isVisible) return false;
-    if (link.type === 'link' && link.id === 'Suggestion Engine' && !isAiAvailable) return false;
-    if (link.type === 'link' && link.id === 'Chat' && !settings.chat.enabled) return false;
-    if (link.type === 'link' && link.id === 'Bug Tracker' && !settings.developerMode.enabled) return false;
-    if (currentUser.role === Role.DonegeonMaster) return true;
-    if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;
-    return link.role === Role.Explorer;
-  }), [settings.sidebars.main, currentUser.role, isAiAvailable, settings.chat.enabled, settings.developerMode.enabled]);
-
-  const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
-  const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;
-  const pendingTrades = tradeOffers.filter(t => t.recipientId === currentUser.id && (t.status === TradeStatus.Pending || t.status === TradeStatus.OfferUpdated)).length;
-  const pendingClaimsCount = quests.reduce((sum, quest) => sum + (quest.pendingClaims?.length || 0), 0);
-  const totalApprovals = pendingQuestApprovals + pendingClaimsCount + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0) + pendingTrades;
-
-  const unreadMessagesCount = useMemo(() => {
-    if (!currentUser) return 0;
+    const { activePage, isSidebarCollapsed, isMobileView } = useUIState();
+    const { setActivePage, toggleSidebar } = useUIDispatch();
+    const { currentUser } = useAuthState();
+    const { questCompletions } = useQuestsState();
+    const { purchaseRequests, tradeOffers } = useEconomyState();
+    const { guilds } = useCommunityState();
+    const { settings, chatMessages } = useSystemState();
+    const [openHeaders, setOpenHeaders] = useState<string[]>(() => {
+        const stored = localStorage.getItem('sidebarOpenHeaders');
+        return stored ? JSON.parse(stored) : ['header-character'];
+    });
     
-    const unreadDms = chatMessages.filter(
-        (msg: ChatMessage) => msg.recipientId === currentUser.id && 
-                !msg.readBy.includes(currentUser.id) &&
-                msg.senderId !== currentUser.id
-    );
-    const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
-    
-    const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
-    const unreadGuilds = new Set(
-        chatMessages
-            .filter((msg: ChatMessage) => 
-                msg.guildId && 
-                userGuildIds.has(msg.guildId) && 
-                !msg.readBy.includes(currentUser.id) &&
-                msg.senderId !== currentUser.id
-            )
-            .map(msg => msg.guildId)
-    );
-    
-    return uniqueSenders.size + unreadGuilds.size;
-  }, [chatMessages, currentUser, guilds]);
+    const sidebarConfig = settings.sidebars?.main || [];
 
+    const handleHeaderToggle = (headerId: string) => {
+        setOpenHeaders(prev => {
+            const newOpenHeaders = prev.includes(headerId)
+                ? prev.filter(id => id !== headerId)
+                : [...prev, headerId];
+            localStorage.setItem('sidebarOpenHeaders', JSON.stringify(newOpenHeaders));
+            return newOpenHeaders;
+        });
+    };
 
-  const renderNavItems = () => {
-    const navTree: React.ReactNode[] = [];
-    let i = 0;
-    while (i < visibleLinks.length) {
-        const item = visibleLinks[i];
-        if (item.type === 'header') {
-            const childItems: SidebarLink[] = [];
-            i++;
-            while (i < visibleLinks.length && visibleLinks[i].level > item.level) {
-                const childItem = visibleLinks[i];
-                if(childItem.type === 'link') {
-                    childItems.push(childItem);
-                }
-                i++;
-            }
-            
-            const groupBadgeCount = childItems.reduce((sum, child) => {
-                if (child.id === 'Approvals') {
-                    return sum + totalApprovals;
-                }
-                // Can be extended for other badges in the future
-                return sum;
-            }, 0);
-            
-            navTree.push(
-                <CollapsibleNavGroup 
-                    key={item.id} 
-                    header={item}
-                    childItems={childItems}
-                    activePage={activePage} 
-                    badgeCount={groupBadgeCount}
-                    isCollapsed={isSidebarCollapsed && !isMobileView}
-                    totalApprovals={totalApprovals}
-                    onNavigate={handleNavigate}
-                />
-            );
-        } else if (item.type === 'link') {
-            if (item.id === 'Chat') {
-                const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
-                navTree.push(
-                    <a
-                      key={item.id}
-                      href="#"
-                      data-log-id="sidebar-chat-toggle"
-                      onClick={(e) => { e.preventDefault(); handleChatToggle(); }}
-                      className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${isSidebarCollapsed && !isMobileView ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
-                      title={isSidebarCollapsed && !isMobileView ? linkName : ''}
-                    >
-                      <span className={`text-xl ${!isSidebarCollapsed || isMobileView ? 'mr-3' : ''}`}>{item.emoji}</span>
-                      {(!isSidebarCollapsed || isMobileView) && <span>{linkName}</span>}
-                      {unreadMessagesCount > 0 && !isChatOpen && (
-                        <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed && !isMobileView ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
-                            {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
-                        </span>
-                      )}
-                    </a>
-                );
-            } else {
-                let badgeCount = item.id === 'Approvals' ? totalApprovals : 0;
-                if (item.id === 'Settings' && isUpdateAvailable) {
-                    badgeCount = 1; // Show a generic "1" or dot for update
-                }
-                navTree.push(
-                    <NavLink 
-                        key={item.id} 
-                        item={item} 
-                        activePage={activePage} 
-                        onNavigate={handleNavigate}
-                        badgeCount={badgeCount}
-                        isCollapsed={isSidebarCollapsed && !isMobileView}
-                    />
-                );
-            }
-            i++;
-        } else if (item.type === 'separator') {
-            navTree.push(<div key={item.id} className="border-t border-stone-700/60 my-2"></div>);
-            i++;
-        } else {
-            i++;
+    const handleNavigate = (page: Page) => {
+        setActivePage(page);
+        if (isMobileView) {
+            toggleSidebar();
         }
-    }
-    return navTree;
-  }
-  
-  const sidebarWidthClass = isSidebarCollapsed && !isMobileView ? 'w-20' : 'w-72';
+    };
+    
+    const totalApprovals = useMemo(() => {
+        if (!currentUser || currentUser.role === Role.Explorer) return 0;
+        
+        const isGatekeeper = currentUser.role === Role.Gatekeeper;
+        const isAdmin = currentUser.role === Role.DonegeonMaster;
 
-  return (
-    <div className={`flex flex-col flex-shrink-0 h-full transition-all duration-300 bg-stone-900 border-r border-stone-700 ${sidebarWidthClass}`}>
-      <button 
-        onClick={() => handleNavigate('Dashboard')} 
-        data-log-id="sidebar-header-logo"
-        className="flex items-center justify-center h-20 border-b border-stone-700 cursor-pointer hover:bg-stone-800/50 transition-colors"
-      >
-        <h1 className={`font-medieval text-accent transition-opacity duration-200 ${isSidebarCollapsed && !isMobileView ? 'opacity-0' : 'opacity-100'}`}>{settings.terminology.appName}</h1>
-      </button>
-      <nav className="flex-1 px-2 py-6 space-y-1 overflow-y-auto scrollbar-hide">
-        {renderNavItems()}
-      </nav>
-      {!isMobileView && (
-        <div className="px-2 py-4 border-t border-stone-700">
-           <button 
-              onClick={toggleSidebar}
-              data-log-id="sidebar-toggle-collapse"
-              title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-              className="w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors"
-           >
-              {isSidebarCollapsed ? <ArrowRightIcon className="w-6 h-6" /> : <ArrowLeftIcon className="w-6 h-6" />}
-           </button>
+        const pendingQuests = questCompletions.filter(q => q.status === QuestCompletionStatus.Pending).length;
+        const pendingPurchases = isAdmin ? purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length : 0;
+        const pendingTrades = tradeOffers.filter(t => t.recipientId === currentUser.id && (t.status === TradeStatus.Pending || t.status === TradeStatus.OfferUpdated)).length;
+        
+        return pendingQuests + pendingPurchases + pendingTrades;
+    }, [currentUser, questCompletions, purchaseRequests, tradeOffers]);
+
+    const unreadChatCount = useMemo(() => {
+        if (!currentUser || !settings.chat.enabled) return 0;
+        
+        const unreadDms = chatMessages.filter(
+            (msg: ChatMessage) => msg.recipientId === currentUser.id && 
+                    !msg.readBy.includes(currentUser.id) &&
+                    msg.senderId !== currentUser.id
+        );
+        const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
+        
+        const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
+        const unreadGuilds = new Set(
+            chatMessages
+                .filter((msg: ChatMessage) => 
+                    msg.guildId && 
+                    userGuildIds.has(msg.guildId) && 
+                    !msg.readBy.includes(currentUser.id) &&
+                    msg.senderId !== currentUser.id
+                )
+                .map(msg => msg.guildId)
+        );
+        
+        return uniqueSenders.size + unreadGuilds.size;
+    }, [chatMessages, currentUser, guilds, settings.chat.enabled]);
+
+    if (!currentUser) return null;
+
+    const roleOrder = [Role.Explorer, Role.Gatekeeper, Role.DonegeonMaster];
+    const userRoleIndex = roleOrder.indexOf(currentUser.role);
+    
+    const visibleItems = sidebarConfig.filter(item => {
+        if (!item.isVisible) return false;
+        const itemRoleIndex = roleOrder.indexOf(item.role as Role);
+        return userRoleIndex >= itemRoleIndex;
+    });
+    
+    return (
+        <div className={`relative flex flex-col bg-stone-900/95 backdrop-blur-sm border-r border-stone-700/50 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}>
+             <div className={`flex items-center justify-between ${isSidebarCollapsed ? 'h-20 justify-center' : 'h-20 px-6'}`}>
+                {!isSidebarCollapsed && <h1 className="text-2xl font-medieval text-emerald-400">{settings.terminology.appName}</h1>}
+                <button
+                    onClick={toggleSidebar}
+                    className={`p-2 rounded-md hover:bg-stone-700/50 text-stone-400 hover:text-white transition-colors ${isSidebarCollapsed ? 'absolute right-0 translate-x-1/2 top-6 bg-stone-800 border border-stone-700 rounded-full' : ''}`}
+                >
+                    {isSidebarCollapsed ? <ArrowRightIcon className="w-5 h-5" /> : <ArrowLeftIcon className="w-5 h-5" />}
+                </button>
+            </div>
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
+                {visibleItems.map(item => {
+                    if(item.type === 'separator') return <hr key={item.id} className="border-stone-700 my-3" />
+                    
+                    const isHeaderOpen = !isSidebarCollapsed && openHeaders.includes(item.id);
+
+                    if(item.type === 'header') {
+                        const childLinks = visibleItems.filter(child => child.level > item.level && visibleItems.indexOf(child) > visibleItems.indexOf(item) && !visibleItems.slice(visibleItems.indexOf(item) + 1, visibleItems.indexOf(child)).some(i => i.type === 'header' && i.level <= item.level));
+                        if(childLinks.length === 0) return null;
+                        
+                        return (
+                            <React.Fragment key={item.id}>
+                                <NavHeader item={item} isCollapsed={isSidebarCollapsed} isOpen={isHeaderOpen} onToggle={() => handleHeaderToggle(item.id)} />
+                                {isHeaderOpen && childLinks.map(child => {
+                                    if(child.type !== 'link') return null;
+                                    const badgeCount = child.id === 'Approvals' ? totalApprovals : child.id === 'Chat' ? unreadChatCount : 0;
+                                    return <NavLink key={child.id} item={child} activePage={activePage} onNavigate={handleNavigate} badgeCount={badgeCount} isCollapsed={isSidebarCollapsed}/>
+                                })}
+                            </React.Fragment>
+                        );
+                    }
+                    if(item.level === 0) {
+                         const badgeCount = item.id === 'Approvals' ? totalApprovals : item.id === 'Chat' ? unreadChatCount : 0;
+                        return <NavLink key={item.id} item={item} activePage={activePage} onNavigate={handleNavigate} badgeCount={badgeCount} isCollapsed={isSidebarCollapsed} />
+                    }
+                    return null;
+                })}
+            </nav>
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default Sidebar;

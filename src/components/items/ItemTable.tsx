@@ -1,6 +1,6 @@
 import React from 'react';
-import { GameAsset, RewardTypeDefinition } from './types';
-import { Terminology } from '../../types/app';
+// FIX: Corrected type import to use the main types barrel file.
+import { GameAsset, RewardTypeDefinition, Terminology } from '../../types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { ItemManagerIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';

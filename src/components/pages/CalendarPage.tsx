@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem, ConditionSet } from '../../types';
+import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem, ConditionSet, QuestCompletionStatus } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import { ScheduleEventDialog } from '../admin/ScheduleEventDialog';
@@ -102,11 +102,12 @@ const CalendarPage: React.FC = () => {
     const eventSources = useMemo<EventSourceInput[]>(() => {
         if (!currentUser) return [];
 
+        // FIX: Replaced flatMap with a more explicit reduce to avoid TypeScript type inference issues.
         const questEvents: EventInput[] = quests
             .filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode))
-            .flatMap(quest => {
+            .reduce((acc, quest) => {
                 if (quest.type === QuestType.Duty && quest.rrule) {
-                    return [{
+                    acc.push({
                         id: quest.id,
                         title: quest.title,
                         rrule: {
@@ -119,22 +120,21 @@ const CalendarPage: React.FC = () => {
                         extendedProps: { type: 'quest', quest },
                         backgroundColor: quest.isOptional ? '#3f3f46' : '#047857',
                         borderColor: quest.isOptional ? '#52525b' : '#059669',
-                    }];
-                }
-                if ((quest.type === QuestType.Venture || quest.type === QuestType.Journey) && quest.startDateTime) {
-                    return [{
+                    });
+                } else if ((quest.type === QuestType.Venture || quest.type === QuestType.Journey) && quest.startDateTime) {
+                    acc.push({
                         id: quest.id,
                         title: quest.title,
                         start: quest.startDateTime,
                         end: quest.endDateTime || undefined,
                         allDay: quest.allDay,
                         extendedProps: { type: 'quest', quest },
-                         backgroundColor: quest.isOptional ? '#3f3f46' : '#d97706',
+                        backgroundColor: quest.isOptional ? '#3f3f46' : '#d97706',
                         borderColor: quest.isOptional ? '#52525b' : '#f59e0b',
-                    }];
+                    });
                 }
-                return [];
-            });
+                return acc;
+            }, [] as EventInput[]);
             
         const scheduledSystemEvents: EventInput[] = scheduledEvents.map(event => ({
             id: event.id,
@@ -230,6 +230,7 @@ const CalendarPage: React.FC = () => {
         if (props.type === 'quest' && currentUser) {
             const isAvailable = isQuestAvailableForUser(props.quest, questCompletions.filter(c => c.userId === currentUser.id), eventInfo.event.start || new Date(), scheduledEvents, appMode);
             const lockStatus = getQuestLockStatus(props.quest, currentUser, conditionDependencies);
+            // FIX: Imported QuestCompletionStatus to resolve name not found error.
             const isCompleted = questCompletions.some(c => c.questId === props.quest.id && c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && toYMD(new Date(c.completedAt)) === toYMD(eventInfo.event.start || new Date()));
             
             const isDimmed = !isAvailable || isCompleted || lockStatus.isLocked;

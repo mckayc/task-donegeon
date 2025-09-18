@@ -1,7 +1,6 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { GameAsset, RewardItem, RewardCategory } from '../../../types';
+import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
@@ -47,7 +46,7 @@ type FormData = Omit<GameAsset, 'id' | 'creatorId' | 'purchaseCount' | 'createdA
 };
 
 
-const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
+export const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { uploadFile } = useSystemDispatch();
   const { addGameAsset, updateGameAsset } = useEconomyDispatch();
   const { addNotification } = useNotificationsDispatch();
@@ -332,4 +331,85 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                     )}
                 </div>
                 {formData.category.toLowerCase() === 'avatar' && (
-                  <Input label
+                  <Input label="Avatar Slot" name="avatarSlot" value={formData.avatarSlot || ''} onChange={e => setFormData(p => ({...p, avatarSlot: e.target.value}))} />
+                )}
+            </div>
+            
+            <div className="pt-4 border-t border-stone-700/60 space-y-4">
+                <ToggleSwitch enabled={formData.isForSale} setEnabled={val => setFormData(p => ({...p, isForSale: val}))} label="For Sale in a Market"/>
+                {formData.isForSale && (
+                    <div className="pl-6 space-y-4">
+                        <ToggleSwitch enabled={formData.requiresApproval} setEnabled={val => setFormData(p => ({...p, requiresApproval: val}))} label="Purchase Requires Approval"/>
+                        <div>
+                          <h3 className="font-semibold text-stone-200 mb-2">Assign to Markets</h3>
+                          <div className="p-2 border border-stone-600 rounded-md max-h-32 overflow-y-auto grid grid-cols-2">
+                              {markets.map(m => (
+                                  <label key={m.id} className="flex items-center gap-2 cursor-pointer p-1">
+                                      <input type="checkbox" checked={formData.marketIds.includes(m.id)} onChange={() => handleMarketToggle(m.id)} />
+                                      <span>{m.icon} {m.title}</span>
+                                  </label>
+                              ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                           {formData.costGroups.map((group, index) => (
+                               <div key={index} className="relative mb-4">
+                                   <RewardInputGroup category='cost' items={group} onChange={handleCostGroupChange(index)} onAdd={handleAddRewardToGroup(index)} onRemove={handleRemoveRewardFromGroup(index)} title={`Cost Option ${index + 1}`} />
+                                   {formData.costGroups.length > 1 && (
+                                       <button type="button" onClick={() => removeCostGroup(index)} className="absolute top-0 right-0 p-1 text-red-400 hover:text-red-300">&times;</button>
+                                   )}
+                               </div>
+                           ))}
+                           <Button type="button" variant="secondary" onClick={addCostGroup}>+ Add Cost Option</Button>
+                        </div>
+
+                        <div>
+                            <h3 className="font-semibold text-stone-200 mb-2">Purchase Limit</h3>
+                            <div className="flex gap-4 p-2 bg-stone-700/50 rounded-md">
+                                <label><input type="radio" value="unlimited" checked={limitTypeOption === 'unlimited'} onChange={e => setLimitTypeOption(e.target.value as any)} /> Unlimited</label>
+                                <label><input type="radio" value="total" checked={limitTypeOption === 'total'} onChange={e => setLimitTypeOption(e.target.value as any)} /> Total</label>
+                                <label><input type="radio" value="perUser" checked={limitTypeOption === 'perUser'} onChange={e => setLimitTypeOption(e.target.value as any)} /> Per User</label>
+                            </div>
+                            {limitTypeOption !== 'unlimited' && (
+                                <Input type="number" min="1" label="Limit Amount" value={formData.purchaseLimit || 1} onChange={e => setFormData(p => ({...p, purchaseLimit: parseInt(e.target.value) || 1}))} className="mt-2"/>
+                            )}
+                        </div>
+                        
+                         <div>
+                            <ToggleSwitch enabled={formData.allowExchange} setEnabled={val => setFormData(p => ({...p, allowExchange: val}))} label="Allow Exchange/Payout"/>
+                             {formData.allowExchange && (
+                                 <RewardInputGroup category="payout" items={formData.payouts} onChange={handlePayoutChange} onAdd={handleAddPayout} onRemove={handleRemovePayout}/>
+                             )}
+                        </div>
+                    </div>
+                )}
+            </div>
+          </form>
+          <div className="p-6 border-t border-stone-700/60">
+            <div className="flex justify-end space-x-4">
+              <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button type="submit" form="asset-dialog-form">{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {isGalleryOpen && (
+        <ImageSelectionDialog 
+          onSelect={(url: string) => {
+            setFormData(p => ({...p, imageUrl: url, iconType: 'image'}));
+            setIsGalleryOpen(false);
+          }}
+          onClose={() => setIsGalleryOpen(false)}
+        />
+      )}
+      {isInfoVisible && formData.imageUrl && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[80] p-4" onClick={() => setIsInfoVisible(false)}>
+              <div className="bg-stone-800 p-4 rounded-lg" onClick={e => e.stopPropagation()}>
+                  <p className="text-sm text-stone-300 break-all">{formData.imageUrl}</p>
+              </div>
+          </div>
+      )}
+    </>
+  );
+};

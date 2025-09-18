@@ -1,5 +1,5 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { Rank, Trophy, UserTrophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -27,7 +27,6 @@ export interface ProgressionDispatch {
 const ProgressionStateContext = createContext<ProgressionState | undefined>(undefined);
 export const ProgressionDispatchContext = createContext<{ dispatch: React.Dispatch<ProgressionAction>, actions: ProgressionDispatch } | undefined>(undefined);
 
-
 const initialState: ProgressionState = {
     ranks: [],
     trophies: [],
@@ -44,10 +43,7 @@ const progressionReducer = (state: ProgressionState, action: ProgressionAction):
                 const typedKey = key as keyof ProgressionState;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    const itemsToUpdate = action.payload[typedKey];
-                    if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
-                    }
+                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -72,7 +68,7 @@ const progressionReducer = (state: ProgressionState, action: ProgressionAction):
 export const ProgressionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(progressionReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
-
+    
     const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
         try {
             const result = await apiFn();
@@ -83,15 +79,24 @@ export const ProgressionProvider: React.FC<{ children: ReactNode }> = ({ childre
             return null;
         }
     }, [addNotification]);
-    
+
     const actions = useMemo<ProgressionDispatch>(() => ({
-        addTrophy: (data) => apiAction(() => addTrophyAPI(data), 'Trophy created!'),
-        updateTrophy: (data) => apiAction(() => updateTrophyAPI(data), 'Trophy updated!'),
+        addTrophy: async (data) => {
+            const result = await apiAction(() => addTrophyAPI(data), 'Trophy created!');
+            if (result) dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { trophies: [result] } });
+            return result;
+        },
+        updateTrophy: async (data) => {
+            const result = await apiAction(() => updateTrophyAPI(data), 'Trophy updated!');
+            if (result) dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { trophies: [result] } });
+            return result;
+        },
         setRanks: async (ranks) => {
-            await apiAction(() => setRanksAPI(ranks));
+            await apiAction(() => setRanksAPI(ranks), 'Ranks updated!');
+            dispatch({ type: 'SET_PROGRESSION_DATA', payload: { ranks } });
         },
     }), [apiAction]);
-
+    
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 
     return (
@@ -115,10 +120,11 @@ export const useProgressionDispatch = (): ProgressionDispatch => {
     return context.actions;
 };
 
-// FIX: Added the missing type argument to React.Dispatch.
+// This hook provides direct access to the reducer's dispatch function.
+// It's useful for optimistic UI updates from other contexts/pages.
 export const useProgressionReducerDispatch = (): React.Dispatch<ProgressionAction> => {
     const context = useContext(ProgressionDispatchContext);
-    if (!context) {
+    if (context === undefined) {
         throw new Error('useProgressionReducerDispatch must be used within a ProgressionProvider');
     }
     return context.dispatch;

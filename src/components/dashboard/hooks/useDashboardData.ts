@@ -2,13 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { QuestCompletionStatus, QuestKind, QuestType, Quest } from '../../quests/types';
-// FIX: Corrected import path for RewardCategory.
-import { RewardCategory } from '../../rewards/types';
-import { Rank } from '../../ranks/types';
-import { Trophy } from '../../trophies/types';
-import { RewardItem } from '../../items/types';
-import { ChronicleEvent } from '../../chronicles/types';
+// FIX: Corrected import paths to use the main barrel file.
+import { QuestCompletionStatus, QuestKind, QuestType, Quest, RewardCategory, Rank, Trophy, RewardItem, ChronicleEvent } from '../../../types';
 import { isQuestAvailableForUser, questSorter } from '../../../utils/quests';
 import { isQuestVisibleToUserInMode, toYMD } from '../../../utils/conditions';
 import { useQuestsState } from '../../../context/QuestsContext';
@@ -172,8 +167,7 @@ export const useDashboardData = () => {
         const progress: any[] = costGroup.map(cost => {
             const rewardDef = rewardTypes.find(rt => rt.id === cost.rewardTypeId);
             return {
-                rewardTypeId: cost.rewardTypeId,
-                amount: cost.amount,
+                ...cost, // Add all properties from RewardItem
                 current: balances[cost.rewardTypeId] || 0,
                 icon: rewardDef?.icon || '❓',
                 name: rewardDef?.name || 'Unknown'

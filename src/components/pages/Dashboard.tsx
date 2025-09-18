@@ -407,7 +407,7 @@ const Dashboard: React.FC = () => {
                 <Reorder.Group
                     axis="y"
                     values={visibleMainCards}
-                    // FIX: Cast newOrder to string[] to resolve TypeScript error.
+                    // FIX: Cast `newOrder` to string[] to resolve TypeScript error.
                     onReorder={(newOrder) => handleReorder('main', newOrder as string[])}
                     className={`${mainColClasses} space-y-6`}
                 >
@@ -427,7 +427,7 @@ const Dashboard: React.FC = () => {
                     <Reorder.Group
                         axis="y"
                         values={visibleSideCards}
-                        // FIX: Cast newOrder to string[] to resolve TypeScript error.
+                        // FIX: Cast `newOrder` to string[] to resolve TypeScript error.
                         onReorder={(newOrder) => handleReorder('side', newOrder as string[])}
                         className={`${sideColClasses} space-y-6`}
                     >

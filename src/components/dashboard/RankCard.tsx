@@ -3,7 +3,8 @@ import Card from '../user-interface/Card';
 import { useUIDispatch } from '../../context/UIContext';
 import { Rank } from '../ranks/types';
 import { Terminology } from '../../types/app';
-import { RewardTypeDefinition } from '../items/types';
+// FIX: Corrected type import for RewardTypeDefinition.
+import { RewardTypeDefinition } from '../../types';
 
 type Currency = RewardTypeDefinition & { amount: number };
 

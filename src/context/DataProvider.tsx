@@ -1,13 +1,14 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
 // FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
-import { User, IAppData, SystemState } from '../types';
+import { User, IAppData } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { CommunityDispatchContext } from './CommunityContext';
 import { EconomyDispatchContext } from './EconomyContext';
 import { ProgressionDispatchContext } from './ProgressionContext';
 import { QuestsDispatchContext } from './QuestsContext';
-import { SystemDispatchContext } from './SystemContext';
+// FIX: Import SystemState from its source file.
+import { SystemDispatchContext, SystemState } from './SystemContext';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 

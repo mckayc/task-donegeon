@@ -5,10 +5,10 @@ import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
 // FIX: Corrected type import to use the main types barrel file.
-import { User, Guild, TradeOffer } from '../../types';
+import { User, Guild, RewardCategory, TradeOffer } from '../../types';
 import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
 import Avatar from '../user-interface/Avatar';
-import DonateDialog from '../guilds/DonateDialog';
+// import DonateDialog from '../guilds/DonateDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import GiftDialog from '../trading/GiftDialog';
@@ -185,7 +185,7 @@ const GuildPage: React.FC = () => {
                     <p className="text-stone-400">You are not currently a member of any {settings.terminology.group.toLowerCase()}.</p>
                 </Card>
             )}
-            {donatingToGuild && <DonateDialog guild={donatingToGuild} onClose={() => setDonatingToGuild(null)} />}
+            {/*donatingToGuild && <DonateDialog guild={donatingToGuild} onClose={() => setDonatingToGuild(null)} />*/}
             {giftingToUser && <GiftDialog recipient={giftingToUser.user} guild={giftingToUser.guild} onClose={() => setGiftingToUser(null)} />}
             {tradeToView && <TradeDialog tradeOffer={tradeOffers.find(t => t.id === tradeToView.id)!} onClose={() => setTradeToView(null)} />}
         </div>

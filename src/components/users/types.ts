@@ -1,11 +1,9 @@
-
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
   Explorer = 'Explorer',
 }
 
-// FIX: Updated DashboardLayout to reflect the current data structure with columns, layoutType, and hidden cards.
 export interface DashboardLayout {
   layoutType: 'single-column' | 'two-column-main-left' | 'two-column-main-right';
   columns: {

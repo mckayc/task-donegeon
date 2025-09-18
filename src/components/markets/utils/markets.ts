@@ -1,11 +1,7 @@
 
-import { Market, RewardItem, MarketOpenStatus } from '../../items/types';
-import { User } from '../../users/types';
-import { Quest, QuestCompletion, QuestCompletionStatus } from '../../quests/types';
-import { ScheduledEvent } from '../../events/types';
-import { ModifierEffectType, AppliedModifier, ModifierDefinition } from '../../modifiers/types';
-import { Rank } from '../../ranks/types';
-import { Condition, ConditionType, ConditionSet } from '../../conditions/types';
+
+// FIX: Corrected type imports to use the main types barrel file.
+import { Market, RewardItem, MarketOpenStatus, User, Quest, ScheduledEvent, ModifierEffectType, AppliedModifier, ModifierDefinition, ConditionSet } from '../../../types';
 import { toYMD } from '../../../utils/quests';
 import { checkAllConditionSetsMet, ConditionDependencies, checkGlobalConditionsMet } from '../../../utils/conditions';
 

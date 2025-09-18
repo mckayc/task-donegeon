@@ -1,5 +1,6 @@
-import { RewardItem } from '../items/types';
 import { Page } from '../../types/app';
+// FIX: Corrected import to avoid circular dependency.
+import { RewardItem } from '../rewards/types';
 
 // FIX: Defined and exported the 'SystemStatus' interface to provide a clear data structure for system health checks, resolving a missing type error.
 export interface SystemStatus {

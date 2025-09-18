@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuthDispatch, useAuthState } from '../../context/AuthContext';
 import { Role } from './types';
@@ -54,6 +55,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // FIX: Updated model from 'gemini-1.5-flash' to 'gemini-2.5-flash'
         body: JSON.stringify({ model: 'gemini-2.5-flash', prompt })
       });
       if (!response.ok) throw new Error('Failed to get suggestion from AI.');

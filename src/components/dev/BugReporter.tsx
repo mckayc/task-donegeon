@@ -279,7 +279,8 @@ const BugReporter: React.FC = () => {
                  {activeTab === 'create' && (
                      <div className="flex items-center gap-2">
                         <Input as="select" value={reportType} onChange={e => setReportType(e.target.value as BugReportType)} className="w-48 h-10">
-                            {Object.values(BugReportType).map(type => <option key={String(type)} value={String(type)}>{String(type)}</option>)}
+                            {/* FIX: Removed redundant String() conversion */}
+                            {Object.values(BugReportType).map(type => <option key={type} value={type}>{type}</option>)}
                         </Input>
                         <Input
                             value={title}

@@ -1,4 +1,3 @@
-
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -31,6 +30,7 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
   { type: 'header', id: 'header-admin-content', title: 'Content Management', emoji: '📚', level: 0, role: 'Donegeon Master', isVisible: true },
   { type: 'link', id: 'Manage Quests', emoji: '📜', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_quests' },
   { type: 'link', id: 'Manage Quest Groups', emoji: '📂', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_quest_groups' },
+  { type: 'link', id: 'Manage AI Tutors', emoji: '🤖', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_ai_tutors' },
   { type: 'link', id: 'Manage Rotations', emoji: '🔄', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_rotations' },
   { type: 'link', id: 'Manage Markets', emoji: '🛒', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_markets' },
   { type: 'link', id: 'Manage Goods', emoji: '⚔️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_items' },
@@ -291,10 +291,14 @@ const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
-  styles: styles,
+  styles: styles as ThemeStyle,
 }));
 
-const INITIAL_TROPHIES = [
+export const createInitialQuestCompletions = (): QuestCompletion[] => {
+    return [];
+};
+
+export const INITIAL_TROPHIES = [
     { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: 'COMPLETE_QUEST_TYPE', value: 'Duty', count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },
     { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] },
@@ -410,7 +414,7 @@ const INITIAL_TROPHIES = [
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
 
-module.exports = {
+export {
   INITIAL_MAIN_SIDEBAR_CONFIG,
   INITIAL_SETTINGS,
   INITIAL_QUEST_GROUPS,
@@ -419,3 +423,4 @@ module.exports = {
   INITIAL_THEMES,
   INITIAL_TROPHIES,
 };
+```

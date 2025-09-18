@@ -86,6 +86,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (Object.keys(systemPayload).length > 0) {
                 systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: systemPayload });
             }
+            if (typeof updates.isAiConfigured === 'boolean') {
+                systemDispatch({ type: 'SET_AI_CONFIGURED', payload: updates.isAiConfigured });
+            }
         }
         
         lastSyncTimestamp.current = newSyncTimestamp;

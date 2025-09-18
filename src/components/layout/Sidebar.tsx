@@ -7,6 +7,7 @@ import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';
+import { INITIAL_MAIN_SIDEBAR_CONFIG } from '../../data/initialData';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean; totalApprovals?: number }> = ({ title, items, isVisible, totalApprovals }) => {
     const { settings } = useSystemState();
@@ -106,7 +107,36 @@ const Sidebar: React.FC = () => {
         return stored ? JSON.parse(stored) : ['header-character'];
     });
     
-    const sidebarConfig = settings.sidebars?.main || [];
+    const sidebarConfig = useMemo(() => {
+        const userConfig = settings.sidebars?.main || [];
+        const defaultConfig = INITIAL_MAIN_SIDEBAR_CONFIG;
+
+        const mergedConfig = [...userConfig];
+        const currentIds = new Set(userConfig.map(item => item.id));
+        const defaultIds = new Set(defaultConfig.map(item => item.id));
+
+        // Add new items from default config that are not in user config
+        defaultConfig.forEach((defaultItem, index) => {
+            if (defaultItem.id && !currentIds.has(defaultItem.id)) {
+                let insertAt = mergedConfig.length; // default to end
+                // Find the item that should come *after* it in the default list
+                for (let i = index + 1; i < defaultConfig.length; i++) {
+                    const nextDefaultItem = defaultConfig[i];
+                    const foundIndex = mergedConfig.findIndex(item => item.id === nextDefaultItem.id);
+                    if (foundIndex !== -1) {
+                        insertAt = foundIndex;
+                        break;
+                    }
+                }
+                mergedConfig.splice(insertAt, 0, defaultItem);
+                currentIds.add(defaultItem.id);
+            }
+        });
+
+        // Filter out any items that are no longer in the default config
+        return mergedConfig.filter(item => item.id && defaultIds.has(item.id));
+        
+    }, [settings.sidebars?.main]);
 
     const handleHeaderToggle = (headerId: string) => {
         setOpenHeaders(prev => {

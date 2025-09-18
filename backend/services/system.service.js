@@ -17,6 +17,7 @@ const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES,
 const settingService = require('../services/setting.service');
 const userService = require('../services/user.service');
 const { updateEmitter } = require('../utils/updateEmitter');
+const { isAiConfigured } = require('../controllers/ai.controller');
 
 
 const getDeltaAppData = async (manager, lastSync) => {
@@ -87,9 +88,11 @@ const syncData = async (lastSync) => {
             return { updates: { settings: INITIAL_SETTINGS, users: [], loginHistory: [] }, newSyncTimestamp };
         }
         const appData = await getFullAppData(manager);
+        appData.isAiConfigured = isAiConfigured();
         return { updates: appData, newSyncTimestamp };
     } else {
         const updates = await getDeltaAppData(manager, lastSync);
+        updates.isAiConfigured = isAiConfigured();
         return { updates, newSyncTimestamp };
     }
 };

@@ -22,7 +22,8 @@ interface Message {
 
 type TutorStage = 'connecting' | 'pre-quiz' | 'teaching' | 'final-quiz' | 'summary' | 'error';
 
-const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose, onSessionComplete }) => {
+// FIX: Export the AITutorPanel component to make it available for import in other modules.
+export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose, onSessionComplete }) => {
     const { aiTutors } = useSystemState();
     const tutor = useMemo(() => aiTutors.find(t => t.id === quest.aiTutorId), [aiTutors, quest.aiTutorId]);
 

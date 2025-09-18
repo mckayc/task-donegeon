@@ -10,7 +10,7 @@ import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import AITutorPanel from '../chat/AITutorPanel';
+import { AITutorPanel } from '../chat/AITutorPanel';
 import AiStoryPanel from '../chat/AiStoryPanel';
 import VideoPlayerOverlay from '../video/VideoPlayerOverlay';
 import { useUIDispatch, useUIState } from '../../context/UIContext';
@@ -272,7 +272,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     </div>
                 </div>
             </div>
-            {isTutorSessionOpen && currentUser && <AITutorPanel quest={quest} user={currentUser} onClose={() => setIsTutorSessionOpen(false)} onSessionComplete={(log) => {
+            {isTutorSessionOpen && currentUser && <AITutorPanel quest={quest} user={currentUser} onClose={() => setIsTutorSessionOpen(false)} onSessionComplete={(log: Omit<AITutorSessionLog, 'id' | 'completionId'>) => {
                 setTutorSessionLog(log);
                 setIsTutorSessionOpen(false);
                 addNotification({ type: 'success', message: 'Tutor session complete! You can now submit the quest.' });

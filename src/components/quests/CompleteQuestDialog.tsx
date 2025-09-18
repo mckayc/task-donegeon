@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Quest, User, QuestCompletionStatus } from '../../types';
+import { Quest, User, QuestCompletionStatus, AITutorSessionLog } from '../../types';
 import { useQuestsDispatch } from '../../context/QuestsContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
@@ -10,9 +10,10 @@ interface CompleteQuestDialogProps {
   completionDate?: Date;
   user?: User; // Optional user for shared mode
   duration?: number; // Optional duration in seconds for timed quests
+  aiTutorSessionLog?: Omit<AITutorSessionLog, 'id' | 'completionId'>;
 }
 
-const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user, duration }) => {
+const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user, duration, aiTutorSessionLog }) => {
   const { completeQuest } = useQuestsDispatch();
   const { currentUser } = useAuthState();
   const [note, setNote] = useState('');
@@ -22,7 +23,7 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
     const userToComplete = user || currentUser;
     if (!userToComplete) return;
 
-    const completionData = {
+    const completionData: any = {
       questId: quest.id,
       userId: userToComplete.id,
       completedAt: (completionDate || new Date()).toISOString(),
@@ -31,6 +32,10 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
       guildId: quest.guildId,
       timerDurationSeconds: duration,
     };
+
+    if (aiTutorSessionLog) {
+      completionData.aiTutorSessionLog = aiTutorSessionLog;
+    }
 
     completeQuest(completionData);
     onClose();

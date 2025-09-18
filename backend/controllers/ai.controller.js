@@ -1,7 +1,8 @@
+
 const { GoogleGenAI, Type } = require('@google/genai');
 const { asyncMiddleware } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
-const { QuestEntity, UserEntity } = require('../entities');
+const { QuestEntity, UserEntity, AITutorEntity } = require('../entities');
 
 let ai;
 if (process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall') {
@@ -99,32 +100,19 @@ function calculateAge(birthdayString) {
     return age;
 }
 
-const startChatSession = async (req, res) => {
-    if (!ai) {
-        return res.status(400).json({ error: 'AI features are not configured on the server.' });
-    }
-    const { questId, userId } = req.body;
-    if (!questId || !userId) {
-        return res.status(400).json({ error: 'questId and userId are required.' });
-    }
-
-    const questRepo = dataSource.getRepository(QuestEntity);
-    const userRepo = dataSource.getRepository(UserEntity);
-
-    const quest = await questRepo.findOneBy({ id: questId });
-    const user = await userRepo.findOneBy({ id: userId });
-
-    if (!quest || !user) {
-        return res.status(404).json({ error: 'Quest or User not found.' });
-    }
-
-    const age = calculateAge(user.birthday);
-    const ageInstruction = age !== null
-        ? `The user is ${age} years old. You MUST adapt your tone, vocabulary, and sentence complexity to be easily understood by a ${age}-year-old.`
-        : "Adapt your language for a general audience, assuming it could include children.";
+const startTutorSession = async (req, res) => {
+    if (!ai) return res.status(400).json({ error: 'AI features are not configured.' });
     
-    // --- 1. Generate the initial quiz ---
-    const quizGenerationPrompt = `You are an AI Teacher. Your task is to create a short, 3 to 5 question multiple-choice quiz to assess a user's baseline knowledge on a topic. The quest is titled "${quest.title}" with description "${quest.description}". Each question must have 3 or 4 choices, with exactly one being correct. Crucially, you must also add a final choice for every question: "I don't know". This "I don't know" option must always have 'isCorrect' set to false. ${ageInstruction}`;
+    const { questId, userId } = req.body;
+    if (!questId || !userId) return res.status(400).json({ error: 'questId and userId are required.' });
+
+    const quest = await dataSource.getRepository(QuestEntity).findOneBy({ id: questId });
+    const user = await dataSource.getRepository(UserEntity).findOneBy({ id: userId });
+    const tutor = await dataSource.getRepository(AITutorEntity).findOneBy({ id: quest.aiTutorId });
+
+    if (!quest || !user || !tutor) return res.status(404).json({ error: 'Required data not found.' });
+
+    const quizGenerationPrompt = `You are an AI Teacher creating a short, 3-question multiple-choice quiz to assess baseline knowledge on the subject of "${tutor.subject}". The user is ${tutor.targetAgeGroup}. Use these sample questions as inspiration for the difficulty and topic: ${tutor.sampleQuestions.join(', ')}. Each question must have exactly 4 choices, with only one being correct. The last choice for every question must be "I don't know", and it is never the correct answer.`;
 
     const quizSchema = {
         type: Type.OBJECT,
@@ -138,12 +126,7 @@ const startChatSession = async (req, res) => {
                         choices: {
                             type: Type.ARRAY,
                             items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    text: { type: Type.STRING },
-                                    isCorrect: { type: Type.BOOLEAN }
-                                },
-                                required: ['text', 'isCorrect']
+                                type: Type.OBJECT, properties: { text: { type: Type.STRING }, isCorrect: { type: Type.BOOLEAN } }, required: ['text', 'isCorrect']
                             }
                         }
                     },
@@ -153,185 +136,117 @@ const startChatSession = async (req, res) => {
         },
         required: ['questions']
     };
-
+    
     const quizResponse = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: quizGenerationPrompt,
         config: { responseMimeType: "application/json", responseSchema: quizSchema }
     });
-
     const quiz = JSON.parse(quizResponse.text);
+    
+    let personaInstruction = '';
+    switch(tutor.style) {
+        case 'Encouraging Coach': personaInstruction = 'You are an encouraging and positive coach. Use sports analogies and praise effort.'; break;
+        case 'Socratic Questioner': personaInstruction = 'You primarily teach by asking thought-provoking questions to guide the user to the answer.'; break;
+        case 'Direct Teacher': personaInstruction = 'You are a straightforward and clear teacher. You present facts directly and concisely.'; break;
+        case 'Custom': personaInstruction = tutor.customPersona || 'You are a helpful AI Tutor.'; break;
+    }
 
-    // --- 2. Create the chat session for teaching ---
-     const personalizationInstruction = `To make the lesson more engaging, here is some information about the user. Use this to create relevant analogies and examples where appropriate.
-    - User's "About Me": "${user.aboutMe || 'Not provided.'}"
-    - Private Admin Notes about user: "${user.adminNotes || 'Not provided.'}"`;
+    const systemInstruction = `You are an AI Tutor named ${tutor.name}. Your subject is ${tutor.subject}.
+    ${personaInstruction}
+    You are tutoring a user named ${user.gameName} who is in the ${tutor.targetAgeGroup} age group.
 
-    const teachingSystemInstruction = `You are an AI Tutor helping a user learn about the quest titled "${quest.title}".
-    Your style must be patient, encouraging, and conversational. Keep answers clear, concise, and educational.
-    The user's name is ${user.gameName}.
-    ${ageInstruction}
-    ${personalizationInstruction}
+    **Core Interaction Loop:**
+    1.  **Analyze User's Answer:** I will provide the user's answer to your question.
+    2.  **Provide Feedback:**
+        - If the user's answer is **correct**, your response MUST start with a congratulatory phrase (e.g., "Excellent!", "That's right!", "Great job!").
+        - If the user's answer is **incorrect**, your response MUST gently explain why it's incorrect and teach the correct concept.
+    3.  **Teach & Check:** After providing feedback, you will present the next small piece of information (1-3 sentences) and then immediately ask a new multiple-choice question using the "ask_a_question_with_choices" tool.
 
-    **Core Task: The "Teach, Check, Feedback" Loop**
-    1.  **Teach:** Present a single, small, digestible piece of information (2-3 sentences). Use examples, especially ones related to the user's interests.
-    2.  **Check:** Immediately after teaching, you MUST use the "ask_a_question_with_choices" tool to ask a simple multiple-choice question to verify understanding. The text in the 'question' parameter will be your message. Always include an "I don't know" option as the last choice.
-    3.  **Feedback:** After the user answers, provide brief, positive feedback if correct, or a gentle correction and simple re-explanation if wrong, then transition to the next "Teach" step. If the user seems idle for a long time, you can gently prompt them.
-
-    **Operational Flow:**
-    1.  **Analyze Quiz Results:** The very first message you receive will be a summary of a baseline quiz. Analyze their results to find their weakest topic. An "I don't know" answer is incorrect.
-    2.  **Begin Lesson:** Your first response MUST be a brief, encouraging message stating which topic you will focus on. Then, immediately begin the "Teach, Check, Feedback" loop for that topic.
-    3.  **Handle User Questions:** If the user asks a question at any point, pause your teaching loop, answer their question thoroughly and clearly, and then seamlessly resume teaching from where you left off.
-    4.  **Provide Final Summary:** When you receive the message "The user has passed the final quiz.", your response must be a concise, bulleted summary of the 3-5 most important key takeaways from the entire lesson. This is your final message.
-
-    **CRITICAL RULE:** Do NOT write XML tags or markdown lists for choices. You MUST use the 'ask_a_question_with_choices' tool for all multiple-choice questions. Your text response must be clean, conversational prose.`;
-
+    **Special Instructions:**
+    - If you receive the system message '[USER_INACTIVE]', you MUST respond ONLY with a gentle, encouraging prompt like "Are you still there?", "Need a hint?", or "Let me know if you're stuck!". Do NOT teach or ask a new question in response to this system message.
+    - When you receive the final quiz results, your final message MUST be a concise, bulleted summary of the key takeaways from the lesson.
+    - **CRITICAL:** ALWAYS use the 'ask_a_question_with_choices' tool for all multiple-choice questions.
+    `;
+    
     const chat = await ai.chats.create({
         model: 'gemini-2.5-flash',
-        config: { systemInstruction: teachingSystemInstruction },
+        config: { systemInstruction },
         tools: [askAQuestionWithChoicesTool]
     });
 
-    const sessionId = `chat-session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const sessionId = `tutor-session-${Date.now()}`;
     activeChats.set(sessionId, chat);
-
-    setTimeout(() => {
-        activeChats.delete(sessionId);
-        console.log(`Cleaned up expired chat session: ${sessionId}`);
-    }, 60 * 60 * 1000);
+    setTimeout(() => activeChats.delete(sessionId), 60 * 60 * 1000); // 1-hour expiry
 
     res.status(201).json({ sessionId, quiz });
 };
 
-
-const sendMessageInSession = async (req, res) => {
-    if (!ai) {
-        return res.status(400).json({ error: 'AI features are not configured on the server.' });
-    }
+const sendMessageToTutor = async (req, res) => {
+    if (!ai) return res.status(400).json({ error: 'AI features are not configured.' });
+    
     const { sessionId, message } = req.body;
-    if (!sessionId || !message) {
-        return res.status(400).json({ error: 'sessionId and message are required.' });
-    }
-
     const chat = activeChats.get(sessionId);
-    if (!chat) {
-        return res.status(404).json({ error: 'Chat session not found or has expired.' });
-    }
+    if (!chat) return res.status(404).json({ error: 'Chat session not found or expired.' });
 
     try {
-        const response = await chat.sendMessage({ message: message });
+        const response = await chat.sendMessage({ message });
         const parts = response.candidates[0].content.parts;
         let textPart = parts.find(part => part.text);
         let functionCallPart = parts.find(part => part.functionCall);
 
-        let replyText = textPart ? textPart.text : '';
-
-        // Fallback for models that embed tool calls as text
-        if (replyText && !functionCallPart && replyText.includes('call:ask_a_question_with_choices')) {
-            // This regex is very specific to the observed output format
-            const toolCallRegex = /<ctrl\d+>call:(\w+)\s*({.*})/; 
-            const match = replyText.match(toolCallRegex);
-
-            if (match && match[1] === 'ask_a_question_with_choices' && match[2]) {
-                try {
-                    const args = JSON.parse(match[2]);
-                    
-                    // Reconstruct the functionCallPart object that the frontend expects
-                    functionCallPart = {
-                        name: 'ask_a_question_with_choices',
-                        args: args
-                    };
-
-                    // Clean the tool call string from the main reply text
-                    replyText = replyText.replace(toolCallRegex, '').trim();
-
-                } catch (e) {
-                    console.error("AI Controller: Failed to parse embedded tool call JSON.", e);
-                    // If JSON is malformed, just strip the bad string and proceed without choices
-                    replyText = replyText.replace(/<ctrl\d+>call:(\w+)\s*({.*})/, '').trim();
-                }
-            }
-        }
-        
-        // Another safeguard for other weird formats
-        replyText = replyText.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '').trim();
-        replyText = replyText.replace(/<\/?multiple_choice>|<\/?question>|<\/?option>/g, '').trim();
-
         res.json({
-            reply: replyText,
-            functionCall: functionCallPart ? functionCallPart : null,
+            reply: textPart?.text || '',
+            functionCall: functionCallPart || null,
         });
     } catch (error) {
-        console.error("Gemini Chat Error:", error);
-        res.status(500).json({ error: 'Failed to get a response from the AI.' });
+        console.error("Gemini Tutor Chat Error:", error);
+        res.status(500).json({ error: 'Failed to get a response from the AI Tutor.' });
     }
 };
 
-const generateQuizForSession = async (req, res) => {
-    if (!ai) {
-        return res.status(400).json({ error: 'AI features are not configured on the server.' });
-    }
+const generateFinalQuiz = async (req, res) => {
+    if (!ai) return res.status(400).json({ error: 'AI features are not configured.' });
+    
     const { sessionId } = req.body;
-    if (!sessionId) {
-        return res.status(400).json({ error: 'sessionId is required.' });
-    }
-
     const chat = activeChats.get(sessionId);
-    if (!chat) {
-        return res.status(404).json({ error: 'Chat session not found or has expired.' });
-    }
+    if (!chat) return res.status(404).json({ error: 'Chat session not found or expired.' });
 
     try {
         const history = await chat.getHistory();
         const conversationText = history.map(h => `${h.role}: ${h.parts.map(p => p.text).join(' ')}`).join('\n');
         
-        const prompt = `Based on the following conversation history, generate a 3-question multiple-choice quiz in a strict JSON format. The quiz should test understanding of the key concepts discussed. For each question, provide 4 choices, with only one being correct. Crucially, you must also add a final choice for every question: "I don't know". This "I don't know" option must always have 'isCorrect' set to false.
-        
-        Conversation History:
-        ${conversationText}`;
+        const prompt = `Based on the preceding conversation history, generate a 3-question multiple-choice quiz to test the user's understanding. Each question must have 4 choices, with only one being correct. The last choice for every question must be "I don't know", which is never correct.\n\nConversation History:\n${conversationText}`;
+
+        const quizSchema = {
+             type: Type.OBJECT,
+            properties: {
+                questions: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            question: { type: Type.STRING },
+                            choices: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, isCorrect: { type: Type.BOOLEAN } } } }
+                        },
+                    }
+                }
+            }
+        };
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        questions: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    question: { type: Type.STRING },
-                                    choices: {
-                                        type: Type.ARRAY,
-                                        items: {
-                                            type: Type.OBJECT,
-                                            properties: {
-                                                text: { type: Type.STRING },
-                                                isCorrect: { type: Type.BOOLEAN }
-                                            },
-                                            required: ['text', 'isCorrect']
-                                        }
-                                    }
-                                },
-                                required: ['question', 'choices']
-                            }
-                        }
-                    },
-                    required: ['questions']
-                }
-            }
+            config: { responseMimeType: "application/json", responseSchema: quizSchema }
         });
 
         res.json({ quiz: JSON.parse(response.text) });
-
     } catch (error) {
-        console.error("Gemini Quiz Generation Error:", error);
-        res.status(500).json({ error: 'Failed to generate a quiz from the conversation.' });
+        console.error("Gemini Final Quiz Error:", error);
+        res.status(500).json({ error: 'Failed to generate a final quiz.' });
     }
 };
+
 
 const generateStory = async (req, res) => {
     if (!ai) {
@@ -383,9 +298,9 @@ const generateStory = async (req, res) => {
 module.exports = {
     testApiKey: asyncMiddleware(testApiKey),
     generateContent: asyncMiddleware(generateContent),
-    startChatSession: asyncMiddleware(startChatSession),
-    sendMessageInSession: asyncMiddleware(sendMessageInSession),
-    generateQuizForSession: asyncMiddleware(generateQuizForSession),
+    startTutorSession: asyncMiddleware(startTutorSession),
+    sendMessageToTutor: asyncMiddleware(sendMessageToTutor),
+    generateFinalQuiz: asyncMiddleware(generateFinalQuiz),
     generateStory: asyncMiddleware(generateStory),
     isAiConfigured: () => !!ai,
 };

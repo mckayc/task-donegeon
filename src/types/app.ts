@@ -17,7 +17,7 @@ export type Page =
   | 'Suggestion Engine' | 'Object Exporter' | 'Asset Manager' | 'Backup & Import'
   | 'Asset Library' | 'Appearance' | 'Settings' | 'About' | 'Help Guide' | 'Themes'
   | 'Bug Tracker' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames'
-  | 'Statistics';
+  | 'Statistics' | 'Manage AI Tutors';
 
 export interface Terminology {
   appName: string;
@@ -93,6 +93,7 @@ export interface Terminology {
   link_test_cases: string;
   link_manage_minigames: string;
   link_statistics: string;
+  link_manage_ai_tutors: string;
 }
 
 export type SidebarConfigItem = 

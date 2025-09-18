@@ -24,9 +24,9 @@ export enum QuestAvailability {
 }
 
 export enum QuestMediaType {
-  AITeacher = 'AI_TEACHER',
-  AIStory = 'AI_STORY',
-  Video = 'VIDEO',
+  AITutor = 'AITutor',
+  AIStory = 'AIStory',
+  Video = 'Video',
   PDF = 'PDF',
 }
 
@@ -71,7 +71,7 @@ export interface Quest {
   type: QuestType;
   kind: QuestKind; // New field to distinguish quest types
   mediaType?: QuestMediaType;
-  aiTutorSessionMinutes?: number;
+  aiTutorId?: string;
   videoUrl?: string | null;
   pdfUrl?: string | null;
   iconType: 'emoji' | 'image';
@@ -149,6 +149,7 @@ export interface QuestCompletion {
   actedAt?: string;
   checkpointId?: string;
   timerDurationSeconds?: number;
+  aiTutorSessionLog?: AITutorSessionLog;
   createdAt?: string;
   updatedAt?: string;
 }

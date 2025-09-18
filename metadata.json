@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.11 - AI Tutor with Timed Sessions",
+  "name": "Task Donegeon 2.0 - 0.5.11 - AI Tutor Management",
   "version": "0.5.11",
-  "description": "Introduces the AI Tutor feature, an interactive learning tool for quests. Admins can now set a minimum session duration, ensuring users engage with the material for a set amount of time before the final quiz unlocks.",
+  "description": "Introduces the administrative backend for creating, managing, and assigning AI Tutors to quests.",
   "requestFramePermissions": [
     "camera"
   ],

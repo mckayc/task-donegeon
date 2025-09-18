@@ -6,8 +6,10 @@ import { UserTemplate, Role } from '../users/types';
 import { Rotation } from '../rotations/types';
 import { ModifierDefinition } from '../modifiers/types';
 import { ChronicleEvent } from '../chronicles/types';
+import { AITutor } from '../tutors/types';
 
-export type ShareableAssetType = 'quests' | 'questGroups' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'users' | 'rotations' | 'modifierDefinitions' | 'chronicles';
+// FIX: Added 'aiTutors' to allow them to be handled by generic asset management functions.
+export type ShareableAssetType = 'quests' | 'questGroups' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'users' | 'rotations' | 'modifierDefinitions' | 'chronicles' | 'aiTutors';
 
 export interface AssetPackAssets {
   quests?: Quest[];
@@ -21,6 +23,7 @@ export interface AssetPackAssets {
   rotations?: Rotation[];
   modifierDefinitions?: ModifierDefinition[];
   chronicles?: ChronicleEvent[];
+  aiTutors?: AITutor[];
 }
 
 export interface AssetPackManifest {

@@ -1,5 +1,6 @@
 
 
+
 const { EntitySchema } = require("typeorm");
 
 // Placeholder classes for TypeORM entity schemas. This removes the dependency on a non-existent file.
@@ -32,6 +33,8 @@ class Gift {}
 class ChronicleEvent {}
 class Minigame {}
 class GameScore {}
+class AITutor {}
+class AITutorSessionLog {}
 
 const ChronicleEventEntity = new EntitySchema({
     name: "ChronicleEvent",
@@ -134,7 +137,7 @@ const QuestEntity = new EntitySchema({
         type: { type: "varchar" },
         kind: { type: "varchar", default: "Personal" },
         mediaType: { type: "varchar", nullable: true },
-        aiTutorSessionMinutes: { type: "integer", nullable: true },
+        aiTutorId: { type: "varchar", nullable: true },
         videoUrl: { type: "varchar", nullable: true },
         pdfUrl: { type: "varchar", nullable: true },
         iconType: { type: "varchar" },
@@ -259,6 +262,52 @@ const AppliedModifierEntity = new EntitySchema({
     }
 });
 
+const AITutorEntity = new EntitySchema({
+    name: "AITutor",
+    target: AITutor,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        name: { type: "varchar" },
+        icon: { type: "varchar" },
+        subject: { type: "varchar" },
+        targetAgeGroup: { type: "varchar" },
+        sessionMinutes: { type: "integer" },
+        style: { type: "varchar" },
+        customPersona: { type: "text", nullable: true },
+        sampleQuestions: { type: "simple-array" },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    }
+});
+
+const AITutorSessionLogEntity = new EntitySchema({
+    name: "AITutorSessionLog",
+    target: AITutorSessionLog,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        questId: { type: "varchar" },
+        userId: { type: "varchar" },
+        tutorId: { type: "varchar" },
+        startedAt: { type: "varchar" },
+        endedAt: { type: "varchar" },
+        durationSeconds: { type: "integer" },
+        transcript: { type: "simple-json" },
+        finalScore: { type: "integer", nullable: true },
+        totalQuestions: { type: "integer", nullable: true },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    },
+    relations: {
+        completion: {
+            type: "one-to-one",
+            target: "QuestCompletion",
+            joinColumn: true,
+            onDelete: 'CASCADE',
+            inverseSide: "aiTutorSessionLog"
+        }
+    }
+});
+
 
 const QuestCompletionEntity = new EntitySchema({
     name: "QuestCompletion",
@@ -291,6 +340,12 @@ const QuestCompletionEntity = new EntitySchema({
             joinColumn: { name: "questId", referencedColumnName: "id" },
             inverseSide: "questCompletions",
             onDelete: "CASCADE",
+        },
+        aiTutorSessionLog: {
+            type: "one-to-one",
+            target: "AITutorSessionLog",
+            inverseSide: "completion",
+            nullable: true,
         },
     },
 });
@@ -420,7 +475,7 @@ const allEntities = [
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
-    ChronicleEventEntity, MinigameEntity, GameScoreEntity,
+    ChronicleEventEntity, MinigameEntity, GameScoreEntity, AITutorEntity, AITutorSessionLogEntity,
 ];
 
 module.exports = { 
@@ -430,5 +485,5 @@ module.exports = {
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
-    ChronicleEventEntity, MinigameEntity, GameScoreEntity,
+    ChronicleEventEntity, MinigameEntity, GameScoreEntity, AITutorEntity, AITutorSessionLogEntity,
 };

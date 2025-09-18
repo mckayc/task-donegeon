@@ -15,8 +15,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of February 21, 2026 (v0.5.11):**
-    -   **New Feature - AI Tutor:** Merged the "AI Teacher" feature into a more robust "AI Tutor". Administrators can now set a minimum session duration for these educational quests. The final quiz to complete the quest remains locked until the timer is complete, encouraging focused learning. The AI's persona has also been updated to be more tutor-like.
+-   **Week of September 18, 2025 (v0.5.11):**
+    -   **New Feature: AI Tutor Management:** Added a new "Manage AI Tutors" page for administrators. This allows for the creation of unique AI tutor personas with specific subjects, teaching styles, and sample questions.
+    -   **Quest Integration:** The "Create Quest" dialog now includes a new "AI Tutor" media type. When selected, administrators can choose from the list of created tutors to assign one to a quest, paving the way for interactive, AI-powered learning sessions.
+    -   **Technical Foundation:** The backend has been updated with new database entities, services, and API endpoints to support the creation, editing, and deletion of AI Tutors.
 
 -   **Week of February 14, 2026 (v0.5.10):**
     -   **Kiosk Dimness Logic Refactor:** Refactored the Kiosk Mode dimming feature to use a more intuitive "Dimness Level" control. The percentage now directly corresponds to the screen overlay's opacity, fixing a bug where different levels looked the same and providing more predictable control for administrators.
@@ -122,6 +124,15 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Week of November 24, 2025 (v0.4.52):**
     -   **Customizable Dashboard:** All cards on the Dashboard are now collapsible and can be reordered via drag-and-drop. Your preferred layout and collapsed states are saved automatically to your profile, allowing for a personalized view of your most important information.
 
+-   **Week of November 17, 2025 (v0.4.46):**
+    -   **eBook Reader Redesign:** The EPUB reader has been completely overhauled with a new UI. It now features permanent, opaque top and bottom bars for controls, an "immersive" mode to hide the UI for distraction-free reading, a scrubbable progress slider for quick navigation, a dedicated "add bookmark" button, and a subtle page-turn animation.
+
+-   **Week of November 10, 2025 (v0.4.45):**
+    -   **EPUB Reader Overhaul:** The eBook reader has been significantly upgraded with fullscreen mode, swipe controls, light/dark themes, improved bookmark display (with progress percentage), and database-backed progress syncing for a seamless experience across devices. Session and total time read are now also tracked and displayed.
+    -   **Media Library Enhancements:** Added the ability to create folders, fixed upload paths, and implemented drag-and-drop for files and folders in the media library.
+    -   **Bug Fixes:** Resolved an issue allowing users to complete daily duties multiple times and fixed a syntax error on the server.
+    -   **Quality of Life:** Added timestamps to the approvals page for better tracking.
+
 -   **November 3, 2025 (v0.4.28):**
     -   **The Arcade Expansion:** Five new minigames have been added: Dragon's Dice (Farkle), Rune Breaker, Dungeon Dash, Forge Master, and Archer's Folly.
     -   **Arcade Leaderboard:** A new "All-Time Arcade Legends" leaderboard now appears in the Arcade, showing top players based on cumulative scores across all games.
@@ -173,11 +184,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Avatar Customization:** Personalize your character with purchased items.
 -   **Trophy Room:** Earn {awards} for completing milestones.
 -   **Multiple Scopes:** Manage tasks in both a **Personal** space and within shared **{groups}**.
--   **AI Teacher:** Engage with an AI-powered tutor on educational {tasks}.
+-   **AI Tutor:** Engage with an AI-powered tutor on educational {tasks}.
 
 ### For Admins ({admin}s)
 -   **Powerful Content Management:** Create and manage every aspect of the game world, including {tasks}, items, {stores}, {levels}, and {awards}.
 -   **AI Suggestion Engine:** Use Google's Gemini AI to generate creative ideas for any game asset, from {tasks} to items to {awards}.
+-   **AI Tutor Management:** Create and configure unique AI Tutor personas with specific subjects, teaching styles, and sample questions to create personalized learning experiences.
 -   **Asset Library:** Kickstart your world with pre-made content packs that can be imported with a single click.
 -   **Blueprint System:** Export your own custom content as a "Blueprint" file to share with others or back up your creations.
 -   **Dynamic Rules Engine:** Create powerful "Condition Sets" to control when {tasks} and {stores} become available based on player progress, time of day, or items owned.

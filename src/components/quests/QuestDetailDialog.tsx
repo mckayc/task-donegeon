@@ -1,5 +1,6 @@
+
 import React, { useEffect, useMemo, useState } from 'react';
-import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User, QuestMediaType } from '../../types';
+import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User, QuestMediaType, AITutorSessionLog } from '../../types';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
@@ -9,7 +10,7 @@ import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import AiTeacherPanel from '../chat/AiTeacherPanel';
+import AITutorPanel from '../chat/AITutorPanel';
 import AiStoryPanel from '../chat/AiStoryPanel';
 import VideoPlayerOverlay from '../video/VideoPlayerOverlay';
 import { useUIDispatch, useUIState } from '../../context/UIContext';
@@ -17,7 +18,7 @@ import { useUIDispatch, useUIState } from '../../context/UIContext';
 interface QuestDetailDialogProps {
   quest: Quest;
   onClose: () => void;
-  onComplete?: (duration?: number) => void;
+  onComplete?: (duration?: number, aiTutorSessionLog?: Omit<AITutorSessionLog, 'id' | 'completionId'>) => void;
   onToggleTodo?: () => void;
   isTodo?: boolean;
   dialogTitle?: string;
@@ -40,9 +41,9 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const { setReadingPdfQuest, startTimer, stopTimer, pauseTimer, resumeTimer } = useUIDispatch();
     const { activeTimer } = useUIState();
     
-    const [isAiTeacherOpen, setIsAiTeacherOpen] = useState(false);
+    const [isTutorSessionOpen, setIsTutorSessionOpen] = useState(false);
+    const [tutorSessionLog, setTutorSessionLog] = useState<Omit<AITutorSessionLog, 'id' | 'completionId'> | null>(null);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
-    const [isQuizPassed, setIsQuizPassed] = useState(false);
     const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
     const [displaySeconds, setDisplaySeconds] = useState(0);
 
@@ -103,7 +104,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
             if (bugLogger.isRecording()) {
                 bugLogger.add({ type: 'ACTION', message: `Clicked 'Complete' in Quest Detail dialog for "${quest.title}".` });
             }
-            onComplete();
+            onComplete(undefined, tutorSessionLog || undefined);
         }
     };
     
@@ -183,42 +184,27 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                 // Logic for TIMED quests that can be completed
                 if (thisQuestsTimer) {
                     // Timer is active: Button should stop timer and complete.
-                    // Countdown quests can now be completed at any time.
-                    return (
-                        <Button onClick={handleStopAndComplete}>
-                            Stop & Complete
-                        </Button>
-                    );
+                    return (<Button onClick={handleStopAndComplete}>Stop & Complete</Button>);
                 } else {
-                    // Timer is NOT active: Button for manual completion.
-                    // We need to check for Journey/AI logic here too.
                     const isJourney = quest.type === QuestType.Journey;
-                    const isAiQuest = quest.mediaType === QuestMediaType.AITeacher;
-                    const canCompleteAiQuest = isAiQuest && isQuizPassed;
+                    const isAiQuest = quest.mediaType === QuestMediaType.AITutor;
+                    const canCompleteAiQuest = isAiQuest && !!tutorSessionLog;
                     const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
-                    
                     let buttonText = 'Complete Manually';
-                    if (isJourney) {
-                        buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
-                    } else if (isAiQuest) {
-                        buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Pass Quiz to Complete';
-                    }
-    
+                    if (isJourney) buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
+                    else if (isAiQuest) buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Complete Session to Enable';
                     return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
                 }
             } else {
                 // Logic for NON-TIMED quests that can be completed
                 const isJourney = quest.type === QuestType.Journey;
-                const isAiQuest = quest.mediaType === QuestMediaType.AITeacher;
-                const canCompleteAiQuest = isAiQuest && isQuizPassed;
+                const isAiQuest = quest.mediaType === QuestMediaType.AITutor;
+                const canCompleteAiQuest = isAiQuest && !!tutorSessionLog;
                 const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
                 
                 let buttonText = 'Complete';
-                if (isJourney) {
-                    buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
-                } else if (isAiQuest) {
-                    buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Pass Quiz to Complete';
-                }
+                if (isJourney) buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
+                else if (isAiQuest) buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Complete Session to Enable';
     
                 return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
             }
@@ -276,7 +262,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     <div className="p-4 bg-black/20 rounded-b-xl flex justify-between items-center gap-2 flex-wrap">
                         <Button variant="secondary" onClick={handleClose}>Close</Button>
                         <div className="flex items-center gap-4">
-                            {quest.mediaType === QuestMediaType.AITeacher && <Button variant="secondary" onClick={() => setIsAiTeacherOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />AI Teacher</Button>}
+                            {quest.mediaType === QuestMediaType.AITutor && <Button variant="secondary" onClick={() => setIsTutorSessionOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Start AI Tutor</Button>}
                             {quest.mediaType === QuestMediaType.AIStory && <Button variant="secondary" onClick={() => setIsAiStoryOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Read AI Story</Button>}
                             {quest.mediaType === QuestMediaType.Video && quest.videoUrl && <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>▶️ Watch Video</Button>}
                             {quest.pdfUrl && <Button variant="secondary" onClick={handleOpenPdfReader}>📖 Read PDF</Button>}
@@ -286,7 +272,11 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     </div>
                 </div>
             </div>
-            {isAiTeacherOpen && currentUser && <AiTeacherPanel quest={quest} user={currentUser} onClose={() => setIsAiTeacherOpen(false)} onQuizPassed={() => setIsQuizPassed(true)}/>}
+            {isTutorSessionOpen && currentUser && <AITutorPanel quest={quest} user={currentUser} onClose={() => setIsTutorSessionOpen(false)} onSessionComplete={(log) => {
+                setTutorSessionLog(log);
+                setIsTutorSessionOpen(false);
+                addNotification({ type: 'success', message: 'Tutor session complete! You can now submit the quest.' });
+            }}/>}
             {isAiStoryOpen && currentUser && <AiStoryPanel quest={quest} user={currentUser} onClose={() => setIsAiStoryOpen(false)} onStoryFinished={handleComplete}/>}
             {isVideoPlayerOpen && quest.videoUrl && <VideoPlayerOverlay videoUrl={quest.videoUrl} onClose={() => setIsVideoPlayerOpen(false)}/>}
         </>

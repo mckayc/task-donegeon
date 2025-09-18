@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -32,6 +33,7 @@ const bugReportsRouter = require('./routes/bugReports.routes');
 const notificationsRouter = require('./routes/notifications.routes');
 const setbacksRouter = require('./routes/setbacks.routes');
 const minigamesRouter = require('./routes/minigames.routes');
+const aiTutorRouter = require('./routes/aiTutor.routes');
 // --- NEW MODULAR ROUTERS ---
 const dataRouter = require('./routes/data.routes');
 const managementRouters = require('./routes/management.routes');
@@ -297,6 +299,7 @@ app.use('/api/bug-reports', bugReportsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/setbacks', setbacksRouter);
 app.use('/api/minigames', minigamesRouter);
+app.use('/api/ai-tutors', aiTutorRouter);
 // Modular routers
 app.use('/api/data', dataRouter);
 app.use('/api/system', systemRouter);

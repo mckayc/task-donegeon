@@ -26,6 +26,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Manage Ranks': lazy(() => import('../pages/management/ManageRanksPage')),
     'Manage Trophies': lazy(() => import('../pages/management/ManageTrophiesPage')),
     'Manage Events': lazy(() => import('../pages/management/ManageEventsPage')),
+    'Manage AI Tutors': lazy(() => import('../pages/management/ManageAITutorsPage')),
     'Triumphs & Trials': lazy(() => import('../pages/management/ManageSetbacksPage')),
     'Suggestion Engine': lazy(() => import('../pages/SuggestionEnginePage')),
     'Approvals': lazy(() => import('../pages/ApprovalsPage')),

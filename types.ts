@@ -17,4 +17,6 @@ export * from './src/components/trading/types';
 export * from './src/components/chronicles/types';
 export * from './src/components/conditions/types';
 export * from './src/components/games/types';
+// FIX: Export AI Tutor related types to make them available across the application.
+export * from './src/components/tutors/types';
 export * from './src/types/app';

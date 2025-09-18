@@ -1,6 +1,6 @@
 
 import {
-    AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore
+    AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore, AITutor, AITutorSessionLog
 } from './types';
 
 // Generic API Request Function
@@ -79,7 +79,7 @@ export const updateQuestAPI = (data: Quest, actorId: string) => apiRequest('PUT'
 export const cloneQuestAPI = (id: string) => apiRequest('POST', `/api/quests/clone/${id}`);
 export const updateQuestsStatusAPI = (ids: string[], isActive: boolean) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive });
 export const bulkUpdateQuestsAPI = (ids: string[], updates: BulkQuestUpdates) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates });
-export const completeQuestAPI = (completionData: Omit<QuestCompletion, 'id'>) => apiRequest('POST', '/api/quests/complete', { completionData });
+export const completeQuestAPI = (completionData: Omit<QuestCompletion, 'id'> & { aiTutorSessionLog?: any }) => apiRequest('POST', '/api/quests/complete', { completionData });
 export const approveQuestCompletionAPI = (id: string, approverId: string, note?: string) => apiRequest('POST', `/api/quests/approve/${id}`, { approverId, note });
 export const rejectQuestCompletionAPI = (id: string, rejecterId: string, note?: string) => apiRequest('POST', `/api/quests/reject/${id}`, { rejecterId, note });
 export const markQuestAsTodoAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/mark-todo', { questId, userId });
@@ -96,8 +96,7 @@ export const claimQuestAPI = (questId: string, userId: string) => apiRequest('PO
 export const unclaimQuestAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/unclaim', { questId, userId });
 export const approveClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/approve-claim', { questId, userId, adminId });
 export const rejectClaimAPI = (questId: string, userId: string, adminId: string) => apiRequest('POST', '/api/quests/reject-claim', { questId, userId, adminId });
-// FIX: Removed missing 'Bookmark' type from signature and updated to match PDF reader functionality.
-export const updateReadingProgressAPI = (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; }) => apiRequest('POST', `/api/quests/${questId}/reading-progress`, { userId, data });
+export const updateReadingProgressAPI = (questId: string, userId: string, data: { secondsToAdd?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: any[]; locationCfi?: string; }) => apiRequest('POST', `/api/quests/${questId}/reading-progress`, { userId, data });
 
 // --- Minigames API ---
 export const getMinigamesAPI = () => apiRequest('GET', '/api/minigames');
@@ -108,6 +107,14 @@ export const submitScoreAPI = (scoreData: { gameId: string; userId: string; scor
 export const deleteMinigameAPI = (gameId: string) => apiRequest('DELETE', `/api/minigames/${gameId}`);
 export const resetAllScoresForGameAPI = (gameId: string) => apiRequest('POST', `/api/minigames/${gameId}/reset-all-scores`);
 export const resetScoresForUsersAPI = (gameId: string, userIds: string[]) => apiRequest('POST', `/api/minigames/${gameId}/reset-user-scores`, { userIds });
+
+// --- AI Tutor API ---
+export const addAITutorAPI = (data: Omit<AITutor, 'id'>) => apiRequest('POST', '/api/ai-tutors', data);
+export const updateAITutorAPI = (data: AITutor) => apiRequest('PUT', `/api/ai-tutors/${data.id}`, data);
+export const getTutorSessionLogAPI = (completionId: string) => apiRequest('GET', `/api/chronicles/tutor-session/${completionId}`);
+export const startTutorSessionAPI = (questId: string, userId: string) => apiRequest('POST', '/api/ai/tutor/start', { questId, userId });
+export const sendMessageToTutorAPI = (sessionId: string, message: string) => apiRequest('POST', '/api/ai/tutor/message', { sessionId, message });
+export const generateFinalQuizAPI = (sessionId: string) => apiRequest('POST', '/api/ai/tutor/generate-final-quiz', { sessionId });
 
 
 // --- System & Dev API ---

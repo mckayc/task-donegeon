@@ -1,4 +1,6 @@
 
+
+
 const { dataSource, ensureDatabaseDirectoryExists } = require('../data-source');
 const fs = require('fs').promises;
 const { In, MoreThan, IsNull, Not, Brackets, Like } = require("typeorm");
@@ -8,7 +10,7 @@ const {
     SettingEntity, LoginHistoryEntity, QuestGroupEntity, MarketEntity, RankEntity, TrophyEntity, 
     GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, ScheduledEventEntity, 
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity,
-    ChronicleEventEntity
+    ChronicleEventEntity, AITutorEntity, AITutorSessionLogEntity
 } = require('../entities');
 const { getFullAppData, updateTimestamps, logAdminAssetAction } = require('../utils/helpers');
 const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
@@ -24,7 +26,7 @@ const getDeltaAppData = async (manager, lastSync) => {
         Rank: 'ranks', Trophy: 'trophies', UserTrophy: 'userTrophies',
         SystemLog: 'systemLogs', AdminAdjustment: 'adminAdjustments', SystemNotification: 'systemNotifications', ScheduledEvent: 'scheduledEvents', ChatMessage: 'chatMessages',
         BugReport: 'bugReports', ModifierDefinition: 'modifierDefinitions', AppliedModifier: 'appliedModifiers', ThemeDefinition: 'themes', QuestGroup: 'questGroups', Rotation: 'rotations',
-        ChronicleEvent: 'chronicleEvents',
+        ChronicleEvent: 'chronicleEvents', AITutor: 'aiTutors', AITutorSessionLog: 'aiTutorSessionLogs',
     };
 
     const updatedUsers = await manager.find('User', { where: { updatedAt: MoreThan(lastSync) }, relations: ['guilds'] });
@@ -189,7 +191,7 @@ const deleteAllCustomContent = async () => {
         await rewardTypeRepo.save(coreRewardsFromDB.map(r => updateTimestamps(r)));
     }
 
-    const tablesToClear = [QuestEntity, QuestGroupEntity, MarketEntity, GameAssetEntity, TrophyEntity, RankEntity, ThemeDefinitionEntity, RotationEntity, ModifierDefinitionEntity];
+    const tablesToClear = [QuestEntity, QuestGroupEntity, MarketEntity, GameAssetEntity, TrophyEntity, RankEntity, ThemeDefinitionEntity, RotationEntity, ModifierDefinitionEntity, AITutorEntity];
     for (const table of tablesToClear) {
         if (table === MarketEntity) {
             // Delete all markets EXCEPT the bank
@@ -407,7 +409,6 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId)
                 const newUser = {
                     ...userTemplate,
                     id: `user-${Date.now()}`,
-                    // FIX: Replaced the incorrect 'avatar' property with 'profilePictureUrl' to match the updated User entity schema.
                     profilePictureUrl: null, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
                     guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false
                 };
@@ -497,6 +498,10 @@ const deleteSelectedAssets = async (assets, actorId) => {
         if (assets.modifierDefinitions?.length) {
             await manager.getRepository(ModifierDefinitionEntity).delete(assets.modifierDefinitions);
              await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'Triumph/Trial', assetCount: assets.modifierDefinitions.length });
+        }
+        if (assets.aiTutors?.length) {
+            await manager.getRepository(AITutorEntity).delete(assets.aiTutors);
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'AI Tutor', assetCount: assets.aiTutors.length });
         }
     });
 };

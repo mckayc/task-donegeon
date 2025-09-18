@@ -1,6 +1,7 @@
 
 
-const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity, ChronicleEventEntity, MinigameEntity, GameScoreEntity } = require('../entities');
+
+const { UserEntity, QuestCompletionEntity, UserTrophyEntity, RankEntity, TrophyEntity, QuestEntity, GuildEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity, PurchaseRequestEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity, ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity, BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, TradeOfferEntity, GiftEntity, RotationEntity, ChronicleEventEntity, MinigameEntity, GameScoreEntity, AITutorEntity, AITutorSessionLogEntity } = require('../entities');
 const { In, IsNull, MoreThan } = require("typeorm");
 const { SystemNotificationEntity: SysNotifEntity } = require('../entities'); // alias for checkAndAwardTrophies
 const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_REWARD_TYPES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
@@ -148,6 +149,8 @@ const getFullAppData = async (manager) => {
     data.chronicleEvents = await manager.find(ChronicleEventEntity, { order: { date: "DESC" } });
     data.minigames = await manager.find(MinigameEntity);
     data.gameScores = await manager.find(GameScoreEntity, { order: { playedAt: "DESC" } });
+    data.aiTutors = await manager.find(AITutorEntity);
+    data.aiTutorSessionLogs = await manager.find(AITutorSessionLogEntity, { relations: ['completion'] });
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     let finalSettings = settingRow ? settingRow.settings : INITIAL_SETTINGS;

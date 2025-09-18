@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AssetPack, ImportResolution, ShareableAssetType, Quest, RewardItem, GameAsset, User, UserTemplate } from '../../types';
 import { Terminology } from '../../types/app';
@@ -31,6 +32,8 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     rotations: 'link_manage_rotations',
     modifierDefinitions: 'link_triumphs_trials',
     chronicles: 'link_chronicles',
+    // FIX: Add 'aiTutors' to the terminology map.
+    aiTutors: 'link_manage_ai_tutors',
 };
 
 const AssetCard: React.FC<{

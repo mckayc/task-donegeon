@@ -8,6 +8,7 @@ import { useSystemState, useSystemDispatch } from '../../../context/SystemContex
 import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
+// FIX: Explicitly import the useEconomyReducerDispatch hook to resolve a 'not found' error, ensuring the component can access the reducer's dispatch function for optimistic UI updates.
 import { useEconomyState, useEconomyDispatch, useEconomyReducerDispatch } from '../../../context/EconomyContext';
 import MarketTable from '../../markets/MarketTable';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';

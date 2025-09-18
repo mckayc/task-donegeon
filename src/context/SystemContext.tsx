@@ -1,13 +1,15 @@
 
+
+
 // Fix: Import `useEffect` from `react` to resolve the "Cannot find name 'useEffect'" error.
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback, useEffect } from 'react';
 // FIX: Fix import path for types to resolve module not found error.
-import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent, Minigame, GameScore } from '../types';
+import { AppSettings, ThemeDefinition, SystemLog, AdminAdjustment, SystemNotification, ScheduledEvent, ChatMessage, BugReport, ModifierDefinition, AppliedModifier, IAppData, ShareableAssetType, User, ChronicleEvent, Minigame, GameScore, AITutor, AITutorSessionLog } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI, playMinigameAPI, submitScoreAPI, updateMinigameAPI, resetAllScoresForGameAPI, resetScoresForUsersAPI } from '../api';
+import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI, playMinigameAPI, submitScoreAPI, updateMinigameAPI, resetAllScoresForGameAPI, resetScoresForUsersAPI, addAITutorAPI, updateAITutorAPI } from '../api';
 import { swLogger } from '../utils/swLogger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
@@ -27,6 +29,8 @@ export interface SystemState {
     chronicleEvents: ChronicleEvent[];
     minigames: Minigame[];
     gameScores: GameScore[];
+    aiTutors: AITutor[];
+    aiTutorSessionLogs: AITutorSessionLog[];
     isUpdateAvailable: ServiceWorker | null;
 }
 
@@ -70,10 +74,12 @@ export interface SystemDispatch {
   markMessagesAsRead: (payload: { partnerId?: string; guildId?: string }) => Promise<void>;
   playMinigame: (gameId: string) => Promise<boolean>;
   submitScore: (gameId: string, score: number) => Promise<GameScore | null>;
-  // FIX: Added missing method declarations for minigame management.
   updateMinigame: (gameId: string, data: Partial<Minigame>) => Promise<Minigame | null>;
   resetAllScoresForGame: (gameId: string) => Promise<void>;
   resetScoresForUsers: (gameId: string, userIds: string[]) => Promise<void>;
+  addAITutor: (tutorData: Omit<AITutor, 'id'>) => Promise<AITutor | null>;
+  updateAITutor: (tutorData: AITutor) => Promise<AITutor | null>;
+  deleteAITutors: (tutorIds: string[]) => Promise<void>;
   setUpdateAvailable: (worker: ServiceWorker | null) => void;
   installUpdate: () => void;
   checkForUpdate: () => Promise<void>;
@@ -97,6 +103,8 @@ const initialState: SystemState = {
     chronicleEvents: [],
     minigames: [],
     gameScores: [],
+    aiTutors: [],
+    aiTutorSessionLogs: [],
     isUpdateAvailable: null,
 };
 
@@ -346,7 +354,6 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
             return result;
         },
-        // FIX: Added implementations for minigame management.
         updateMinigame: async (gameId, data) => {
             const result = await apiAction(() => updateMinigameAPI(gameId, data), 'Game updated!');
             if (result) {
@@ -370,6 +377,20 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                     gameScores: state.gameScores.filter(s => !(s.gameId === gameId && userIdsSet.has(s.userId)))
                 }
             });
+        },
+        addAITutor: async (data) => {
+            const result = await apiAction(() => addAITutorAPI(data), 'AI Tutor created!');
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { aiTutors: [result] } });
+            return result;
+        },
+        updateAITutor: async (data) => {
+            const result = await apiAction(() => updateAITutorAPI(data), 'AI Tutor updated!');
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { aiTutors: [result] } });
+            return result;
+        },
+        deleteAITutors: async (ids) => {
+            await apiAction(() => deleteSelectedAssetsAPI({ aiTutors: ids }, currentUser?.id || 'system'), `${ids.length} AI Tutor(s) deleted.`);
+            dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { aiTutors: ids } });
         },
         setUpdateAvailable: (worker: ServiceWorker | null) => {
             dispatch({ type: 'SET_UPDATE_AVAILABLE', payload: worker });

@@ -31,6 +31,8 @@ const ExportPanel: React.FC = () => {
         rotations: [],
         modifierDefinitions: [],
         chronicles: [],
+        // FIX: Add missing 'aiTutors' property to support exporting AI Tutor assets.
+        aiTutors: [],
     });
     const [blueprintName, setBlueprintName] = useState('');
     const [blueprintDesc, setBlueprintDesc] = useState('');
@@ -48,6 +50,8 @@ const ExportPanel: React.FC = () => {
         { key: 'rotations', label: 'link_manage_rotations', data: questState.rotations },
         { key: 'modifierDefinitions', label: 'link_triumphs_trials', data: systemState.modifierDefinitions },
         { key: 'chronicles', label: 'link_chronicles', data: users },
+        // FIX: Add 'aiTutors' to the list of exportable asset types.
+        { key: 'aiTutors', label: 'link_manage_ai_tutors', data: systemState.aiTutors },
     ], [systemState, economyState, progressionState, questState, users]);
 
     const handleCheckboxChange = useCallback((

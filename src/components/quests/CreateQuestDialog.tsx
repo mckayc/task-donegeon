@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig } from '../quests/types';
+import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig, AITutor } from '../../types';
 import { RewardCategory } from '../users/types';
 import { RewardItem } from '../users/types';
 import { Role } from '../users/types';
@@ -37,7 +37,7 @@ interface QuestDialogProps {
 }
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
-  const { settings } = useSystemState();
+  const { settings, aiTutors } = useSystemState();
   const { guilds } = useCommunityState();
   const { allTags, questGroups } = useQuestsState();
   const { rewardTypes } = useEconomyState();
@@ -53,7 +53,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         type: QuestType.Duty,
         kind: QuestKind.Personal,
         mediaType: undefined,
-        aiTutorSessionMinutes: undefined,
+        aiTutorId: undefined,
         videoUrl: '',
         pdfUrl: '',
         iconType: 'emoji' as 'emoji' | 'image',
@@ -270,7 +270,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         type: formData.type,
         kind: formData.kind,
         mediaType: formData.mediaType || undefined,
-        aiTutorSessionMinutes: formData.mediaType === QuestMediaType.AITeacher ? formData.aiTutorSessionMinutes : undefined,
+        aiTutorId: formData.mediaType === QuestMediaType.AITutor ? formData.aiTutorId : undefined,
         videoUrl: formData.mediaType === QuestMediaType.Video ? formData.videoUrl : null,
         pdfUrl: formData.mediaType === QuestMediaType.PDF ? formData.pdfUrl : null,
         iconType: formData.iconType,
@@ -438,18 +438,26 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input as="select" label="Interactive Media" name="mediaType" value={formData.mediaType || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, mediaType: (e.target.value as QuestMediaType) || undefined}))}>
                   <option value="">None</option>
-                  <option value={QuestMediaType.AITeacher}>AI Teacher</option>
+                  <option value={QuestMediaType.AITutor}>AI Tutor</option>
                   <option value={QuestMediaType.AIStory}>AI Story</option>
                   <option value={QuestMediaType.Video}>Video</option>
                   <option value={QuestMediaType.PDF}>PDF</option>
               </Input>
-              {formData.mediaType === QuestMediaType.AITeacher && (
-                <NumberInput 
-                    label="AI Tutor Session (Minutes)"
-                    value={formData.aiTutorSessionMinutes || 0}
-                    onChange={newVal => setFormData(p => ({...p, aiTutorSessionMinutes: newVal > 0 ? newVal : undefined}))}
-                    min={0}
-                />
+              {formData.mediaType === QuestMediaType.AITutor && (
+                <Input
+                    as="select"
+                    label="Select Tutor"
+                    name="aiTutorId"
+                    value={formData.aiTutorId || ''}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({ ...p, aiTutorId: e.target.value || undefined }))}
+                >
+                    <option value="">-- Choose a Tutor --</option>
+                    {aiTutors.map(tutor => (
+                        <option key={tutor.id} value={tutor.id}>
+                            {tutor.name} ({tutor.subject})
+                        </option>
+                    ))}
+                </Input>
               )}
             </div>
              {formData.mediaType === QuestMediaType.Video && (

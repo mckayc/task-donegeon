@@ -17,6 +17,8 @@ import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import LiveTimerWidget from './LiveTimerWidget';
 import BatteryStatus from '../user-interface/BatteryStatus';
+// FIX: Corrected import path for types
+import { User } from '../../types';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];

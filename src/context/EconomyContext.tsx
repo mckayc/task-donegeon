@@ -248,6 +248,7 @@ export const useEconomyDispatch = (): EconomyDispatch => {
     return context.actions;
 };
 
+// FIX: Export the useEconomyReducerDispatch hook to allow other components to dispatch actions directly to the economy reducer for optimistic UI updates.
 // Hook to get the dispatch for the economy reducer directly
 export const useEconomyReducerDispatch = (): React.Dispatch<EconomyAction> => {
   const context = useContext(EconomyDispatchContext);

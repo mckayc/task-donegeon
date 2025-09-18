@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AssetPack, ImportResolution, ShareableAssetType, Quest, RewardItem, GameAsset, User, UserTemplate } from '../../types';
 import { Terminology } from '../../types/app';
@@ -126,7 +124,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                 (packWithSelectedAssets.assets as any)[res.type] = [];
             }
             // FIX: Ensure the asset list exists before trying to find an item in it.
-            const assetList = assetPack.assets[res.type] as any[];
+            const assetList = assetPack.assets[res.type] as any[] | undefined;
             let originalAsset;
             if (res.type === 'users') {
                  originalAsset = assetList ? assetList.find(a => a.username === res.id) : undefined;

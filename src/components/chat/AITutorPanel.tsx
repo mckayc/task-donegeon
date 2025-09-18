@@ -1,6 +1,5 @@
-
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+// FIX: Import missing types from the main barrel file.
 import { Quest, User, QuizQuestion, QuizChoice, AITutorSessionLog, TranscriptEntry } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -365,5 +364,3 @@ const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose, onSes
         </div>
     );
 };
-
-export default AITutorPanel;

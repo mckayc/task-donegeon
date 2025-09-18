@@ -115,6 +115,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_test_cases: 'Sidebar: Test Cases',
   link_manage_minigames: 'Sidebar: Manage Minigames',
   link_statistics: 'Sidebar: Statistics',
+  link_manage_ai_tutors: 'Sidebar: Manage AI Tutors',
 };
 
 const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];

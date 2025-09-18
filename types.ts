@@ -1,6 +1,7 @@
 // Re-export all the modularized types
 export * from './src/components/users/types';
 export * from './src/components/items/types';
+export * from './src/components/tutors/types';
 export * from './src/components/quests/types';
 export * from './src/components/trophies/types';
 export * from './src/components/ranks/types';
@@ -17,6 +18,4 @@ export * from './src/components/trading/types';
 export * from './src/components/chronicles/types';
 export * from './src/components/conditions/types';
 export * from './src/components/games/types';
-// FIX: Export AI Tutor related types to make them available across the application.
-export * from './src/components/tutors/types';
 export * from './src/types/app';

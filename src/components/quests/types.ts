@@ -1,6 +1,8 @@
 // Changed import from '../items/types' to '../users/types' to break circular dependency.
 import type { RewardItem } from '../users/types';
 import { Role } from '../users/types';
+// FIX: Use `import type` to potentially resolve circular dependency issues with the main types barrel file.
+import type { AITutorSessionLog } from '../tutors/types';
 
 export enum QuestType {
   Duty = 'Duty',

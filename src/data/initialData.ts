@@ -423,3 +423,17 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] },
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
+
+// FIX: Remove redundant export block that was causing redeclaration errors.
+// All variables are already exported individually.
+/*
+export {
+  INITIAL_MAIN_SIDEBAR_CONFIG,
+  INITIAL_SETTINGS,
+  INITIAL_QUEST_GROUPS,
+  INITIAL_REWARD_TYPES,
+  INITIAL_RANKS,
+  INITIAL_THEMES,
+  INITIAL_TROPHIES,
+};
+*/

@@ -1,9 +1,8 @@
-
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { Quest, DashboardLayout, ConditionSet, QuestType, GameAsset, RewardItem } from '../../types';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
+import { Quest, DashboardLayout, ConditionSet, QuestType, GameAsset, RewardItem, AITutorSessionLog } from '../../types';
 import RankCard from '../dashboard/RankCard';
 import InventoryCard from '../dashboard/InventoryCard';
 import LeaderboardCard from '../dashboard/LeaderboardCard';
@@ -51,13 +50,13 @@ interface GoalCardProps {
 }
 
 const ProgressBar: React.FC<{ progress: GoalProgress }> = ({ progress }) => {
-    // FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'.
+    // FIX: Access `amount` property which exists due to extending RewardItem.
     const percentage = Math.min(100, (progress.current / progress.amount) * 100);
     return (
         <div>
             <div className="flex justify-between items-center text-xs mb-1">
                 <span className="font-semibold text-stone-300 flex items-center gap-1">{progress.icon} {progress.name}</span>
-                {/* FIX: The GoalProgress type extends RewardItem, which has an 'amount' property, not 'required'. */}
+                {/* FIX: Access `amount` property which exists due to extending RewardItem. */}
                 <span className="font-mono">{progress.current} / {progress.amount}</span>
             </div>
             <div className="w-full bg-stone-700 rounded-full h-2.5">
@@ -106,6 +105,7 @@ const GoalCard: React.FC<GoalCardProps> = ({ goalData, ...cardProps }) => {
                 </div>
                 <h4 className="font-bold text-lg text-amber-300">{item.name}</h4>
                 <div className="w-full space-y-3 mt-4 text-left">
+                    {/* FIX: Access `rewardTypeId` property which exists due to extending RewardItem. */}
                     {progress.map(p => <ProgressBar key={p.rewardTypeId} progress={p} />)}
                 </div>
                 <Button onClick={handleViewInMarket} size="sm" className="mt-4">
@@ -146,7 +146,7 @@ export const defaultLayout: DashboardLayout = {
 
 const Dashboard: React.FC = () => {
     const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
-    const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
+    const [completingQuest, setCompletingQuest] = useState<{quest: Quest, duration?: number, aiTutorSessionLog?: Omit<AITutorSessionLog, 'id' | 'completionId'>} | null>(null);
     const [isCustomizeDialogOpen, setIsCustomizeDialogOpen] = useState(false);
     const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<Quest | null>(null);
     const [now, setNow] = useState(new Date());
@@ -330,9 +330,9 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleStartCompletion = () => {
+    const handleStartCompletion = (duration?: number, aiTutorSessionLog?: Omit<AITutorSessionLog, 'id' | 'completionId'>) => {
         if (selectedQuest) {
-            setCompletingQuest(selectedQuest);
+            setCompletingQuest({ quest: selectedQuest, duration, aiTutorSessionLog });
             setSelectedQuestId(null);
         }
     };
@@ -407,7 +407,8 @@ const Dashboard: React.FC = () => {
                 <Reorder.Group
                     axis="y"
                     values={visibleMainCards}
-                    onReorder={newOrder => handleReorder('main', newOrder)}
+                    // FIX: Cast newOrder to string[] to resolve TypeScript error.
+                    onReorder={(newOrder) => handleReorder('main', newOrder as string[])}
                     className={`${mainColClasses} space-y-6`}
                 >
                     {visibleMainCards.map(cardId => {
@@ -426,7 +427,8 @@ const Dashboard: React.FC = () => {
                     <Reorder.Group
                         axis="y"
                         values={visibleSideCards}
-                        onReorder={newOrder => handleReorder('side', newOrder)}
+                        // FIX: Cast newOrder to string[] to resolve TypeScript error.
+                        onReorder={(newOrder) => handleReorder('side', newOrder as string[])}
                         className={`${sideColClasses} space-y-6`}
                     >
                         {visibleSideCards.map(cardId => {
@@ -453,7 +455,7 @@ const Dashboard: React.FC = () => {
                 />
             )}
             {completingQuest && (
-                <CompleteQuestDialog quest={completingQuest} onClose={() => setCompletingQuest(null)} />
+                <CompleteQuestDialog quest={completingQuest.quest} duration={completingQuest.duration} aiTutorSessionLog={completingQuest.aiTutorSessionLog} onClose={() => setCompletingQuest(null)} />
             )}
             {isCustomizeDialogOpen && currentUser && (
                 <DashboardCustomizationDialog

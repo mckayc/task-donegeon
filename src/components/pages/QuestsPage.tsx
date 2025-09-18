@@ -6,6 +6,7 @@ import { useSystemState } from '../../context/SystemContext';
 // FIX: Import useUIState to get appMode for condition checking.
 import { useUIState } from '../../context/UIContext';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet, QuestGroup } from '../../types';
 import { isQuestAvailableForUser, questSorter, getAvailabilityText, formatTimeRemaining } from '../../utils/quests';
 import { getQuestLockStatus, QuestLockStatus, ConditionDependencies, isQuestVisibleToUserInMode, toYMD } from '../../utils/conditions';

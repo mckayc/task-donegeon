@@ -1,14 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Role } from '../users/types';
-import { QuestCompletionStatus } from '../quests/types';
-import { PurchaseRequestStatus } from '../items/types';
-import { Page, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types/app';
-import { TradeStatus } from '../trading/types';
-import { ChatMessage } from '../chat/types';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
+import { Role, QuestCompletionStatus, PurchaseRequestStatus, Page, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestsState } from '../../context/QuestsContext';
+// FIX: Corrected import for useEconomyState hook.
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';

@@ -2,27 +2,7 @@
 import type { Quest } from '../quests/types';
 import { Rank } from '../ranks/types';
 import { ConditionSet, Condition } from '../conditions/types';
-// Import RewardItem and RewardCategory from users/types to break circular dependency with quests/types.
-import { RewardItem, RewardCategory } from '../users/types';
-
-export { RewardCategory };
-export type { RewardItem };
-
-export interface RewardTypeDefinition {
-  id: string;
-  name: string;
-  category: RewardCategory;
-  description: string;
-  isCore: boolean;
-  iconType: 'emoji' | 'image';
-  icon: string;
-  imageUrl?: string;
-  // How many units of the real-world currency are equal to 1 unit of this reward.
-  baseValue: number;
-  isExchangeable?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { RewardItem } from '../rewards/types';
 
 export interface GameAsset {
   id: string;

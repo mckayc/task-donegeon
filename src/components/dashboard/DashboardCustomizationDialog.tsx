@@ -1,6 +1,6 @@
-
-
+// FIX: Added `useMemo` to React import.
 import React, { useState, useCallback, useMemo } from 'react';
+// FIX: Corrected type import for `DashboardLayout`.
 import { DashboardLayout } from '../../types';
 import Button from '../user-interface/Button';
 import { Reorder } from 'framer-motion';
@@ -164,7 +164,6 @@ const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> 
         </div>
     );
     
-    // FIX: Added `useMemo` to React import.
     const allVisibleCards = useMemo(() => {
         const allOrderedCards = tempLayout.layoutType === 'single-column'
             ? [...tempLayout.columns.main.order, ...tempLayout.columns.side.order]
@@ -173,7 +172,6 @@ const DashboardCustomizationDialog: React.FC<DashboardCustomizationDialogProps> 
         return allOrderedCards.filter(id => !tempLayout.hidden.includes(id));
     }, [tempLayout]);
 
-    // FIX: Added `useMemo` to React import.
     const allSideVisibleCards = useMemo(() => {
         return tempLayout.columns.side.order.filter(id => !tempLayout.hidden.includes(id));
     }, [tempLayout]);

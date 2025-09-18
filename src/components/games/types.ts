@@ -1,4 +1,4 @@
-import { RewardItem } from "../users/types";
+import { RewardItem } from "../rewards/types";
 
 export interface PrizeThreshold {
     score: number;

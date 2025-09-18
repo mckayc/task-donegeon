@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { AppMode, Page, Quest } from '../types';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
+import { AppMode, Page, Quest } from '../../types';
 import { bugLogger } from '../utils/bugLogger';
 
 // FIX: Added ActiveTimer interface for the new quest timer feature.

@@ -7,7 +7,7 @@ import { QuestType } from '../../types';
 import { Terminology } from '../../types/app';
 import Card from '../user-interface/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
-import EditGameAssetDialog from '../admin/EditGameAssetDialog';
+import { EditGameAssetDialog } from '../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
 import EditMarketDialog from '../markets/EditMarketDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
+import { EditGameAssetDialog } from '../../admin/EditGameAssetDialog';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';

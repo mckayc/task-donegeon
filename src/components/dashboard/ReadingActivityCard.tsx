@@ -33,12 +33,14 @@ const ReadingActivityCard: React.FC<ReadingActivityCardProps> = (props) => {
             if (quest.readingProgress) {
                 Object.entries(quest.readingProgress).forEach(([userId, progress]) => {
                     const user = users.find(u => u.id === userId);
-                    if (user && progress.totalSeconds && progress.totalSeconds > 0) {
+                    // FIX: Correctly cast the `progress` object to ensure type safety when accessing its properties.
+                    const progressData = progress as { totalSeconds?: number; sessionSeconds?: number; };
+                    if (user && progressData.totalSeconds && progressData.totalSeconds > 0) {
                         activities.push({ 
                             user, 
                             quest, 
-                            time: progress.totalSeconds,
-                            sessionTime: progress.sessionSeconds
+                            time: progressData.totalSeconds,
+                            sessionTime: progressData.sessionSeconds
                         });
                     }
                 });
@@ -62,7 +64,9 @@ const ReadingActivityCard: React.FC<ReadingActivityCardProps> = (props) => {
                                 </p>
                             </div>
                              <div className="font-mono text-right flex-shrink-0">
+                                {/* FIX: Correctly access properties on a potentially unknown object type. */}
                                 <p className="font-bold text-lg text-emerald-300" title="Total Time">{formatTime(time)}</p>
+                                {/* FIX: Correctly access properties on a potentially unknown object type. */}
                                 {sessionTime && sessionTime > 0 && <p className="text-xs text-stone-400" title="Current Session">({formatTime(sessionTime)})</p>}
                             </div>
                         </div>

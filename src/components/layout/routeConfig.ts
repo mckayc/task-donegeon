@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Page } from '../../types/app';
+import { Page } from '../../types';
 
 // This is a mapping of page names to their lazy-loaded components.
 export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.FC<{}>>>> = {
@@ -29,6 +29,7 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Manage AI Tutors': lazy(() => import('../pages/management/ManageAITutorsPage')),
     'Triumphs & Trials': lazy(() => import('../pages/management/ManageSetbacksPage')),
     'Suggestion Engine': lazy(() => import('../pages/SuggestionEnginePage')),
+    // FIX: Corrected lazy import syntax for named exports.
     'Approvals': lazy(() => import('../pages/ApprovalsPage')),
     'Settings': lazy(() => import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage }))),
     'Appearance': lazy(() => import('../pages/AppearancePage')),

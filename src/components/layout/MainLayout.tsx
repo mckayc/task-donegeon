@@ -1,9 +1,8 @@
 import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { Role } from '../users/types';
-import { Page, Quest, QuestCompletionStatus } from '../../types';
-import { SystemNotification } from '../system/types';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
+import { Role, Page, Quest, AITutorSessionLog, SystemNotification } from '../../types';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -29,7 +28,7 @@ const MainLayout: React.FC = () => {
   const { logout } = useAuthDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
-  const [completingQuest, setCompletingQuest] = useState<{quest: Quest, duration?: number} | null>(null);
+  const [completingQuest, setCompletingQuest] = useState<{quest: Quest, duration?: number, aiTutorSessionLog?: Omit<AITutorSessionLog, 'id' | 'completionId'>} | null>(null);
   const prevUserIdRef = useRef<string | undefined>(undefined);
   const timerRef = useRef<number | null>(null);
   const activeTimerUserId = useRef<string | undefined>(undefined);
@@ -164,9 +163,9 @@ const MainLayout: React.FC = () => {
       </div>
   );
 
-  const handleStartCompletion = (duration?: number) => {
+  const handleStartCompletion = (duration?: number, aiTutorSessionLog?: Omit<AITutorSessionLog, 'id' | 'completionId'>) => {
     if (timedQuestDetail) {
-      setCompletingQuest({ quest: timedQuestDetail, duration });
+      setCompletingQuest({ quest: timedQuestDetail, duration, aiTutorSessionLog });
       setTimedQuestDetail(null);
     }
   };
@@ -234,7 +233,7 @@ const MainLayout: React.FC = () => {
           isTodo={timedQuestDetail.todoUserIds?.includes(currentUser.id)}
         />
       )}
-      {completingQuest && <CompleteQuestDialog quest={completingQuest.quest} duration={completingQuest.duration} onClose={() => setCompletingQuest(null)} />}
+      {completingQuest && <CompleteQuestDialog quest={completingQuest.quest} duration={completingQuest.duration} aiTutorSessionLog={completingQuest.aiTutorSessionLog} onClose={() => setCompletingQuest(null)} />}
     </>
   );
 };

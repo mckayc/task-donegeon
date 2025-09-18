@@ -1,4 +1,5 @@
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { Rank, Trophy, UserTrophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -114,10 +115,11 @@ export const useProgressionDispatch = (): ProgressionDispatch => {
     return context.actions;
 };
 
+// FIX: Added the missing type argument to React.Dispatch.
 export const useProgressionReducerDispatch = (): React.Dispatch<ProgressionAction> => {
-  const context = useContext(ProgressionDispatchContext);
-  if (!context) {
-    throw new Error('useProgressionReducerDispatch must be used within a ProgressionProvider');
-  }
-  return context.dispatch;
+    const context = useContext(ProgressionDispatchContext);
+    if (!context) {
+        throw new Error('useProgressionReducerDispatch must be used within a ProgressionProvider');
+    }
+    return context.dispatch;
 };

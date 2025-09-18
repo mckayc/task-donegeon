@@ -57,7 +57,7 @@ const TypeButton: React.FC<{
 };
 
 
-const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) => {
+export const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) => {
     const { settings } = useSystemState();
     const [hasDueDate, setHasDueDate] = useState(!!(value.startDateTime || value.endDateTime));
     const [recurrenceType, setRecurrenceType] = useState('DAILY');
@@ -168,88 +168,81 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
 
     return (
         <fieldset className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-            <legend className="font-medieval text-xl text-accent mb-2">Scheduling &amp; Type</legend>
-            <div className="flex gap-2 p-1 bg-stone-700/50 rounded-lg">
-                <TypeButton type={QuestType.Duty} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For recurring tasks, like daily or weekly chores." />
-                <TypeButton type={QuestType.Venture} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For one-time tasks or projects with a specific deadline." />
-                <TypeButton type={QuestType.Journey} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="A multi-step adventure with checkpoints and staged rewards." />
+            <h3 className="font-semibold text-lg text-stone-200">Scheduling</h3>
+            <div className="flex space-x-2 p-1 bg-stone-700/50 rounded-lg">
+                <TypeButton type={QuestType.Duty} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="A recurring task, like a daily chore." />
+                <TypeButton type={QuestType.Venture} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="A one-time task or project with an optional deadline." />
+                <TypeButton type={QuestType.Journey} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="A multi-step quest with checkpoints." />
             </div>
-
-            {(value.type === QuestType.Venture || value.type === QuestType.Journey) ? (
+            
+            {value.type === QuestType.Duty ? (
+                // --- Duty Scheduling ---
                 <div className="space-y-4">
-                    {value.type === QuestType.Venture && (
-                       <div className="grid grid-cols-2 gap-4">
-                           <NumberInput label="Daily Completions Limit (0 for unlimited)" min={0} value={value.dailyCompletionsLimit ?? 1} onChange={newVal => onChange({ dailyCompletionsLimit: newVal })} />
-                           <NumberInput label="Total Completions Limit (0 for unlimited)" min={0} value={value.totalCompletionsLimit ?? 0} onChange={newVal => onChange({ totalCompletionsLimit: newVal })} />
-                       </div>
-                    )}
-                    <ToggleSwitch label="Specific Due Date" enabled={hasDueDate} setEnabled={val => {
-                        setHasDueDate(val);
-                        if (!val) {
-                            onChange({ startDateTime: null, endDateTime: null });
-                        }
-                    }} />
-                    {hasDueDate && (
-                        <div className="pl-4 border-l-2 border-stone-700 space-y-4">
-                            <ToggleSwitch label="All Day" enabled={value.allDay} setEnabled={handleAllDayToggle} />
-                            {value.allDay ? (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Start Date" type="date" value={value.startDateTime ? value.startDateTime.split('T')[0] : ''} onChange={e => onChange({ startDateTime: e.target.value ? `${e.target.value}T00:00:00` : null })} />
-                                    <Input label="End Date" type="date" value={value.endDateTime ? value.endDateTime.split('T')[0] : ''} onChange={e => onChange({ endDateTime: e.target.value ? `${e.target.value}T23:59:59` : null })} />
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Start" type="datetime-local" value={value.startDateTime || ''} onChange={e => onChange({ startDateTime: e.target.value })} />
-                                    <Input label="End" type="datetime-local" value={value.endDateTime || ''} onChange={e => onChange({ endDateTime: e.target.value })} />
-                                </div>
-                            )}
+                    <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Daily Limit" min={0} value={value.dailyCompletionsLimit || 1} onChange={val => onChange({ dailyCompletionsLimit: val })} />
+                        <div className="pt-7"><ToggleSwitch enabled={value.allDay} setEnabled={handleAllDayToggle} label="All Day" /></div>
+                    </div>
+
+                    {!value.allDay && (
+                         <div className="grid grid-cols-2 gap-4">
+                            <Input label="Due Time" type="time" value={value.startTime || ''} onChange={e => onChange({ startTime: e.target.value })} />
+                            <Input label="Incomplete Time" type="time" value={value.endTime || ''} onChange={e => onChange({ endTime: e.target.value })} />
                         </div>
                     )}
-                </div>
-            ) : ( // Duty
-                <div className="space-y-4">
-                    <div className="grid grid-cols-3 items-end gap-2">
-                        <Input as="select" label="Repeats" value={recurrenceType} onChange={handleRecurrenceChange} className="col-span-2">
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                         <Input as="select" label="Repeats" value={recurrenceType} onChange={handleRecurrenceChange}>
                             <option value="DAILY">Daily</option>
                             <option value="WEEKLY">Weekly</option>
                             <option value="MONTHLY">Monthly</option>
                         </Input>
-                         <div className="flex items-center gap-2">
-                            <NumberInput label="Every" min={1} value={interval} onChange={handleIntervalChange} className="w-20" />
-                            <span className="text-sm text-stone-400 pt-7">{intervalUnit}</span>
-                        </div>
+                        <NumberInput label={`Every`} min={1} value={interval} onChange={handleIntervalChange} />
                     </div>
+                     <p className="text-xs -mt-3 ml-2 text-stone-400">{intervalUnit}</p>
+
 
                     {recurrenceType === 'WEEKLY' && (
                         <div>
-                            <label className="block text-sm font-medium text-stone-300 mb-1">On</label>
-                            <div className="flex justify-center gap-1">
+                             <label className="block text-sm font-medium text-stone-300 mb-1">On Days</label>
+                             <div className="flex justify-center gap-1">
                                 {WEEKDAYS.map(day => (
-                                    <button
-                                        key={day.value}
-                                        type="button"
-                                        onClick={() => handleWeeklyDayToggle(day.value)}
-                                        className={`w-10 h-10 rounded-full font-bold transition-colors ${!weeklyDays.includes(day.value) ? 'bg-stone-700 text-stone-300 hover:bg-stone-600' : ''}`}
-                                        style={weeklyDays.includes(day.value) ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' } : {}}
-                                    >{day.label}</button>
+                                    <button key={day.value} type="button" onClick={() => handleWeeklyDayToggle(day.value)} className={`w-10 h-10 rounded-full font-bold transition-colors ${weeklyDays.includes(day.value) ? 'bg-emerald-600 text-white' : 'bg-stone-700 text-stone-300 hover:bg-stone-600'}`}>
+                                        {day.label}
+                                    </button>
                                 ))}
                             </div>
                         </div>
                     )}
                     {recurrenceType === 'MONTHLY' && (
-                        <Input label="On Days (comma-separated)" placeholder="e.g. 1, 15, 31" value={monthlyDays} onChange={handleMonthlyDaysChange} />
+                        <Input label="On Days of Month (comma-separated)" value={monthlyDays} onChange={handleMonthlyDaysChange} placeholder="e.g., 1,15" />
                     )}
-                    <ToggleSwitch label="All Day" enabled={value.allDay} setEnabled={handleAllDayToggle} />
-                    {!value.allDay && (
-                         <div className="pl-4 border-l-2 border-stone-700 grid grid-cols-2 gap-4">
-                            <Input label="Due Time" type="time" value={value.startTime || ''} onChange={e => onChange({ startTime: e.target.value })} />
-                            <Input label="Incomplete Time" type="time" value={value.endTime || ''} onChange={e => onChange({ endTime: e.target.value })} />
-                        </div>
-                    )}
+                </div>
+            ) : (
+                // --- Venture & Journey Scheduling ---
+                <div className="space-y-4">
+                     <ToggleSwitch enabled={hasDueDate} setEnabled={(val) => { setHasDueDate(val); if (!val) { onChange({ startDateTime: null, endDateTime: null }); } }} label="Has a Due Date" />
+                     {hasDueDate && (
+                         <div className="pl-6 border-l-2 border-stone-700/60 space-y-4">
+                             <ToggleSwitch enabled={value.allDay} setEnabled={handleAllDayToggle} label="All Day Event" />
+                             {value.allDay ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input label="Start Date" type="date" value={value.startDateTime?.split('T')[0] || ''} onChange={e => onChange({ startDateTime: `${e.target.value}T00:00:00` })} />
+                                    <Input label="End Date" type="date" value={value.endDateTime?.split('T')[0] || ''} onChange={e => onChange({ endDateTime: `${e.target.value}T23:59:59` })} />
+                                </div>
+                             ) : (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input label="Start" type="datetime-local" value={value.startDateTime || ''} onChange={e => onChange({ startDateTime: e.target.value })} />
+                                    <Input label="End" type="datetime-local" value={value.endDateTime || ''} onChange={e => onChange({ endDateTime: e.target.value })} />
+                                </div>
+                             )}
+                         </div>
+                     )}
+                     <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Daily Limit" min={0} value={value.dailyCompletionsLimit || 1} onChange={val => onChange({ dailyCompletionsLimit: val })} />
+                        <NumberInput label="Total Limit" min={0} value={value.totalCompletionsLimit || 0} onChange={val => onChange({ totalCompletionsLimit: val })} />
+                    </div>
                 </div>
             )}
         </fieldset>
-    );
+    )
 };
-
-export default QuestScheduling;

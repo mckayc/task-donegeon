@@ -1,11 +1,15 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
-import { Role, ChronicleEvent, ChronicleEventType } from '../../types';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
+import { Role, ChronicleEvent, ChronicleEventType, QuestMediaType, QuestCompletion } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
+// FIX: Corrected import for useEconomyDispatch hook.
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { FilterIcon, ChevronDownIcon } from '../user-interface/Icons';
+import { useQuestsState } from '../../context/QuestsContext';
+import AITutorReportDialog from '../tutors/AITutorReportDialog';
 
 const CHRONICLE_EVENT_TYPES = [
     ChronicleEventType.QuestCompletion,
@@ -43,6 +47,7 @@ const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { cancelPurchaseRequest } = useEconomyDispatch();
+    const { quests, questCompletions } = useQuestsState();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -53,6 +58,7 @@ const ChroniclesPage: React.FC = () => {
     
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
+    const [viewingReportFor, setViewingReportFor] = useState<string | null>(null);
 
     const [selectedFilters, setSelectedFilters] = useState<string[]>(() => {
         try {
@@ -118,6 +124,13 @@ const ChroniclesPage: React.FC = () => {
     }, [currentPage, itemsPerPage, viewMode, appMode, currentUser, selectedFilters]);
 
     if (!currentUser) return null;
+
+    const isAiTutorCompletion = (completionId: string) => {
+        const completion = questCompletions.find(c => c.id === completionId);
+        if (!completion) return false;
+        const quest = quests.find(q => q.id === completion.questId);
+        return quest?.mediaType === QuestMediaType.AITutor;
+    };
 
     const totalPages = Math.ceil(totalEvents / itemsPerPage);
 
@@ -256,8 +269,12 @@ const ChroniclesPage: React.FC = () => {
                 ) : events.length > 0 ? (
                     <>
                         <ul className="space-y-4">
-                            {events.map(activity => (
-                                <li key={activity.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-3 bg-stone-800/60 rounded-lg border-l-4" style={{ borderColor: activity.color }}>
+                            {events.map(activity => {
+                                const canViewReport = (currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && activity.type === ChronicleEventType.QuestCompletion && isAiTutorCompletion(activity.originalId);
+                                const itemClass = `grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-3 bg-stone-800/60 rounded-lg border-l-4 transition-colors ${canViewReport ? 'cursor-pointer hover:bg-stone-700/50' : ''}`;
+                                
+                                return (
+                                <li key={activity.id} className={itemClass} style={{ borderColor: activity.color }} onClick={() => canViewReport && setViewingReportFor(activity.originalId)}>
                                     {/* Column 1: Title, Icon, & Subject */}
                                     <div className="flex items-start gap-3 md:col-span-1 min-w-0">
                                         <span className="text-2xl flex-shrink-0 mt-1">{activity.icon}</span>
@@ -289,7 +306,8 @@ const ChroniclesPage: React.FC = () => {
                                         </div>
                                     </div>
                                 </li>
-                            ))}
+                                );
+                            })}
                         </ul>
                         {totalPages > 1 && (
                             <div className="flex justify-between items-center mt-6 pt-4 border-t border-stone-700">
@@ -303,6 +321,7 @@ const ChroniclesPage: React.FC = () => {
                     <p className="text-stone-400 text-center py-4">No activities match your current filters.</p>
                 )}
             </Card>
+            {viewingReportFor && <AITutorReportDialog completionId={viewingReportFor} onClose={() => setViewingReportFor(null)} />}
         </div>
     );
 };

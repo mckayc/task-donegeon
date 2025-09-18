@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Market, MarketStatus, Condition, ConditionType } from '../../types';
@@ -8,6 +7,7 @@ import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { useQuestsState } from '../../context/QuestsContext';
+// FIX: Corrected import for useEconomyDispatch hook.
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';

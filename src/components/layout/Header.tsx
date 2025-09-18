@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Page, AppMode } from '../../types/app';
-import { Quest } from '../quests/types';
-import { Role } from '../users/types';
+// FIX: Corrected import path for types
+import { Page, AppMode, Quest, Role, User } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -17,8 +16,6 @@ import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import LiveTimerWidget from './LiveTimerWidget';
 import BatteryStatus from '../user-interface/BatteryStatus';
-// FIX: Corrected import path for types
-import { User } from '../../types';
 
 interface PendingApprovals {
     quests: { id: string; title: string; submittedAt: string; questId: string; }[];

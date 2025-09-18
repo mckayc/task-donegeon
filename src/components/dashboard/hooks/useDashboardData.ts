@@ -3,7 +3,8 @@ import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { QuestCompletionStatus, QuestKind, QuestType, Quest } from '../../quests/types';
-import { RewardCategory } from '../../users/types';
+// FIX: Corrected import path for RewardCategory.
+import { RewardCategory } from '../../rewards/types';
 import { Rank } from '../../ranks/types';
 import { Trophy } from '../../trophies/types';
 import { RewardItem } from '../../items/types';
@@ -24,7 +25,6 @@ export const useDashboardData = () => {
     const { 
         settings, scheduledEvents, adminAdjustments
     } = useSystemState();
-    // FIX: Add gameAssets to destructuring as it's needed for the 'myGoal' calculation.
     const { rewardTypes, gameAssets } = useEconomyState();
     const { guilds } = useCommunityState();
     const { quests, questCompletions } = useQuestsState();
@@ -152,7 +152,6 @@ export const useDashboardData = () => {
         return statsMap;
     }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
     
-    // FIX: Add logic to calculate 'myGoal' for the dashboard.
     const myGoal = useMemo(() => {
         if (!currentUser || !currentUser.wishlistAssetIds || currentUser.wishlistAssetIds.length === 0) {
             return { hasGoal: false, item: null, progress: [], isAffordable: false };
@@ -368,7 +367,6 @@ export const useDashboardData = () => {
         mostRecentTrophy,
         quickActionQuests,
         weeklyProgressData,
-        // FIX: Add myGoal to the return object.
         myGoal,
         terminology
     };

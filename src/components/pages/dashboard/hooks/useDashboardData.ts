@@ -2,12 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { useSystemState } from '../../../../context/SystemContext';
 import { useUIState } from '../../../../context/UIContext';
 import { useAuthState } from '../../../../context/AuthContext';
-import { QuestCompletionStatus, QuestKind, QuestType, Quest } from '../../../quests/types';
-import { RewardCategory } from '../../../users/types';
-import { Rank } from '../../../ranks/types';
-import { Trophy } from '../../../trophies/types';
-import { RewardItem } from '../../../items/types';
-import { ChronicleEvent } from '../../../chronicles/types';
+// FIX: Corrected import paths to use the main barrel file.
+import { QuestCompletionStatus, QuestKind, QuestType, Quest, RewardCategory, Rank, Trophy, RewardItem, ChronicleEvent } from '../../../../types';
 import { isQuestAvailableForUser, questSorter } from '../../../../utils/quests';
 import { isQuestVisibleToUserInMode, toYMD } from '../../../../utils/conditions';
 import { useQuestsState } from '../../../../context/QuestsContext';
@@ -24,7 +20,6 @@ export const useDashboardData = () => {
     const { 
         settings, scheduledEvents, adminAdjustments
     } = useSystemState();
-    // FIX: Add gameAssets to destructuring as it's needed for the 'myGoal' calculation.
     const { rewardTypes, gameAssets } = useEconomyState();
     const { guilds } = useCommunityState();
     const { quests, questCompletions } = useQuestsState();
@@ -152,7 +147,6 @@ export const useDashboardData = () => {
         return statsMap;
     }, [users, quests, questCompletions, rewardTypes, adminAdjustments]);
     
-    // FIX: Add logic to calculate 'myGoal' for the dashboard.
     const myGoal = useMemo(() => {
         if (!currentUser || !currentUser.wishlistAssetIds || currentUser.wishlistAssetIds.length === 0) {
             return { hasGoal: false, item: null, progress: [], isAffordable: false };
@@ -173,8 +167,7 @@ export const useDashboardData = () => {
         const progress: any[] = costGroup.map(cost => {
             const rewardDef = rewardTypes.find(rt => rt.id === cost.rewardTypeId);
             return {
-                rewardTypeId: cost.rewardTypeId,
-                amount: cost.amount,
+                ...cost, // Add all properties from RewardItem
                 current: balances[cost.rewardTypeId] || 0,
                 icon: rewardDef?.icon || '❓',
                 name: rewardDef?.name || 'Unknown'
@@ -368,7 +361,6 @@ export const useDashboardData = () => {
         mostRecentTrophy,
         quickActionQuests,
         weeklyProgressData,
-        // FIX: Add myGoal to the return object.
         myGoal,
         terminology
     };

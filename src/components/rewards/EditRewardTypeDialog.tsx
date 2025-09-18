@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { RewardTypeDefinition } from '../items/types';
-import { RewardCategory } from '../users/types';
+import { RewardTypeDefinition, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
+// FIX: Corrected import for useEconomyDispatch hook.
 import { useEconomyDispatch } from '../../context/EconomyContext';
 import { useSystemState } from '../../context/SystemContext';
 import NumberInput from '../user-interface/NumberInput';

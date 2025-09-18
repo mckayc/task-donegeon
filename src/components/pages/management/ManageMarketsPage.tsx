@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { Market } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -9,7 +9,7 @@ import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 // FIX: Explicitly import the useEconomyReducerDispatch hook to resolve a 'not found' error, ensuring the component can access the reducer's dispatch function for optimistic UI updates.
-import { useEconomyState, useEconomyDispatch, useEconomyReducerDispatch } from '../../../context/EconomyContext';
+import { useEconomyState, useEconomyDispatch, EconomyDispatchContext } from '../../../context/EconomyContext';
 import MarketTable from '../../markets/MarketTable';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useUIState } from '../../../context/UIContext';
@@ -78,7 +78,7 @@ export const ManageMarketsPage: React.FC = () => {
     const { deleteSelectedAssets } = useSystemDispatch();
     const { markets } = useEconomyState();
     const { updateMarketsStatus, cloneMarket } = useEconomyDispatch();
-    const economyDispatch = useEconomyReducerDispatch();
+    const { dispatch: economyDispatch } = useContext(EconomyDispatchContext)!;
     const { isMobileView } = useUIState();
 
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);

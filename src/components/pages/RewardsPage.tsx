@@ -1,13 +1,15 @@
 
+
+
 import React, { useState, useRef, useEffect } from 'react';
-import { RewardTypeDefinition } from '../items/types';
-import { RewardCategory } from '../users/types';
+import { RewardTypeDefinition, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useRewardValuePerUnit } from '../rewards/hooks/useRewardValue';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
+// FIX: Corrected import for useEconomyState and useEconomyDispatch hooks.
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 

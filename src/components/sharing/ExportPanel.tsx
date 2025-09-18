@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
+// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';

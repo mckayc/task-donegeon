@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useContext } from 'react';
 import { Rank } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import EditRankDialog from '../../settings/EditRankDialog';
+import { EditRankDialog } from '../../settings/EditRankDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useProgressionState, ProgressionDispatchContext } from '../../../context/ProgressionContext';

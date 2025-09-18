@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User, QuestMediaType, AITutorSessionLog } from '../../types';
 import Button from '../user-interface/Button';
@@ -154,7 +153,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
             
             const finalDurationSeconds = Math.round(elapsed / 1000);
             stopTimer();
-            onComplete(finalDurationSeconds);
+            onComplete(finalDurationSeconds, tutorSessionLog || undefined);
         }
     };
 

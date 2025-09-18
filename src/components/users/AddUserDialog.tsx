@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useAuthDispatch, useAuthState } from '../../context/AuthContext';
 import { Role } from './types';

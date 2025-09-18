@@ -1,5 +1,5 @@
-// Changed import from '../items/types' to '../users/types' to break circular dependency.
-import type { RewardItem } from '../users/types';
+// Changed import from '../users/types' to '../rewards/types' to break circular dependency.
+import type { RewardItem } from '../rewards/types';
 import { Role } from '../users/types';
 // FIX: Use `import type` to potentially resolve circular dependency issues with the main types barrel file.
 import type { AITutorSessionLog } from '../tutors/types';
@@ -60,7 +60,6 @@ export interface Bookmark {
   createdAt: string;
 }
 
-// FIX: Added timer configuration for quests.
 export interface QuestTimerConfig {
     mode: 'stopwatch' | 'countdown';
     durationSeconds?: number;
@@ -114,7 +113,6 @@ export interface Quest {
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[]; // Kept for Ventures
-  // FIX: Added timer configuration.
   timerConfig?: QuestTimerConfig;
   conditionSetIds?: string[];
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for

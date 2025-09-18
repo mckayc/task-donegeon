@@ -88,6 +88,20 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
         });
     };
 
+    const isValidMove = (piece: { x: number, y: number, shape: number[][] }) => {
+        return piece.shape.every((row, dy) => {
+            return row.every((value, dx) => {
+                if (value === 0) return true;
+                const newX = piece.x + dx;
+                const newY = piece.y + dy;
+                return (
+                    newX >= 0 && newX < COLS && newY < ROWS &&
+                    (boardRef.current[newY] && boardRef.current[newY][newX] === 0)
+                );
+            });
+        });
+    };
+
     const draw = useCallback(() => {
         const ctx = canvasRef.current?.getContext('2d');
         if (!ctx) return;
@@ -125,21 +139,7 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
             ctx.fillRect(p.x, p.y, 3, 3);
         });
 
-    }, []);
-    
-    const isValidMove = (piece: { x: number, y: number, shape: number[][] }) => {
-        return piece.shape.every((row, dy) => {
-            return row.every((value, dx) => {
-                if (value === 0) return true;
-                const newX = piece.x + dx;
-                const newY = piece.y + dy;
-                return (
-                    newX >= 0 && newX < COLS && newY < ROWS &&
-                    (boardRef.current[newY] && boardRef.current[newY][newX] === 0)
-                );
-            });
-        });
-    };
+    }, [isValidMove]);
     
     const mergeToBoard = () => {
         if (!pieceRef.current) return;
@@ -191,7 +191,7 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
             setGameState('game-over');
             submitScore('minigame-tetris', score);
         }
-    }, [generatePiece, score, submitScore]);
+    }, [generatePiece, score, submitScore, isValidMove]);
     
     const moveDown = useCallback(() => {
         if (!pieceRef.current) return;
@@ -204,7 +204,7 @@ const TetrisGame: React.FC<TetrisGameProps> = ({ onClose }) => {
             spawnNewPiece();
         }
         draw();
-    }, [draw, spawnNewPiece]);
+    }, [draw, spawnNewPiece, isValidMove]);
     
     const gameSpeed = useMemo(() => Math.max(100, 1000 - level * 50), [level]);
     useGameLoop(moveDown, gameState === 'playing' ? gameSpeed : null);

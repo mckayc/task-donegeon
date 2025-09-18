@@ -9,25 +9,11 @@ import { ForgeMasterGame } from './ForgeMasterGame';
 import ArchersFollyGame from './ArchersFollyGame';
 import TetrisGame from './TetrisGame';
 import GemstoneMinesGame from './GemstoneMinesGame';
-import LabyrinthGame from './LabyrinthGame';
-import AlchemistsTrialGame from './AlchemistsTrialGame';
-import GoblinAmbushGame from './GoblinAmbushGame';
-import RiverCrossingGame from './RiverCrossingGame';
-import WizardsVortexGame from './WizardsVortexGame';
 
 interface GameOverlayProps {
   gameId: string;
   onClose: () => void;
 }
-
-const PlaceholderGame: React.FC<{ gameName: string; onClose: () => void; }> = ({ gameName, onClose }) => (
-    <div className="text-white text-center">
-        <h2 className="text-4xl font-medieval text-amber-400">{gameName}</h2>
-        <p className="mt-4 text-lg">Coming Soon!</p>
-        <Button onClick={onClose} className="mt-8">Back to Arcade</Button>
-    </div>
-);
-
 
 const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
   const renderGame = () => {
@@ -48,21 +34,12 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
         return <TetrisGame onClose={onClose} />;
       case 'minigame-gemstone-mines':
         return <GemstoneMinesGame onClose={onClose} />;
-      case 'minigame-labyrinth':
-        return <LabyrinthGame onClose={onClose} />;
-      case 'minigame-alchemists-trial':
-        return <AlchemistsTrialGame onClose={onClose} />;
-      case 'minigame-goblin-ambush':
-        return <GoblinAmbushGame onClose={onClose} />;
-      case 'minigame-river-crossing':
-        return <RiverCrossingGame onClose={onClose} />;
-      case 'minigame-wizards-vortex':
-        return <WizardsVortexGame onClose={onClose} />;
       default:
         return (
-            <div className="text-white">
-                <p>Error: Game "{gameId}" not found.</p>
-                <button onClick={onClose} className="mt-4 p-2 bg-red-500 rounded">Close</button>
+            <div className="w-full h-full flex flex-col items-center justify-center text-white text-center">
+                <h2 className="text-4xl font-medieval text-amber-400">Error</h2>
+                <p className="mt-4 text-lg">Game "{gameId}" not found or is under construction.</p>
+                <Button onClick={onClose} className="mt-8">Back to Arcade</Button>
             </div>
         );
     }

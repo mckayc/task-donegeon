@@ -153,7 +153,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                     <p className="text-stone-300 mt-1">Review and select the contents to import.</p>
                 </div>
 
-                <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden">
+                <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden min-h-0">
                     {/* Left Column */}
                     <div className="md:col-span-1 flex flex-col gap-6">
                          <div className="p-4 bg-stone-900/50 rounded-lg">

@@ -1,13 +1,11 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
-import { User, RewardCategory } from '../users/types';
-import { Guild } from '../guilds/types';
-import { TradeOffer } from '../trading/types';
+// FIX: Corrected type import to use the main types barrel file.
+import { User, Guild, RewardCategory, TradeOffer } from '../../../types';
 import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
 import Avatar from '../user-interface/Avatar';
 import DonateDialog from '../guilds/DonateDialog';

@@ -225,6 +225,59 @@ export const INITIAL_SETTINGS: AppSettings = {
     bugReportTemplates: [],
 };
 
+export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
+    { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
+    { id: 'qg-school', name: 'School & Learning', description: 'Quests related to homework, studying, and educational activities.', icon: '📚' },
+    { id: 'qg-personal', name: 'Personal Goals', description: 'Quests for self-improvement, habits, and personal projects.', icon: '🎯' },
+    { id: 'qg-health', name: 'Health & Wellness', description: 'Tasks for physical and mental well-being, like exercise and hygiene.', icon: '❤️‍🩹' },
+    { id: 'qg-family', name: 'Family & Social', description: 'Quests that involve spending time with or helping family and friends.', icon: '👨‍👩‍👧‍👦' },
+    { id: 'qg-creative', name: 'Creative & Hobbies', description: 'Quests for art, music, building, and other creative pursuits.', icon: '🎨' },
+    { id: 'qg-outdoor', name: 'Outdoor & Adventure', description: 'Tasks related to yard work, playing outside, and exploring nature.', icon: '🌳' },
+    { id: 'qg-kindness', name: 'Kindness & Service', description: 'Quests focused on helping others, showing appreciation, and community service.', icon: '💖' },
+];
+
+export const INITIAL_REWARD_TYPES: RewardTypeDefinition[] = [
+    { id: 'core-gold', name: 'Gold Coins', category: RewardCategory.Currency, description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 0.20 },
+    { id: 'core-gems', name: 'Gems', category: RewardCategory.Currency, description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 1.00 },
+    { id: 'core-crystal', name: 'Crystals', category: RewardCategory.Currency, description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.10 },
+    { id: 'core-token', name: 'Game Token', category: RewardCategory.Currency, description: 'Used to play minigames in The Arcade.', isCore: true, iconType: 'emoji', icon: '🪙', baseValue: 0.25 },
+    { id: 'core-strength', name: 'Strength', category: RewardCategory.XP, description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.05 },
+    { id: 'core-diligence', name: 'Diligence', category: RewardCategory.XP, description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.05 },
+    { id: 'core-wisdom', name: 'Wisdom', category: RewardCategory.XP, description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.05 },
+    { id: 'core-skill', name: 'Skill', category: RewardCategory.XP, description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯', baseValue: 0.05 },
+    { id: 'core-creative', name: 'Creativity', category: RewardCategory.XP, description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨', baseValue: 0.05 },
+];
+
+const rankNames = [
+    "Novice", "Initiate", "Apprentice", "Journeyman", "Adept", 
+    "Squire", "Knight", "Guardian", "Sentinel", "Champion", 
+    "Vanguard", "Paladin", "Myrmidon", "Justicar", "Marshal", 
+    "Baron", "Viscount", "Earl", "Marquess", "Duke", 
+    "Warlord", "Conqueror", "Highlord", "Overlord", "Master",
+    "Grandmaster", "Elder", "Mystic", "Sage", "Archsage", 
+    "Shadow", "Phantom", "Spectre", "Wraith", "Lich", 
+    "Paragon", "Exemplar", "Titan", "Colossus", "Behemoth",
+    "Celestial", "Empyrean", "Astral", "Ethereal", "Cosmic",
+    "Demigod", "Ascendant", "Immortal", "Transcendent", "The Absolute"
+];
+
+const rankIcons = [
+    '🔰', '🌱', '🛠️', '🧭', '🔥', '🛡️', '⚔️', '🏰', '🔭', '🏆',
+    '🎖️', '⚜️', '💠', '⚖️', '👑', '🌍', '🚀', '🌌', '🌟', '✨',
+    '🔥', '💥', '💫', '☄️', '🪐', '⭐', '🥇', '🏅', '🎖️', '🏆',
+    '👻', '💀', '☠️', '🎃', '👽', '💎', '💍', '👑', '🔱', '⚡',
+    '🌈', '🌊', '🌋', '🏔️', '🌪️', '☀️', '🌕', '🌠', '🎇', '💥'
+];
+
+
+export const INITIAL_RANKS: Rank[] = Array.from({ length: 50 }, (_, i) => ({
+    id: `rank-${i + 1}`,
+    name: rankNames[i] || `Level ${i + 1}`,
+    xpThreshold: Math.floor(i * (50 + i * 5)),
+    iconType: 'emoji',
+    icon: rankIcons[i] || '❓',
+}));
+
 const rawThemes: { [key: string]: Partial<ThemeStyle> } = {
   emerald: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "224 71% 4%", '--color-bg-secondary-hsl': "224 39% 10%", '--color-bg-tertiary-hsl': "240 10% 19%", '--color-text-primary-hsl': "240 8% 90%", '--color-text-secondary-hsl': "240 6% 65%", '--color-border-hsl': "240 6% 30%", '--color-primary-hue': "158", '--color-primary-saturation': "84%", '--color-primary-lightness': "39%", '--color-accent-hue': "158", '--color-accent-saturation': "75%", '--color-accent-lightness': "58%", '--color-accent-light-hue': "158", '--color-accent-light-saturation': "70%", '--color-accent-light-lightness': "45%" },
   rose: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "334 27% 10%", '--color-bg-secondary-hsl': "334 20% 15%", '--color-bg-tertiary-hsl': "334 15% 22%", '--color-text-primary-hsl': "346 33% 94%", '--color-text-secondary-hsl': "346 20% 70%", '--color-border-hsl': "346 15% 40%", '--color-primary-hue': "346", '--color-primary-saturation': "84%", '--color-primary-lightness': "59%", '--color-accent-hue': "346", '--color-accent-saturation': "91%", '--color-accent-lightness': "71%", '--color-accent-light-hue': "346", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "60%" },
@@ -244,7 +297,7 @@ const rawThemes: { [key: string]: Partial<ThemeStyle> } = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
@@ -255,7 +308,6 @@ export const createInitialQuestCompletions = (): QuestCompletion[] => {
     return [];
 };
 
-// FIX: Explicitly type the array as Trophy[] and use the TrophyRequirementType enum for requirement types to improve type safety and prevent errors from string typos.
 export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: 'Duty', count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },

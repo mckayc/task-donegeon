@@ -176,7 +176,6 @@ const SuggestionEnginePage: React.FC = () => {
         const fullPrompt = `Generate a single JSON object for a ${assetTypeName} for a gamified task app called ${settings.terminology.appName}. The asset should be based on the theme: "${prompt}".${userContext} ${specificInstructions}`;
 
         const requestBody = {
-             // FIX: Updated model from 'gemini-1.5-flash' to 'gemini-2.5-flash'
              model: 'gemini-2.5-flash',
              prompt: fullPrompt,
              generationConfig: { 

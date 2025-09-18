@@ -69,7 +69,6 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    // FIX: Updated model from 'gemini-1.5-flash' to 'gemini-2.5-flash'
                     model: 'gemini-2.5-flash',
                     prompt: fullPrompt,
                     generationConfig: {

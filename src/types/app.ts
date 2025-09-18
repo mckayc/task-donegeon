@@ -92,8 +92,8 @@ export interface Terminology {
   link_themes: string;
   link_test_cases: string;
   link_manage_minigames: string;
-  link_statistics: string;
   link_manage_ai_tutors: string;
+  link_statistics: string;
 }
 
 export type SidebarConfigItem = 

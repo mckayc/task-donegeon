@@ -32,7 +32,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const messagesContainerRef = useRef<HTMLDivElement | null>(null);
     
     const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -44,6 +44,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
     const [timeLeft, setTimeLeft] = useState(tutor ? tutor.sessionMinutes * 60 : 0);
     const timerRef = useRef<number | null>(null);
     const inactivityTimerRef = useRef<number | null>(null);
+    const [userScrolledUp, setUserScrolledUp] = useState(false);
 
     const addToTranscript = (entry: Omit<TranscriptEntry, 'timestamp'>) => {
         setTranscript(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }]);
@@ -104,8 +105,18 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
     }, [quest.id, user.id]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isLoading, quiz]);
+        if (messagesContainerRef.current && !userScrolledUp) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+    }, [messages, isLoading, quiz, userScrolledUp]);
+    
+    const handleScroll = () => {
+        const container = messagesContainerRef.current;
+        if (container) {
+            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
+            setUserScrolledUp(!atBottom);
+        }
+    };
 
     const handleSendMessage = async (messageText?: string) => {
         const textToSend = messageText || inputMessage.trim();
@@ -123,7 +134,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
 
         try {
             const data = await sendMessageToTutorAPI(sessionId, userMessage.text);
-            let aiMessageText = data.reply;
+            const aiMessageText = data.reply;
             
             if (data.functionCall && data.functionCall.name === 'ask_a_question_with_choices') {
                 const { question, choices } = data.functionCall.args;
@@ -135,7 +146,6 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                 setCurrentQuestionIndex(0);
                 setQuizAnswers([null]);
                 setStage('teaching-quiz');
-                if (!aiMessageText) aiMessageText = question;
             }
 
             if (aiMessageText) {
@@ -176,9 +186,9 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
             setShowFeedbackFor(null);
             if (currentQuestionIndex + 1 >= (quiz || []).length) {
                 if (stage === 'pre-quiz') {
-                     handleBeginLesson();
+                     handleBeginLesson(newAnswers);
                 } else {
-                     handleSubmitQuiz();
+                     handleSubmitQuiz(newAnswers);
                 }
             } else {
                 setCurrentQuestionIndex(prev => prev + 1);
@@ -186,10 +196,10 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
         }, 2500);
     };
 
-    const handleBeginLesson = () => {
+    const handleBeginLesson = (finalAnswers: (string | null)[]) => {
         if (!quiz) return;
         const summary = quiz.map((q, index) => {
-            const userAnswer = quizAnswers[index];
+            const userAnswer = finalAnswers[index];
             const correctChoice = q.choices.find(c => c.isCorrect);
             const isCorrect = userAnswer === correctChoice?.text;
             return `Question "${q.question}": User answered "${userAnswer}", which was ${isCorrect ? 'correct' : 'incorrect'}.`;
@@ -225,12 +235,12 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
         }
     };
     
-    const handleSubmitQuiz = () => {
+    const handleSubmitQuiz = (finalAnswers: (string | null)[]) => {
         if (!quiz) return;
         let score = 0;
         quiz.forEach((q, index) => {
             const correctChoice = q.choices.find(c => c.isCorrect);
-            if (correctChoice && quizAnswers[index] === correctChoice.text) {
+            if (correctChoice && finalAnswers[index] === correctChoice.text) {
                 score++;
             }
         });
@@ -270,7 +280,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                     {stage === 'teaching-quiz' && "Question:"}
                     {stage === 'final-quiz' && "Quiz Time!"}
                 </h3>
-                <p className="font-semibold text-stone-200">{stage !== 'teaching-quiz' && `${currentQuestionIndex + 1}. `}{q.question}</p>
+                <p className="font-semibold text-stone-200 text-lg">{stage !== 'teaching-quiz' && `${currentQuestionIndex + 1}. `}{q.question}</p>
                 <div className="mt-2 space-y-2">
                     {q.choices.map((choice, cIndex) => {
                         const isSelected = quizAnswers[currentQuestionIndex] === choice.text;
@@ -290,7 +300,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                                 {showFeedback && stage !== 'teaching-quiz' && (
                                     choice.isCorrect ? <CheckCircleIcon className="w-5 h-5 text-green-400" /> : <XCircleIcon className="w-5 h-5 text-red-400" />
                                 )}
-                                <span className="text-stone-300 text-base">{choice.text}</span>
+                                <span className="text-stone-300 text-lg">{choice.text}</span>
                             </button>
                         );
                     })}
@@ -315,7 +325,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                             <p className="text-sm text-stone-400">{tutor?.subject}</p>
                         </div>
 
-                        <div ref={messagesEndRef} className="flex-1 space-y-4 overflow-y-auto scrollbar-hide pr-2">
+                        <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 space-y-4 overflow-y-auto pr-2">
                             {messages.map((msg, index) => {
                                 const isUser = msg.author === 'user';
                                 if (msg.text.startsWith('[USER_INACTIVE]')) return null;

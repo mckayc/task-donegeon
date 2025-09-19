@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.27
+**Version:** 0.5.28
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of December 4, 2025 (v0.5.28):**
+    -   **AI Tutor Bug Fixes:** A significant update to the AI Tutor to resolve multiple critical bugs. Fixes an issue where the AI would display raw tool code in the chat instead of interactive questions. The chat panel now correctly auto-scrolls when new messages appear. Resolves a scoring bug where the last question of the initial quiz was always marked as incorrect. The font size for chat and quiz answers has also been increased for better readability.
 
 -   **Week of November 27, 2025 (v0.5.27):**
     -   **AI Tutor Overhaul & Bug Fixes:** A major overhaul of the AI Tutor feature to improve stability and user experience. Fixes a critical bug where the AI would show raw tool code instead of interactive questions during a lesson. The UI has been redesigned to separate conversation from quizzes, and the chat now auto-scrolls correctly. Also resolves an issue where the last question of the initial quiz was always marked incorrect.

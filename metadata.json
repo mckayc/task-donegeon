@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.27 - AI Tutor Overhaul",
-  "version": "0.5.27",
-  "description": "Overhauls the AI Tutor for stability. Fixes bugs causing raw code to display, implements auto-scrolling, separates chat from quizzes, and corrects quiz scoring logic.",
+  "name": "Task Donegeon 2.0 - 0.5.28 - AI Tutor Bug Fixes",
+  "version": "0.5.28",
+  "description": "Fixes critical AI Tutor bugs: prevents raw code display, ensures chat auto-scrolls, corrects quiz scoring, and increases font sizes for better readability.",
   "requestFramePermissions": [
     "camera"
   ],

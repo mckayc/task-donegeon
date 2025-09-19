@@ -164,12 +164,12 @@ const startTutorSession = async (req, res) => {
     **Core Interaction Loop:**
     1.  **Analyze User's Answer:** I will provide the user's answer to your previous question.
     2.  **Provide Feedback & Teach:** Your text response MUST provide feedback on the user's answer. If correct, praise them. If incorrect, explain the concept gently. Then, introduce the next small piece of information (1-3 sentences).
-    3.  **Ask a Question:** After your text response, you MUST ALWAYS follow up by calling the "ask_a_question_with_choices" tool to ask the next multiple-choice question. Do not ask multiple-choice questions in plain text.
+    3.  **Ask a Question:** After your text response, you MUST use the "ask_a_question_with_choices" function to present the next multiple choice question. Do not ask multiple-choice questions in plain text or inside a code block.
 
     **Special Instructions:**
     - If you receive the system message '[USER_INACTIVE]', you MUST respond ONLY with a gentle, encouraging prompt like "Are you still there?", "Need a hint?", or "Let me know if you're stuck!". Do NOT teach or ask a new question in response to this system message.
     - When you receive the final quiz results, your final message MUST be a concise, bulleted summary of the key takeaways from the lesson.
-    - **CRITICAL:** ALWAYS use the 'ask_a_question_with_choices' tool for all multiple-choice questions.
+    - **CRITICAL:** ALWAYS use the 'ask_a_question_with_choices' tool for all multiple-choice questions. Do not output it as text or inside a <tool_code> block.
     `;
     
     const chat = await ai.chats.create({

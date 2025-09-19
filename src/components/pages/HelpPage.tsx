@@ -336,7 +336,7 @@ const VersionHistoryContent: React.FC = () => (
                         <li><strong>Dungeon Dash:</strong> Fixed a critical bug where players were not correctly defeated upon hitting a spike.</li>
                         <li><strong>Forge Master:</strong> Implemented a combo system to reward consecutive "Perfect" hits with bonus points and a progressive speed increase.</li>
                         <li><strong>Archer's Folly:</strong> Added a trajectory line and power meter to make aiming more intuitive.</li>
-                        <li><strong>Snake:</strong> Fixed a bug that allowed players to reverse direction and end the game. Added a "Tablet Mode" toggle for a two-handed D-pad layout on larger devices.</li>
+                        <li><strong>Snake:</strong> Fixed a bug that allowed players to reverse direction and end the game. Added a "Tablet Mode" toggle for a two-handed D-pad layout for larger devices.</li>
                         <li><strong>Dragon's Dice:</strong> Added a clear "BUSTED!" message when a player fails to score on a roll.</li>
                         <li><strong>Admin Tools:</strong> Admins can now edit minigame properties like cost, plays per token, and prize thresholds from the management page.</li>
                     </ul>

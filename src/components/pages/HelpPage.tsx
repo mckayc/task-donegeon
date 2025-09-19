@@ -84,7 +84,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <p>Details about the app's shell and progressive web app features.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Favicon Fix:</strong> Resolved an issue where the application's browser tab icon (favicon) was missing. The castle icon has been restored.</li>
-            <li><strong>Sidebar Navigation:</strong> Section headers (e.g., "Content Management") now display their icons in both expanded and collapsed views. When the sidebar is collapsed, hovering over a section header's icon will now trigger a flyout menu, showing all the links within that section for quick access. This fixes a bug where these headers were previously unclickable in the collapsed state.</li>
+            <li><strong>Sidebar Navigation:</strong> Fixed several issues with sidebar interactivity. The 'Chat' link now correctly opens the chat panel. In the collapsed view, section headers (e.g., 'Content Management') are now clickable. Clicking a header icon will open a persistent flyout menu with its sub-links, improving usability on both desktop and touch devices. The flyout closes when a link is clicked or when clicking outside of it.</li>
         </ul>
         <h3>Exchange Rate Clarity</h3>
         <p>To improve user understanding and transparency in the Exchange Post, the direct conversion rate between the two selected reward types is now prominently displayed.</p>
@@ -168,6 +168,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <h3>The Arcade & Minigames</h3>
         <p>The "Arcade" is a special market where users can spend "Game Tokens" to play minigames.</p>
          <ul className="list-disc list-inside space-y-2">
+            <li><strong>Game Rules:</strong> A new "Rules" button has been added to every game card in the Arcade. Clicking it will open a dialog explaining the objective and how to play.</li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Bug Fix & UI Improvement:</strong> Fixed a bug where the game would sometimes fail to recognize a "bust," causing it to get stuck. When you bust now, a large, impactful "BUSTED!" message will appear to make the outcome clear.</li>
@@ -177,7 +178,12 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li><strong>Dungeon Dash:</strong> A simple side-scrolling "endless runner." An adventurer runs automatically, and the player taps to make them jump over pits and slide under obstacles.</li>
             <li><strong>Forge Master:</strong> A rhythm and timing game. The player must click at the right moment to strike a piece of hot metal with a hammer to forge a powerful weapon.</li>
             <li><strong>Archer's Folly:</strong> An archery game where the player clicks and drags to aim their bow, hitting a series of moving targets. The game now includes a power meter and a trajectory line to help players aim. The difficulty also gradually increases, with targets getting smaller and faster as the score increases.</li>
-            <li><strong>Snake:</strong> The classic game of snake. The game now features a larger play area, a slower starting speed, and a "3, 2, 1, GO!" countdown. You can also press any arrow key on the "Game Over" screen to instantly start a new game. On-screen controls are now always visible on tablet-sized devices to ensure playability.</li>
+            <li><strong>Snake:</strong> The classic game of snake. It now features a larger play area, a slower starting speed, a "3, 2, 1, GO!" countdown, and instant restart from the game over screen. On-screen controls are now always visible on tablet-sized devices.</li>
+            <li><strong>Labyrinth of the Minotaur:</strong> Navigate a maze, find the exit, and avoid the minotaur.</li>
+            <li><strong>Alchemist's Trial:</strong> A memory game where you repeat sequences of ingredients.</li>
+            <li><strong>Goblin Ambush:</strong> A "whack-a-mole" style game.</li>
+            <li><strong>River Crossing:</strong> Guide your hero across a busy road and a dangerous river.</li>
+            <li><strong>Wizard's Vortex:</strong> A top-down shooter where you defend a central point from waves of monsters.</li>
         </ul>
         <h4>Arcade Leaderboard</h4>
         <p>The Arcade now features an "All-Time Arcade Legends" leaderboard. It shows the top 5 players based on their <strong>cumulative scores</strong> across <strong>all</strong> minigames. Additionally, each individual game card now proudly displays the name of the current high score holder for that game.</p>

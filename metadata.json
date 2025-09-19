@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.24 - Sidebar UI/UX Fix",
-  "version": "0.5.24",
-  "description": "Enhances sidebar headers with icons in all views and adds interactive flyout menus in collapsed mode for improved navigation and UX.",
+  "name": "Task Donegeon 2.0 - 0.5.27 - AI Tutor Overhaul",
+  "version": "0.5.27",
+  "description": "Overhauls the AI Tutor for stability. Fixes bugs causing raw code to display, implements auto-scrolling, separates chat from quizzes, and corrects quiz scoring logic.",
   "requestFramePermissions": [
     "camera"
   ],

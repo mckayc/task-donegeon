@@ -7,6 +7,7 @@ import { useUIDispatch } from '../../context/UIContext';
 import Button from '../user-interface/Button';
 import ConfirmPlayDialog from './ConfirmPlayDialog';
 import GameStatsDialog from '../games/GameStatsDialog';
+import GameRulesDialog from '../games/GameRulesDialog';
 
 interface ArcadeViewProps {
     market: Market;
@@ -18,6 +19,7 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
     const { setActiveMarketId } = useUIDispatch();
     const [gameToPlay, setGameToPlay] = useState<Minigame | null>(null);
     const [gameForStats, setGameForStats] = useState<Minigame | null>(null);
+    const [gameForRules, setGameForRules] = useState<Minigame | null>(null);
 
     // Calculate scores for each game
     const scoresByGame = useMemo(() => {
@@ -135,11 +137,10 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-center gap-2">
-                                    <Button onClick={() => setGameToPlay(game)}>
-                                        Play for 1 🪙
-                                    </Button>
-                                    <Button variant="secondary" size="sm" onClick={() => setGameForStats(game)}>Stats</Button>
+                                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 grid grid-cols-3 gap-2">
+                                    <Button size="sm" variant="secondary" onClick={() => setGameForRules(game)}>Rules</Button>
+                                    <Button size="sm" onClick={() => setGameToPlay(game)} className="col-span-1">Play</Button>
+                                    <Button size="sm" variant="secondary" onClick={() => setGameForStats(game)}>Stats</Button>
                                 </div>
                             </div>
                         );
@@ -151,6 +152,9 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
             )}
             {gameForStats && (
                 <GameStatsDialog game={gameForStats} onClose={() => setGameForStats(null)} />
+            )}
+            {gameForRules && (
+                <GameRulesDialog game={gameForRules} onClose={() => setGameForRules(null)} />
             )}
         </>
     );

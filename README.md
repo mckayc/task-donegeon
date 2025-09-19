@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.24
+**Version:** 0.5.27
 
 ---
 
@@ -14,6 +14,16 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of November 27, 2025 (v0.5.27):**
+    -   **AI Tutor Overhaul & Bug Fixes:** A major overhaul of the AI Tutor feature to improve stability and user experience. Fixes a critical bug where the AI would show raw tool code instead of interactive questions during a lesson. The UI has been redesigned to separate conversation from quizzes, and the chat now auto-scrolls correctly. Also resolves an issue where the last question of the initial quiz was always marked incorrect.
+
+-   **Week of November 27, 2025 (v0.5.26):**
+    -   **Sidebar Interactivity Fix:** Fixed bugs where the "Chat" link in the sidebar was unresponsive and collapsed section headers (e.g., "Content Management") were not interactive. Clicking a collapsed header icon now correctly opens a persistent flyout menu to access its sub-links.
+
+-   **Week of November 20, 2025 (v0.5.25):**
+    -   **Arcade Enhancements:** Added a "Rules" button to every minigame in the Arcade, which opens a dialog explaining the objective and controls for that game.
+    -   **New Games (Coming Soon):** Implemented placeholder components for five new minigames: Labyrinth of the Minotaur, Alchemist's Trial, Goblin Ambush, River Crossing, and Wizard's Vortex. These games now appear in the Arcade and are ready for full development.
 
 -   **Week of November 13, 2025 (v0.5.24):**
     -   **Sidebar UI/UX Fix:** Fixed a bug where section headers in the sidebar (e.g., "Content Management") were missing their icons when expanded. Additionally, when the sidebar is collapsed, these headers are now interactive; hovering over their icons reveals a flyout menu of their child links, fixing an issue where they were previously unclickable.
@@ -117,7 +127,7 @@ Task Donegeon is a gamified task and chore management application designed for f
         -   **Dungeon Dash:** Fixed a critical bug where players were not correctly defeated upon hitting a spike.
         -   **Forge Master:** Implemented a combo system to reward consecutive "Perfect" hits with bonus points and a progressive speed increase.
         -   **Archer's Folly:** Added a trajectory line and power meter to make aiming more intuitive.
-        -   **Snake:** Fixed a bug that allowed players to reverse direction and end the game. Added a "Tablet Mode" toggle for a two-handed D-pad layout on larger devices.
+        -   **Snake:** Fixed a bug that allowed players to reverse direction and end the game. Added a "Tablet Mode" toggle for a two-handed D-pad layout for larger devices.
         -   **Dragon's Dice:** Added a clear "BUSTED!" message when a player fails to score on a roll.
         -   **Admin Tools:** Admins can now edit minigame properties like cost, plays per token, and prize thresholds from the management page.
 
@@ -237,4 +247,4 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 
 ### Phase 1: Foundational Features & Quality of Life
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
--   **Enhanced Security:------
+-   **Enhanced Security:

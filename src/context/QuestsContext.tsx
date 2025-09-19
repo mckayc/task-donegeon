@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -31,8 +30,7 @@ export interface QuestsState {
 export type QuestsAction = 
   | { type: 'SET_QUESTS_DATA', payload: Partial<QuestsState> }
   | { type: 'UPDATE_QUESTS_DATA', payload: Partial<QuestsState> }
-  | { type: 'REMOVE_QUESTS_DATA', payload: { [key in keyof QuestsState]?: string[] } }
-  | { type: 'UPDATE_SINGLE_COMPLETION', payload: QuestCompletion };
+  | { type: 'REMOVE_QUESTS_DATA', payload: { [key in keyof QuestsState]?: string[] } };
 
 export interface QuestsDispatch {
   addQuest: (questData: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<Quest | null>;
@@ -79,17 +77,6 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
         case 'SET_QUESTS_DATA':
             newState = { ...initialState, ...action.payload };
             break;
-        case 'UPDATE_SINGLE_COMPLETION': {
-            const index = state.questCompletions.findIndex(c => c.id === action.payload.id);
-            if (index > -1) {
-                const newCompletions = [...state.questCompletions];
-                newCompletions[index] = action.payload;
-                newState = { ...state, questCompletions: newCompletions };
-            } else {
-                newState = { ...state, questCompletions: [...state.questCompletions, action.payload] };
-            }
-            break;
-        }
         case 'UPDATE_QUESTS_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {
@@ -199,7 +186,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (result) {
                 const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
-                if (updatedCompletion) dispatch({ type: 'UPDATE_SINGLE_COMPLETION', payload: updatedCompletion });
+                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
                 if (newUserTrophies?.length > 0) progressionDispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
                 if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
                 addNotification({ type: 'success', message: 'Quest approved!' });
@@ -209,7 +196,7 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
             if (result) {
                 const { updatedCompletion } = result as any;
-                if (updatedCompletion) dispatch({ type: 'UPDATE_SINGLE_COMPLETION', payload: updatedCompletion });
+                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
             }
         },
         markQuestAsTodo: async (questId, userId) => {

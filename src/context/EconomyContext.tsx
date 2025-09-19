@@ -1,9 +1,8 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
-import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
+import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, RewardItem, User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
-import { bugLogger } from '../utils/bugLogger';
-import { SystemAction, useSystemReducerDispatch } from './SystemContext';
 import { 
     addMarketAPI, updateMarketAPI, cloneMarketAPI, updateMarketsStatusAPI, 
     addRewardTypeAPI, updateRewardTypeAPI, cloneRewardTypeAPI, 
@@ -75,20 +74,11 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
             for (const key in action.payload) {
                 const typedKey = key as keyof EconomyState;
                 if (Array.isArray(updatedState[typedKey]) && Array.isArray(action.payload[typedKey])) {
-                    
-                    const payloadMap = new Map((action.payload[typedKey] as any[]).map(item => [item.id, item]));
-
-                    const newArray = (updatedState[typedKey] as any[]).map(existingItem => 
-                        payloadMap.get(existingItem.id) || existingItem
-                    );
-
-                    (action.payload[typedKey] as any[]).forEach(payloadItem => {
-                        if (!newArray.some(item => item.id === payloadItem.id)) {
-                            newArray.push(payloadItem);
-                        }
+                    const existingItemsMap = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
+                    (action.payload[typedKey] as any[]).forEach(item => {
+                        existingItemsMap.set(item.id, item);
                     });
-
-                    (updatedState as any)[typedKey] = newArray;
+                    (updatedState as any)[typedKey] = Array.from(existingItemsMap.values());
                 }
             }
             return updatedState;
@@ -112,7 +102,6 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
 export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(economyReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
-    const systemDispatch = useSystemReducerDispatch();
     const { updateUser } = useAuthDispatch();
     const { currentUser } = useAuthState();
 
@@ -270,8 +259,6 @@ export const useEconomyDispatch = (): EconomyDispatch => {
     return context.actions;
 };
 
-// This hook provides direct access to the reducer's dispatch function.
-// It's useful for optimistic UI updates from other contexts/pages.
 export const useEconomyReducerDispatch = (): React.Dispatch<EconomyAction> => {
     const context = useContext(EconomyDispatchContext);
     if (context === undefined) {

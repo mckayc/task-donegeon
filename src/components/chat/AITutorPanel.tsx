@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Quest, User, QuizQuestion, QuizChoice, AITutorSessionLog, TranscriptEntry } from '../../types';
 import Button from '../user-interface/Button';
@@ -134,7 +135,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
 
         try {
             const data = await sendMessageToTutorAPI(sessionId, userMessage.text);
-            const aiMessageText = data.reply;
+            let aiMessageText = data.reply;
             
             if (data.functionCall && data.functionCall.name === 'ask_a_question_with_choices') {
                 const { question, choices } = data.functionCall.args;
@@ -146,6 +147,17 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                 setCurrentQuestionIndex(0);
                 setQuizAnswers([null]);
                 setStage('teaching-quiz');
+
+                // Sanitize the text part to avoid showing the redundant question/code from the AI.
+                if (aiMessageText) {
+                    const toolCodeRegex = /<tool_code>[\s\S]*?<\/tool_code>\s*/g;
+                    aiMessageText = aiMessageText.replace(toolCodeRegex, '');
+
+                    // Escape special regex characters from the question before creating a regex from it.
+                    const questionTextForRegex = question.replace(/[?.]/g, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const questionRegex = new RegExp(questionTextForRegex, 'gi');
+                    aiMessageText = aiMessageText.replace(questionRegex, '').trim();
+                }
             }
 
             if (aiMessageText) {

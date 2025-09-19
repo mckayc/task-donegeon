@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -80,26 +81,14 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
-
-                if (typedKey === 'allTags') {
-                    continue; // Skip allTags, it is derived from quests
-                }
+                if (typedKey === 'allTags') continue;
 
                 if (Array.isArray(updatedState[typedKey]) && Array.isArray(action.payload[typedKey])) {
-                    
-                    const payloadMap = new Map((action.payload[typedKey] as any[]).map(item => [item.id, item]));
-
-                    const newArray = (updatedState[typedKey] as any[]).map(existingItem => 
-                        payloadMap.get(existingItem.id) || existingItem
-                    );
-
-                    (action.payload[typedKey] as any[]).forEach(payloadItem => {
-                        if (!newArray.some(item => item.id === payloadItem.id)) {
-                            newArray.push(payloadItem);
-                        }
+                    const existingItemsMap = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
+                    (action.payload[typedKey] as any[]).forEach(item => {
+                        existingItemsMap.set(item.id, item);
                     });
-
-                    (updatedState as any)[typedKey] = newArray;
+                    (updatedState as any)[typedKey] = Array.from(existingItemsMap.values());
                 }
             }
             newState = updatedState;
@@ -109,10 +98,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
-                
-                if (typedKey === 'allTags') {
-                    continue; // Skip allTags
-                }
+                if (typedKey === 'allTags') continue;
 
                 if (Array.isArray(stateWithRemoved[typedKey])) {
                     const idsToRemove = new Set(action.payload[typedKey] as string[]);
@@ -126,7 +112,6 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             return state;
     }
     
-    // Always derive allTags from the quests array to ensure consistency
     if (newState.quests) {
         newState.allTags = Array.from(new Set(newState.quests.flatMap(q => q.tags || [])));
     } else {

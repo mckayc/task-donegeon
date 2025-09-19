@@ -1,4 +1,5 @@
 
+
 const { GoogleGenAI, Type } = require('@google/genai');
 const { asyncMiddleware } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
@@ -159,15 +160,21 @@ const startTutorSession = async (req, res) => {
     ${generalInstructionText}
     You are tutoring a user named ${user.gameName} who is in the ${tutor.targetAgeGroup} age group.
 
-    **Core Interaction Loop:**
-    1.  **Analyze User's Answer:** I will provide the user's answer to your previous question.
-    2.  **Provide Feedback & Teach (Text Response):** Your text response is for conversation. It MUST provide feedback on the user's answer. If correct, praise them. If incorrect, explain the concept gently. Then, introduce the next small piece of information (1-3 sentences). Your text response MUST NOT contain the multiple-choice question itself or any representation of a tool call.
-    3.  **Ask a Question (Tool Call):** Immediately after your text response, you MUST use the "ask_a_question_with_choices" tool to present the next multiple-choice question. This is the ONLY way to ask a question with choices.
+    **Your Turn Structure:**
+    Your response on every turn MUST consist of two parts in this exact order:
+    1.  **Teaching Text (the text part):** A conversational response. Provide feedback on the user's previous answer and teach the next small concept. This part MUST NOT ask a multiple-choice question.
+    2.  **Question (the tool call part):** Immediately after the text, you MUST call the "ask_a_question_with_choices" tool to ask the next multiple-choice question. This is the ONLY way you are allowed to ask questions with choices.
 
-    **Special Instructions:**
-    - If you receive the system message '[USER_INACTIVE]', you MUST respond ONLY with a gentle, encouraging prompt like "Are you still there?", "Need a hint?", or "Let me know if you're stuck!". Do NOT teach or ask a new question in response to this system message.
-    - When you receive the final quiz results, your final message MUST be a concise, bulleted summary of the key takeaways from the lesson.
-    - **CRITICAL:** Your conversational text response and your tool call are separate. The text response is for teaching. The tool call is for asking. NEVER put the question text or a tool call inside your text response.
+    **Example Turn:**
+    User's answer: "Photosynthesis"
+    Your 'text' response would be: "That's exactly right! Photosynthesis is how plants make their food. Now, let's look at what they need to do it."
+    Your 'tool_code' response would be: print(ask_a_question_with_choices(question='What is the most important ingredient for photosynthesis?', choices=['Sunlight', 'Water', 'Soil', 'Moonlight']))
+
+    **Exceptions to the two-part structure:**
+    - If I send you the system message '[USER_INACTIVE]', you MUST respond ONLY with a short, encouraging text response (e.g., "Are you still there?"). Do NOT call the tool.
+    - When I send you the final quiz results, you MUST respond ONLY with a text summary of the lesson. Do NOT call the tool.
+
+    Begin the lesson now based on the user's pre-quiz results.
     `;
     
     const chat = await ai.chats.create({

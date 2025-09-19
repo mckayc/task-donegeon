@@ -175,29 +175,14 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
         },
         approvePurchaseRequest: async (id, approverId) => {
-            const result = await apiAction(() => approvePurchaseRequestAPI(id, approverId), 'Purchase approved!');
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result as any;
-                updateUser(updatedUser.id, updatedUser);
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-            }
+            await apiAction(() => approvePurchaseRequestAPI(id, approverId), 'Purchase approved!');
         },
         rejectPurchaseRequest: async (id, rejecterId) => {
-            const result = await apiAction(() => rejectPurchaseRequestAPI(id, rejecterId), 'Purchase rejected.');
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result as any;
-                updateUser(updatedUser.id, updatedUser);
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-            }
+            await apiAction(() => rejectPurchaseRequestAPI(id, rejecterId), 'Purchase rejected.');
         },
          cancelPurchaseRequest: async (id) => {
             if (!currentUser) return;
-            const result = await apiAction(() => cancelPurchaseRequestAPI(id), 'Purchase cancelled.');
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result as any;
-                updateUser(updatedUser.id, updatedUser);
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-            }
+            await apiAction(() => cancelPurchaseRequestAPI(id), 'Purchase cancelled.');
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId), 'Exchange successful!');

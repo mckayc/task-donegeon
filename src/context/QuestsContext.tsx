@@ -75,7 +75,7 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
 
     switch (action.type) {
         case 'SET_QUESTS_DATA':
-            newState = { ...initialState, ...action.payload };
+            newState = { ...state, ...action.payload };
             break;
         case 'UPDATE_QUESTS_DATA': {
             const updatedState = { ...state };
@@ -174,22 +174,12 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         approveQuestCompletion: async (id, approverId, note) => {
-            const result = await apiAction(() => approveQuestCompletionAPI(id, approverId, note));
-            if (result) {
-                const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
-                if (updatedUser) updateUser(updatedUser.id, updatedUser);
-                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
-                if (newUserTrophies?.length > 0) progressionDispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
-                if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
-                addNotification({ type: 'success', message: 'Quest approved!' });
-            }
+            // Remove optimistic updates and rely on server-triggered sync
+            await apiAction(() => approveQuestCompletionAPI(id, approverId, note), 'Quest approved!');
         },
         rejectQuestCompletion: async (id, rejecterId, note) => {
-            const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
-            if (result) {
-                const { updatedCompletion } = result as any;
-                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
-            }
+            // Remove optimistic updates and rely on server-triggered sync
+            await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
         },
         markQuestAsTodo: async (questId, userId) => {
             const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
@@ -224,16 +214,12 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
         approveClaim: async (questId, userId, adminId) => {
-            const result = await apiAction(() => approveClaimAPI(questId, userId, adminId), 'Claim approved!');
-            if (result) {
-                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
-            }
+            // Remove optimistic updates and rely on server-triggered sync
+            await apiAction(() => approveClaimAPI(questId, userId, adminId), 'Claim approved!');
         },
         rejectClaim: async (questId, userId, adminId) => {
-            const result = await apiAction(() => rejectClaimAPI(questId, userId, adminId), 'Claim rejected.');
-            if (result) {
-                dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
-            }
+            // Remove optimistic updates and rely on server-triggered sync
+            await apiAction(() => rejectClaimAPI(questId, userId, adminId), 'Claim rejected.');
         },
         updateReadingProgress: async (questId, userId, data) => {
             await apiAction(() => updateReadingProgressAPI(questId, userId, data));

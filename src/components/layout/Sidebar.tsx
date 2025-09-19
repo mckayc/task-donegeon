@@ -78,18 +78,30 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, onNavigate: (page
     );
 };
 
-const NavHeader: React.FC<{ item: SidebarHeader, isCollapsed: boolean, onToggle: () => void, isOpen: boolean }> = ({ item, isCollapsed, onToggle, isOpen }) => {
+const NavHeader: React.FC<{ item: SidebarHeader, isCollapsed: boolean, onToggle: () => void, isOpen: boolean, badgeCount?: number }> = ({ item, isCollapsed, onToggle, isOpen, badgeCount = 0 }) => {
     if (isCollapsed) {
         return (
-            <div className="flex justify-center my-4">
+            <div className="flex justify-center my-4 relative">
                 <span className="text-xl">{item.emoji}</span>
+                 {badgeCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-stone-900">
+                        {badgeCount > 9 ? '9+' : badgeCount}
+                    </span>
+                )}
             </div>
         )
     }
     return (
         <button onClick={onToggle} className="w-full flex items-center justify-between text-left px-4 py-2 mt-4 text-stone-400 hover:text-white transition-colors">
             <span className="font-bold uppercase text-sm tracking-wider">{item.title}</span>
-            <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            <div className="flex items-center gap-2">
+                {badgeCount > 0 && (
+                    <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
+                        {badgeCount > 9 ? '9+' : badgeCount}
+                    </span>
+                )}
+                <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
         </button>
     )
 };
@@ -225,9 +237,14 @@ const Sidebar: React.FC = () => {
                         const childLinks = visibleItems.filter(child => child.level > item.level && visibleItems.indexOf(child) > visibleItems.indexOf(item) && !visibleItems.slice(visibleItems.indexOf(item) + 1, visibleItems.indexOf(child)).some(i => i.type === 'header' && i.level <= item.level));
                         if(childLinks.length === 0) return null;
                         
+                        let headerBadgeCount = 0;
+                        if (item.id === 'header-admin-community') {
+                            headerBadgeCount = totalApprovals;
+                        }
+
                         return (
                             <React.Fragment key={item.id}>
-                                <NavHeader item={item} isCollapsed={isSidebarCollapsed} isOpen={isHeaderOpen} onToggle={() => handleHeaderToggle(item.id)} />
+                                <NavHeader item={item} isCollapsed={isSidebarCollapsed} isOpen={isHeaderOpen} onToggle={() => handleHeaderToggle(item.id)} badgeCount={headerBadgeCount} />
                                 {isHeaderOpen && childLinks.map(child => {
                                     if(child.type !== 'link') return null;
                                     const badgeCount = child.id === 'Approvals' ? totalApprovals : child.id === 'Chat' ? unreadChatCount : 0;

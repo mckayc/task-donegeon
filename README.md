@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.11
+**Version:** 0.5.14
 
 ---
 
@@ -14,6 +14,15 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of September 25, 2025 (v0.5.14):**
+    -   **Enhanced Login Notifications:** Overhauled the login notification system for a more informative and user-friendly experience. The new popup includes a "Daily Briefing" that lists all required quests for the day, providing an immediate action list. Notifications are now grouped by type (e.g., "New Quests," "Approvals"), and users have two dismissal options: "Acknowledge & Continue" to mark notifications as read, and "Remind Me Later" to hide them for the current session while keeping them unread for the next login.
+
+-   **Week of September 25, 2025 (v0.5.13):**
+    -   **Bug Squashing & Stability:** A major stability update resolving a large number of bugs across the application. This version fixes issues with state management, data synchronization, user management, automated backups, and significantly enhances the AI Tutor's reliability and user interface. Key fixes include ensuring the correct user is logged in after an update, fixing stale data in user selection screens, adding missing notification badges and labels, resolving UI disappearing acts in the approvals queue, and overhauling the AI Tutor to be more robust and user-friendly.
+
+-   **Week of September 18, 2025 (v0.5.12):**
+    -   **Stability & AI Tutor Overhaul:** A major stability update resolving numerous bugs related to state management, data synchronization, and UI consistency. This version also significantly enhances the AI Tutor feature, improving its instructional flow, reliability, and administrative customization options. Key fixes include preventing the app from defaulting to the user selection screen after updates, ensuring the approvals queue updates correctly, adding missing sidebar labels, and fixing AI Tutor's quiz logic and response handling to prevent raw code from being displayed.
 
 -   **Week of September 18, 2025 (v0.5.11):**
     -   **New Feature: AI Tutor Management:** Added a new "Manage AI Tutors" page for administrators. This allows for the creation of unique AI tutor personas with specific subjects, teaching styles, and sample questions.
@@ -40,7 +49,7 @@ Task Donegeon is a gamified task and chore management application designed for f
     -   **Battery Display:** Admins can now enable a battery level indicator in the Kiosk Mode header, perfect for managing shared tablets.
     -   **Auto-Dimming:** A new feature allows admins to configure automatic screen dimming during specific hours (e.g., at night). The screen will dim after a set period of inactivity and instantly brighten on touch, saving power and reducing screen burn-in.
 
--   **Week of January 10, 2026 (v0.5.5):**
+-   **Week of January 10, 2025 (v0.5.5):**
     -   **Quest Timers:** Implemented a new feature allowing administrators to add timers to quests. This includes a "Stopwatch" mode for tracking time spent and a "Countdown" mode for tasks requiring a minimum duration (e.g., reading for 20 minutes).
     -   **Persistent Timer Widget:** When a timed quest is started, a persistent widget appears in the header, allowing users to navigate the app while keeping track of their active quest. Clicking the widget returns the user to the quest details.
     -   **Timer in Approvals:** The time recorded for a completed timed quest is now displayed on the Approvals page for administrators to review.

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-// FIX: Import missing types from the main barrel file.
 import { Quest, User, QuizQuestion, QuizChoice, AITutorSessionLog, TranscriptEntry } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -20,9 +19,8 @@ interface Message {
     text: string;
 }
 
-type TutorStage = 'connecting' | 'pre-quiz' | 'teaching' | 'final-quiz' | 'summary' | 'error';
+type TutorStage = 'connecting' | 'pre-quiz' | 'teaching' | 'teaching-quiz' | 'final-quiz' | 'summary' | 'error';
 
-// FIX: Export the AITutorPanel component to make it available for import in other modules.
 export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose, onSessionComplete }) => {
     const { aiTutors } = useSystemState();
     const tutor = useMemo(() => aiTutors.find(t => t.id === quest.aiTutorId), [aiTutors, quest.aiTutorId]);
@@ -46,8 +44,6 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
     const [timeLeft, setTimeLeft] = useState(tutor ? tutor.sessionMinutes * 60 : 0);
     const timerRef = useRef<number | null>(null);
     const inactivityTimerRef = useRef<number | null>(null);
-
-    const [currentChoices, setCurrentChoices] = useState<string[]>([]);
 
     const addToTranscript = (entry: Omit<TranscriptEntry, 'timestamp'>) => {
         setTranscript(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }]);
@@ -124,18 +120,22 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
         setInputMessage('');
         setIsLoading(true);
         setError(null);
-        setCurrentChoices([]);
 
         try {
             const data = await sendMessageToTutorAPI(sessionId, userMessage.text);
             let aiMessageText = data.reply;
             
             if (data.functionCall && data.functionCall.name === 'ask_a_question_with_choices') {
-                const choices = data.functionCall.args.choices || [];
-                setCurrentChoices(choices);
-                if (!aiMessageText && data.functionCall.args.question) {
-                    aiMessageText = data.functionCall.args.question;
-                }
+                const { question, choices } = data.functionCall.args;
+                const newQuizQuestion: QuizQuestion = {
+                    question: question,
+                    choices: choices.map((choiceText: string) => ({ text: choiceText, isCorrect: false }))
+                };
+                setQuiz([newQuizQuestion]);
+                setCurrentQuestionIndex(0);
+                setQuizAnswers([null]);
+                setStage('teaching-quiz');
+                if (!aiMessageText) aiMessageText = question;
             }
 
             if (aiMessageText) {
@@ -152,11 +152,21 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
         }
     };
     
-    const handleQuizAnswer = (choice: QuizChoice, isPreQuiz: boolean) => {
+    const handleQuizAnswer = (choice: QuizChoice) => {
         const currentQuestion = (quiz || [])[currentQuestionIndex];
+        
+        if (stage === 'teaching-quiz') {
+            addToTranscript({ type: 'question', author: 'ai', text: currentQuestion.question});
+            addToTranscript({ type: 'answer', author: 'user', text: choice.text });
+            setQuiz(null);
+            setStage('teaching');
+            handleSendMessage(choice.text);
+            return;
+        }
+
         addToTranscript({ type: 'question', author: 'ai', text: currentQuestion.question});
         addToTranscript({ type: 'answer', author: 'user', text: choice.text, isCorrect: choice.isCorrect });
-
+        
         const newAnswers = [...quizAnswers];
         newAnswers[currentQuestionIndex] = choice.text;
         setQuizAnswers(newAnswers);
@@ -165,7 +175,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
         setTimeout(() => {
             setShowFeedbackFor(null);
             if (currentQuestionIndex + 1 >= (quiz || []).length) {
-                if (isPreQuiz) {
+                if (stage === 'pre-quiz') {
                      handleBeginLesson();
                 } else {
                      handleSubmitQuiz();
@@ -198,7 +208,6 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
         setIsLoading(true);
         setError(null);
         setQuiz(null);
-        setCurrentChoices([]);
         
         try {
             const data = await generateFinalQuizAPI(sessionId);
@@ -249,35 +258,39 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
         onSessionComplete(log);
     };
 
-    const renderQuiz = (isPreQuiz: boolean) => {
+    const renderQuiz = () => {
         if (!quiz || currentQuestionIndex >= quiz.length) return null;
         
         const q = quiz[currentQuestionIndex];
         
         return (
             <div className="space-y-4">
-                <h3 className="font-bold text-lg text-emerald-300">{isPreQuiz ? "Let's check what you know!" : "Quiz Time!"}</h3>
-                <p className="font-semibold text-stone-200">{currentQuestionIndex + 1}. {q.question}</p>
+                <h3 className="font-bold text-lg text-emerald-300">
+                    {stage === 'pre-quiz' && "Let's check what you know!"}
+                    {stage === 'teaching-quiz' && "Question:"}
+                    {stage === 'final-quiz' && "Quiz Time!"}
+                </h3>
+                <p className="font-semibold text-stone-200">{stage !== 'teaching-quiz' && `${currentQuestionIndex + 1}. `}{q.question}</p>
                 <div className="mt-2 space-y-2">
                     {q.choices.map((choice, cIndex) => {
                         const isSelected = quizAnswers[currentQuestionIndex] === choice.text;
                         const showFeedback = showFeedbackFor === currentQuestionIndex && isSelected;
                         let feedbackClass = '';
-                        if (showFeedback) {
+                        if (showFeedback && stage !== 'teaching-quiz') {
                             feedbackClass = choice.isCorrect ? 'bg-green-700/50 border-green-500' : 'bg-red-700/50 border-red-500';
                         }
 
                         return (
                             <button
                                 key={cIndex}
-                                onClick={() => handleQuizAnswer(choice, isPreQuiz)}
-                                disabled={showFeedbackFor !== null}
+                                onClick={() => handleQuizAnswer(choice)}
+                                disabled={showFeedbackFor !== null && stage !== 'teaching-quiz'}
                                 className={`w-full text-left flex items-center gap-3 p-3 rounded-md bg-stone-700/50 hover:bg-stone-700 disabled:cursor-not-allowed border ${feedbackClass}`}
                             >
-                                {showFeedback && (
+                                {showFeedback && stage !== 'teaching-quiz' && (
                                     choice.isCorrect ? <CheckCircleIcon className="w-5 h-5 text-green-400" /> : <XCircleIcon className="w-5 h-5 text-red-400" />
                                 )}
-                                <span className="text-stone-300">{choice.text}</span>
+                                <span className="text-stone-300 text-base">{choice.text}</span>
                             </button>
                         );
                     })}
@@ -309,7 +322,7 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                                 return (
                                     <div key={index} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
                                         {isUser ? (<Avatar user={user} className="w-8 h-8 rounded-full flex-shrink-0" />) : (<div className="w-8 h-8 rounded-full bg-emerald-800 flex items-center justify-center flex-shrink-0 text-2xl">{tutor?.icon}</div>)}
-                                        <div className={`max-w-md p-3 rounded-lg ${isUser ? 'bg-blue-800 text-white' : 'bg-stone-700 text-stone-200'}`}><p className="text-sm whitespace-pre-wrap">{msg.text}</p></div>
+                                        <div className={`max-w-md p-3 rounded-lg ${isUser ? 'bg-blue-800 text-white' : 'bg-stone-700 text-stone-200'}`}><p className="text-base whitespace-pre-wrap">{msg.text}</p></div>
                                     </div>
                                 );
                             })}
@@ -323,18 +336,10 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                         
                         {stage === 'teaching' && (
                              <div className="mt-auto pt-4 flex-shrink-0">
-                                {currentChoices.length > 0 && !isLoading ? (
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {currentChoices.map((choice, index) => (
-                                            <Button key={index} type="button" variant="secondary" onClick={() => handleSendMessage(choice)} className="w-full justify-start text-left !h-auto !py-2 whitespace-normal">{choice}</Button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
-                                        <Input as="textarea" rows={2} value={inputMessage} onChange={(e) => { setInputMessage(e.target.value); resetInactivityTimer(); }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={sessionId ? "Your response..." : "Connecting..."} className="flex-grow resize-none" disabled={!sessionId || isLoading} autoFocus />
-                                        <Button type="submit" disabled={!sessionId || isLoading || !inputMessage.trim()} className="h-full">Send</Button>
-                                    </form>
-                                )}
+                                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
+                                    <Input as="textarea" rows={2} value={inputMessage} onChange={(e) => { setInputMessage(e.target.value); resetInactivityTimer(); }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={sessionId ? "Your response..." : "Connecting..."} className="flex-grow resize-none" disabled={!sessionId || isLoading} autoFocus />
+                                    <Button type="submit" disabled={!sessionId || isLoading || !inputMessage.trim()} className="h-full">Send</Button>
+                                </form>
                             </div>
                         )}
                     </div>
@@ -342,9 +347,16 @@ export const AITutorPanel: React.FC<AITutorPanelProps> = ({ quest, user, onClose
                     <div className="w-full md:w-1/3 lg:w-2/5 border-t md:border-t-0 md:border-l border-stone-700/60 flex flex-col p-4 bg-stone-900/50">
                         <div className="flex-grow overflow-y-auto pr-2 space-y-4">
                             {error && <p className="text-center text-red-400">{error}</p>}
-                            {stage === 'connecting' && <div className="text-center text-stone-400">Connecting to AI Tutor...</div>}
-                            {stage === 'pre-quiz' && renderQuiz(true)}
-                            {stage === 'final-quiz' && renderQuiz(false)}
+                            {stage === 'connecting' && (
+                                <div className="flex flex-col items-center justify-center h-full text-center">
+                                    <div className="w-24 h-24 rounded-full bg-emerald-800/50 border-2 border-emerald-600/70 flex items-center justify-center mx-auto text-6xl mb-4">{tutor?.icon}</div>
+                                    <h3 className="text-lg font-bold text-stone-200">Greetings, {user.gameName}!</h3>
+                                    <p className="text-stone-300 mt-1">I am {tutor?.name}, and I'll be your guide on the path of {tutor?.subject}.</p>
+                                    <p className="text-stone-400 mt-4">Please wait while I prepare a few questions to begin...</p>
+                                    <div className="w-8 h-8 border-2 border-dashed rounded-full animate-spin border-emerald-400 mt-6"></div>
+                                </div>
+                            )}
+                            {(stage === 'pre-quiz' || stage === 'final-quiz' || stage === 'teaching-quiz') && renderQuiz()}
                             {stage === 'summary' && quizResult && (
                                  <div className={`p-4 rounded-lg text-center ${quizResult.score / quizResult.total >= 0.66 ? 'bg-green-900/50' : 'bg-amber-900/50'}`}>
                                     <h3 className="font-bold text-lg">{quizResult.score / quizResult.total >= 0.66 ? 'Lesson Complete!' : 'Good Effort!'}</h3>

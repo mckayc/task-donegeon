@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.14 - Enhanced Login Notifications",
-  "version": "0.5.14",
-  "description": "This update overhauls the login notification system. It now includes a 'Daily Briefing' showing required quests for the day, groups notifications by type for clarity, and adds new dismissal options ('Acknowledge' vs. 'Remind Me Later') to give users more control over their alerts.",
+  "name": "Task Donegeon 2.0 - 0.5.24 - Sidebar UI/UX Fix",
+  "version": "0.5.24",
+  "description": "Enhances sidebar headers with icons in all views and adds interactive flyout menus in collapsed mode for improved navigation and UX.",
   "requestFramePermissions": [
     "camera"
   ],

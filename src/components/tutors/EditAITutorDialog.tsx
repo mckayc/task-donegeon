@@ -23,6 +23,7 @@ const EditAITutorDialog: React.FC<EditAITutorDialogProps> = ({ tutorToEdit, onCl
     sessionMinutes: 15,
     style: AITutorStyle.EncouragingCoach,
     customPersona: '',
+    generalInstructions: '',
     sampleQuestions: [''],
   });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
@@ -37,6 +38,7 @@ const EditAITutorDialog: React.FC<EditAITutorDialogProps> = ({ tutorToEdit, onCl
         sessionMinutes: tutorToEdit.sessionMinutes,
         style: tutorToEdit.style,
         customPersona: tutorToEdit.customPersona || '',
+        generalInstructions: tutorToEdit.generalInstructions || '',
         sampleQuestions: tutorToEdit.sampleQuestions.length > 0 ? tutorToEdit.sampleQuestions : [''],
       });
     }
@@ -70,6 +72,7 @@ const EditAITutorDialog: React.FC<EditAITutorDialogProps> = ({ tutorToEdit, onCl
     const finalData = {
         ...formData,
         customPersona: formData.style === AITutorStyle.Custom ? formData.customPersona : undefined,
+        generalInstructions: formData.generalInstructions.trim() ? formData.generalInstructions.trim() : undefined,
         sampleQuestions: formData.sampleQuestions.map(q => q.trim()).filter(q => q),
     };
     if (tutorToEdit) {
@@ -103,6 +106,8 @@ const EditAITutorDialog: React.FC<EditAITutorDialogProps> = ({ tutorToEdit, onCl
                 <Input label="Target Age Group" name="targetAgeGroup" value={formData.targetAgeGroup} onChange={handleChange} placeholder="e.g., 5-7 years old"/>
             </div>
             
+            <Input as="textarea" label="General Instructions (Optional)" name="generalInstructions" value={formData.generalInstructions} onChange={handleChange} placeholder="e.g., Keep responses short. Focus on positive reinforcement." rows={3} />
+
             <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
                 <NumberInput 
                     label="Tutor Session Time (Minutes)"

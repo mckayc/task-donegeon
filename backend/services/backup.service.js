@@ -1,4 +1,5 @@
 
+
 const fs = require('fs').promises;
 const path = require('path');
 const { dataSource } = require('../data-source');
@@ -49,7 +50,13 @@ const list = async () => {
             }
             return null;
         }));
-        return backupDetails.filter(Boolean).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return backupDetails.filter(Boolean).sort((a, b) => {
+            // Prioritize parsed date from filename, which is more reliable than file mtime.
+            // Fallback to file modified time for older formats or parsing errors.
+            const dateA = a.parsed ? new Date(a.parsed.date) : new Date(a.createdAt);
+            const dateB = b.parsed ? new Date(b.parsed.date) : new Date(b.createdAt);
+            return dateB.getTime() - dateA.getTime();
+        });
     } catch (err) {
         if (err.code === 'ENOENT') {
             await fs.mkdir(BACKUP_DIR, { recursive: true });

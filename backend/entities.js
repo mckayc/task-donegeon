@@ -274,6 +274,7 @@ const AITutorEntity = new EntitySchema({
         sessionMinutes: { type: "integer" },
         style: { type: "varchar" },
         customPersona: { type: "text", nullable: true },
+        generalInstructions: { type: "text", nullable: true },
         sampleQuestions: { type: "simple-array" },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },

@@ -29,6 +29,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const questsDispatch = useContext(QuestsDispatchContext)!.dispatch;
   const economyDispatch = useContext(EconomyDispatchContext)!.dispatch;
   const progressionDispatch = useContext(ProgressionDispatchContext)!.dispatch;
+  // FIX: Corrected CommunityContext to CommunityDispatchContext to match the import and intended usage.
   const communityDispatch = useContext(CommunityDispatchContext)!.dispatch;
   const systemDispatch = useContext(SystemDispatchContext)!.dispatch;
 
@@ -45,7 +46,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw new Error(`Server responded with status ${response.status}`);
         }
 
-        // FIX: Completed the syncData function logic.
         const { updates, newSyncTimestamp } = await response.json();
 
         if (updates) {
@@ -95,6 +95,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSyncStatus('success');
         
         if (!isDataLoaded) {
+            // FIX: Restore the last logged-in user after the initial data load to persist session across refreshes.
+            const lastUserId = localStorage.getItem('lastUserId');
+            const isKiosk = localStorage.getItem('isKioskDevice') === 'true';
+            const isAppUnlocked = localStorage.getItem('isAppUnlocked') === 'true';
+            
+            // Do not auto-login on Kiosk devices; they must always show user selection.
+            if (lastUserId && updates.users && !isKiosk) {
+                const lastUser = updates.users.find((u: User) => u.id === lastUserId);
+                if (lastUser) {
+                    // Only set current user if the app is unlocked. Otherwise, App.tsx will show the AppLockScreen,
+                    // which handles setting the user after a successful unlock.
+                    if (isAppUnlocked) {
+                        setCurrentUser(lastUser);
+                    }
+                } else {
+                    // The last user ID was invalid (e.g., user deleted), so clear it.
+                    localStorage.removeItem('lastUserId');
+                }
+            }
             setIsDataLoaded(true);
         }
     } catch (e) {
@@ -102,8 +121,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSyncStatus('error');
         setSyncError(message);
     }
-  }, [isDataLoaded, addNotification, setUsers, setLoginHistory, questsDispatch, economyDispatch, progressionDispatch, communityDispatch, systemDispatch]);
-
+  }, [isDataLoaded, addNotification, setUsers, setCurrentUser, setLoginHistory, questsDispatch, economyDispatch, progressionDispatch, communityDispatch, systemDispatch]);
+  
   useEffect(() => {
     syncData(); // Initial full sync
   }, [syncData]);

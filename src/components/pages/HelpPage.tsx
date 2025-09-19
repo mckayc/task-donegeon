@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -89,6 +84,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <p>Details about the app's shell and progressive web app features.</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Favicon Fix:</strong> Resolved an issue where the application's browser tab icon (favicon) was missing. The castle icon has been restored.</li>
+            <li><strong>Sidebar Navigation:</strong> Section headers (e.g., "Content Management") now display their icons in both expanded and collapsed views. When the sidebar is collapsed, hovering over a section header's icon will now trigger a flyout menu, showing all the links within that section for quick access. This fixes a bug where these headers were previously unclickable in the collapsed state.</li>
         </ul>
         <h3>Exchange Rate Clarity</h3>
         <p>To improve user understanding and transparency in the Exchange Post, the direct conversion rate between the two selected reward types is now prominently displayed.</p>
@@ -109,6 +105,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Blueprint User Imports:</strong> Fixed an issue where users exported in a blueprint JSON file would not appear in the import preview dialog. The system now correctly identifies users by their username, ensuring successful imports.</li>
             <li><strong>JSON & SQLite Restore:</strong> Overhauled the Backup & Restore functionality. Restoring from a JSON backup now correctly repopulates the entire database. Restoring from an SQLite backup no longer incorrectly triggers the first-run wizard and now correctly re-initializes the database connection.</li>
+            <li><strong>Automated Backup Cleanup:</strong> Fixed a logic error where the system could fail to delete the oldest automated backups, causing more backups to be stored than the configured limit. The cleanup process now reliably prunes old files based on the timestamp in their filename.</li>
         </ul>
         <h3>Real-Time UI Updates</h3>
         <p>A comprehensive fix has been implemented to address state synchronization issues across the application. Previously, actions such as creating, updating, or deleting assets (like Quests, Items, Markets, etc.) would not immediately reflect in the user interface, requiring a page refresh to see the changes. This has been resolved.</p>
@@ -149,7 +146,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         </p>
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li>
-                <strong>AI Teacher:</strong> This turns a quest into a full-screen, interactive lesson. The AI gauges the user's knowledge with a pre-quiz, creates a personalized lesson using relatable examples from the user's profile, and confirms understanding with a final quiz. Passing this quiz is required to complete the quest.
+                <strong>AI Teacher:</strong> This feature provides an interactive, one-on-one lesson. Upon starting, the tutor introduces themselves with a welcome message while preparing an initial pre-quiz. The AI then assesses baseline knowledge with this quiz. During the lesson, the conversation happens on the left, while any multiple-choice questions from the tutor appear on the right as large, readable buttons, keeping the main chat clean. A final quiz confirms understanding. The font size throughout the interface has been increased for better readability.
             </li>
             <li>
                 <strong>AI Story Teller:</strong> This feature generates a unique, short story based on the quest's title and description, turning a simple chore into a narrative adventure.
@@ -313,6 +310,31 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                  <li><strong>The Grand Arcade Expansion:</strong> Added six brand new minigames to the Arcade: Gemstone Mines, Labyrinth of the Minotaur, Alchemist's Trial, Goblin Ambush, River Crossing, and Wizard's Vortex.</li>
                  <li><strong>Major Tetris Improvements:</strong> Overhauled Tetris with modern features, including a Hold Queue, a Ghost Piece, and satisfying particle effects.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of November 15, 2025 (v0.4.76)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New Game: Tetris!</strong> Added a complete, from-scratch implementation of the classic puzzle game Tetris to the Arcade, featuring scoring, levels, a next-piece preview, and on-screen controls.</li>
+                <li><strong>Tablet Mode:</strong> The new Tetris game includes a "Tablet Mode" toggle, which provides an optimized two-handed control layout for larger devices.</li>
+                <li><strong>Game Rules:</strong> A new "Game Rules" dialog has been created to show players how to play any game in the Arcade.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of November 8, 2025 (v0.4.75)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Arcade Gameplay Overhaul:</strong> Implemented a massive update to the Arcade based on user feedback. This includes:
+                    <ul className="list-disc list-inside pl-6 mt-2">
+                        <li><strong>UI Improvements:</strong> Game cards now have explicit "Play", "Rules", and "Stats" buttons for clearer actions.</li>
+                        <li><strong>Rune Breaker:</strong> Added falling power-ups (e.g., paddle widener) to make gameplay more dynamic.</li>
+                        <li><strong>Dungeon Dash:</strong> Fixed a critical bug where players were not correctly defeated upon hitting a spike.</li>
+                        <li><strong>Forge Master:</strong> Implemented a combo system to reward consecutive "Perfect" hits with bonus points and a progressive speed increase.</li>
+                        <li><strong>Archer's Folly:</strong> Added a trajectory line and power meter to make aiming more intuitive.</li>
+                        <li><strong>Snake:</strong> Fixed a bug that allowed players to reverse direction and end the game. Added a "Tablet Mode" toggle for a two-handed D-pad layout on larger devices.</li>
+                        <li><strong>Dragon's Dice:</strong> Added a clear "BUSTED!" message when a player fails to score on a roll.</li>
+                        <li><strong>Admin Tools:</strong> Admins can now edit minigame properties like cost, plays per token, and prize thresholds from the management page.</li>
+                    </ul>
+                </li>
             </ul>
         </div>
         <div>

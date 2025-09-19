@@ -14,6 +14,7 @@ export interface AITutor {
     sessionMinutes: number;
     style: AITutorStyle;
     customPersona?: string;
+    generalInstructions?: string;
     sampleQuestions: string[];
     createdAt?: string;
     updatedAt?: string;

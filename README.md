@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.14
+**Version:** 0.5.24
 
 ---
 
@@ -14,6 +14,36 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of November 13, 2025 (v0.5.24):**
+    -   **Sidebar UI/UX Fix:** Fixed a bug where section headers in the sidebar (e.g., "Content Management") were missing their icons when expanded. Additionally, when the sidebar is collapsed, these headers are now interactive; hovering over their icons reveals a flyout menu of their child links, fixing an issue where they were previously unclickable.
+
+-   **Week of November 6, 2025 (v0.5.23):**
+    -   **AI Tutor Readability & UX:** The AI Tutor now displays a friendly welcome message while it prepares its initial quiz. The font size for both chat messages and quiz answers has been increased for better readability, improving the overall user experience.
+
+-   **Week of October 30, 2025 (v0.5.22):**
+    -   **AI Tutor Enhancements:** Resolved a configuration issue causing the "Manage AI Tutors" sidebar link to appear without a text label on new installations. Added a new "General Instructions" field to the AI Tutor editor, allowing administrators to provide overarching guidelines to the AI during tutoring sessions.
+
+-   **Week of October 23, 2025 (v0.5.21):**
+    -   **AI Tutor Enhancements:** Fixed a bug where the "Manage AI Tutors" sidebar link was missing its text label. Added a new "General Instructions" field to the AI Tutor editor to allow for better personalization of the tutor's behavior, which is now passed to the AI during sessions.
+
+-   **Week of October 16, 2025 (v0.5.20):**
+    -   **Sidebar Label Fix:** Fixed a UI bug where the "Manage AI Tutors" link in the sidebar was missing its text label due to an incomplete backend configuration. The terminology is now correctly displayed.
+
+-   **Week of October 9, 2025 (v0.5.19):**
+    -   **Automated Backup Cleanup Fix:** Resolved a critical bug where the system would fail to delete old automated backups according to the defined schedule limits, causing an excessive number of backup files to accumulate. The sorting logic for identifying the oldest backups has been made more robust to ensure cleanup runs correctly.
+
+-   **Week of October 2, 2025 (v0.5.18):**
+    -   **AI Tutor UX Fix:** Resolved a bug where the AI Tutor would display multiple-choice questions as raw code in the main chat area. All interactive questions now correctly appear in the side panel, creating a clear separation between conversation and quizzes for a more stable user experience.
+
+-   **Week of September 25, 2025 (v0.5.17):**
+    -   **AI Tutor UX Improvement:** Fixed a critical bug where multiple-choice questions from the AI Tutor could appear as raw code in the chat. The interaction model has been redesigned: the main chat area is now reserved for conversation, while all interactive questions appear in a dedicated panel on the right, providing a cleaner and more stable learning experience.
+
+-   **Week of October 9, 2025 (v0.5.16):**
+    -   **Approvals Page Stability Fix:** Fixed a critical state management bug on the Approvals page where acting on one item (approving or rejecting) would cause all other pending items to incorrectly disappear from the view until the page was refreshed. The state update logic has been refactored to be more precise, ensuring a stable and predictable UI for administrators.
+
+-   **Week of October 2, 2025 (v0.5.15):**
+    -   **Login Persistence Fix:** Resolved a critical bug that caused the application to forget the last logged-in user after an app update and page refresh. The system now correctly restores the user's session, ensuring a seamless experience without being redirected to the user selection screen.
 
 -   **Week of September 25, 2025 (v0.5.14):**
     -   **Enhanced Login Notifications:** Overhauled the login notification system for a more informative and user-friendly experience. The new popup includes a "Daily Briefing" that lists all required quests for the day, providing an immediate action list. Notifications are now grouped by type (e.g., "New Quests," "Approvals"), and users have two dismissal options: "Acknowledge & Continue" to mark notifications as read, and "Remind Me Later" to hide them for the current session while keeping them unread for the next login.
@@ -72,14 +102,8 @@ Task Donegeon is a gamified task and chore management application designed for f
     -   **Service Worker Update:** The service worker has been updated to enable this new caching strategy.
 
 -   **Week of November 22, 2025 (v0.4.77):**
-    -   **The Grand Arcade Expansion:** Added six brand new minigames to the Arcade:
-        -   **Gemstone Mines:** A classic match-3 puzzle game.
-        -   **Labyrinth of the Minotaur:** A procedurally generated maze runner.
-        -   **Alchemist's Trial:** A "Simon Says" style memory game.
-        -   **Goblin Ambush:** A fast-paced "Whack-a-Mole" reflex game.
-        -   **River Crossing:** A fantasy take on the arcade classic *Frogger*.
-        -   **Wizard's Vortex:** A top-down magical survival shooter.
-    -   **Major Tetris Improvements:** Overhauled Tetris with modern features, including a **Hold Queue** to save pieces for later, a **Ghost Piece** to preview placement, and satisfying particle effects for line clears.
+    -   **The Grand Arcade Expansion:** Added six brand new minigames to the Arcade: Gemstone Mines, Labyrinth of the Minotaur, Alchemist's Trial, Goblin Ambush, River Crossing, and Wizard's Vortex.
+    -   **Major Tetris Improvements:** Overhauled Tetris with modern features, including a Hold Queue, a Ghost Piece, and satisfying particle effects.
 
 -   **Week of November 15, 2025 (v0.4.76):**
     -   **New Game: Tetris!** Added a complete, from-scratch implementation of the classic puzzle game Tetris to the Arcade, featuring scoring, levels, a next-piece preview, and on-screen controls.
@@ -213,4 +237,4 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 
 ### Phase 1: Foundational Features & Quality of Life
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
--   **Enhanced Security:
+-   **Enhanced Security:------

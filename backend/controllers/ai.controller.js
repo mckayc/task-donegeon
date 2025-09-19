@@ -1,5 +1,6 @@
 
 
+
 const { GoogleGenAI, Type } = require('@google/genai');
 const { asyncMiddleware } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
@@ -153,8 +154,11 @@ const startTutorSession = async (req, res) => {
         case 'Custom': personaInstruction = tutor.customPersona || 'You are a helpful AI Tutor.'; break;
     }
 
+    const generalInstructionText = tutor.generalInstructions ? `\n**General Instructions to always follow:** ${tutor.generalInstructions}` : '';
+
     const systemInstruction = `You are an AI Tutor named ${tutor.name}. Your subject is ${tutor.subject}.
     ${personaInstruction}
+    ${generalInstructionText}
     You are tutoring a user named ${user.gameName} who is in the ${tutor.targetAgeGroup} age group.
 
     **Core Interaction Loop:**

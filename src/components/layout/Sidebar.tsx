@@ -9,7 +9,7 @@ import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';
 import { INITIAL_MAIN_SIDEBAR_CONFIG } from '../../data/initialData';
 
-const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean; totalApprovals?: number }> = ({ title, items, isVisible, totalApprovals }) => {
+const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean; totalApprovals?: number; unreadChatCount?: number; }> = ({ title, items, isVisible, totalApprovals, unreadChatCount }) => {
     const { settings } = useSystemState();
     const { setActivePage } = useUIDispatch();
     
@@ -19,22 +19,25 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
         <div className="absolute left-full top-0 ml-2 z-20 w-60 bg-stone-900 border border-stone-700 rounded-lg shadow-xl py-2">
             <h4 className="font-bold text-accent px-4 pb-2 border-b border-stone-700">{title}</h4>
             <div className="mt-2">
-                {items ? items.map(item => (
-                     <a
-                        key={item.id}
-                        href="#"
-                        onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { setActivePage(item.id as Page); } }}
-                        className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700"
-                        data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
-                     >
-                        {item.emoji} <span className="ml-2">{item.termKey ? settings.terminology[item.termKey] : item.id}</span>
-                        {item.id === 'Approvals' && totalApprovals && totalApprovals > 0 && (
-                            <span className="ml-auto flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
-                                {totalApprovals > 9 ? '9+' : totalApprovals}
-                            </span>
-                        )}
-                     </a>
-                )) : (
+                {items ? items.map(item => {
+                     const badgeCount = item.id === 'Approvals' ? totalApprovals : item.id === 'Chat' ? unreadChatCount : 0;
+                     return (
+                         <a
+                            key={item.id}
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); if (item.id !== 'Chat') { setActivePage(item.id as Page); } }}
+                            className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700"
+                            data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
+                         >
+                            {item.emoji} <span className="ml-2">{item.termKey ? settings.terminology[item.termKey] : item.id}</span>
+                            {badgeCount && badgeCount > 0 && (
+                                <span className="ml-auto flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
+                                    {badgeCount > 9 ? '9+' : badgeCount}
+                                </span>
+                            )}
+                         </a>
+                     );
+                }) : (
                     <div className="px-4 py-1 text-stone-200">{title}</div>
                 )}
             </div>
@@ -78,22 +81,34 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, onNavigate: (page
     );
 };
 
-const NavHeader: React.FC<{ item: SidebarHeader, isCollapsed: boolean, onToggle: () => void, isOpen: boolean, badgeCount?: number }> = ({ item, isCollapsed, onToggle, isOpen, badgeCount = 0 }) => {
+const NavHeader: React.FC<{ item: SidebarHeader, isCollapsed: boolean, onToggle: () => void, isOpen: boolean, badgeCount?: number, childItems?: SidebarLink[], totalApprovals?: number, unreadChatCount?: number }> = ({ item, isCollapsed, onToggle, isOpen, badgeCount = 0, childItems, totalApprovals, unreadChatCount }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
     if (isCollapsed) {
         return (
-            <div className="flex justify-center my-4 relative">
-                <span className="text-xl">{item.emoji}</span>
-                 {badgeCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-stone-900">
-                        {badgeCount > 9 ? '9+' : badgeCount}
-                    </span>
-                )}
+            <div 
+                className="relative"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                <div className="flex justify-center my-4 relative">
+                    <span className="text-xl">{item.emoji}</span>
+                     {badgeCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-stone-900">
+                            {badgeCount > 9 ? '9+' : badgeCount}
+                        </span>
+                    )}
+                </div>
+                <FlyoutPanel title={item.title} items={childItems} isVisible={isHovered} totalApprovals={totalApprovals} unreadChatCount={unreadChatCount} />
             </div>
-        )
+        );
     }
     return (
         <button onClick={onToggle} className="w-full flex items-center justify-between text-left px-4 py-2 mt-4 text-stone-400 hover:text-white transition-colors">
-            <span className="font-bold uppercase text-sm tracking-wider">{item.title}</span>
+            <div className="flex items-center gap-3">
+                <span className="text-xl">{item.emoji}</span>
+                <span className="font-bold uppercase text-sm tracking-wider">{item.title}</span>
+            </div>
             <div className="flex items-center gap-2">
                 {badgeCount > 0 && (
                     <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
@@ -103,7 +118,7 @@ const NavHeader: React.FC<{ item: SidebarHeader, isCollapsed: boolean, onToggle:
                 <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </div>
         </button>
-    )
+    );
 };
 
 const Sidebar: React.FC = () => {
@@ -244,7 +259,16 @@ const Sidebar: React.FC = () => {
 
                         return (
                             <React.Fragment key={item.id}>
-                                <NavHeader item={item} isCollapsed={isSidebarCollapsed} isOpen={isHeaderOpen} onToggle={() => handleHeaderToggle(item.id)} badgeCount={headerBadgeCount} />
+                                <NavHeader
+                                    item={item}
+                                    isCollapsed={isSidebarCollapsed}
+                                    isOpen={isHeaderOpen}
+                                    onToggle={() => handleHeaderToggle(item.id)}
+                                    badgeCount={headerBadgeCount}
+                                    childItems={childLinks.filter(c => c.type === 'link') as SidebarLink[]}
+                                    totalApprovals={totalApprovals}
+                                    unreadChatCount={unreadChatCount}
+                                />
                                 {isHeaderOpen && childLinks.map(child => {
                                     if(child.type !== 'link') return null;
                                     const badgeCount = child.id === 'Approvals' ? totalApprovals : child.id === 'Chat' ? unreadChatCount : 0;

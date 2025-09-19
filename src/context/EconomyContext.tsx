@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -28,7 +29,8 @@ export interface EconomyState {
 export type EconomyAction = 
   | { type: 'SET_ECONOMY_DATA', payload: Partial<EconomyState> }
   | { type: 'UPDATE_ECONOMY_DATA', payload: Partial<EconomyState> }
-  | { type: 'REMOVE_ECONOMY_DATA', payload: { [key in keyof EconomyState]?: string[] } };
+  | { type: 'REMOVE_ECONOMY_DATA', payload: { [key in keyof EconomyState]?: string[] } }
+  | { type: 'UPDATE_SINGLE_PURCHASE_REQUEST', payload: PurchaseRequest };
 
 export interface EconomyDispatch {
   addMarket: (marketData: Omit<Market, 'id'>) => Promise<Market | null>;
@@ -71,6 +73,15 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
     switch (action.type) {
         case 'SET_ECONOMY_DATA':
             return { ...state, ...action.payload };
+        case 'UPDATE_SINGLE_PURCHASE_REQUEST': {
+            const index = state.purchaseRequests.findIndex(pr => pr.id === action.payload.id);
+            if (index > -1) {
+                const newPurchaseRequests = [...state.purchaseRequests];
+                newPurchaseRequests[index] = action.payload;
+                return { ...state, purchaseRequests: newPurchaseRequests };
+            }
+            return { ...state, purchaseRequests: [...state.purchaseRequests, action.payload] };
+        }
         case 'UPDATE_ECONOMY_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {
@@ -183,7 +194,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (result) {
                 const { updatedUser, updatedPurchaseRequest } = result as any;
                 updateUser(updatedUser.id, updatedUser);
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                dispatch({ type: 'UPDATE_SINGLE_PURCHASE_REQUEST', payload: updatedPurchaseRequest });
             }
         },
         rejectPurchaseRequest: async (id, rejecterId) => {
@@ -191,7 +202,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (result) {
                 const { updatedUser, updatedPurchaseRequest } = result as any;
                 updateUser(updatedUser.id, updatedUser);
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                dispatch({ type: 'UPDATE_SINGLE_PURCHASE_REQUEST', payload: updatedPurchaseRequest });
             }
         },
          cancelPurchaseRequest: async (id) => {
@@ -200,7 +211,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (result) {
                 const { updatedUser, updatedPurchaseRequest } = result as any;
                 updateUser(updatedUser.id, updatedUser);
-                dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                dispatch({ type: 'UPDATE_SINGLE_PURCHASE_REQUEST', payload: updatedPurchaseRequest });
             }
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {

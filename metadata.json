@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.29 - Stability Patch",
-  "version": "0.5.29",
-  "description": "A major stability patch fixing critical bugs in the AI Tutor (code display, scrolling, scoring), the Approvals page (disappearing items), and the automated backup system (improper pruning of old files).",
+  "name": "Task Donegeon 2.0 - 0.5.30 - Kiosk Mode Live Refresh",
+  "version": "0.5.30",
+  "description": "Adds a live data refresh to the Kiosk Mode screen, ensuring quest deadlines and availability are always up-to-date without requiring a manual page reload.",
   "requestFramePermissions": [
     "camera"
   ],

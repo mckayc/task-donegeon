@@ -109,6 +109,11 @@ const SharedCalendarPage: React.FC = () => {
     const [selectedQuestDetailsId, setSelectedQuestDetailsId] = useState<{ questId: string; userId: string } | null>(null);
     const [viewingConditionsForQuest, setViewingConditionsForQuest] = useState<{ quest: Quest; user: User } | null>(null);
 
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentDate(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
     const selectedQuestDetails = useMemo(() => {
         if (!selectedQuestDetailsId) return null;
         const quest = quests.find(q => q.id === selectedQuestDetailsId.questId);
@@ -242,8 +247,7 @@ const SharedCalendarPage: React.FC = () => {
         return rewardTypes.find(rt => rt.id === rewardTypeId) || { name: 'Unknown', icon: '❓' };
     };
 
-    const QuestCardComponent: React.FC<{ quest: Quest; user: User }> = ({ quest, user }) => {
-        const now = new Date();
+    const QuestCardComponent: React.FC<{ quest: Quest; user: User; now: Date; }> = ({ quest, user, now }) => {
         const lockStatus = getQuestLockStatus(quest, user, conditionDependencies);
         
         const { borderClass, timeStatusText, timeStatusColor, absoluteDueDateString } = useMemo(() => {
@@ -389,13 +393,13 @@ const SharedCalendarPage: React.FC = () => {
                                             {userQuests.duties.length > 0 && (
                                                 <div className="space-y-2">
                                                     <h4 className="font-bold text-lg text-stone-300">Duties</h4>
-                                                    {userQuests.duties.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
+                                                    {userQuests.duties.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} now={currentDate} />)}
                                                 </div>
                                             )}
                                             {userQuests.ventures.length > 0 && (
                                                 <div className="space-y-2">
                                                     <h4 className="font-bold text-lg text-stone-300 mt-4">Ventures</h4>
-                                                    {userQuests.ventures.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} />)}
+                                                    {userQuests.ventures.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} now={currentDate} />)}
                                                 </div>
                                             )}
                                         </>

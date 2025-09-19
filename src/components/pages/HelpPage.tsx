@@ -58,6 +58,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
                     <li>The brightness level can be previewed in the settings page for 5 seconds.</li>
                 </ul>
             </li>
+            <li>
+                <strong>Live Data Refresh:</strong> To ensure information like quest deadlines ("Due in...") is always accurate on long-running kiosk screens, the quest list now automatically refreshes its data every minute without requiring a full page reload. This provides up-to-date information without interrupting the user experience.
+            </li>
         </ul>
         <h3>Quest Timers</h3>
         <p>

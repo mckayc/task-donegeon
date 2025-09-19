@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -75,13 +74,21 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof EconomyState;
-                if (Array.isArray(updatedState[typedKey])) {
-                    const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    const itemsToUpdate = action.payload[typedKey];
-                    if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
-                    }
-                    (updatedState as any)[typedKey] = Array.from(existingItems.values());
+                if (Array.isArray(updatedState[typedKey]) && Array.isArray(action.payload[typedKey])) {
+                    
+                    const payloadMap = new Map((action.payload[typedKey] as any[]).map(item => [item.id, item]));
+
+                    const newArray = (updatedState[typedKey] as any[]).map(existingItem => 
+                        payloadMap.get(existingItem.id) || existingItem
+                    );
+
+                    (action.payload[typedKey] as any[]).forEach(payloadItem => {
+                        if (!newArray.some(item => item.id === payloadItem.id)) {
+                            newArray.push(payloadItem);
+                        }
+                    });
+
+                    (updatedState as any)[typedKey] = newArray;
                 }
             }
             return updatedState;

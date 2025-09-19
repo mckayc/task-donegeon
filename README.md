@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.28
+**Version:** 0.5.29
 
 ---
 
@@ -14,6 +14,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of December 11, 2025 (v0.5.29):**
+    -   **Major Bug Fix Release:** A comprehensive update addressing multiple critical bugs.
+        -   **AI Tutor Overhaul:** Fixed issues where the tutor would show raw code instead of interactive questions, failed to auto-scroll, and incorrectly scored quizzes. The UI and underlying logic have been improved for a more stable learning experience.
+        -   **Approvals Page Stability:** Resolved a state management bug where approving an item would cause all other pending items to disappear from the view until a page refresh.
+        -   **Automated Backup Cleanup:** Fixed a critical bug where old automated backups were not being cleaned up correctly if their corresponding schedule was deleted, leading to excessive storage use. The system now properly prunes these "orphaned" backups.
 
 -   **Week of December 4, 2025 (v0.5.28):**
     -   **AI Tutor Bug Fixes:** A significant update to the AI Tutor to resolve multiple critical bugs. Fixes an issue where the AI would display raw tool code in the chat instead of interactive questions. The chat panel now correctly auto-scrolls when new messages appear. Resolves a scoring bug where the last question of the initial quiz was always marked as incorrect. The font size for chat and quiz answers has also been increased for better readability.
@@ -250,4 +256,4 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 
 ### Phase 1: Foundational Features & Quality of Life
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
--   **Enhanced Security:
+-   **Enhanced Security:---

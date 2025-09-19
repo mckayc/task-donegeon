@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -86,13 +85,21 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
                     continue; // Skip allTags, it is derived from quests
                 }
 
-                if (Array.isArray(updatedState[typedKey])) {
-                    const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    const itemsToUpdate = action.payload[typedKey];
-                    if (Array.isArray(itemsToUpdate)) {
-                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
-                    }
-                    (updatedState as any)[typedKey] = Array.from(existingItems.values());
+                if (Array.isArray(updatedState[typedKey]) && Array.isArray(action.payload[typedKey])) {
+                    
+                    const payloadMap = new Map((action.payload[typedKey] as any[]).map(item => [item.id, item]));
+
+                    const newArray = (updatedState[typedKey] as any[]).map(existingItem => 
+                        payloadMap.get(existingItem.id) || existingItem
+                    );
+
+                    (action.payload[typedKey] as any[]).forEach(payloadItem => {
+                        if (!newArray.some(item => item.id === payloadItem.id)) {
+                            newArray.push(payloadItem);
+                        }
+                    });
+
+                    (updatedState as any)[typedKey] = newArray;
                 }
             }
             newState = updatedState;

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.34 - Minigame Mania",
-  "version": "0.5.34",
-  "description": "A major update adding the new Wizard's Vortex game and overhauling Forge Master, Goblin Ambush, Alchemist's Trial, and River Crossing with new mechanics and fixes.",
+  "name": "Task Donegeon 2.0 - 0.5.35 - Quest Locking Fix",
+  "version": "0.5.35",
+  "description": "Fixes a critical bug in quest locking logic that caused circular dependencies and blocked quests with unavailable requirements. The lock status dialog is now much clearer.",
   "requestFramePermissions": [
     "camera"
   ],

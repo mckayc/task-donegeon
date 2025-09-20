@@ -135,6 +135,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Scheduled Duties:</strong> Duties (recurring quests) that are not scheduled to be active on the current day will now be fully disabled. While they may still appear dimmed on the Quest Page for informational purposes, they cannot be selected or completed until their scheduled day. This prevents accidental completions on non-active days and clarifies user expectations.</li>
             <li><strong>Quest Completion Timing:</strong> Server-side validation has been strengthened to strictly enforce quest deadlines. The system now prevents users from submitting a quest completion after its defined "incomplete" time has passed. This resolves an issue where completions could be logged with a timestamp that was after the quest's cutoff, ensuring that all completion data is accurate and adheres to the established rules.</li>
+            <li>
+                <strong>Quest Locking Logic:</strong> Fixed a critical bug that caused circular dependencies in quest requirements. A quest can no longer be locked by a condition that requires the quest itself to be completed. Additionally, quests that are unavailable (e.g., not scheduled for today, expired) are now correctly ignored when checking lock conditions. The "Quest Locked" dialog now clearly indicates which requirements are self-exempt or unavailable, so users know exactly what they need to do.
+            </li>
         </ul>
         <h3>Rank & Leaderboard Calculations</h3>
         <p>

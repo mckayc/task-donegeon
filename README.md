@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.34
+**Version:** 0.5.35
 
 ---
 
@@ -14,6 +14,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of March 21, 2026 (v0.5.35):**
+    -   **Quest Locking Logic Fix:** Resolved a critical bug where a quest could be locked by a condition that requires the quest itself to be completed. The system now also correctly ignores unavailable quests (e.g., expired or not scheduled for today) when determining lock status.
+    -   **Improved Lock Dialog:** The "Quest Locked" dialog has been enhanced to visually distinguish exempted requirements. Self-exempted quests are highlighted in orange, and unavailable quests are greyed out, providing clear information on what tasks are actually required to unlock content.
 
 -   **Week of March 14, 2026 (v0.5.34):**
     -   **Minigame Polish & New Game:** A major update to the Arcade, implementing a new game and refining several others based on user feedback.

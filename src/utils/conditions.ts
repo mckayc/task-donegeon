@@ -1,5 +1,3 @@
-
-
 import { User, QuestCompletionStatus, Condition, ConditionType, ConditionSet, ConditionSetLogic, Rank, QuestCompletion, Quest, QuestGroup, Trophy, UserTrophy, GameAsset, Guild, Role, QuestType, AppMode } from '../types';
 
 /**
@@ -156,46 +154,35 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
                 q.id !== questIdToExclude
             );
 
-            const visibleQuestsInGroup = questsInGroup.filter(q =>
-                isQuestVisibleToUserInMode(q, user.id, dependencies.appMode)
-            );
-
-            // Filter to quests that are actually required today. A duty not scheduled for today should be ignored.
-            const relevantQuestsInGroup = visibleQuestsInGroup.filter(q => {
+            // Filter for quests that are actually requirements *right now*.
+            const relevantRequirements = questsInGroup.filter(q => {
+                if (!isQuestVisibleToUserInMode(q, user.id, dependencies.appMode)) {
+                    return false;
+                }
                 if (q.type === QuestType.Duty) {
-                    if (!isQuestScheduledForDay(q, now)) {
-                        return false; // Not scheduled for today, so it's not a requirement for today.
-                    }
-                    // It is scheduled, so check if it's already past its 'incomplete' time.
+                    if (!isQuestScheduledForDay(q, now)) return false;
                     if (q.endTime) {
                         const [h, m] = q.endTime.split(':').map(Number);
                         const incompleteTime = new Date(now);
                         incompleteTime.setHours(h, m, 0, 0);
-                        if (now > incompleteTime) {
-                            return false; // It was required today but is now incomplete, so it's irrelevant.
-                        }
+                        if (now > incompleteTime) return false;
                     }
                 } else { // Venture or Journey
-                    // A venture is irrelevant if it's past its final due date.
-                    if (q.endDateTime && now > new Date(q.endDateTime)) {
-                        return false;
-                    }
+                    if (q.endDateTime && now > new Date(q.endDateTime)) return false;
                 }
                 return true;
             });
 
             const requiredGroupStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
 
-            return relevantQuestsInGroup.every(q =>
+            return relevantRequirements.every(q =>
                 dependencies.questCompletions.some(c => {
                     if (c.userId !== user.id || c.questId !== q.id || !requiredGroupStatuses.includes(c.status)) {
                         return false;
                     }
-                    // For a recurring quest (Duty), it must be completed today.
                     if (q.type === QuestType.Duty) {
                         return toYMD(new Date(c.completedAt)) === todayYMD;
                     }
-                    // For a one-time quest (Venture/Journey), any completion is sufficient.
                     return true;
                 })
             );

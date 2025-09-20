@@ -15,7 +15,7 @@ interface ArcadeViewProps {
     market: Market;
 }
 
-const UNIMPLEMENTED_GAMES = ['minigame-wizards-vortex'];
+const UNIMPLEMENTED_GAMES: string[] = [];
 
 const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
     const { settings, minigames, gameScores } = useSystemState();

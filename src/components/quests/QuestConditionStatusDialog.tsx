@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import { Quest, User, ConditionSet, QuestCompletionStatus, QuestType } from '../../types';
 import Button from '../user-interface/Button';
@@ -8,10 +6,10 @@ import { useQuestsState } from '../../context/QuestsContext';
 import { useProgressionState } from '../../context/ProgressionContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
-import { CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
+import { CheckCircleIcon, XCircleIcon, InfoIcon } from '../user-interface/Icons';
 import { checkCondition, getConditionDescription, ConditionDependencies } from '../../utils/conditions';
 import { toYMD } from '../../utils/quests';
-import { isQuestVisibleToUserInMode } from '../../utils/conditions';
+import { isQuestVisibleToUserInMode, isQuestScheduledForDay } from '../../utils/conditions';
 import { useUIState } from '../../context/UIContext';
 
 interface QuestConditionStatusDialogProps {
@@ -28,6 +26,7 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
     const { guilds } = useCommunityState();
     const { appMode } = useUIState();
     const todayYMD = toYMD(new Date());
+    const now = new Date();
 
     const dependencies: ConditionDependencies = {
         ranks, questCompletions, quests, questGroups, userTrophies, trophies, gameAssets, guilds, appMode
@@ -66,30 +65,58 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                     if (condition.type === 'QUEST_GROUP_COMPLETED') {
                                         const group = dependencies.questGroups.find(g => g.id === condition.questGroupId);
                                         if (group) {
-                                            const questsInGroup = dependencies.quests.filter(q => 
-                                                q.groupIds?.includes(group.id) &&
-                                                // FIX: Pass user.id instead of the full user object to isQuestVisibleToUserInMode.
-                                                isQuestVisibleToUserInMode(q, user.id, appMode)
-                                            );
+                                            const questsInGroup = dependencies.quests.filter(q => q.groupIds?.includes(group.id));
+                                            
                                             subList = (
                                                 <ul className="pl-8 mt-1 space-y-1">
                                                     {questsInGroup.map(q => {
+                                                        const isSelfExempt = q.id === quest.id;
+
+                                                        let isRelevant = isQuestVisibleToUserInMode(q, user.id, appMode);
+                                                        if (q.type === QuestType.Duty) {
+                                                          if (!isQuestScheduledForDay(q, now)) isRelevant = false;
+                                                          if (q.endTime) {
+                                                            const [h, m] = q.endTime.split(':').map(Number);
+                                                            const incompleteTime = new Date(now);
+                                                            incompleteTime.setHours(h, m, 0, 0);
+                                                            if (now > incompleteTime) isRelevant = false;
+                                                          }
+                                                        } else {
+                                                          if (q.endDateTime && now > new Date(q.endDateTime)) isRelevant = false;
+                                                        }
+                                                        
+                                                        const isRequirement = !isSelfExempt && isRelevant;
+
                                                         const completion = dependencies.questCompletions
                                                             .slice()
                                                             .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
                                                             .find(c => {
-                                                                if (c.userId !== user.id || c.questId !== q.id || c.status !== QuestCompletionStatus.Approved) {
-                                                                    return false;
-                                                                }
-                                                                // For a recurring quest (Duty), it must be completed today.
-                                                                if (q.type === QuestType.Duty) {
-                                                                    return toYMD(new Date(c.completedAt)) === todayYMD;
-                                                                }
-                                                                // For a one-time quest (Venture/Journey), any completion is sufficient.
+                                                                if (c.userId !== user.id || c.questId !== q.id || c.status !== QuestCompletionStatus.Approved) return false;
+                                                                if (q.type === QuestType.Duty) return toYMD(new Date(c.completedAt)) === todayYMD;
                                                                 return true;
                                                             });
 
                                                         const isQuestCompleted = !!completion;
+
+                                                        if (isSelfExempt) {
+                                                            return (
+                                                                <li key={q.id} className="flex items-center gap-2 text-xs text-orange-400" title="This quest is exempt from its own group requirement.">
+                                                                    <InfoIcon className="w-4 h-4" />
+                                                                    <span className="line-through">{q.title}</span>
+                                                                    <span>(Exempt)</span>
+                                                                </li>
+                                                            );
+                                                        }
+
+                                                        if (!isRelevant) {
+                                                            return (
+                                                                 <li key={q.id} className="flex items-center gap-2 text-xs text-stone-500" title="This quest is not available today and is not required.">
+                                                                    <CheckCircleIcon className="w-4 h-4" />
+                                                                    <span className="line-through">{q.title}</span>
+                                                                    <span>(Unavailable)</span>
+                                                                </li>
+                                                            )
+                                                        }
 
                                                         return (
                                                             <li key={q.id} className="flex items-center justify-between text-xs">
@@ -99,7 +126,7 @@ const QuestConditionStatusDialog: React.FC<QuestConditionStatusDialogProps> = ({
                                                                 </div>
                                                                 {isQuestCompleted && (
                                                                     <span className="text-stone-500">
-                                                                        {new Date(completion.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                        {new Date(completion!.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                                     </span>
                                                                 )}
                                                             </li>

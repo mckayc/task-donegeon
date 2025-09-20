@@ -10,6 +10,7 @@ import ArchersFollyGame from './ArchersFollyGame';
 import TetrisGame from './TetrisGame';
 import GemstoneMinesGame from './GemstoneMinesGame';
 import LabyrinthGame from './LabyrinthGame';
+import AlchemistsTrialGame from './AlchemistsTrialGame';
 
 interface GameOverlayProps {
   gameId: string;
@@ -37,6 +38,8 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
         return <GemstoneMinesGame onClose={onClose} />;
       case 'minigame-labyrinth':
         return <LabyrinthGame onClose={onClose} />;
+      case 'minigame-alchemists-trial':
+        return <AlchemistsTrialGame onClose={onClose} />;
       default:
         return (
             <div className="w-full h-full flex flex-col items-center justify-center text-white text-center">

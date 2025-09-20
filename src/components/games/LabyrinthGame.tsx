@@ -79,23 +79,22 @@ const LabyrinthGame: React.FC<LabyrinthGameProps> = ({ onClose }) => {
         ctx.beginPath();
         for (let y = 0; y < MAZE_HEIGHT; y++) {
             for (let x = 0; x < MAZE_WIDTH; x++) {
-                if (mazeRef.current[y][x].top) { ctx.moveTo(x * CELL_SIZE, y * CELL_SIZE); ctx.lineTo((x + 1) * CELL_SIZE, y * CELL_SIZE); }
-                if (mazeRef.current[y][x].right) { ctx.moveTo((x + 1) * CELL_SIZE, y * CELL_SIZE); ctx.lineTo((x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE); }
-                if (mazeRef.current[y][x].bottom) { ctx.moveTo((x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE); ctx.lineTo(x * CELL_SIZE, (y + 1) * CELL_SIZE); }
-                if (mazeRef.current[y][x].left) { ctx.moveTo(x * CELL_SIZE, (y + 1) * CELL_SIZE); ctx.lineTo(x * CELL_SIZE, y * CELL_SIZE); }
+                if (mazeRef.current[y]?.[x]?.top) { ctx.moveTo(x * CELL_SIZE, y * CELL_SIZE); ctx.lineTo((x + 1) * CELL_SIZE, y * CELL_SIZE); }
+                if (mazeRef.current[y]?.[x]?.right) { ctx.moveTo((x + 1) * CELL_SIZE, y * CELL_SIZE); ctx.lineTo((x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE); }
+                if (mazeRef.current[y]?.[x]?.bottom) { ctx.moveTo((x + 1) * CELL_SIZE, (y + 1) * CELL_SIZE); ctx.lineTo(x * CELL_SIZE, (y + 1) * CELL_SIZE); }
+                if (mazeRef.current[y]?.[x]?.left) { ctx.moveTo(x * CELL_SIZE, (y + 1) * CELL_SIZE); ctx.lineTo(x * CELL_SIZE, y * CELL_SIZE); }
             }
         }
         ctx.stroke();
 
-        // Draw Player
-        ctx.fillStyle = '#34d399'; // Emerald 400
-        ctx.beginPath();
-        ctx.arc(playerRef.current.x * CELL_SIZE + CELL_SIZE / 2, playerRef.current.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2 - 4, 0, 2 * Math.PI);
-        ctx.fill();
+        // Draw Player and Minotaur Emojis
+        ctx.font = `${CELL_SIZE * 0.8}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
 
-        // Draw Minotaur
-        ctx.fillStyle = '#ef4444'; // Red 500
-        ctx.fillRect(minotaurRef.current.x * CELL_SIZE + 5, minotaurRef.current.y * CELL_SIZE + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+        ctx.fillText('🦸', playerRef.current.x * CELL_SIZE + CELL_SIZE / 2, playerRef.current.y * CELL_SIZE + CELL_SIZE / 2);
+        ctx.fillText('👹', minotaurRef.current.x * CELL_SIZE + CELL_SIZE / 2, minotaurRef.current.y * CELL_SIZE + CELL_SIZE / 2);
+
     }, []);
 
     const moveMinotaur = useCallback(() => {

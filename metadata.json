@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.31 - Minigame Bonanza",
-  "version": "0.5.31",
-  "description": "A major update to the Arcade, featuring UI improvements, animated gems in Gemstone Mines, and the brand new Labyrinth of the Minotaur game.",
+  "name": "Task Donegeon 2.0 - 0.5.32 - Minigame Mania",
+  "version": "0.5.32",
+  "description": "A massive update to the Arcade! Labyrinth of the Minotaur and Dungeon Dash get emoji makeovers. Forge Master is completely overhauled with new gameplay. And introducing a brand new game: Alchemist's Trial!",
   "requestFramePermissions": [
     "camera"
   ],

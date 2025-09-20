@@ -11,6 +11,7 @@ import {
     executeExchangeAPI, proposeTradeAPI, updateTradeOfferAPI, acceptTradeAPI, cancelOrRejectTradeAPI, 
     sendGiftAPI, useItemAPI, craftItemAPI 
 } from '../api';
+import { bugLogger } from '../utils/bugLogger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -175,35 +176,16 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
         },
         approvePurchaseRequest: async (requestId, approverId) => {
-            const result = await apiAction(() => approvePurchaseRequestAPI(requestId, approverId), 'Purchase approved!');
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result as any;
-                if(updatedUser) updateUser(updatedUser.id, updatedUser);
-                if(updatedPurchaseRequest) {
-                    dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-                }
-            }
+            bugLogger.add({ type: 'ACTION', message: `[EconomyContext] Approving purchase request ID: ${requestId}` });
+            await apiAction(() => approvePurchaseRequestAPI(requestId, approverId), 'Purchase approved!');
         },
         rejectPurchaseRequest: async (requestId, rejecterId) => {
-            const result = await apiAction(() => rejectPurchaseRequestAPI(requestId, rejecterId), 'Purchase rejected.');
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result as any;
-                if(updatedUser) updateUser(updatedUser.id, updatedUser);
-                if(updatedPurchaseRequest) {
-                    dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-                }
-            }
+            bugLogger.add({ type: 'ACTION', message: `[EconomyContext] Rejecting purchase request ID: ${requestId}` });
+            await apiAction(() => rejectPurchaseRequestAPI(requestId, rejecterId), 'Purchase rejected.');
         },
         cancelPurchaseRequest: async (requestId) => {
-            if (!currentUser) return;
-            const result = await apiAction(() => cancelPurchaseRequestAPI(requestId), 'Purchase cancelled.');
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result as any;
-                if(updatedUser) updateUser(updatedUser.id, updatedUser);
-                if(updatedPurchaseRequest) {
-                    dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-                }
-            }
+            bugLogger.add({ type: 'ACTION', message: `[EconomyContext] Cancelling purchase request ID: ${requestId}` });
+            await apiAction(() => cancelPurchaseRequestAPI(requestId), 'Purchase cancelled.');
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId), 'Exchange successful!');

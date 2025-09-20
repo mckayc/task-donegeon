@@ -16,6 +16,7 @@ import {
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
 import { useSystemReducerDispatch } from './SystemContext';
+import { bugLogger } from '../utils/bugLogger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -174,23 +175,14 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         },
         approveQuestCompletion: async (id, approverId, note) => {
-            const result = await apiAction(() => approveQuestCompletionAPI(id, approverId, note), 'Quest approved!');
-            if (result) {
-                const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
-                if (updatedUser) updateUser(updatedUser.id, updatedUser);
-                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
-                if (newUserTrophies?.length > 0) progressionDispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
-                if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
-            }
+            bugLogger.add({ type: 'ACTION', message: `[QuestsContext] Approving quest completion ID: ${id}` });
+            await apiAction(() => approveQuestCompletionAPI(id, approverId, note), 'Quest approved!');
+            // State update is now handled by the server-sent event sync for consistency.
         },
         rejectQuestCompletion: async (id, rejecterId, note) => {
-            const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
-            if (result) {
-                const { updatedCompletion } = result as any;
-                if (updatedCompletion) {
-                    dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
-                }
-            }
+            bugLogger.add({ type: 'ACTION', message: `[QuestsContext] Rejecting quest completion ID: ${id}` });
+            await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note), 'Quest rejected.');
+            // State update is now handled by the server-sent event sync for consistency.
         },
         markQuestAsTodo: async (questId, userId) => {
             const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
@@ -225,11 +217,11 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
         },
         approveClaim: async (questId, userId, adminId) => {
-            // Remove optimistic updates and rely on server-triggered sync
+            bugLogger.add({ type: 'ACTION', message: `[QuestsContext] Approving claim for quest ${questId} by user ${userId}` });
             await apiAction(() => approveClaimAPI(questId, userId, adminId), 'Claim approved!');
         },
         rejectClaim: async (questId, userId, adminId) => {
-            // Remove optimistic updates and rely on server-triggered sync
+            bugLogger.add({ type: 'ACTION', message: `[QuestsContext] Rejecting claim for quest ${questId} by user ${userId}` });
             await apiAction(() => rejectClaimAPI(questId, userId, adminId), 'Claim rejected.');
         },
         updateReadingProgress: async (questId, userId, data) => {

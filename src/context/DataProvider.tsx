@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
 // FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { User, IAppData } from '../types';
@@ -9,6 +10,7 @@ import { ProgressionDispatchContext } from './ProgressionContext';
 import { QuestsDispatchContext } from './QuestsContext';
 // FIX: Import SystemState from its source file.
 import { SystemDispatchContext, SystemState } from './SystemContext';
+import { bugLogger } from '../utils/bugLogger';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
@@ -49,10 +51,26 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { updates, newSyncTimestamp } = await response.json();
 
         if (updates) {
+            bugLogger.add({ type: 'STATE_CHANGE', message: '[DataProvider] Received sync data from server.', element: { keys: Object.keys(updates) } as any });
+            
             // Dispatch updates to all relevant contexts
             if (updates.settings) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { settings: updates.settings } });
             if (updates.themes) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { themes: updates.themes } });
-            if (updates.users) setUsers(updates.users);
+            
+            if (updates.users) {
+                bugLogger.add({ type: 'STATE_CHANGE', message: `[DataProvider] Sync received ${updates.users.length} user updates.` });
+                setUsers(prevUsers => {
+                    bugLogger.add({ type: 'STATE_CHANGE', message: `[DataProvider] Merging users. Before: ${prevUsers.length} users.` });
+                    const userMap = new Map(prevUsers.map(u => [u.id, u]));
+                    (updates.users as User[]).forEach(updatedUser => {
+                        userMap.set(updatedUser.id, updatedUser);
+                    });
+                    const newUsers = Array.from(userMap.values());
+                    bugLogger.add({ type: 'STATE_CHANGE', message: `[DataProvider] Merged users. After: ${newUsers.length} users.` });
+                    return newUsers;
+                });
+            }
+
             if (updates.loginHistory) setLoginHistory(updates.loginHistory);
             if (updates.quests) questsDispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: updates.quests } });
             if (updates.questGroups) questsDispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questGroups: updates.questGroups } });

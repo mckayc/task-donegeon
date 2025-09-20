@@ -179,15 +179,15 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 </ul>
             </li>
             <li><strong>Rune Breaker:</strong> A fantasy-themed version of the classic *Breakout*. Control a magical shield and bounce an orb to break rows of enchanted runes.</li>
-            <li><strong>Dungeon Dash:</strong> An endless runner with a new "slide" mechanic! Control a hero emoji ('🏃') who must jump over fire pits ('🔥') and slide under flying ghosts ('👻').</li>
+            <li><strong>Dungeon Dash:</strong> An endless runner with a new "slide" mechanic! Control a hero emoji ('🏃') who must jump over fire pits ('🔥') and slide under flying ghosts ('👻'). The runner emoji now correctly faces right.</li>
             <li><strong>Forge Master:</strong> A complete gameplay overhaul! Instead of a simple timing bar, strike a piece of metal on an anvil as it heats and cools. Time your strike when the metal is glowing bright yellow for a "Perfect" hit to maximize your score and weapon quality.</li>
             <li><strong>Archer's Folly:</strong> An archery game where the player clicks and drags to aim their bow, hitting a series of moving targets. The game now includes a power meter and a trajectory line to help players aim. The difficulty also gradually increases, with targets getting smaller and faster as the score increases.</li>
             <li><strong>Snake:</strong> The classic game of snake. It now features a larger play area, a slower starting speed, a "3, 2, 1, GO!" countdown, and instant restart from the game over screen. On-screen controls are now always visible on tablet-sized devices.</li>
             <li><strong>Labyrinth of the Minotaur:</strong> Navigate a procedurally generated maze, find the exit, and escape the fearsome Ogre ('👹') who relentlessly hunts your hero ('🦸').</li>
             <li><strong>Gemstone Mines:</strong> This match-3 game has been visually upgraded. Instead of plain colors, it now uses vibrant fruit emojis and features a satisfying particle burst effect when you make a match.</li>
             <li><strong>Alchemist's Trial:</strong> A brand new "Simon"-style memory game. Watch the sequence of magical ingredients and repeat it perfectly. The sequence gets longer with each successful round!</li>
-            <li><strong>Goblin Ambush:</strong> A "whack-a-mole" style game.</li>
-            <li><strong>River Crossing:</strong> Guide your hero across a busy road and a dangerous river.</li>
+            <li><strong>Goblin Ambush:</strong> A "whack-a-mole" style game where you must click on goblins as they appear, but avoid the friendly gnomes!</li>
+            <li><strong>River Crossing:</strong> A "Frogger"-style game. Guide your hero across a busy road and a dangerous river to reach safety.</li>
             <li><strong>Wizard's Vortex:</strong> A top-down shooter where you defend a central point from waves of monsters.</li>
         </ul>
         <h4>Arcade Leaderboard</h4>
@@ -241,6 +241,18 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of March 7, 2026 (v0.5.33)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Arcade Overhaul:</strong> A major update to the Arcade with new games and gameplay improvements.
+                    <ul className="list-disc list-inside pl-6 mt-2">
+                        <li><strong>New Games Implemented:</strong> Three new games are now fully playable: **Alchemist's Trial** (a Simon-style memory game), **Goblin Ambush** (a whack-a-mole game), and **River Crossing** (a Frogger-style game).</li>
+                        <li><strong>Forge Master Rework:</strong> Completely redesigned the Forge Master game. It now features a more interactive heat-based mechanic where players must time their strikes to the metal's temperature for optimal scores.</li>
+                        <li>**Dungeon Dash Fixes:** The runner emoji now correctly faces the direction of movement, and flying ghost obstacles have been repositioned to make the slide mechanic functional.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of February 28, 2026 (v0.5.32)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

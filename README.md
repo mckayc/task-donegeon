@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.29
+**Version:** 0.5.33
 
 ---
 
@@ -15,68 +15,24 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of December 11, 2025 (v0.5.29):**
-    -   **Major Bug Fix Release:** A comprehensive update addressing multiple critical bugs.
-        -   **AI Tutor Overhaul:** Fixed issues where the tutor would show raw code instead of interactive questions, failed to auto-scroll, and incorrectly scored quizzes. The UI and underlying logic have been improved for a more stable learning experience.
-        -   **Approvals Page Stability:** Resolved a state management bug where approving an item would cause all other pending items to disappear from the view until a page refresh.
-        -   **Automated Backup Cleanup:** Fixed a critical bug where old automated backups were not being cleaned up correctly if their corresponding schedule was deleted, leading to excessive storage use. The system now properly prunes these "orphaned" backups.
+-   **Week of March 7, 2026 (v0.5.33):**
+    -   **Arcade Overhaul:** A major update to the Arcade with new games and gameplay improvements.
+        -   **New Games:** Implemented three new playable games: **Alchemist's Trial** (a Simon-style memory game), **Goblin Ambush** (a whack-a-mole game), and **River Crossing** (a Frogger-style game).
+        -   **Forge Master Rework:** Completely redesigned the Forge Master game. It now features a more interactive heat-based mechanic where players must time their strikes to the metal's temperature for optimal scores.
+        -   **Dungeon Dash Fixes:** The runner emoji now faces the correct direction, and flying ghost obstacles have been repositioned to make the slide mechanic functional.
 
--   **Week of December 4, 2025 (v0.5.28):**
-    -   **AI Tutor Bug Fixes:** A significant update to the AI Tutor to resolve multiple critical bugs. Fixes an issue where the AI would display raw tool code in the chat instead of interactive questions. The chat panel now correctly auto-scrolls when new messages appear. Resolves a scoring bug where the last question of the initial quiz was always marked as incorrect. The font size for chat and quiz answers has also been increased for better readability.
+-   **Week of February 28, 2026 (v0.5.32):**
+    -   **Minigame Mania:** A massive update to the Arcade based on user feedback!
+        -   **New Game - Alchemist's Trial:** A "Simon"-style memory game where you must repeat increasingly long sequences of magical ingredients.
+        -   **Labyrinth Overhaul:** The player and minotaur are now represented by emojis ('🦸' and '👹') for a more thematic experience.
+        -   **Dungeon Dash Overhaul:** The player is now a running emoji ('🏃'). Added a new "slide" mechanic (down arrow) to dodge flying ghost obstacles ('👻') in addition to jumping over fire pits ('🔥').
+        -   **Forge Master Overhaul:** This game has been completely rebuilt. Instead of a simple timing bar, you now strike a piece of metal on an anvil that heats and cools, with sparks flying. Time your strike to the "perfect" heat to maximize your weapon's quality and score.
 
--   **Week of November 27, 2025 (v0.5.27):**
-    -   **AI Tutor Overhaul & Bug Fixes:** A major overhaul of the AI Tutor feature to improve stability and user experience. Fixes a critical bug where the AI would show raw tool code instead of interactive questions during a lesson. The UI has been redesigned to separate conversation from quizzes, and the chat now auto-scrolls correctly. Also resolves an issue where the last question of the initial quiz was always marked incorrect.
-
--   **Week of November 27, 2025 (v0.5.26):**
-    -   **Sidebar Interactivity Fix:** Fixed bugs where the "Chat" link in the sidebar was unresponsive and collapsed section headers (e.g., "Content Management") were not interactive. Clicking a collapsed header icon now correctly opens a persistent flyout menu to access its sub-links.
-
--   **Week of November 20, 2025 (v0.5.25):**
-    -   **Arcade Enhancements:** Added a "Rules" button to every minigame in the Arcade, which opens a dialog explaining the objective and controls for that game.
-    -   **New Games (Coming Soon):** Implemented placeholder components for five new minigames: Labyrinth of the Minotaur, Alchemist's Trial, Goblin Ambush, River Crossing, and Wizard's Vortex. These games now appear in the Arcade and are ready for full development.
-
--   **Week of November 13, 2025 (v0.5.24):**
-    -   **Sidebar UI/UX Fix:** Fixed a bug where section headers in the sidebar (e.g., "Content Management") were missing their icons when expanded. Additionally, when the sidebar is collapsed, these headers are now interactive; hovering over their icons reveals a flyout menu of their child links, fixing an issue where they were previously unclickable.
-
--   **Week of November 6, 2025 (v0.5.23):**
-    -   **AI Tutor Readability & UX:** The AI Tutor now displays a friendly welcome message while it prepares its initial quiz. The font size for both chat messages and quiz answers has been increased for better readability, improving the overall user experience.
-
--   **Week of October 30, 2025 (v0.5.22):**
-    -   **AI Tutor Enhancements:** Resolved a configuration issue causing the "Manage AI Tutors" sidebar link to appear without a text label on new installations. Added a new "General Instructions" field to the AI Tutor editor, allowing administrators to provide overarching guidelines to the AI during tutoring sessions.
-
--   **Week of October 23, 2025 (v0.5.21):**
-    -   **AI Tutor Enhancements:** Fixed a bug where the "Manage AI Tutors" sidebar link was missing its text label. Added a new "General Instructions" field to the AI Tutor editor to allow for better personalization of the tutor's behavior, which is now passed to the AI during sessions.
-
--   **Week of October 16, 2025 (v0.5.20):**
-    -   **Sidebar Label Fix:** Fixed a UI bug where the "Manage AI Tutors" link in the sidebar was missing its text label due to an incomplete backend configuration. The terminology is now correctly displayed.
-
--   **Week of October 9, 2025 (v0.5.19):**
-    -   **Automated Backup Cleanup Fix:** Resolved a critical bug where the system would fail to delete old automated backups according to the defined schedule limits, causing an excessive number of backup files to accumulate. The sorting logic for identifying the oldest backups has been made more robust to ensure cleanup runs correctly.
-
--   **Week of October 2, 2025 (v0.5.18):**
-    -   **AI Tutor UX Fix:** Resolved a bug where the AI Tutor would display multiple-choice questions as raw code in the main chat area. All interactive questions now correctly appear in the side panel, creating a clear separation between conversation and quizzes for a more stable user experience.
-
--   **Week of September 25, 2025 (v0.5.17):**
-    -   **AI Tutor UX Improvement:** Fixed a critical bug where multiple-choice questions from the AI Tutor could appear as raw code in the chat. The interaction model has been redesigned: the main chat area is now reserved for conversation, while all interactive questions appear in a dedicated panel on the right, providing a cleaner and more stable learning experience.
-
--   **Week of October 9, 2025 (v0.5.16):**
-    -   **Approvals Page Stability Fix:** Fixed a critical state management bug on the Approvals page where acting on one item (approving or rejecting) would cause all other pending items to incorrectly disappear from the view until the page was refreshed. The state update logic has been refactored to be more precise, ensuring a stable and predictable UI for administrators.
-
--   **Week of October 2, 2025 (v0.5.15):**
-    -   **Login Persistence Fix:** Resolved a critical bug that caused the application to forget the last logged-in user after an app update and page refresh. The system now correctly restores the user's session, ensuring a seamless experience without being redirected to the user selection screen.
-
--   **Week of September 25, 2025 (v0.5.14):**
-    -   **Enhanced Login Notifications:** Overhauled the login notification system for a more informative and user-friendly experience. The new popup includes a "Daily Briefing" that lists all required quests for the day, providing an immediate action list. Notifications are now grouped by type (e.g., "New Quests," "Approvals"), and users have two dismissal options: "Acknowledge & Continue" to mark notifications as read, and "Remind Me Later" to hide them for the current session while keeping them unread for the next login.
-
--   **Week of September 25, 2025 (v0.5.13):**
-    -   **Bug Squashing & Stability:** A major stability update resolving a large number of bugs across the application. This version fixes issues with state management, data synchronization, user management, automated backups, and significantly enhances the AI Tutor's reliability and user interface. Key fixes include ensuring the correct user is logged in after an update, fixing stale data in user selection screens, adding missing notification badges and labels, resolving UI disappearing acts in the approvals queue, and overhauling the AI Tutor to be more robust and user-friendly.
-
--   **Week of September 18, 2025 (v0.5.12):**
-    -   **Stability & AI Tutor Overhaul:** A major stability update resolving numerous bugs related to state management, data synchronization, and UI consistency. This version also significantly enhances the AI Tutor feature, improving its instructional flow, reliability, and administrative customization options. Key fixes include preventing the app from defaulting to the user selection screen after updates, ensuring the approvals queue updates correctly, adding missing sidebar labels, and fixing AI Tutor's quiz logic and response handling to prevent raw code from being displayed.
-
--   **Week of September 18, 2025 (v0.5.11):**
-    -   **New Feature: AI Tutor Management:** Added a new "Manage AI Tutors" page for administrators. This allows for the creation of unique AI tutor personas with specific subjects, teaching styles, and sample questions.
-    -   **Quest Integration:** The "Create Quest" dialog now includes a new "AI Tutor" media type. When selected, administrators can choose from the list of created tutors to assign one to a quest, paving the way for interactive, AI-powered learning sessions.
-    -   **Technical Foundation:** The backend has been updated with new database entities, services, and API endpoints to support the creation, editing, and deletion of AI Tutors.
+-   **Week of February 21, 2026 (v0.5.31):**
+    -   **Minigame Bonanza:** A major update to the Arcade!
+        -   **New Game - Labyrinth of the Minotaur:** A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time!
+        -   **Arcade UI Overhaul:** Game cards now have a primary "Play" button that clearly shows the cost in Game Tokens. Under-construction games are now disabled to prevent accidental spending.
+        -   **Gemstone Mines Visual Upgrade:** The classic match-3 game now uses vibrant fruit emojis instead of plain colors and features a satisfying particle burst effect for matches.
 
 -   **Week of February 14, 2026 (v0.5.10):**
     -   **Kiosk Dimness Logic Refactor:** Refactored the Kiosk Mode dimming feature to use a more intuitive "Dimness Level" control. The percentage now directly corresponds to the screen overlay's opacity, fixing a bug where different levels looked the same and providing more predictable control for administrators.
@@ -256,4 +212,4 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 
 ### Phase 1: Foundational Features & Quality of Life
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
--   **Enhanced Security:---
+-   **Enhanced Security:------

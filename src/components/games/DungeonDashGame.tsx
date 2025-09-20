@@ -61,11 +61,15 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
         ctx.fillRect(0, GAME_HEIGHT - GROUND_HEIGHT, GAME_WIDTH, GROUND_HEIGHT);
 
         const player = playerRef.current;
+        ctx.save();
+        ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+        ctx.scale(-1, 1); // Flip the runner emoji
         ctx.font = `${player.height * 0.9}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const playerEmoji = player.isCrouching ? '🧎' : '🏃';
-        ctx.fillText(playerEmoji, player.x + player.width / 2, player.y + player.height / 2);
+        ctx.fillText(playerEmoji, 0, 0);
+        ctx.restore();
 
         obstaclesRef.current.forEach(obstacle => {
             ctx.font = `${obstacle.height}px sans-serif`;
@@ -110,7 +114,7 @@ const DungeonDashGame: React.FC<DungeonDashGameProps> = ({ onClose }) => {
             if (type === 'pit') {
                 obstaclesRef.current.push({ x: GAME_WIDTH, y: GAME_HEIGHT - GROUND_HEIGHT - 30, width: 40, height: 40, type: 'pit' });
             } else {
-                obstaclesRef.current.push({ x: GAME_WIDTH, y: GAME_HEIGHT - GROUND_HEIGHT - PLAYER_HEIGHT_NORMAL, width: 40, height: 40, type: 'flyer' });
+                obstaclesRef.current.push({ x: GAME_WIDTH, y: GAME_HEIGHT - GROUND_HEIGHT - PLAYER_HEIGHT_NORMAL - 30, width: 40, height: 40, type: 'flyer' });
             }
         }
         

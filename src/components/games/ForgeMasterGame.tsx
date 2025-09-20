@@ -79,7 +79,10 @@ export const ForgeMasterGame: React.FC<ForgeMasterGameProps> = ({ onClose }) => 
     }, []);
     
     const gameLoop = useCallback(() => {
-        if (gameState !== 'playing') return;
+        if (gameState !== 'playing') {
+             if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+             return;
+        }
         // Update temperature
         let temp = metalTempRef.current;
         if (tempDirectionRef.current === 'up') {

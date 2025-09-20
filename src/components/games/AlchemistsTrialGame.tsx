@@ -24,28 +24,26 @@ const AlchemistsTrialGame: React.FC<AlchemistsTrialGameProps> = ({ onClose }) =>
     const [flashingButton, setFlashingButton] = useState<number | null>(null);
     const { submitScore } = useSystemDispatch();
     
-    const startNewGame = useCallback(() => {
-        setSequence([]);
-        setPlayerInput([]);
-        setScore(0);
-        // Start the first turn after a short delay
-        setTimeout(() => addNewToSequence([]), 500);
-    }, []);
-
-    const addNewToSequence = (currentSequence: number[]) => {
+    const addNewToSequence = useCallback((currentSequence: number[]) => {
         const nextVal = Math.floor(Math.random() * INGREDIENTS.length);
         const newSequence = [...currentSequence, nextVal];
         setSequence(newSequence);
         setPlayerInput([]);
         setGameState('watching');
-    };
+    }, []);
+
+    const startNewGame = useCallback(() => {
+        setSequence([]);
+        setPlayerInput([]);
+        setScore(0);
+        setTimeout(() => addNewToSequence([]), 500);
+    }, [addNewToSequence]);
 
     const handlePlayerClick = (index: number) => {
         if (gameState !== 'playing') return;
         
         const newPlayerInput = [...playerInput, index];
         
-        // Check if the current move is correct
         if (newPlayerInput[newPlayerInput.length - 1] !== sequence[newPlayerInput.length - 1]) {
             setGameState('game-over');
             submitScore('minigame-alchemists-trial', score);
@@ -54,15 +52,13 @@ const AlchemistsTrialGame: React.FC<AlchemistsTrialGameProps> = ({ onClose }) =>
 
         setPlayerInput(newPlayerInput);
 
-        // Check if the player has completed the sequence for this turn
         if (newPlayerInput.length === sequence.length) {
             setScore(s => s + sequence.length * 10);
             setGameState('watching');
-            setTimeout(() => addNewToSequence(sequence), 1000); // Add next item after a delay
+            setTimeout(() => addNewToSequence(sequence), 1000);
         }
     };
     
-    // Animate the sequence display
     useEffect(() => {
         if (gameState === 'watching' && sequence.length > 0) {
             let i = 0;

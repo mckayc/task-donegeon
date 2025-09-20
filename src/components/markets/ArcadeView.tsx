@@ -15,7 +15,7 @@ interface ArcadeViewProps {
     market: Market;
 }
 
-const UNIMPLEMENTED_GAMES = ['minigame-alchemists-trial', 'minigame-goblin-ambush', 'minigame-river-crossing', 'minigame-wizards-vortex'];
+const UNIMPLEMENTED_GAMES = ['minigame-wizards-vortex'];
 
 const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
     const { settings, minigames, gameScores } = useSystemState();

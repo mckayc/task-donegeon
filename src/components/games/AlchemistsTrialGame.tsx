@@ -24,10 +24,11 @@ const AlchemistsTrialGame: React.FC<AlchemistsTrialGameProps> = ({ onClose }) =>
     const [flashingButton, setFlashingButton] = useState<number | null>(null);
     const { submitScore } = useSystemDispatch();
     
-    const addNewToSequence = useCallback((currentSequence: number[]) => {
-        const nextVal = Math.floor(Math.random() * INGREDIENTS.length);
-        const newSequence = [...currentSequence, nextVal];
-        setSequence(newSequence);
+    const addNewToSequence = useCallback(() => {
+        setSequence(prevSequence => {
+            const nextVal = Math.floor(Math.random() * INGREDIENTS.length);
+            return [...prevSequence, nextVal];
+        });
         setPlayerInput([]);
         setGameState('watching');
     }, []);
@@ -36,12 +37,16 @@ const AlchemistsTrialGame: React.FC<AlchemistsTrialGameProps> = ({ onClose }) =>
         setSequence([]);
         setPlayerInput([]);
         setScore(0);
-        setTimeout(() => addNewToSequence([]), 500);
+        setTimeout(() => addNewToSequence(), 500);
     }, [addNewToSequence]);
 
     const handlePlayerClick = (index: number) => {
         if (gameState !== 'playing') return;
         
+        // Visual feedback on click
+        setFlashingButton(index);
+        setTimeout(() => setFlashingButton(null), 200);
+
         const newPlayerInput = [...playerInput, index];
         
         if (newPlayerInput[newPlayerInput.length - 1] !== sequence[newPlayerInput.length - 1]) {
@@ -55,7 +60,7 @@ const AlchemistsTrialGame: React.FC<AlchemistsTrialGameProps> = ({ onClose }) =>
         if (newPlayerInput.length === sequence.length) {
             setScore(s => s + sequence.length * 10);
             setGameState('watching');
-            setTimeout(() => addNewToSequence(sequence), 1000);
+            setTimeout(() => addNewToSequence(), 1000);
         }
     };
     

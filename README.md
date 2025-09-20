@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.33
+**Version:** 0.5.34
 
 ---
 
@@ -14,6 +14,14 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of March 14, 2026 (v0.5.34):**
+    -   **Minigame Polish & New Game:** A major update to the Arcade, implementing a new game and refining several others based on user feedback.
+        -   **New Game - Wizard's Vortex:** The previously unimplemented "Wizard's Vortex" is now playable! It's a top-down shooter where you defend a central point from waves of monsters by aiming with the mouse and clicking to fire.
+        -   **Forge Master Redesign:** The gameplay has been visually overhauled. A sword emoji now swings back and forth, and the player controls a hammer emoji to strike it. The sword's swing speed increases over time for a greater challenge.
+        -   **Goblin Ambush Enhancements:** Added a new lose condition where players have three lives and lose one for hitting a friendly gnome. Added "whack" and "ouch" animations for hitting characters.
+        -   **Alchemist's Trial Fix:** Corrected a logic bug that prevented the game from advancing past the first round. Added animations for button presses.
+        -   **River Crossing Fixes:** Fixed faulty collision detection that caused unfair deaths. The player character is now a classic frog emoji `🐸`.
 
 -   **Week of March 7, 2026 (v0.5.33):**
     -   **Arcade Overhaul:** A major update to the Arcade with new games and gameplay improvements.
@@ -212,4 +220,4 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 
 ### Phase 1: Foundational Features & Quality of Life
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
--   **Enhanced Security:------
+-   **Enhanced Security:

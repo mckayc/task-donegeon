@@ -78,22 +78,22 @@ const RiverCrossingGame: React.FC<RiverCrossingGameProps> = ({ onClose }) => {
             ctx.fillRect(0, y * CELL_SIZE, GAME_WIDTH, CELL_SIZE);
         });
         
+        ctx.font = `${CELL_SIZE * 0.9}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
         homesRef.current.forEach((filled, i) => {
-            if(filled) ctx.fillText('🦸', (i * 2 + 1.5) * CELL_SIZE, 0.5 * CELL_SIZE);
+            if(filled) ctx.fillText('🐸', (i * 2 + 1.5) * CELL_SIZE, 0.5 * CELL_SIZE);
         });
 
         lanesRef.current.forEach(lane => {
             lane.obstacles.forEach(obs => {
-                ctx.font = `${CELL_SIZE * 0.9}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
                 ctx.fillText(obs.emoji, obs.x + obs.width / 2, lanesRef.current.indexOf(lane) * CELL_SIZE + CELL_SIZE / 2);
             });
         });
         
         const player = playerRef.current;
-        ctx.font = `${CELL_SIZE * 0.9}px sans-serif`;
-        ctx.fillText('🦸', player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2);
+        ctx.fillText('🐸', player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2);
 
     }, []);
 
@@ -110,10 +110,12 @@ const RiverCrossingGame: React.FC<RiverCrossingGameProps> = ({ onClose }) => {
         });
         
         // Collision Detection
+        const playerCenterX = player.x * CELL_SIZE + CELL_SIZE / 2;
         const currentLane = lanesRef.current[player.y];
+        
         if (currentLane.type === 'road') {
             for (const obs of currentLane.obstacles) {
-                if (player.x * CELL_SIZE < obs.x + obs.width && (player.x + 1) * CELL_SIZE > obs.x) {
+                if (playerCenterX > obs.x && playerCenterX < obs.x + obs.width) {
                     setLives(l => l - 1);
                     resetLevel();
                     return;
@@ -122,9 +124,8 @@ const RiverCrossingGame: React.FC<RiverCrossingGameProps> = ({ onClose }) => {
         } else if (currentLane.type === 'river') {
             let onLog = false;
             for (const obs of currentLane.obstacles) {
-                if (player.x * CELL_SIZE < obs.x + obs.width && (player.x + 1) * CELL_SIZE > obs.x) {
+                if (playerCenterX > obs.x && playerCenterX < obs.x + obs.width) {
                     onLog = true;
-                    // FIX: Changed `lane` to `currentLane` to use the variable in the correct scope.
                     player.x += currentLane.speed * currentLane.direction / CELL_SIZE;
                     break;
                 }
@@ -136,7 +137,7 @@ const RiverCrossingGame: React.FC<RiverCrossingGameProps> = ({ onClose }) => {
             }
         }
         
-        if (player.x < 0 || player.x >= COLS) {
+        if (player.x * CELL_SIZE < -CELL_SIZE / 2 || player.x * CELL_SIZE > GAME_WIDTH - CELL_SIZE / 2) {
              setLives(l => l - 1);
              resetLevel();
              return;

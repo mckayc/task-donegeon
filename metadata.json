@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.33 - Arcade Overhaul",
-  "version": "0.5.33",
-  "description": "A major update fixing and enhancing several Arcade games. Dungeon Dash and Forge Master are overhauled. Alchemist's Trial, Goblin Ambush, and River Crossing are now fully playable!",
+  "name": "Task Donegeon 2.0 - 0.5.34 - Minigame Mania",
+  "version": "0.5.34",
+  "description": "A major update adding the new Wizard's Vortex game and overhauling Forge Master, Goblin Ambush, Alchemist's Trial, and River Crossing with new mechanics and fixes.",
   "requestFramePermissions": [
     "camera"
   ],

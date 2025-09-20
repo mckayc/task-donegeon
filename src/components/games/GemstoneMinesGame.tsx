@@ -51,7 +51,7 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
 
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
-                if (boardRef.current[r][c] > -1) {
+                if (boardRef.current[r]?.[c] > -1) {
                     const x = c * GEM_SIZE + GEM_SIZE / 2;
                     const y = r * GEM_SIZE + GEM_SIZE / 2;
                     ctx.fillText(GEM_EMOJIS[boardRef.current[r][c]], x, y);
@@ -79,14 +79,14 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
 
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS - 2; c++) {
-                if (board[r][c] > -1 && board[r][c] === board[r][c + 1] && board[r][c] === board[r][c + 2]) {
+                if (board[r]?.[c] > -1 && board[r][c] === board[r][c + 1] && board[r][c] === board[r][c + 2]) {
                     matches.push({ row: r, col: c }, { row: r, col: c + 1 }, { row: r, col: c + 2 });
                 }
             }
         }
         for (let c = 0; c < COLS; c++) {
             for (let r = 0; r < ROWS - 2; r++) {
-                if (board[r][c] > -1 && board[r][c] === board[r+1][c] && board[r][c] === board[r+2][c]) {
+                if (board[r]?.[c] > -1 && board[r][c] === board[r+1]?.[c] && board[r][c] === board[r+2]?.[c]) {
                     matches.push({ row: r, col: c }, { row: r + 1, col: c }, { row: r + 2, col: c });
                 }
             }
@@ -188,13 +188,11 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
     
     const resetGame = useCallback(() => {
         createBoard();
-        while (findMatches().length > 0) {
-            handleMatches();
-        }
+        handleMatches(); // Check for initial matches and start the chain reaction
         setScore(0);
         setTimeLeft(TIME_LIMIT);
         setGameState('playing');
-    }, [createBoard, findMatches, handleMatches]);
+    }, [createBoard, handleMatches]);
     
     useEffect(() => {
         let isMounted = true;

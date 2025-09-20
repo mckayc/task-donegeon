@@ -67,6 +67,12 @@ const LabyrinthGame: React.FC<LabyrinthGameProps> = ({ onClose }) => {
         ctx.fillStyle = '#1e293b'; // Slate 800
         ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+        // Draw Exit Emoji
+        ctx.font = `${CELL_SIZE * 0.8}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🚪', exitRef.current.x * CELL_SIZE + CELL_SIZE / 2, exitRef.current.y * CELL_SIZE + CELL_SIZE / 2 + 2);
+
         // Draw maze walls
         ctx.strokeStyle = '#475569'; // Slate 600
         ctx.lineWidth = 2;
@@ -80,10 +86,6 @@ const LabyrinthGame: React.FC<LabyrinthGameProps> = ({ onClose }) => {
             }
         }
         ctx.stroke();
-        
-        // Draw Exit
-        ctx.fillStyle = '#facc15'; // Amber 400
-        ctx.fillRect(exitRef.current.x * CELL_SIZE, exitRef.current.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 
         // Draw Player
         ctx.fillStyle = '#34d399'; // Emerald 400
@@ -141,7 +143,9 @@ const LabyrinthGame: React.FC<LabyrinthGameProps> = ({ onClose }) => {
             setGameState('game-over');
             submitScore('minigame-labyrinth', 0);
         } else if (playerRef.current.x === exitRef.current.x && playerRef.current.y === exitRef.current.y) {
-            const finalScore = score + timeLeft * 10;
+            const winBonus = 500;
+            const timeBonus = timeLeft * 10;
+            const finalScore = winBonus + timeBonus;
             setScore(finalScore);
             setGameState('win');
             submitScore('minigame-labyrinth', finalScore);

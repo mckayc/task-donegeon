@@ -8,7 +8,6 @@ import Button from '../user-interface/Button';
 import { User, Guild, RewardCategory, TradeOffer } from '../../types';
 import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
 import Avatar from '../user-interface/Avatar';
-// import DonateDialog from '../guilds/DonateDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import GiftDialog from '../trading/GiftDialog';
@@ -29,7 +28,6 @@ const GuildPage: React.FC = () => {
     const { addNotification } = useNotificationsDispatch();
     
     const [viewingMember, setViewingMember] = useState<{ user: User; guild: Guild } | null>(null);
-    const [donatingToGuild, setDonatingToGuild] = useState<Guild | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const [giftingToUser, setGiftingToUser] = useState<{ user: User; guild: Guild } | null>(null);
     const [tradeToView, setTradeToView] = useState<TradeOffer | null>(null);
@@ -94,7 +92,6 @@ const GuildPage: React.FC = () => {
             <div className="p-6 border-t border-stone-700/60">
                 <div className="flex justify-between items-center">
                     <h4 className="font-bold text-lg text-stone-200">Guild Treasury</h4>
-                    <Button variant="secondary" size="sm" onClick={() => setDonatingToGuild(guild)}>Donate</Button>
                 </div>
                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -185,7 +182,6 @@ const GuildPage: React.FC = () => {
                     <p className="text-stone-400">You are not currently a member of any {settings.terminology.group.toLowerCase()}.</p>
                 </Card>
             )}
-            {/*donatingToGuild && <DonateDialog guild={donatingToGuild} onClose={() => setDonatingToGuild(null)} />*/}
             {giftingToUser && <GiftDialog recipient={giftingToUser.user} guild={giftingToUser.guild} onClose={() => setGiftingToUser(null)} />}
             {tradeToView && <TradeDialog tradeOffer={tradeOffers.find(t => t.id === tradeToView.id)!} onClose={() => setTradeToView(null)} />}
         </div>

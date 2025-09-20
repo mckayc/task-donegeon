@@ -68,7 +68,7 @@ const initialState: EconomyState = {
 const economyReducer = (state: EconomyState, action: EconomyAction): EconomyState => {
     switch (action.type) {
         case 'SET_ECONOMY_DATA':
-            return { ...state, ...action.payload };
+            return { ...initialState, ...action.payload };
         case 'UPDATE_ECONOMY_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {
@@ -175,14 +175,29 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
         },
         approvePurchaseRequest: async (id, approverId) => {
-            await apiAction(() => approvePurchaseRequestAPI(id, approverId), 'Purchase approved!');
+            const result = await apiAction(() => approvePurchaseRequestAPI(id, approverId), 'Purchase approved!');
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result as any;
+                if(updatedUser) updateUser(updatedUser.id, updatedUser);
+                if(updatedPurchaseRequest) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
         },
         rejectPurchaseRequest: async (id, rejecterId) => {
-            await apiAction(() => rejectPurchaseRequestAPI(id, rejecterId), 'Purchase rejected.');
+            const result = await apiAction(() => rejectPurchaseRequestAPI(id, rejecterId), 'Purchase rejected.');
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result as any;
+                if(updatedUser) updateUser(updatedUser.id, updatedUser);
+                if(updatedPurchaseRequest) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
         },
          cancelPurchaseRequest: async (id) => {
             if (!currentUser) return;
-            await apiAction(() => cancelPurchaseRequestAPI(id), 'Purchase cancelled.');
+            const result = await apiAction(() => cancelPurchaseRequestAPI(id), 'Purchase cancelled.');
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result as any;
+                if(updatedUser) updateUser(updatedUser.id, updatedUser);
+                if(updatedPurchaseRequest) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId), 'Exchange successful!');

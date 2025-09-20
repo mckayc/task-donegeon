@@ -174,29 +174,35 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [newPurchaseRequest] } });
             }
         },
-        approvePurchaseRequest: async (id, approverId) => {
-            const result = await apiAction(() => approvePurchaseRequestAPI(id, approverId), 'Purchase approved!');
+        approvePurchaseRequest: async (requestId, approverId) => {
+            const result = await apiAction(() => approvePurchaseRequestAPI(requestId, approverId), 'Purchase approved!');
             if (result) {
                 const { updatedUser, updatedPurchaseRequest } = result as any;
                 if(updatedUser) updateUser(updatedUser.id, updatedUser);
-                if(updatedPurchaseRequest) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                if(updatedPurchaseRequest) {
+                    dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                }
             }
         },
-        rejectPurchaseRequest: async (id, rejecterId) => {
-            const result = await apiAction(() => rejectPurchaseRequestAPI(id, rejecterId), 'Purchase rejected.');
+        rejectPurchaseRequest: async (requestId, rejecterId) => {
+            const result = await apiAction(() => rejectPurchaseRequestAPI(requestId, rejecterId), 'Purchase rejected.');
             if (result) {
                 const { updatedUser, updatedPurchaseRequest } = result as any;
                 if(updatedUser) updateUser(updatedUser.id, updatedUser);
-                if(updatedPurchaseRequest) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                if(updatedPurchaseRequest) {
+                    dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                }
             }
         },
-         cancelPurchaseRequest: async (id) => {
+        cancelPurchaseRequest: async (requestId) => {
             if (!currentUser) return;
-            const result = await apiAction(() => cancelPurchaseRequestAPI(id), 'Purchase cancelled.');
+            const result = await apiAction(() => cancelPurchaseRequestAPI(requestId), 'Purchase cancelled.');
             if (result) {
                 const { updatedUser, updatedPurchaseRequest } = result as any;
                 if(updatedUser) updateUser(updatedUser.id, updatedUser);
-                if(updatedPurchaseRequest) dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                if(updatedPurchaseRequest) {
+                    dispatch({ type: 'UPDATE_ECONOMY_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                }
             }
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {

@@ -187,7 +187,9 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
             if (result) {
                 const { updatedCompletion } = result as any;
-                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
+                if (updatedCompletion) {
+                    dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
+                }
             }
         },
         markQuestAsTodo: async (questId, userId) => {

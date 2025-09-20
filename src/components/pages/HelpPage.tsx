@@ -171,6 +171,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <h3>The Arcade & Minigames</h3>
         <p>The "Arcade" is a special market where users can spend "Game Tokens" to play minigames.</p>
          <ul className="list-disc list-inside space-y-2">
+            <li><strong>UI Overhaul:</strong> The action buttons on game cards have been redesigned for clarity. The "Play" button is now a prominent, primary action and clearly displays the cost to play. Placeholder or under-construction games are now disabled to prevent users from spending tokens on them.</li>
             <li><strong>Game Rules:</strong> A new "Rules" button has been added to every game card in the Arcade. Clicking it will open a dialog explaining the objective and how to play.</li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!
                 <ul className="list-disc list-inside pl-6 mt-2">
@@ -182,7 +183,8 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li><strong>Forge Master:</strong> A rhythm and timing game. The player must click at the right moment to strike a piece of hot metal with a hammer to forge a powerful weapon.</li>
             <li><strong>Archer's Folly:</strong> An archery game where the player clicks and drags to aim their bow, hitting a series of moving targets. The game now includes a power meter and a trajectory line to help players aim. The difficulty also gradually increases, with targets getting smaller and faster as the score increases.</li>
             <li><strong>Snake:</strong> The classic game of snake. It now features a larger play area, a slower starting speed, a "3, 2, 1, GO!" countdown, and instant restart from the game over screen. On-screen controls are now always visible on tablet-sized devices.</li>
-            <li><strong>Labyrinth of the Minotaur:</strong> Navigate a maze, find the exit, and avoid the minotaur.</li>
+            <li><strong>Labyrinth of the Minotaur:</strong> A brand new game! Navigate a procedurally generated maze, find the golden exit, and escape the fearsome Minotaur who hunts you down.</li>
+            <li><strong>Gemstone Mines:</strong> This match-3 game has been visually upgraded. Instead of plain colors, it now uses vibrant fruit emojis and features a satisfying particle burst effect when you make a match.</li>
             <li><strong>Alchemist's Trial:</strong> A memory game where you repeat sequences of ingredients.</li>
             <li><strong>Goblin Ambush:</strong> A "whack-a-mole" style game.</li>
             <li><strong>River Crossing:</strong> Guide your hero across a busy road and a dangerous river.</li>
@@ -239,6 +241,18 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of February 21, 2026 (v0.5.31)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Minigame Bonanza:</strong> A major update to the Arcade!
+                    <ul className="list-disc list-inside pl-6 mt-2">
+                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time!</li>
+                        <li><strong>Arcade UI Overhaul:</strong> Game cards now have a primary "Play" button that clearly shows the cost in Game Tokens. Under-construction games are now disabled to prevent accidental spending.</li>
+                        <li><strong>Gemstone Mines Visual Upgrade:</strong> The classic match-3 game now uses vibrant fruit emojis instead of plain colors and features a satisfying particle burst effect for matches.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of February 14, 2026 (v0.5.10)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

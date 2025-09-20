@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.30 - Kiosk Mode Live Refresh",
-  "version": "0.5.30",
-  "description": "Adds a live data refresh to the Kiosk Mode screen, ensuring quest deadlines and availability are always up-to-date without requiring a manual page reload.",
+  "name": "Task Donegeon 2.0 - 0.5.31 - Minigame Bonanza",
+  "version": "0.5.31",
+  "description": "A major update to the Arcade, featuring UI improvements, animated gems in Gemstone Mines, and the brand new Labyrinth of the Minotaur game.",
   "requestFramePermissions": [
     "camera"
   ],

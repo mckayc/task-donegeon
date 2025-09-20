@@ -8,18 +8,26 @@ import Button from '../user-interface/Button';
 import ConfirmPlayDialog from './ConfirmPlayDialog';
 import GameStatsDialog from '../games/GameStatsDialog';
 import GameRulesDialog from '../games/GameRulesDialog';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface ArcadeViewProps {
     market: Market;
 }
 
+const UNIMPLEMENTED_GAMES = ['minigame-alchemists-trial', 'minigame-goblin-ambush', 'minigame-river-crossing', 'minigame-wizards-vortex'];
+
 const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
     const { settings, minigames, gameScores } = useSystemState();
+    const { rewardTypes } = useEconomyState();
     const { currentUser, users } = useAuthState();
     const { setActiveMarketId } = useUIDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const [gameToPlay, setGameToPlay] = useState<Minigame | null>(null);
     const [gameForStats, setGameForStats] = useState<Minigame | null>(null);
     const [gameForRules, setGameForRules] = useState<Minigame | null>(null);
+
+    const gameToken = useMemo(() => rewardTypes.find(rt => rt.id === 'core-token'), [rewardTypes]);
 
     // Calculate scores for each game
     const scoresByGame = useMemo(() => {
@@ -118,6 +126,7 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
 
                     {minigames.map(game => {
                         const scores = scoresByGame[game.id] || { userHighScore: 0, globalHighScore: 0, globalHighScoreHolder: null };
+                        const isPlayable = !UNIMPLEMENTED_GAMES.includes(game.id);
                         return (
                             <div key={game.id} className="bg-indigo-900/30 border-2 border-indigo-700/60 rounded-xl shadow-lg flex flex-col h-full">
                                 <div className="p-4 border-b border-white/10">
@@ -137,10 +146,14 @@ const ArcadeView: React.FC<ArcadeViewProps> = ({ market }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 grid grid-cols-3 gap-2">
-                                    <Button size="sm" variant="secondary" onClick={() => setGameForRules(game)}>Rules</Button>
-                                    <Button size="sm" onClick={() => setGameToPlay(game)} className="col-span-1">Play</Button>
-                                    <Button size="sm" variant="secondary" onClick={() => setGameForStats(game)}>Stats</Button>
+                                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex flex-col gap-2">
+                                     <Button size="sm" onClick={() => isPlayable ? setGameToPlay(game) : addNotification({ type: 'info', message: 'This game is under construction!' })} className="w-full" disabled={!isPlayable}>
+                                        Play ({game.cost} {gameToken?.icon || '🪙'})
+                                    </Button>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button size="sm" variant="secondary" onClick={() => setGameForRules(game)}>Rules</Button>
+                                        <Button size="sm" variant="secondary" onClick={() => setGameForStats(game)}>Stats</Button>
+                                    </div>
                                 </div>
                             </div>
                         );

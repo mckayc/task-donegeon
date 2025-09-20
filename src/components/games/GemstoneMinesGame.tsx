@@ -13,7 +13,9 @@ const GAME_WIDTH = COLS * GEM_SIZE;
 const GAME_HEIGHT = ROWS * GEM_SIZE;
 const TIME_LIMIT = 60; // 60 seconds
 
-const GEM_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
+const GEM_EMOJIS = ['🍓', '🍊', '🍋', '🍏', '🍇', '🍒'];
+
+type Particle = { x: number; y: number; vx: number; vy: number; alpha: number; emoji: string };
 
 const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,13 +26,15 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
     
     const boardRef = useRef<number[][]>([]);
     const selectedGemRef = useRef<{ row: number, col: number } | null>(null);
+    const particlesRef = useRef<Particle[]>([]);
+    const animationFrameId = useRef<number | null>(null);
 
     const createBoard = useCallback(() => {
         const newBoard: number[][] = [];
         for (let r = 0; r < ROWS; r++) {
             newBoard[r] = [];
             for (let c = 0; c < COLS; c++) {
-                newBoard[r][c] = Math.floor(Math.random() * GEM_COLORS.length);
+                newBoard[r][c] = Math.floor(Math.random() * GEM_EMOJIS.length);
             }
         }
         boardRef.current = newBoard;
@@ -41,13 +45,17 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
         if (!ctx) return;
 
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        ctx.font = `${GEM_SIZE * 0.7}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
                 if (boardRef.current[r][c] > -1) {
-                    ctx.fillStyle = GEM_COLORS[boardRef.current[r][c]];
-                    ctx.fillRect(c * GEM_SIZE, r * GEM_SIZE, GEM_SIZE, GEM_SIZE);
-                    ctx.strokeRect(c * GEM_SIZE, r * GEM_SIZE, GEM_SIZE, GEM_SIZE);
-
+                    const x = c * GEM_SIZE + GEM_SIZE / 2;
+                    const y = r * GEM_SIZE + GEM_SIZE / 2;
+                    ctx.fillText(GEM_EMOJIS[boardRef.current[r][c]], x, y);
+                    
                     if (selectedGemRef.current && selectedGemRef.current.row === r && selectedGemRef.current.col === c) {
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 3;
@@ -57,13 +65,18 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
                 }
             }
         }
+
+        particlesRef.current.forEach(p => {
+            ctx.globalAlpha = p.alpha;
+            ctx.fillText(p.emoji, p.x, p.y);
+            ctx.globalAlpha = 1.0;
+        });
     }, []);
 
     const findMatches = useCallback(() => {
         const matches: { row: number, col: number }[] = [];
         const board = boardRef.current;
 
-        // Horizontal matches
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS - 2; c++) {
                 if (board[r][c] > -1 && board[r][c] === board[r][c + 1] && board[r][c] === board[r][c + 2]) {
@@ -71,7 +84,6 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
                 }
             }
         }
-        // Vertical matches
         for (let c = 0; c < COLS; c++) {
             for (let r = 0; r < ROWS - 2; r++) {
                 if (board[r][c] > -1 && board[r][c] === board[r+1][c] && board[r][c] === board[r+2][c]) {
@@ -87,34 +99,45 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
         if (matches.length === 0) return false;
         
         setScore(s => s + matches.length * 10);
-        setTimeLeft(t => Math.min(TIME_LIMIT, t + matches.length)); // Add 1s per gem
-        matches.forEach(match => boardRef.current[match.row][match.col] = -1);
-        
-        // Drop gems down
-        for (let c = 0; c < COLS; c++) {
-            let emptyRow = ROWS - 1;
-            for (let r = ROWS - 1; r >= 0; r--) {
-                if (boardRef.current[r][c] > -1) {
-                    [boardRef.current[r][c], boardRef.current[emptyRow][c]] = [boardRef.current[emptyRow][c], boardRef.current[r][c]];
-                    emptyRow--;
-                }
+        setTimeLeft(t => Math.min(TIME_LIMIT, t + matches.length));
+        matches.forEach(match => {
+            const emoji = GEM_EMOJIS[boardRef.current[match.row][match.col]];
+            for (let i = 0; i < 5; i++) {
+                 particlesRef.current.push({
+                    x: match.col * GEM_SIZE + GEM_SIZE / 2,
+                    y: match.row * GEM_SIZE + GEM_SIZE / 2,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    alpha: 1,
+                    emoji
+                });
             }
-        }
+            boardRef.current[match.row][match.col] = -1;
+        });
         
-        // Refill board
-        for (let r = 0; r < ROWS; r++) {
+        setTimeout(() => {
             for (let c = 0; c < COLS; c++) {
-                if (boardRef.current[r][c] === -1) {
-                    boardRef.current[r][c] = Math.floor(Math.random() * GEM_COLORS.length);
+                let emptyRow = ROWS - 1;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (boardRef.current[r][c] > -1) {
+                        [boardRef.current[r][c], boardRef.current[emptyRow][c]] = [boardRef.current[emptyRow][c], boardRef.current[r][c]];
+                        emptyRow--;
+                    }
                 }
             }
-        }
-        
-        draw();
-        // Check for new matches recursively
-        setTimeout(() => handleMatches(), 200);
+            
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (boardRef.current[r][c] === -1) {
+                        boardRef.current[r][c] = Math.floor(Math.random() * GEM_EMOJIS.length);
+                    }
+                }
+            }
+            
+            setTimeout(() => handleMatches(), 100);
+        }, 200);
         return true;
-    }, [draw, findMatches]);
+    }, [findMatches]);
 
     const handleClick = useCallback((e: MouseEvent) => {
         if (gameState !== 'playing') return;
@@ -132,23 +155,18 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
             const isAdjacent = Math.abs(prevRow - row) + Math.abs(prevCol - col) === 1;
 
             if (isAdjacent) {
-                // Swap
                 [boardRef.current[prevRow][prevCol], boardRef.current[row][col]] = [boardRef.current[row][col], boardRef.current[prevRow][prevCol]];
-                
-                // Check if swap is valid (creates a match)
-                if (findMatches().length > 0) {
-                    handleMatches();
-                } else {
-                    // Invalid move, swap back
-                    [boardRef.current[prevRow][prevCol], boardRef.current[row][col]] = [boardRef.current[row][col], boardRef.current[prevRow][prevCol]];
+                if (!handleMatches()) {
+                    setTimeout(() => { // Swap back animation
+                        [boardRef.current[prevRow][prevCol], boardRef.current[row][col]] = [boardRef.current[row][col], boardRef.current[prevRow][prevCol]];
+                    }, 200);
                 }
             }
             selectedGemRef.current = null;
         } else {
             selectedGemRef.current = { row, col };
         }
-        draw();
-    }, [gameState, draw, findMatches, handleMatches]);
+    }, [gameState, handleMatches]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -176,12 +194,27 @@ const GemstoneMinesGame: React.FC<GemstoneMinesGameProps> = ({ onClose }) => {
         setScore(0);
         setTimeLeft(TIME_LIMIT);
         setGameState('playing');
-        draw();
-    }, [createBoard, draw, findMatches, handleMatches]);
-
+    }, [createBoard, findMatches, handleMatches]);
+    
     useEffect(() => {
-        if (gameState === 'pre-game') resetGame();
-    }, [gameState, resetGame]);
+        let isMounted = true;
+        const renderLoop = () => {
+            if (!isMounted) return;
+            particlesRef.current.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.02;
+                if (p.alpha <= 0) particlesRef.current.splice(i, 1);
+            });
+            draw();
+            animationFrameId.current = requestAnimationFrame(renderLoop);
+        };
+        renderLoop();
+        return () => {
+            isMounted = false;
+            if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+        };
+    }, [draw]);
 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center p-4">

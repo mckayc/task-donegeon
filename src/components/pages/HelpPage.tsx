@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -552,9 +553,9 @@ const VersionHistoryContent: React.FC = () => (
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 22, 2025 (v0.1.90 - v0.1.95):</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Dashboard & Notifications:** Introduced new dashboard widgets and header notifications for pending user items.</li>
-                <li>**Responsive Approvals:** Made the Approvals page fully responsive for mobile devices.</li>
-                <li>**Enhanced Chronicles:** The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.</li>
+                <li><strong>Dashboard & Notifications:</strong> Introduced new dashboard widgets and header notifications for pending user items.</li>
+                <li><strong>Responsive Approvals:</strong> Made the Approvals page fully responsive for mobile devices.</li>
+                <li><strong>Enhanced Chronicles:</strong> The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.</li>
             </ul>
         </div>
     </div>

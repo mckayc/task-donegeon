@@ -232,7 +232,7 @@ const SuggestionEnginePage: React.FC = () => {
     const renderResults = () => {
         if (!generatedResults) return null;
         
-        const typeMapping: { [key in keyof GeneratedResults]: AssetType } = {
+        const typeMapping: { [key in keyof GeneratedResults]?: AssetType } = {
             ventures: 'Ventures', duties: 'Duties', journeys: 'Journeys',
             items: 'Items', markets: 'Markets', trophies: 'Trophies', quest_groups: 'Quest Groups'
         };
@@ -246,19 +246,26 @@ const SuggestionEnginePage: React.FC = () => {
                 {Object.entries(generatedResults).map(([schemaKey, items]) => {
                     if (!items || items.length === 0) return null;
                     const assetType = typeMapping[schemaKey as keyof GeneratedResults];
+                    // FIX: Add a guard clause to ensure assetType and its config exist before rendering, preventing a crash if the API returns an unexpected key.
+                    if (!assetType) return null;
                     const config = assetTypeConfig[assetType];
+                    // FIX: Correctly check that a termKey exists on the config object before using it to access terminology settings, preventing a potential runtime error.
+                    if (!config?.termKey) return null;
 
                     return (
-                        <Card key={schemaKey} title={`${config.icon} Generated ${settings.terminology[config.termKey]}`}>
+                        // FIX: Add a type assertion to `config.termKey` to assure TypeScript that it is a valid key for the `terminology` object, resolving a TS7053 error.
+                        <Card key={schemaKey} title={`${config.icon} Generated ${settings.terminology[config.termKey as keyof Terminology]}`}>
                             <div className="space-y-3">
                                 {items.map((item, index) => (
                                     <div key={index} className="bg-stone-900/50 p-3 rounded-lg flex justify-between items-center gap-4">
                                         <div className="flex-grow">
-                                            <p className="font-bold text-stone-200">{item.icon} {item.title || item.name}</p>
+                                            {/* FIX: Use type assertions to safely access 'title' or 'name' from the union type, resolving TS2339 property not found errors. */}
+                                            <p className="font-bold text-stone-200">{item.icon} {(item as any).title || (item as any).name}</p>
                                             <p className="text-sm text-stone-400">{item.description}</p>
                                         </div>
                                         <div className="flex gap-2 flex-shrink-0">
                                             <Button size="sm" variant="secondary" onClick={() => handleAddItem(schemaKey as keyof GeneratedResults, item, index)}>Add</Button>
+                                            {/* FIX: The assetType is now guaranteed to be defined due to the guard clause above, resolving a TS2345 error. */}
                                             <Button size="sm" variant="secondary" onClick={() => handleEditAndAddItem(assetType, item, schemaKey as keyof GeneratedResults, index)}>Edit & Add</Button>
                                             <Button size="sm" variant="destructive" onClick={() => handleDiscardItem(schemaKey as keyof GeneratedResults, index)}>Discard</Button>
                                         </div>

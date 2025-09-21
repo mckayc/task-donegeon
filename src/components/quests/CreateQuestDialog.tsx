@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig, AITutor, RewardItem, RewardCategory } from '../../types';
+import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig, AITutor, RewardItem, RewardCategory, ImageSlide } from '../../types';
 import { Role } from '../users/types';
 import { BugReport } from '../dev/types';
 import Button from '../user-interface/Button';
@@ -20,6 +20,7 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import NumberInput from '../user-interface/NumberInput';
 import MediaBrowserDialog from '../video/MediaBrowserDialog';
+import EditSlideshowDialog from './EditSlideshowDialog';
 
 type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
 
@@ -54,6 +55,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         aiTutorId: undefined,
         videoUrl: '',
         pdfUrl: '',
+        images: [],
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
@@ -174,6 +176,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [newGroupName, setNewGroupName] = useState(initialData?.isNewGroup ? initialData.groupName || '' : '');
   const [isJourneyEditorOpen, setIsJourneyEditorOpen] = useState(false);
   const [isMediaBrowserOpen, setIsMediaBrowserOpen] = useState(false);
+  const [isSlideshowEditorOpen, setIsSlideshowEditorOpen] = useState(false);
   
   const userList = initialDataFromBug ? users.filter(u => u.role === Role.DonegeonMaster) : users;
 
@@ -271,6 +274,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         aiTutorId: formData.mediaType === QuestMediaType.AITutor ? formData.aiTutorId : undefined,
         videoUrl: formData.mediaType === QuestMediaType.Video ? formData.videoUrl : null,
         pdfUrl: formData.mediaType === QuestMediaType.PDF ? formData.pdfUrl : null,
+        images: formData.mediaType === QuestMediaType.Images ? formData.images : undefined,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -440,6 +444,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                   <option value={QuestMediaType.AIStory}>AI Story</option>
                   <option value={QuestMediaType.Video}>Video</option>
                   <option value={QuestMediaType.PDF}>PDF</option>
+                  <option value={QuestMediaType.Images}>Image Slideshow</option>
               </Input>
               {formData.mediaType === QuestMediaType.AITutor && (
                 <Input
@@ -488,6 +493,22 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                          <Button type="button" variant="secondary" onClick={() => setIsMediaBrowserOpen(true)}>Browse Library</Button>
                     </div>
                      <p className="text-xs text-stone-400">Select a PDF file from your media library.</p>
+                </div>
+            )}
+             {formData.mediaType === QuestMediaType.Images && (
+                <div className="p-4 bg-stone-900/50 rounded-lg">
+                    <h4 className="font-semibold text-stone-200 mb-2">Image Slideshow</h4>
+                    <p className="text-sm text-stone-400 mb-3">
+                        Manage the images and captions for this quest's slideshow.
+                    </p>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setIsSlideshowEditorOpen(true)}
+                        className="w-full"
+                    >
+                        Manage Slides ({formData.images?.length || 0})
+                    </Button>
                 </div>
             )}
            <div>
@@ -722,6 +743,17 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         <MediaBrowserDialog
             onSelect={handleMediaSelect}
             onClose={() => setIsMediaBrowserOpen(false)}
+        />
+    )}
+    {isSlideshowEditorOpen && (
+        <EditSlideshowDialog
+            questTitle={formData.title || 'New Quest'}
+            initialImages={formData.images || []}
+            onSave={(updatedImages: ImageSlide[]) => {
+                setFormData(p => ({ ...p, images: updatedImages }));
+                setIsSlideshowEditorOpen(false);
+            }}
+            onClose={() => setIsSlideshowEditorOpen(false)}
         />
     )}
     </>

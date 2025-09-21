@@ -28,6 +28,12 @@ export enum QuestMediaType {
   AIStory = 'AIStory',
   Video = 'Video',
   PDF = 'PDF',
+  Images = 'Images',
+}
+
+export interface ImageSlide {
+  url: string;
+  caption: string;
 }
 
 export interface Checkpoint {
@@ -72,6 +78,7 @@ export interface Quest {
   aiTutorId?: string;
   videoUrl?: string | null;
   pdfUrl?: string | null;
+  images?: ImageSlide[];
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;

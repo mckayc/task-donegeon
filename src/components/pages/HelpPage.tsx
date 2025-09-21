@@ -44,6 +44,29 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>Suggestion Engine: The Foundry</h3>
+        <p>
+            The Suggestion Engine has been upgraded into a powerful "Foundry" that can generate multiple types of assets from a single prompt, dramatically speeding up content creation.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Multi-Asset Generation:</strong> Administrators can now select multiple asset types (e.g., Ventures, Items, Trophies, Quest Groups) and specify a quantity for each.
+            </li>
+            <li>
+                <strong>Unified Prompting:</strong> A single, general theme is all that's needed. The AI will intelligently apply the theme to create all requested assets in one go.
+            </li>
+            <li>
+                <strong>Interactive Results View:</strong> After generation, the results are presented in a new, organized view, grouped by asset type. Each suggested asset is shown on a card with several actions.
+            </li>
+             <li>
+                <strong>Full Control over Suggestions:</strong> Each card has three options:
+                 <ul className="list-disc list-inside pl-6 mt-2">
+                    <li><strong>Add to Game:</strong> Instantly saves the asset to your game world as-is.</li>
+                    <li><strong>Edit & Add:</strong> Opens the standard creation/editing dialog for that asset type, pre-filled with the AI's suggestion. This allows for fine-tuning before the asset is saved.</li>
+                    <li><strong>Discard:</strong> Removes the suggestion from the results list.</li>
+                 </ul>
+            </li>
+        </ul>
         <h3>Shared / Kiosk Mode</h3>
         <p>
             Kiosk mode is designed for shared devices, like a family tablet. It provides a simplified interface focused on user switching and at-a-glance information.
@@ -169,6 +192,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
                     <li><strong>Large File Support:</strong> The PDF reader has been optimized for performance. It now uses progressive loading, allowing very large documents to open almost instantly without requiring the entire file to be downloaded first. This significantly reduces memory usage and prevents browser crashes with big files.</li>
                     <li><strong>Total Time & UI Fixes:</strong> Corrected an issue where total read time was calculated incorrectly. The UI has been improved by simplifying page controls and ensuring the viewer properly fills the screen in fullscreen mode.</li>
                 </ul>
+            </li>
+             <li>
+                <strong>Image Slideshows:</strong> A new media type that allows admins to create a sequence of images with captions. This is ideal for visual guides, storytelling, or showcasing multiple pictures related to a task. Users can launch a full-screen viewer to navigate through the slides.
             </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
@@ -526,9 +552,9 @@ const VersionHistoryContent: React.FC = () => (
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of September 22, 2025 (v0.1.90 - v0.1.95):</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Dashboard & Notifications:</strong> Introduced new dashboard widgets and header notifications for pending user items.</li>
-                <li><strong>Responsive Approvals:</strong> Made the Approvals page fully responsive for mobile devices.</li>
-                <li><strong>Enhanced Chronicles:</strong> The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.</li>
+                <li><strong>Dashboard & Notifications:** Introduced new dashboard widgets and header notifications for pending user items.</li>
+                <li>**Responsive Approvals:** Made the Approvals page fully responsive for mobile devices.</li>
+                <li>**Enhanced Chronicles:** The Chronicles system was updated with a full audit trail for multi-step actions and richer logging details.</li>
             </ul>
         </div>
     </div>

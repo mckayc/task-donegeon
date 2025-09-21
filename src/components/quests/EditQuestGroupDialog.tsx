@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { QuestGroup, Quest } from '../../types';
 import Button from '../user-interface/Button';

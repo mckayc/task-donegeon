@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.35
+**Version:** 0.5.39
 
 ---
 
@@ -14,6 +14,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of April 11, 2026 (v0.5.39):**
+    -   **Suggestion Engine Overhaul:** The Suggestion Engine has been completely overhauled to support generating multiple assets of different types simultaneously. Administrators can now select various asset types (including the newly added Quest Groups), specify quantities for each, and receive a comprehensive list of AI-generated content in a new interactive results view. Each suggestion can be instantly added, edited before adding, or discarded, dramatically accelerating content creation.
+
+-   **Week of April 4, 2026 (v0.5.38):**
+    -   **New Media Type - Image Slideshows:** Introduced a new interactive media type for quests. Admins can now create engaging visual narratives or guides by uploading a series of images with captions that users can view in a full-screen slideshow.
 
 -   **Week of March 21, 2026 (v0.5.35):**
     -   **Quest Locking Logic Fix:** Resolved a critical bug where a quest could be locked by a condition that requires the quest itself to be completed. The system now also correctly ignores unavailable quests (e.g., expired or not scheduled for today) when determining lock status.

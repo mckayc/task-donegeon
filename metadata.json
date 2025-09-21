@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.35 - Quest Locking Fix",
-  "version": "0.5.35",
-  "description": "Fixes a critical bug in quest locking logic that caused circular dependencies and blocked quests with unavailable requirements. The lock status dialog is now much clearer.",
+  "name": "Task Donegeon 2.0 - 0.5.39 - Suggestion Engine Overhaul",
+  "version": "0.5.39",
+  "description": "The Suggestion Engine has been completely overhauled to support generating multiple assets of different types simultaneously. Users can now select various asset types, specify quantities for each, and receive a comprehensive list of AI-generated content in a new interactive results view, complete with options to add, edit, or discard each suggestion.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -43,6 +43,14 @@ export enum SystemNotificationType {
     TradeAccepted = 'TradeAccepted',
     TradeCancelled = 'TradeCancelled',
     TradeRejected = 'TradeRejected',
+    QuestApproved = 'QuestApproved',
+    QuestRejected = 'QuestRejected',
+    PurchaseApproved = 'PurchaseApproved',
+    PurchaseRejected = 'PurchaseRejected',
+    PurchaseCancelled = 'PurchaseCancelled',
+    TriumphApplied = 'TriumphApplied',
+    TrialApplied = 'TrialApplied',
+    TradeOfferUpdated = 'TradeOfferUpdated',
 }
 
 export interface SystemNotification {

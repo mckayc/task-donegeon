@@ -1,5 +1,5 @@
 const { dataSource } = require('../data-source');
-const { UserEntity, ModifierDefinitionEntity, QuestEntity, AppliedModifierEntity, RewardTypeDefinitionEntity, ChronicleEventEntity } = require('../entities');
+const { UserEntity, ModifierDefinitionEntity, QuestEntity, AppliedModifierEntity, RewardTypeDefinitionEntity, ChronicleEventEntity, SystemNotificationEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 
@@ -126,6 +126,23 @@ const apply = async (userId, modifierDefinitionId, reason, appliedById, override
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
         
+        // 4. Create Notification
+        const notificationRepo = manager.getRepository(SystemNotificationEntity);
+        const notifType = finalDefinition.category === 'Triumph' ? 'TriumphApplied' : 'TrialApplied';
+        const newNotification = notificationRepo.create({
+            id: `sysnotif-mod-${user.id}-${now.getTime()}`,
+            type: notifType,
+            message: `${appliedBy.gameName} applied a ${finalDefinition.category.toLowerCase()}: "${finalDefinition.name}"`,
+            recipientUserIds: [userId],
+            readByUserIds: [],
+            senderId: appliedById,
+            timestamp: now.toISOString(),
+            link: 'Triumphs & Trials',
+            icon: finalDefinition.icon,
+            guildId: undefined, // Triumphs/Trials are personal for now
+        });
+        await manager.save(updateTimestamps(newNotification, true));
+
         const updatedUser = await userRepo.findOneBy({ id: userId });
         updateEmitter.emit('update');
         return { updatedUser, newAppliedModifier: savedModifier, newRedemptionQuest };

@@ -15,6 +15,14 @@ const getIconForType = (type: SystemNotificationType) => {
         case SystemNotificationType.TradeAccepted: return '🤝';
         case SystemNotificationType.TradeCancelled: return '❌';
         case SystemNotificationType.TradeRejected: return '🚫';
+        case SystemNotificationType.QuestApproved: return '✅';
+        case SystemNotificationType.QuestRejected: return '❌';
+        case SystemNotificationType.PurchaseApproved: return '🛍️';
+        case SystemNotificationType.PurchaseRejected: return '🚫';
+        case SystemNotificationType.PurchaseCancelled: return '↩️';
+        case SystemNotificationType.TriumphApplied: return '🎉';
+        case SystemNotificationType.TrialApplied: return '⚖️';
+        case SystemNotificationType.TradeOfferUpdated: return '🔄';
         default: return '🔔';
     }
 };

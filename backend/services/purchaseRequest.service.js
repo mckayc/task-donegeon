@@ -1,5 +1,5 @@
 const { dataSource } = require('../data-source');
-const { PurchaseRequestEntity, UserEntity, GameAssetEntity, RewardTypeDefinitionEntity, SettingEntity, ChronicleEventEntity, MarketEntity } = require('../entities');
+const { PurchaseRequestEntity, UserEntity, GameAssetEntity, RewardTypeDefinitionEntity, SettingEntity, ChronicleEventEntity, MarketEntity, SystemNotificationEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 
@@ -164,6 +164,22 @@ const approve = async (id, approverId) => {
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
 
+        const notification = manager.create(SystemNotificationEntity, {
+            id: `sysnotif-approve-${request.id}`,
+            type: 'PurchaseApproved',
+            message: `${approver.gameName} approved your purchase of "${asset.name}".`,
+            recipientUserIds: [user.id],
+            readByUserIds: [],
+            senderId: approverId,
+            timestamp: new Date().toISOString(),
+            link: 'Chronicles',
+            icon: asset.icon,
+            iconType: asset.iconType,
+            imageUrl: asset.imageUrl,
+            guildId: request.guildId || undefined,
+        });
+        await manager.save(updateTimestamps(notification, true));
+
         updateEmitter.emit('update');
         return { updatedUser, updatedPurchaseRequest };
     });
@@ -237,6 +253,27 @@ const rejectOrCancel = async (id, actorId, status) => {
         
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
+
+        const notificationType = status === 'Rejected' ? 'PurchaseRejected' : 'PurchaseCancelled';
+        const message = status === 'Rejected'
+            ? `${actor.gameName} rejected your purchase of "${request.assetDetails.name}". Your funds were returned.`
+            : `Your purchase of "${request.assetDetails.name}" was cancelled and your funds were returned.`;
+
+        const notification = manager.create(SystemNotificationEntity, {
+            id: `sysnotif-${status.toLowerCase()}-${request.id}`,
+            type: notificationType,
+            message,
+            recipientUserIds: [user.id],
+            readByUserIds: [],
+            senderId: actorId,
+            timestamp: new Date().toISOString(),
+            link: 'Chronicles',
+            icon: request.assetDetails.icon,
+            iconType: request.assetDetails.iconType,
+            imageUrl: request.assetDetails.imageUrl,
+            guildId: request.guildId || undefined,
+        });
+        await manager.save(updateTimestamps(notification, true));
 
         updateEmitter.emit('update');
         return { updatedUser, updatedPurchaseRequest };

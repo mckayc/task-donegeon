@@ -1,5 +1,6 @@
 
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity, ScheduledEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
@@ -414,6 +415,23 @@ const approveQuestCompletion = async (id, approverId, note) => {
                 
                 await manager.save(ChronicleEventEntity, updateTimestamps(manager.create(ChronicleEventEntity, eventData), true));
                 
+                const notification = manager.create(SystemNotificationEntity, {
+                    id: `sysnotif-approve-${completion.id}`,
+                    type: 'QuestApproved',
+                    message: `${approver.gameName} approved your completion of "${quest.title}".`,
+                    recipientUserIds: [user.id],
+                    readByUserIds: [],
+                    senderId: approverId,
+                    timestamp: new Date().toISOString(),
+                    link: 'Chronicles',
+                    icon: quest.icon,
+                    iconType: quest.iconType,
+                    imageUrl: quest.imageUrl,
+                    guildId: quest.guildId || undefined,
+                });
+                const savedNotification = await manager.save(updateTimestamps(notification, true));
+                newNotifications.push(savedNotification);
+
                 const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: ['user', 'quest'] });
 
                 updateEmitter.emit('update');
@@ -452,6 +470,22 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
             imageUrl: completion.quest.imageUrl, questType: completion.quest.type, guildId: completion.quest.guildId
         };
         await manager.save(ChronicleEventEntity, updateTimestamps(manager.create(ChronicleEventEntity, eventData), true));
+
+        const notification = manager.create(SystemNotificationEntity, {
+            id: `sysnotif-reject-${completion.id}`,
+            type: 'QuestRejected',
+            message: `${rejecter.gameName} rejected your completion of "${completion.quest.title}".`,
+            recipientUserIds: [completion.user.id],
+            readByUserIds: [],
+            senderId: rejecterId,
+            timestamp: new Date().toISOString(),
+            link: 'Chronicles',
+            icon: completion.quest.icon,
+            iconType: completion.quest.iconType,
+            imageUrl: completion.quest.imageUrl,
+            guildId: completion.quest.guildId || undefined,
+        });
+        await manager.save(updateTimestamps(notification, true));
 
         updateEmitter.emit('update');
         return { updatedCompletion };

@@ -33,7 +33,7 @@ const FlyoutPanel: React.FC<{
     };
 
     return (
-        <div className="absolute left-full top-0 ml-2 z-20 w-60 bg-stone-900 border border-stone-700 rounded-lg shadow-xl py-2">
+        <div className="absolute left-full top-0 ml-2 z-50 w-60 bg-stone-900 border border-stone-700 rounded-lg shadow-xl py-2">
             <h4 className="font-bold text-accent px-4 pb-2 border-b border-stone-700">{title}</h4>
             <div className="mt-2">
                 {items && items.length > 0 ? items.map(item => {

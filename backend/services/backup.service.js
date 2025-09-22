@@ -1,4 +1,5 @@
 
+
 const fs = require('fs').promises;
 const path = require('path');
 const { dataSource } = require('../data-source');
@@ -6,7 +7,7 @@ const { getFullAppData, updateTimestamps } = require('../utils/helpers');
 const { SettingEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { In } = require("typeorm");
-const { version: appVersion } = require('../../../package.json');
+const { version: appVersion } = require('../../package.json');
 
 const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
 const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');

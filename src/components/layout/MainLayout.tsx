@@ -24,13 +24,14 @@ const MainLayout: React.FC = () => {
   const { quests, questCompletions } = useQuestsState();
   const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
   const { addNotification } = useNotificationsDispatch();
-  const { setActivePage, toggleSidebar, setTimedQuestDetail, pauseTimer, resumeTimer } = useUIDispatch();
+  const { setActivePage, toggleSidebar, setTimedQuestDetail, pauseTimer, resumeTimer, setScreenDimmed } = useUIDispatch();
   const { logout } = useAuthDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
   const [completingQuest, setCompletingQuest] = useState<{quest: Quest, duration?: number, aiTutorSessionLog?: Omit<AITutorSessionLog, 'id' | 'completionId'>} | null>(null);
   const prevUserIdRef = useRef<string | undefined>(undefined);
-  const timerRef = useRef<number | null>(null);
+  const autoExitTimerRef = useRef<number | null>(null);
+  const dimTimerRef = useRef<number | null>(null);
   const activeTimerUserId = useRef<string | undefined>(undefined);
   
   const ADMIN_ONLY_PAGES: Page[] = [
@@ -110,11 +111,11 @@ const MainLayout: React.FC = () => {
   }, [activePage, currentUser, setActivePage, addNotification]);
 
   // --- Kiosk Mode Auto-Exit Timer ---
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) {
-        clearTimeout(timerRef.current);
+  const resetAutoExitTimer = useCallback(() => {
+    if (autoExitTimerRef.current) {
+        clearTimeout(autoExitTimerRef.current);
     }
-    timerRef.current = window.setTimeout(() => {
+    autoExitTimerRef.current = window.setTimeout(() => {
         addNotification({ type: 'info', message: 'Session timed out due to inactivity.' });
         logout();
     }, settings.sharedMode.autoExitMinutes * 60 * 1000);
@@ -125,26 +126,73 @@ const MainLayout: React.FC = () => {
           const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
           
           events.forEach(event => {
-              window.addEventListener(event, resetTimer);
+              window.addEventListener(event, resetAutoExitTimer);
           });
 
-          resetTimer(); // Start the timer initially
+          resetAutoExitTimer(); // Start the timer initially
 
           return () => {
-              if (timerRef.current) {
-                  clearTimeout(timerRef.current);
+              if (autoExitTimerRef.current) {
+                  clearTimeout(autoExitTimerRef.current);
               }
               events.forEach(event => {
-                  window.removeEventListener(event, resetTimer);
+                  window.removeEventListener(event, resetAutoExitTimer);
               });
           };
       } else {
         // If not in kiosk mode or settings are off, make sure any existing timer is cleared.
-        if (timerRef.current) {
-            clearTimeout(timerRef.current);
+        if (autoExitTimerRef.current) {
+            clearTimeout(autoExitTimerRef.current);
         }
       }
-  }, [settings.sharedMode.enabled, settings.sharedMode.autoExit, resetTimer, isKioskDevice]);
+  }, [settings.sharedMode.enabled, settings.sharedMode.autoExit, resetAutoExitTimer, isKioskDevice]);
+
+  // --- Kiosk Mode Auto-Dimming Logic ---
+  const isWithinDimmingTime = useCallback(() => {
+      const { autoDimStartTime, autoDimStopTime } = settings.sharedMode;
+      if (!autoDimStartTime || !autoDimStopTime) return false;
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      const [startH, startM] = autoDimStartTime.split(':').map(Number);
+      const startTime = startH * 60 + startM;
+      const [stopH, stopM] = autoDimStopTime.split(':').map(Number);
+      const stopTime = stopH * 60 + stopM;
+      if (startTime > stopTime) { // Overnight case
+          return currentTime >= startTime || currentTime < stopTime;
+      } else {
+          return currentTime >= startTime && currentTime < stopTime;
+      }
+  }, [settings.sharedMode.autoDimStartTime, settings.sharedMode.autoDimStopTime]);
+
+  const resetDimTimer = useCallback(() => {
+      setScreenDimmed(false);
+      if (dimTimerRef.current) {
+          clearTimeout(dimTimerRef.current);
+      }
+      if (isWithinDimmingTime()) {
+          dimTimerRef.current = window.setTimeout(() => {
+              setScreenDimmed(true);
+          }, (settings.sharedMode.autoDimInactivitySeconds || 30) * 1000);
+      }
+  }, [isWithinDimmingTime, settings.sharedMode.autoDimInactivitySeconds, setScreenDimmed]);
+
+  useEffect(() => {
+      if (settings.sharedMode.enabled && settings.sharedMode.autoDim && isKioskDevice) {
+          const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+          events.forEach(event => window.addEventListener(event, resetDimTimer));
+          
+          resetDimTimer();
+          
+          const timeCheckInterval = setInterval(resetDimTimer, 60000);
+          
+          return () => {
+              if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
+              clearInterval(timeCheckInterval);
+              events.forEach(event => window.removeEventListener(event, resetDimTimer));
+              setScreenDimmed(false);
+          };
+      }
+  }, [settings.sharedMode.enabled, settings.sharedMode.autoDim, isKioskDevice, resetDimTimer, setScreenDimmed]);
 
 
   const renderPage = () => {

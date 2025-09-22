@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.39 - Suggestion Engine Overhaul",
-  "version": "0.5.39",
-  "description": "The Suggestion Engine has been completely overhauled to support generating multiple assets of different types simultaneously. Users can now select various asset types, specify quantities for each, and receive a comprehensive list of AI-generated content in a new interactive results view, complete with options to add, edit, or discard each suggestion.",
+  "name": "Task Donegeon 2.0 - 0.5.40 - Backup Management Overhaul",
+  "version": "0.5.40",
+  "description": "This update overhauls the automated backup system to prevent old backups from accumulating and introduces a new interface for bulk-deleting manual and automated backups, giving administrators more control over their data.",
   "requestFramePermissions": [
     "camera"
   ],

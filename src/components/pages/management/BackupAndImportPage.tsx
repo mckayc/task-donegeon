@@ -241,7 +241,7 @@ export const BackupAndImportPage: React.FC = () => {
         }
     };
 
-    const handleSaveSchedule = (scheduleData: Omit<BackupSchedule, 'id'>) => {
+    const handleSaveSchedule = (scheduleData: Omit<BackupSchedule, 'id' | 'lastBackupTimestamp'>) => {
         const updatedSchedules = [...settings.automatedBackups.schedules];
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);

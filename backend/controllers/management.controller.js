@@ -268,12 +268,6 @@ const restoreFromBackup = async (req, res) => {
     res.json({ message: 'Restore successful! The application will now reload.' });
 };
 
-const cleanupOldBackups = async (req, res) => {
-    const { actorId } = req.body;
-    const deletedCount = await backupService.cleanupOldFormatBackups(actorId);
-    res.json({ message: `${deletedCount} old-format backup files have been deleted.`, deletedCount });
-};
-
 // --- Media ---
 const getLocalGallery = async (req, res) => {
     const gallery = [];
@@ -482,5 +476,4 @@ module.exports = {
     deleteBackup: asyncMiddleware(deleteBackup),
     bulkDeleteBackups: asyncMiddleware(bulkDeleteBackups),
     restoreFromBackup: asyncMiddleware(restoreFromBackup),
-    cleanupOldBackups: asyncMiddleware(cleanupOldBackups),
 };

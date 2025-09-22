@@ -10,7 +10,6 @@ const {
     deleteBackup,
     bulkDeleteBackups,
     restoreFromBackup,
-    cleanupOldBackups,
 } = require('../controllers/management.controller');
 
 const router = express.Router();
@@ -23,6 +22,5 @@ router.get('/download/:filename', asyncMiddleware(downloadBackup));
 router.delete('/:filename', asyncMiddleware(deleteBackup));
 router.post('/bulk-delete', asyncMiddleware(bulkDeleteBackups));
 router.post('/restore-upload', restoreUpload.single('backupFile'), asyncMiddleware(restoreFromBackup));
-router.post('/cleanup-old', asyncMiddleware(cleanupOldBackups));
 
 module.exports = router;

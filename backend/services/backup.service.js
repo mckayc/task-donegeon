@@ -6,7 +6,6 @@ const { getFullAppData, updateTimestamps, logGeneralAdminAction } = require('../
 const { SettingEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { In } = require("typeorm");
-const { version: appVersion } = require('../../package.json');
 
 const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
 const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
@@ -15,21 +14,18 @@ const HELP_GUIDE_PATH = path.resolve(__dirname, '..', '..', 'src', 'content', 'H
 
 
 const parseBackupFilename = (filename) => {
-    // Updated regex to look for a "v" before the version string for robust parsing.
-    const match = filename.match(/^backup-(manual|auto-.+?)-(\d{14})-v(.+)\.(json|sqlite)$/);
+    // New format: YYYY-MM-DD_HHMMSS_type.extension
+    const match = filename.match(/^(\d{4}-\d{2}-\d{2})_(\d{6})_(.+?)\.(json|sqlite)$/);
     if (!match) return null;
     
-    const [_, type, timestamp, version, format] = match;
-    const year = timestamp.substring(0, 4);
-    const month = timestamp.substring(4, 6);
-    const day = timestamp.substring(6, 8);
-    const hour = timestamp.substring(8, 10);
-    const minute = timestamp.substring(10, 12);
-    const second = timestamp.substring(12, 14);
+    const [_, datePart, timePart, type, format] = match;
+    const hour = timePart.substring(0, 2);
+    const minute = timePart.substring(2, 4);
+    const second = timePart.substring(4, 6);
 
     return {
-        date: `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`,
-        version,
+        date: `${datePart}T${hour}:${minute}:${second}.000Z`,
+        version: null, // Version is no longer in the filename
         type,
         format,
     };
@@ -37,9 +33,10 @@ const parseBackupFilename = (filename) => {
 
 const list = async () => {
     try {
+        await fs.mkdir(BACKUP_DIR, { recursive: true });
         const files = await fs.readdir(BACKUP_DIR);
         const backupDetails = await Promise.all(files.map(async (filename) => {
-            if (filename.startsWith('backup-') && (filename.endsWith('.json') || filename.endsWith('.sqlite'))) {
+            if (filename.endsWith('.json') || filename.endsWith('.sqlite')) {
                 const filePath = path.join(BACKUP_DIR, filename);
                 const stats = await fs.stat(filePath);
                 return {
@@ -52,8 +49,6 @@ const list = async () => {
             return null;
         }));
         return backupDetails.filter(Boolean).sort((a, b) => {
-            // Prioritize parsed date from filename, which is more reliable than file mtime.
-            // Fallback to file modified time for older formats or parsing errors.
             const dateA = a.parsed ? new Date(a.parsed.date) : new Date(a.createdAt);
             const dateB = b.parsed ? new Date(b.parsed.date) : new Date(b.createdAt);
             return dateB.getTime() - dateA.getTime();
@@ -67,14 +62,14 @@ const list = async () => {
     }
 };
 
-const create = async (format, type = 'manual') => {
+const create = async (format, type = 'manual', actorId) => {
     const manager = dataSource.manager;
 
-    const version = appVersion || 'unknown';
     const now = new Date();
-    const timestamp = now.toISOString().replace(/[-:.]/g, '').slice(0, 14);
-    // Added 'v' prefix to version for robust parsing
-    const filename = `backup-${type}-${timestamp}-v${version}.${format}`;
+    const datePart = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timePart = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS
+
+    const filename = `${datePart}_${timePart}_${type}.${format}`;
     const filePath = path.join(BACKUP_DIR, filename);
 
     if (format === 'json') {
@@ -218,14 +213,15 @@ const runScheduled = async () => {
         if (!schedule.lastBackupTimestamp || (now - schedule.lastBackupTimestamp > frequencyMs)) {
             console.log(`Running scheduled backup: ${schedule.id}`);
             const formats = settings.automatedBackups.format;
-            if (formats === 'both' || formats === 'json') await create('json', `auto-${schedule.id}`);
-            if (formats === 'both' || formats === 'sqlite') await create('sqlite', `auto-${schedule.id}`);
+            const typeString = `${schedule.frequency}${schedule.unit}`;
+            if (formats === 'both' || formats === 'json') await create('json', typeString);
+            if (formats === 'both' || formats === 'sqlite') await create('sqlite', typeString);
             
             schedule.lastBackupTimestamp = now;
             await manager.save(SettingEntity, updateTimestamps({ id: 1, settings }));
             
             const allBackups = await list();
-            const scheduleBackups = allBackups.filter(b => b.parsed?.type === `auto-${schedule.id}`);
+            const scheduleBackups = allBackups.filter(b => b.parsed?.type === typeString);
             if (scheduleBackups.length > schedule.maxBackups) {
                 const toDelete = scheduleBackups.slice(schedule.maxBackups);
                 await removeMany(toDelete.map(b => b.filename));
@@ -235,15 +231,14 @@ const runScheduled = async () => {
 
     // --- Global Orphaned Backup Cleanup ---
     console.log('[Backup Service] Starting orphaned backup cleanup...');
-    const currentScheduleIds = new Set(settings.automatedBackups.schedules.map(s => s.id));
+    const currentScheduleTypes = new Set(settings.automatedBackups.schedules.map(s => `${s.frequency}${s.unit}`));
     const allBackups = await list();
-    const allAutoBackups = allBackups.filter(b => b.parsed?.type && b.parsed.type.startsWith('auto-'));
+    const allAutoBackups = allBackups.filter(b => b.parsed?.type && b.parsed.type !== 'manual');
     
     const orphansToDelete = allAutoBackups
         .filter(backup => {
             if (!backup.parsed) return false;
-            const scheduleId = backup.parsed.type.substring(5); // remove 'auto-'
-            return !currentScheduleIds.has(scheduleId);
+            return !currentScheduleTypes.has(backup.parsed.type);
         })
         .map(b => b.filename);
 
@@ -258,10 +253,10 @@ const runScheduled = async () => {
 const cleanupOldFormatBackups = async (actorId) => {
     let deletedCount = 0;
     try {
+        await fs.mkdir(BACKUP_DIR, { recursive: true });
         const files = await fs.readdir(BACKUP_DIR);
-        const oldFormatFiles = files.filter(filename => 
-            filename.startsWith('backup-') && !parseBackupFilename(filename)
-        );
+        // An "old" file is one that does not match the new format.
+        const oldFormatFiles = files.filter(filename => !parseBackupFilename(filename));
 
         for (const filename of oldFormatFiles) {
             const filePath = path.join(BACKUP_DIR, filename);
@@ -277,14 +272,16 @@ const cleanupOldFormatBackups = async (actorId) => {
                     title: 'Cleaned Up Old Backups',
                     note: `Deleted ${deletedCount} old-format backup files.`,
                     icon: '🧹',
-                    color: '#a8a29e' // stone-400
+                    color: '#a8a29e'
                 });
             });
             updateEmitter.emit('update');
         }
-
         return deletedCount;
     } catch (err) {
+        if (err.code === 'ENOENT') {
+            return 0; // The directory doesn't exist, so nothing to clean up.
+        }
         console.error("Error cleaning up old format backups:", err);
         throw err;
     }

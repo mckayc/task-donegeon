@@ -1,4 +1,3 @@
-
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem, Minigame, GameScore, AITutor, AITutorSessionLog
 } from '../types';
@@ -136,7 +135,6 @@ export const clearAllHistoryAPI = () => apiRequest('POST', '/api/data/clear-hist
 export const resetAllPlayerDataAPI = (includeAdmins: boolean) => apiRequest('POST', '/api/data/reset-players', { includeAdmins });
 export const deleteAllCustomContentAPI = () => apiRequest('POST', '/api/data/delete-content');
 export const factoryResetAPI = () => apiRequest('POST', '/api/data/factory-reset');
-export const cleanupOldBackupsAPI = (actorId: string): Promise<{ deletedCount: number }> => apiRequest('POST', '/api/backups/cleanup-old', { actorId });
 export const addSystemNotificationAPI = (data: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => apiRequest('POST', '/api/notifications', data);
 export const markSystemNotificationsAsReadAPI = (ids: string[], userId: string) => apiRequest('POST', '/api/notifications/read', { ids, userId });
 export const addScheduledEventAPI = (data: Omit<ScheduledEvent, 'id'>) => apiRequest('POST', '/api/events', data);

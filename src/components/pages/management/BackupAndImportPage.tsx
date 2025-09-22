@@ -20,9 +20,22 @@ const BackupListItem: React.FC<{
     const { parsed, filename, size, createdAt } = backup;
     
     let displayType = 'Manual';
-    if (parsed?.type.startsWith('auto-')) {
-        const scheduleName = parsed.type.substring(5).replace(/-/g, ' ');
-        displayType = `Auto: ${scheduleName}`;
+    if (parsed?.type) {
+        if (parsed.type === 'manual') {
+            displayType = 'Manual';
+        } else {
+            const match = parsed.type.match(/^(\d+)(hours|days|weeks)$/);
+            if (match) {
+                const num = parseInt(match[1]);
+                let unit = match[2];
+                if (num === 1) {
+                    unit = unit.slice(0, -1); // make singular
+                }
+                displayType = `Auto: Every ${num} ${unit}`;
+            } else {
+                displayType = `Auto: ${parsed.type.replace(/-/g, ' ')}`; // Fallback for custom schedules
+            }
+        }
     }
 
     const format = parsed?.format || (filename.endsWith('.sqlite') ? 'sqlite' : 'json');
@@ -46,7 +59,7 @@ const BackupListItem: React.FC<{
                     <p className="text-xs text-stone-400">
                         {parsed ? (
                             <>
-                                {new Date(parsed.date).toLocaleString()} - v{parsed.version} - <span className="capitalize">{displayType}</span>
+                                {new Date(parsed.date).toLocaleString()} - <span className="capitalize">{displayType}</span>
                             </>
                         ) : (
                             <>
@@ -269,7 +282,7 @@ export const BackupAndImportPage: React.FC = () => {
         const manual: BackupInfo[] = [];
         const automated: BackupInfo[] = [];
         backups.forEach(b => {
-            if (b.parsed?.type === 'manual' || (!b.parsed && !b.filename.includes('auto'))) {
+            if (b.parsed?.type === 'manual' || !b.parsed) {
                 manual.push(b);
             } else {
                 automated.push(b);

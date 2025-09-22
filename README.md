@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.40
+**Version:** 0.5.41
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of April 25, 2026 (v0.5.41):**
+    -   **Backup System Refinement:** The backup filename format has been updated to a cleaner, more readable `YYYY-MM-DD_HHMMSS_type.extension` structure. An automatic cleanup process has been added to the server startup sequence, which will find and delete any backups created with older filename formats, ensuring a smooth, one-time migration to the new system.
 
 -   **Week of April 18, 2026 (v0.5.40):**
     -   **Backup Management Overhaul:** This update overhauls the automated backup system to prevent old backups from accumulating and introduces a new interface for bulk-deleting manual and automated backups, giving administrators more control over their data. A new "Danger Zone" action has been added to the Settings page to clean up any backups created with the old filename format. The internal application version was also synchronized to ensure new backups are always created in the correct format.

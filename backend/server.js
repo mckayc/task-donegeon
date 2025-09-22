@@ -10,6 +10,7 @@ const { GuildEntity, UserEntity, MarketEntity, TrophyEntity, MinigameEntity, Rew
 const { updateTimestamps } = require('./utils/helpers');
 const { In } = require('typeorm');
 const { INITIAL_TROPHIES, INITIAL_REWARD_TYPES } = require('./initialData');
+const backupService = require('./services/backup.service');
 
 // --- Routers ---
 const questsRouter = require('./routes/quests.routes');
@@ -273,6 +274,15 @@ const initializeApp = async () => {
     // Start schedulers
     startAutomatedBackupScheduler();
     startAutomatedRotationScheduler();
+
+    // Run one-time cleanup of old backups on startup
+    backupService.cleanupOldFormatBackups('system').then(deletedCount => {
+        if (deletedCount > 0) {
+            console.log(`[Startup Cleanup] Deleted ${deletedCount} old-format backup files.`);
+        }
+    }).catch(err => {
+        console.error('[Startup Cleanup] Failed to cleanup old backups:', err);
+    });
 
     console.log("Application initialization complete.");
 };

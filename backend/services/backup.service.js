@@ -1,3 +1,4 @@
+
 const fs = require('fs').promises;
 const path = require('path');
 const { dataSource } = require('../data-source');
@@ -5,6 +6,7 @@ const { getFullAppData, updateTimestamps } = require('../utils/helpers');
 const { SettingEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { In } = require("typeorm");
+const { version: appVersion } = require('../../../package.json');
 
 const DATA_ROOT = path.resolve(__dirname, '..', '..', 'data');
 const BACKUP_DIR = path.resolve(DATA_ROOT, 'backups');
@@ -13,7 +15,8 @@ const HELP_GUIDE_PATH = path.resolve(__dirname, '..', '..', 'src', 'content', 'H
 
 
 const parseBackupFilename = (filename) => {
-    const match = filename.match(/^backup-(manual|auto-.+?)-(\d{14})-(.+)\.(json|sqlite)$/);
+    // Updated regex to look for a "v" before the version string for robust parsing.
+    const match = filename.match(/^backup-(manual|auto-.+?)-(\d{14})-v(.+)\.(json|sqlite)$/);
     if (!match) return null;
     
     const [_, type, timestamp, version, format] = match;
@@ -66,12 +69,12 @@ const list = async () => {
 
 const create = async (format, type = 'manual') => {
     const manager = dataSource.manager;
-    const settings = (await manager.findOneBy(SettingEntity, { id: 1 }))?.settings || {};
-    const version = settings.contentVersion || 'unknown';
 
+    const version = appVersion || 'unknown';
     const now = new Date();
     const timestamp = now.toISOString().replace(/[-:.]/g, '').slice(0, 14);
-    const filename = `backup-${type}-${timestamp}-${version}.${format}`;
+    // Added 'v' prefix to version for robust parsing
+    const filename = `backup-${type}-${timestamp}-v${version}.${format}`;
     const filePath = path.join(BACKUP_DIR, filename);
 
     if (format === 'json') {
@@ -238,6 +241,7 @@ const runScheduled = async () => {
     
     const orphansToDelete = allAutoBackups
         .filter(backup => {
+            if (!backup.parsed) return false;
             const scheduleId = backup.parsed.type.substring(5); // remove 'auto-'
             return !currentScheduleIds.has(scheduleId);
         })

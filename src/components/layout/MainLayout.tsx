@@ -77,20 +77,9 @@ const MainLayout: React.FC = () => {
 
 
   useEffect(() => {
-    // When the user changes, reset the session flag so the popup can show for the new user.
-    if (currentUser?.id !== prevUserIdRef.current) {
-        sessionStorage.removeItem('notificationsShownForSession');
-        prevUserIdRef.current = currentUser?.id;
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    const alreadyShown = sessionStorage.getItem('notificationsShownForSession') === 'true';
-
-    if (currentUser && !alreadyShown && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
+    if (currentUser && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
         setShowLoginNotifications(true);
-        sessionStorage.setItem('notificationsShownForSession', 'true');
-    } else if (!currentUser) {
+    } else {
         setShowLoginNotifications(false);
     }
   }, [currentUser, settings.loginNotifications.enabled, unreadNotifications]);

@@ -1,7 +1,7 @@
 import React from 'react';
-import { SystemNotification, SystemNotificationType, User } from '../../../types';
-import Button from './Button';
-import { useSystemDispatch } from '../../../context/SystemContext';
+import { SystemNotification, SystemNotificationType, User } from '../../types';
+import Button from '../user-interface/Button';
+import { useSystemDispatch } from '../../context/SystemContext';
 import { motion } from 'framer-motion';
 
 const getIconForType = (type: SystemNotificationType) => {

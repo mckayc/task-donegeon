@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.39
+**Version:** 0.5.40
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of April 18, 2026 (v0.5.40):**
+    -   **Backup Management Overhaul:** This update overhauls the automated backup system to prevent old backups from accumulating and introduces a new interface for bulk-deleting manual and automated backups, giving administrators more control over their data. A new "Danger Zone" action has been added to the Settings page to clean up any backups created with the old filename format. The internal application version was also synchronized to ensure new backups are always created in the correct format.
 
 -   **Week of April 11, 2026 (v0.5.39):**
     -   **Suggestion Engine Overhaul:** The Suggestion Engine has been completely overhauled to support generating multiple assets of different types simultaneously. Administrators can now select various asset types (including the newly added Quest Groups), specify quantities for each, and receive a comprehensive list of AI-generated content in a new interactive results view. Each suggestion can be instantly added, edited before adding, or discarded, dramatically accelerating content creation.

@@ -7,7 +7,7 @@ import { INITIAL_SETTINGS } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI, playMinigameAPI, submitScoreAPI, updateMinigameAPI, resetAllScoresForGameAPI, resetScoresForUsersAPI, addAITutorAPI, updateAITutorAPI } from '../api';
+import { addBugReportAPI, addModifierDefinitionAPI, addScheduledEventAPI, addSystemNotificationAPI, addThemeAPI, applyManualAdjustmentAPI, applyModifierAPI, applySettingsUpdatesAPI, clearAllHistoryAPI, cloneUserAPI, deleteAllCustomContentAPI, deleteBugReportsAPI, deleteScheduledEventAPI, deleteSelectedAssetsAPI, deleteThemeAPI, factoryResetAPI, importAssetPackAPI, importBugReportsAPI, markMessagesAsReadAPI, markSystemNotificationsAsReadAPI, resetAllPlayerDataAPI, resetSettingsAPI, sendMessageAPI, updateBugReportAPI, updateModifierDefinitionAPI, updateScheduledEventAPI, updateSettingsAPI, updateThemeAPI, uploadFileAPI, deleteAppliedModifiersAPI, playMinigameAPI, submitScoreAPI, updateMinigameAPI, resetAllScoresForGameAPI, resetScoresForUsersAPI, addAITutorAPI, updateAITutorAPI, cleanupOldBackupsAPI } from '../api';
 import { swLogger } from '../utils/swLogger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
@@ -53,6 +53,7 @@ export interface SystemDispatch {
   resetAllPlayerData: (includeAdmins: boolean) => Promise<void>;
   deleteAllCustomContent: () => Promise<void>;
   factoryReset: () => Promise<void>;
+  cleanupOldBackups: () => Promise<{ deletedCount: number } | null>;
   addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<SystemNotification | null>;
   markSystemNotificationsAsRead: (notificationIds: string[], userId: string) => Promise<void>;
   addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | null>;
@@ -269,6 +270,10 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                     window.location.reload();
                 }, 2000);
             }
+        },
+        cleanupOldBackups: async () => {
+            if (!currentUser) return null;
+            return apiAction(() => cleanupOldBackupsAPI(currentUser.id));
         },
         addSystemNotification: (data) => apiAction(() => addSystemNotificationAPI(data)),
         markSystemNotificationsAsRead: (ids, userId) => apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)),

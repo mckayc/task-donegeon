@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -118,7 +119,7 @@ const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
 export const SettingsPage: React.FC = () => {
     const { settings, themes, isUpdateAvailable } = useSystemState();
     const { users } = useAuthState();
-    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset, installUpdate, checkForUpdate } = useSystemDispatch();
+    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset, installUpdate, checkForUpdate, cleanupOldBackups } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { setScreenDimmed } = useUIDispatch();
     
@@ -156,7 +157,7 @@ export const SettingsPage: React.FC = () => {
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!confirmation) return;
         switch(confirmation) {
             case 'resetSettings': resetSettings(); break;
@@ -165,6 +166,12 @@ export const SettingsPage: React.FC = () => {
             case 'resetPlayers': resetAllPlayerData(includeAdminsInReset); break;
             case 'deleteContent': deleteAllCustomContent(); break;
             case 'factoryReset': factoryReset(); break;
+            case 'cleanupOldBackups':
+                const result = await cleanupOldBackups();
+                if (result) {
+                    addNotification({ type: 'success', message: `Successfully deleted ${result.deletedCount} old-format backup files.` });
+                }
+                break;
         }
         setConfirmation(null);
     };
@@ -358,6 +365,7 @@ export const SettingsPage: React.FC = () => {
                     <div className="p-6 space-y-4">
                         <DangerZoneAction title="Apply Setting Updates" description={<><p>After updating the application, some new features might require new default settings.</p><p>This action safely merges new default settings from the latest version into your current configuration, preserving all your existing customizations.</p></>} buttonText="Apply Updates" onAction={() => setConfirmation('applyUpdates')} />
                         <DangerZoneAction title="Reset All Settings" description="This will revert all settings on this page, including Terminology and Security, to their original defaults. This does NOT affect user data or created content." buttonText="Reset All Settings" onAction={() => setConfirmation('resetSettings')} />
+                        <DangerZoneAction title="Clean Up Old-Format Backups" description={<><p>Permanently delete all backup files that use the outdated filename format. This is useful for clearing out legacy files after the backup system update and cannot be undone.</p></>} buttonText="Clean Up Old Backups" onAction={() => setConfirmation('cleanupOldBackups')} />
                         <DangerZoneAction title="Clear All History" description="Permanently delete all historical records, including quest completions, purchases, adjustments, and notifications. This is useful for cleaning up test data." buttonText="Clear History" onAction={() => setConfirmation('clearHistory')} />
                         <DangerZoneAction title="Reset Player Data" description={<><p>Reset all players' currencies, XP, and owned items to zero. This does NOT delete the users themselves.</p><div className="mt-2"><ToggleSwitch enabled={includeAdminsInReset} setEnabled={setIncludeAdminsInReset} label="Include Donegeon Masters in Reset" /></div></>} buttonText="Reset Player Data" onAction={() => setConfirmation('resetPlayers')} />
                         <DangerZoneAction title="Delete All Custom Content" description="Permanently delete all user-created content, including quests, items, markets, ranks, trophies, guilds, and themes. Core/default content will be restored." buttonText="Delete Content" onAction={() => setConfirmation('deleteContent')} />

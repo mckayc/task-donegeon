@@ -1,5 +1,7 @@
+
 const express = require('express');
 const multer = require('multer');
+const { asyncMiddleware } = require('../utils/helpers');
 const {
     getBackups,
     createJsonBackup,
@@ -8,17 +10,19 @@ const {
     deleteBackup,
     bulkDeleteBackups,
     restoreFromBackup,
+    cleanupOldBackups,
 } = require('../controllers/management.controller');
 
 const router = express.Router();
 const restoreUpload = multer({ dest: '/tmp/' });
 
-router.get('/', getBackups);
-router.post('/create-json', createJsonBackup);
-router.post('/create-sqlite', createSqliteBackup);
-router.get('/download/:filename', downloadBackup);
-router.delete('/:filename', deleteBackup);
-router.post('/bulk-delete', bulkDeleteBackups);
-router.post('/restore-upload', restoreUpload.single('backupFile'), restoreFromBackup);
+router.get('/', asyncMiddleware(getBackups));
+router.post('/create-json', asyncMiddleware(createJsonBackup));
+router.post('/create-sqlite', asyncMiddleware(createSqliteBackup));
+router.get('/download/:filename', asyncMiddleware(downloadBackup));
+router.delete('/:filename', asyncMiddleware(deleteBackup));
+router.post('/bulk-delete', asyncMiddleware(bulkDeleteBackups));
+router.post('/restore-upload', restoreUpload.single('backupFile'), asyncMiddleware(restoreFromBackup));
+router.post('/cleanup-old', asyncMiddleware(cleanupOldBackups));
 
 module.exports = router;

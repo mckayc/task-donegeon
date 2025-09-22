@@ -1,9 +1,8 @@
 
-
 const fs = require('fs').promises;
 const path = require('path');
 const { dataSource } = require('../data-source');
-const { getFullAppData, updateTimestamps } = require('../utils/helpers');
+const { getFullAppData, updateTimestamps, logGeneralAdminAction } = require('../utils/helpers');
 const { SettingEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { In } = require("typeorm");
@@ -256,6 +255,41 @@ const runScheduled = async () => {
     }
 };
 
+const cleanupOldFormatBackups = async (actorId) => {
+    let deletedCount = 0;
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const oldFormatFiles = files.filter(filename => 
+            filename.startsWith('backup-') && !parseBackupFilename(filename)
+        );
+
+        for (const filename of oldFormatFiles) {
+            const filePath = path.join(BACKUP_DIR, filename);
+            await fs.unlink(filePath);
+            deletedCount++;
+            console.log(`Deleted old-format backup: ${filename}`);
+        }
+        
+        if (deletedCount > 0) {
+            await dataSource.transaction(async manager => {
+                await logGeneralAdminAction(manager, {
+                    actorId,
+                    title: 'Cleaned Up Old Backups',
+                    note: `Deleted ${deletedCount} old-format backup files.`,
+                    icon: '🧹',
+                    color: '#a8a29e' // stone-400
+                });
+            });
+            updateEmitter.emit('update');
+        }
+
+        return deletedCount;
+    } catch (err) {
+        console.error("Error cleaning up old format backups:", err);
+        throw err;
+    }
+};
+
 const getFilePath = async (filename) => {
     const safeFilename = path.basename(filename);
     if (safeFilename !== filename) return null;
@@ -269,5 +303,12 @@ const getFilePath = async (filename) => {
 };
 
 module.exports = {
-    list, create, remove, removeMany, restore, runScheduled, getFilePath,
+    list,
+    create,
+    remove,
+    removeMany,
+    restore,
+    runScheduled,
+    getFilePath,
+    cleanupOldFormatBackups,
 };

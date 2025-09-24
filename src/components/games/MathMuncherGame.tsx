@@ -59,7 +59,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         const newPlayerPos = { x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) };
         setPlayerPos(newPlayerPos);
 
-        correctAnswersLeft.current = newGrid.flat().filter(c => c.isCorrect).length;
+        correctAnswersLeft.current = newGrid.flat().filter((c: Cell) => c.isCorrect).length;
 
         const numTroggles = 1 + Math.floor(round / 2) + Math.floor(index / 4);
         const newTroggles: Troggle[] = [];
@@ -183,7 +183,6 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         }));
     }, []);
 
-    // FIX: Moved 'handlePlayerMove' before the 'useEffect' that uses it to prevent a block-scoped variable error.
     const handlePlayerMove = useCallback((dx: number, dy: number) => {
         setPlayerPos(prev => {
             const newPos = { x: prev.x + dx, y: prev.y + dy };

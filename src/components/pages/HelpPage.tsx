@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -206,15 +207,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
          <ul className="list-disc list-inside space-y-2">
             <li><strong>UI Overhaul:</strong> The action buttons on game cards have been redesigned for clarity. The "Play" button is now a prominent, primary action and clearly displays the cost to play. Placeholder or under-construction games are now disabled to prevent users from spending tokens on them.</li>
             <li><strong>Game Rules:</strong> A new "Rules" button has been added to every game card in the Arcade. Clicking it will open a dialog explaining the objective and how to play.</li>
-            <li><strong>Math Muncher Expansion:</strong> The educational math game has been massively expanded with a full curriculum for grades 1-6.
-                <ul className="list-disc list-inside pl-6 mt-2">
-                    <li><strong>New Content:</strong> The game now features 10 unique, randomly selected challenges for each grade level, covering topics from basic arithmetic to one-step algebra equations.</li>
-                    <li><strong>Dynamic Grid:</strong> The play area intelligently switches between a 12x12 grid for simple numbers and a larger 6x6 grid for complex expressions, ensuring readability.</li>
-                    <li><strong>Endless Progression:</strong> After a player masters all 10 challenges in a grade, the game speed increases, and the challenges are re-shuffled for a new, faster round.</li>
-                    <li><strong>Gameplay Polish:</strong> Based on user feedback, several aspects of the game have been polished. Enemy movement is now more varied and less predictable, with different monster types having distinct visual appearances and behaviors. The spawn rate for in-game power-ups has been increased. When the player is hit by a monster, a clearer and longer animation now plays to provide better visual feedback. The distribution of correct and incorrect answers on the grid has been improved to be more random.</li>
-                    <li><strong>Further Gameplay Polish:</strong> Based on additional user feedback, the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A stability issue causing random crashes has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Enemy AI has been improved again for more varied and challenging movement patterns.</li>
-                </ul>
-            </li>
+            <li><strong>Math Muncher Expansion:</strong> The educational math game "Math Muncher" has been massively expanded with a full curriculum for grades 1 through 6. It now features 10 unique, randomly generated challenges for each grade level, covering topics from basic arithmetic to simple algebra. Based on extensive user feedback, gameplay has been polished: enemy AI is more varied, power-ups are collected via the 'Munch' action and have been rebalanced, a critical crash bug has been fixed, and the game provides clear UI feedback for any earnable rewards.</li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Bug Fix & UI Improvement:</strong> Fixed a bug where the game would sometimes fail to recognize a "bust," causing it to get stuck. When you bust now, a large, impactful "BUSTED!" message will appear to make the outcome clear.</li>
@@ -313,7 +306,7 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Minigame Bonanza:</strong> A major update to the Arcade!
                     <ul className="list-disc list-inside pl-6 mt-2">
-                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time!</li>
+                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time you play!</li>
                         <li><strong>Arcade UI Overhaul:</strong> Game cards now have a primary "Play" button that clearly shows the cost in Game Tokens. Under-construction games are now disabled to prevent accidental spending.</li>
                         <li><strong>Gemstone Mines Visual Upgrade:</strong> The classic match-3 game now uses vibrant fruit emojis instead of plain colors and features a satisfying particle burst effect for matches.</li>
                     </ul>

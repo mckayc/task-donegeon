@@ -15,8 +15,10 @@ export const shuffleArray = <T>(array: T[]): T[] => {
 
 export const isPrime = (num: number): boolean => {
     if (num <= 1) return false;
-    for (let i = 2; i * i <= num; i++) {
-        if (num % i === 0) return false;
+    if (num <= 3) return true;
+    if (num % 2 === 0 || num % 3 === 0) return false;
+    for (let i = 5; i * i <= num; i = i + 6) {
+        if (num % i === 0 || num % (i + 2) === 0) return false;
     }
     return true;
 };
@@ -39,13 +41,14 @@ export const getGCF = (a: number, b: number): number => gcd(a, b);
 export const getLCM = (a: number, b: number): number => (a * b) / gcd(a, b);
 
 export const simplifyFraction = (numerator: number, denominator: number): [number, number] => {
+    if (denominator === 0) return [numerator, denominator];
     const commonDivisor = gcd(numerator, denominator);
     return [numerator / commonDivisor, denominator / commonDivisor];
 };
 
 
 /**
- * Fills a grid with a mix of correct and incorrect answers.
+ * Fills a grid with a mix of correct and incorrect answers using a shuffling method for better randomness.
  * @param gridSize The size of the grid (e.g., 6 for 6x6).
  * @param correctGenerator A function that returns a correct value.
  * @param incorrectGenerator A function that returns an incorrect value.
@@ -58,37 +61,51 @@ export const generateChallengeGrid = (
     incorrectGenerator: () => CellValue,
     checker: (val: CellValue) => boolean
 ): Cell[][] => {
-    const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+    const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize));
     const totalCells = gridSize * gridSize;
     const targetCorrect = Math.floor(totalCells * 0.4);
     const targetIncorrect = totalCells - targetCorrect;
 
     const values: { value: CellValue, isCorrect: boolean }[] = [];
+    const usedCorrectValues = new Set<string>();
     
-    // Generate correct values
-    for (let i = 0; i < targetCorrect; i++) {
+    // Generate unique correct values
+    while (values.filter(v => v.isCorrect).length < targetCorrect) {
         let value: CellValue;
-        do { value = correctGenerator(); } while (!checker(value));
-        values.push({ value, isCorrect: true });
+        let valueStr: string;
+        let attempts = 0;
+        do { 
+            value = correctGenerator();
+            valueStr = String(value);
+            attempts++;
+        } while (usedCorrectValues.has(valueStr) && attempts < 20);
+        
+        if (checker(value)) {
+            values.push({ value, isCorrect: true });
+            usedCorrectValues.add(valueStr);
+        }
     }
     
     // Generate incorrect values
-    for (let i = 0; i < targetIncorrect; i++) {
+    while (values.filter(v => !v.isCorrect).length < targetIncorrect) {
         let value: CellValue;
-        do { value = incorrectGenerator(); } while (checker(value));
+        do { 
+            value = incorrectGenerator(); 
+        } while (checker(value) || usedCorrectValues.has(String(value)));
         values.push({ value, isCorrect: false });
+        usedCorrectValues.add(String(value)); // Also add incorrect to prevent any duplicates
     }
 
     // Shuffle the generated values
-    shuffleArray(values);
+    const shuffledValues = shuffleArray(values);
 
     // Place values into the grid
-    for (let r = 0; r < gridSize; r++) {
-        for (let c = 0; c < gridSize; c++) {
-            const val = values.pop();
-            if (val) {
-                 grid[r][c] = { ...val, isEaten: false };
-            }
+    for (let i = 0; i < totalCells; i++) {
+        const row = Math.floor(i / gridSize);
+        const col = i % gridSize;
+        const val = shuffledValues[i];
+        if (val) {
+             grid[row][col] = { ...val, isEaten: false };
         }
     }
     

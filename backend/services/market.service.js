@@ -1,3 +1,4 @@
+
 const marketRepository = require('../repositories/market.repository');
 const userRepository = require('../repositories/user.repository');
 const rewardTypeRepository = require('../repositories/rewardType.repository');
@@ -72,10 +73,26 @@ const exchange = async (userId, payItem, receiveItem, guildId) => {
 
         if (!user || !settings) return null;
 
-        const fromReward = rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+        const { rewardTypeId: fromRewardId, amount: totalCostFromClient, pooledRewardTypeIds = [] } = payItem;
+        
+        if (fromRewardId === receiveItem.rewardTypeId) {
+            console.error("[Exchange Security] Attempted to exchange an item for itself.");
+            return null;
+        }
+
+        const fromReward = rewardTypes.find(rt => rt.id === fromRewardId);
         const toReward = rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
 
         if (!fromReward || !toReward || fromReward.baseValue <= 0 || toReward.baseValue <= 0) return null;
+        
+        // Security check: ensure all pooled items have the same baseValue as the primary item
+        if (pooledRewardTypeIds.length > 0) {
+            const pooledRewards = rewardTypes.filter(rt => pooledRewardTypeIds.includes(rt.id));
+            if (pooledRewards.length !== pooledRewardTypeIds.length || pooledRewards.some(pr => pr.baseValue !== fromReward.baseValue)) {
+                console.error("[Exchange Security] Attempted to pool items with different base values or invalid IDs.");
+                return null;
+            }
+        }
 
         const { currencyExchangeFeePercent, xpExchangeFeePercent } = settings.rewardValuation;
         const feePercent = fromReward.category === 'Currency' ? currencyExchangeFeePercent : xpExchangeFeePercent;
@@ -86,19 +103,44 @@ const exchange = async (userId, payItem, receiveItem, guildId) => {
         const provisionalTotalCost = fromAmountBase * feeMultiplier;
         const totalCost = Math.ceil(provisionalTotalCost);
 
-        if (payItem.amount !== totalCost) {
-            console.warn(`[Exchange Mismatch] Client cost: ${payItem.amount}, Server cost: ${totalCost}. Using server cost.`);
+        if (totalCostFromClient !== totalCost) {
+            console.warn(`[Exchange Mismatch] Client cost: ${totalCostFromClient}, Server cost: ${totalCost}. Using server cost.`);
         }
 
         const isGuildScope = !!guildId;
-        let balances = isGuildScope ? user.guildBalances[guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+        const balances = isGuildScope ? user.guildBalances[guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
 
-        const fromBalance = (fromReward.category === 'Currency' ? balances.purse[fromReward.id] : balances.experience[fromReward.id]) || 0;
-        if (fromBalance < totalCost) return null;
+        const allPayIds = [fromRewardId, ...pooledRewardTypeIds];
+        const allPayRewards = rewardTypes.filter(rt => allPayIds.includes(rt.id));
+        
+        const totalFromBalance = allPayRewards.reduce((sum, reward) => {
+            const balanceDict = reward.category === 'Currency' ? balances.purse : balances.experience;
+            const balance = balanceDict[reward.id] || 0;
+            return sum + balance;
+        }, 0);
+        
+        if (totalFromBalance < totalCost) return null;
 
-        if (fromReward.category === 'Currency') balances.purse[fromReward.id] = fromBalance - totalCost;
-        else balances.experience[fromReward.id] = fromBalance - totalCost;
+        let costRemaining = totalCost;
 
+        const deductFrom = (reward) => {
+            if (costRemaining <= 0) return;
+            const balanceDict = reward.category === 'Currency' ? balances.purse : balances.experience;
+            const balance = balanceDict[reward.id] || 0;
+            if (balance > 0) {
+                const amountToDeduct = Math.min(balance, costRemaining);
+                balanceDict[reward.id] = balance - amountToDeduct;
+                costRemaining -= amountToDeduct;
+            }
+        };
+        
+        // Deduct from primary first, then pooled items
+        deductFrom(fromReward);
+        pooledRewardTypeIds.forEach(id => {
+            const reward = rewardTypes.find(rt => rt.id === id);
+            if (reward) deductFrom(reward);
+        });
+        
         const toBalance = (toReward.category === 'Currency' ? balances.purse[toReward.id] : balances.experience[toReward.id]) || 0;
         if (toReward.category === 'Currency') balances.purse[toReward.id] = toBalance + receiveItem.amount;
         else balances.experience[toReward.id] = toBalance + receiveItem.amount;
@@ -112,7 +154,7 @@ const exchange = async (userId, payItem, receiveItem, guildId) => {
             originalId: `exchange-${Date.now()}`,
             date: new Date().toISOString(),
             type: 'Exchange',
-            title: `Exchanged ${totalCost} ${fromReward.name} for ${receiveItem.amount} ${toReward.name}`,
+            title: `Exchanged for ${receiveItem.amount} ${toReward.name}`,
             status: 'Exchanged',
             icon: '↔️',
             color: '#a855f7',

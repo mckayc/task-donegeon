@@ -1,5 +1,5 @@
 import { RewardItem } from "../rewards/types";
-import { Cell } from './MathMuncherTypes';
+import { Cell, Troggle, PowerUpType } from './MathMuncherTypes';
 
 export interface PrizeThreshold {
     score: number;
@@ -45,3 +45,4 @@ export interface GameGrade {
 }
 
 export type GameGrades = Record<string, GameGrade>;
+export { Cell, Troggle, PowerUpType };

@@ -68,6 +68,12 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const [toAmount, setToAmount] = useState<number>(0);
     const [isCombineModeEnabled, setIsCombineModeEnabled] = useState<boolean>(false);
 
+    useEffect(() => {
+        if (!isCombineModeEnabled) {
+            setPooledPayIds(new Set());
+        }
+    }, [isCombineModeEnabled]);
+
     const exchangeableRewardTypes = useMemo(() => {
         return rewardTypes.filter(rt => rt.baseValue > 0 && rt.isExchangeable !== false);
     }, [rewardTypes]);
@@ -254,11 +260,15 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
             return;
         }
 
-        const payItem: RewardItem = { rewardTypeId: fromRewardId, amount: calculation.totalCost };
+        const payItemPayload = {
+            rewardTypeId: fromRewardId,
+            amount: calculation.totalCost,
+            pooledRewardTypeIds: Array.from(pooledPayIds)
+        };
         const receiveItem: RewardItem = { rewardTypeId: toRewardId, amount: toAmount };
         const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
-        executeExchange(currentUser.id, payItem, receiveItem, guildId);
+        executeExchange(currentUser.id, payItemPayload, receiveItem, guildId);
         setToAmount(0);
         setFromRewardId('');
         setPooledPayIds(new Set());

@@ -3,14 +3,13 @@ import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
-import { Cell, Troggle, PowerUpType } from './MathMuncherTypes';
+import { Cell, Troggle, PowerUpType } from './types';
 import { challenges } from './MathMuncherChallenges';
-import { shuffleArray } from './MathMuncherHelpers';
+import { shuffleArray, getRandomInt } from './MathMuncherHelpers';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import { useEconomyState } from '../../context/EconomyContext';
-import { getRandomInt } from './MathMuncherHelpers';
 
 interface MathMuncherGameProps {
   onClose: () => void;
@@ -352,23 +351,26 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         gameLoopRef.current = window.setInterval(() => {
             if(!freezeActive) moveTroggles();
             
-            setPlayerPos(currentPlPos => {
-                if (troggles.some(t => t.pos.x === currentPlPos.x && t.pos.y === currentPlPos.y)) {
-                    if (shieldActive) {
-                        setTroggles(prevTroggles => prevTroggles.filter(t => t.pos.x !== currentPlPos.x || t.pos.y !== currentPlPos.y));
-                        setShieldActive(false);
-                    } else {
-                        setGameState('player-hit');
-                    }
-                }
-                return currentPlPos;
-            });
-
-            if(Math.random() < 0.05) spawnPowerUp();
+            // Collision check is now its own effect
+            if(Math.random() < 0.02) spawnPowerUp(); // Reduced spawn rate
         }, gameSpeed);
         
         return () => { if (gameLoopRef.current) clearInterval(gameLoopRef.current); };
-    }, [gameState, gameSpeed, freezeActive, spawnPowerUp, moveTroggles, troggles, shieldActive]);
+    }, [gameState, gameSpeed, freezeActive, spawnPowerUp, moveTroggles]);
+    
+    // Collision detection effect
+    useEffect(() => {
+        if(gameState !== 'playing' || isHit) return;
+
+        if (troggles.some(t => t.pos.x === playerPos.x && t.pos.y === playerPos.y)) {
+             if (shieldActive) {
+                setTroggles(prevTroggles => prevTroggles.filter(t => t.pos.x !== playerPos.x || t.pos.y !== playerPos.y));
+                setShieldActive(false);
+            } else {
+                setGameState('player-hit');
+            }
+        }
+    }, [playerPos, troggles, shieldActive, gameState, isHit]);
     
     useEffect(() => {
         if (gameState !== 'player-hit') return;
@@ -383,15 +385,19 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 setGameState('game-over');
                 submitScore('minigame-math-muncher', score);
             } else {
-                if (grid && grid.length > 0) {
-                    setPlayerPos({ x: Math.floor(grid.length / 2), y: Math.floor(grid.length / 2) });
+                if (grid && grid.length > 0 && currentChallenge) {
+                    const gridSize = currentChallenge.gridSize;
+                    const respawnPos = { x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) };
+                    setPlayerPos(respawnPos);
+                    // Make respawn safe by removing any troggles at the center
+                    setTroggles(prev => prev.filter(t => t.pos.x !== respawnPos.x || t.pos.y !== respawnPos.y));
                 }
                 setGameState('playing');
             }
         }, 1500);
 
         return () => clearTimeout(hitTimeout);
-    }, [gameState, grid, lives, score, submitScore]);
+    }, [gameState, grid, lives, score, submitScore, currentChallenge]);
     
     useEffect(() => {
          if (gameState === 'playing' && correctAnswersLeft.current <= 0) {

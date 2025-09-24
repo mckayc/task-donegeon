@@ -24,4 +24,9 @@ export interface MathChallenge {
   generateGrid: () => Cell[][];
 }
 
-export type GameGrades = Record<string, MathChallenge[]>;
+export interface GameGrade {
+    name: string;
+    challenges: MathChallenge[];
+}
+
+export type GameGrades = Record<string, GameGrade>;

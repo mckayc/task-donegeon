@@ -85,10 +85,25 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
     // Mode: Edit
     if (mode === 'edit' && questToEdit) {
-      const videos = questToEdit.videos || (questToEdit.videoUrl ? [{ url: questToEdit.videoUrl, title: '' }] : []);
+      // Defensive coding: ensure videos is an array and handle legacy videoUrl or corrupted data.
+      let initialVideos: VideoSlide[] = [];
+      if (Array.isArray(questToEdit.videos)) {
+        initialVideos = questToEdit.videos;
+      } else if (typeof questToEdit.videos === 'string') {
+        // Handle case where corrupted string was saved. Assume it's a URL.
+        initialVideos = [{ url: questToEdit.videos, title: '' }];
+      } else if (questToEdit.videoUrl) {
+        // Handle legacy videoUrl
+        initialVideos = [{ url: questToEdit.videoUrl, title: '' }];
+      }
+
+      // Explicitly remove legacy and potentially conflicting properties from the object we spread.
+      const { videoUrl, videos, ...restOfQuestToEdit } = questToEdit;
+
       return {
-        ...questToEdit,
-        videos,
+        ...baseData,
+        ...restOfQuestToEdit,
+        videos: initialVideos,
         startDateTime: questToEdit.startDateTime || null,
         endDateTime: questToEdit.endDateTime || null,
         allDay: questToEdit.allDay ?? true,

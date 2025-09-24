@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.42 - Currency Exchange Enhancements",
-  "version": "0.5.42",
-  "description": "This update enhances the currency exchange by automatically pooling same-value XP types, maximizing user purchasing power without complicating the UI. It also introduces a tooltip for transparency, showing users which XP balances are contributing to a transaction.",
+  "name": "Task Donegeon 2.0 - 0.5.43 - New Minigame: Math Muncher",
+  "version": "0.5.43",
+  "description": "This update prepares for the creation of a new educational minigame, 'Math Muncher', an homage to the classic 'Number Munchers'. It will feature grade-level-based difficulty, power-ups, and varied enemies to make learning math fun.",
   "requestFramePermissions": [
     "camera"
   ],

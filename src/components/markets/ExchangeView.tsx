@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
@@ -223,7 +222,6 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
             const fromAmountBase = toValueInReal / fromReward.baseValue;
             const feePercent = fromReward.category === RewardCategory.Currency ? settings.rewardValuation.currencyExchangeFeePercent : settings.rewardValuation.xpExchangeFeePercent;
             const feeMultiplier = 1 + (Number(feePercent) / 100);
-            // FIX: Removed incorrect function call `()` on the numeric variable `feeMultiplier`.
             const provisionalTotalCost = fromAmountBase * feeMultiplier;
             const totalCost = Math.ceil(provisionalTotalCost);
             const roundingLoss = totalCost - provisionalTotalCost;

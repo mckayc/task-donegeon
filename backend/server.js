@@ -1,5 +1,4 @@
 
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -194,23 +193,9 @@ const initializeApp = async () => {
         console.log('[Data Sync] The Arcade created.');
     }
 
-    // MIGRATION/SYNC: Ensure the Snake minigame exists.
-    let snakeGame = await manager.findOne(MinigameEntity, { where: { id: 'minigame-snake' } });
-    if (!snakeGame) {
-        console.log('[Data Sync] Snake game not found. Creating it...');
-        snakeGame = manager.create(MinigameEntity, {
-            id: 'minigame-snake',
-            name: 'Snake',
-            description: 'The classic game of snake. Eat the food to grow longer, but don\'t run into yourself or the walls!',
-            icon: '🐍',
-            cost: 1, // Costs 1 Game Token
-        });
-        await manager.save(updateTimestamps(snakeGame, true));
-        console.log('[Data Sync] Snake game created.');
-    }
-
     // MIGRATION/SYNC: Add new minigames if they don't exist
     const newMinigames = [
+        { id: 'minigame-snake', name: 'Snake', description: 'The classic game of snake. Eat the food to grow longer, but don\'t run into yourself or the walls!', icon: '🐍', cost: 1 },
         { id: 'minigame-dragons-dice', name: "Dragon's Dice", description: "A classic dice game of risk and reward. Roll the dice, bank points, but don't get greedy or you'll lose it all!", icon: '🎲', cost: 1 },
         { id: 'minigame-rune-breaker', name: 'Rune Breaker', description: 'A fantasy-themed version of the classic Breakout. Control a magical shield and bounce an orb to break rows of enchanted runes.', icon: '🛡️', cost: 1 },
         { id: 'minigame-dungeon-dash', name: 'Dungeon Dash', description: 'A simple side-scrolling "endless runner." An adventurer runs automatically, and the player taps to make them jump over pits and slide under obstacles.', icon: '🏃‍♂️', cost: 1 },
@@ -223,6 +208,7 @@ const initializeApp = async () => {
         { id: 'minigame-goblin-ambush', name: 'Goblin Ambush', description: 'Whack the goblins as they pop out, but be careful not to hit the friendly gnomes!', icon: '👺', cost: 1 },
         { id: 'minigame-river-crossing', name: 'River Crossing', description: 'Guide your hero across the treacherous river, hopping on logs and avoiding danger.', icon: '🏞️', cost: 1 },
         { id: 'minigame-wizards-vortex', name: "Wizard's Vortex", description: 'Survive waves of incoming monsters by blasting them with your magic spells.', icon: '🧙', cost: 1 },
+        { id: 'minigame-math-muncher', name: 'Math Muncher', description: 'Eat the correct numbers while avoiding the Troggles! A classic math challenge.', icon: '🔢', cost: 1 },
     ];
 
     for (const gameData of newMinigames) {

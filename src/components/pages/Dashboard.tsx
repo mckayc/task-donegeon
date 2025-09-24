@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -50,13 +51,11 @@ interface GoalCardProps {
 }
 
 const ProgressBar: React.FC<{ progress: GoalProgress }> = ({ progress }) => {
-    // FIX: Access `amount` property which exists due to extending RewardItem.
     const percentage = Math.min(100, (progress.current / progress.amount) * 100);
     return (
         <div>
             <div className="flex justify-between items-center text-xs mb-1">
                 <span className="font-semibold text-stone-300 flex items-center gap-1">{progress.icon} {progress.name}</span>
-                {/* FIX: Access `amount` property which exists due to extending RewardItem. */}
                 <span className="font-mono">{progress.current} / {progress.amount}</span>
             </div>
             <div className="w-full bg-stone-700 rounded-full h-2.5">
@@ -105,7 +104,6 @@ const GoalCard: React.FC<GoalCardProps> = ({ goalData, ...cardProps }) => {
                 </div>
                 <h4 className="font-bold text-lg text-amber-300">{item.name}</h4>
                 <div className="w-full space-y-3 mt-4 text-left">
-                    {/* FIX: Access `rewardTypeId` property which exists due to extending RewardItem. */}
                     {progress.map(p => <ProgressBar key={p.rewardTypeId} progress={p} />)}
                 </div>
                 <Button onClick={handleViewInMarket} size="sm" className="mt-4">
@@ -408,7 +406,6 @@ const Dashboard: React.FC = () => {
                 <Reorder.Group
                     axis="y"
                     values={visibleMainCards}
-                    // FIX: Cast `newOrder` to string[] to resolve TypeScript error.
                     onReorder={(newOrder) => handleReorder('main', newOrder as string[])}
                     className={`${mainColClasses} space-y-6`}
                 >
@@ -428,7 +425,6 @@ const Dashboard: React.FC = () => {
                     <Reorder.Group
                         axis="y"
                         values={visibleSideCards}
-                        // FIX: Cast `newOrder` to string[] to resolve TypeScript error.
                         onReorder={(newOrder) => handleReorder('side', newOrder as string[])}
                         className={`${sideColClasses} space-y-6`}
                     >

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo } from 'react';
 import { useAuthState } from './context/AuthContext';
 import { useUIState, useUIDispatch } from './context/UIContext';
@@ -83,7 +84,6 @@ const App: React.FC = () => {
                     {isScreenDimmed && (
                         <motion.div
                             initial={{ opacity: 0 }}
-                            // FIX: Replaced mixed '??' and '||' operators with consistent '??' to fix syntax error and potential logic bug where an opacity of 0 would be ignored.
                             animate={{ opacity: screenDimOverride ?? settings.sharedMode.autoDimLevel ?? 0.8 }}
                             exit={{ opacity: 0 }}
                             className="fixed inset-0 bg-black pointer-events-none z-[9998]"

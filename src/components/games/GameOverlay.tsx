@@ -14,6 +14,7 @@ import AlchemistsTrialGame from './AlchemistsTrialGame';
 import GoblinAmbushGame from './GoblinAmbushGame';
 import RiverCrossingGame from './RiverCrossingGame';
 import WizardsVortexGame from './WizardsVortexGame';
+import MathMuncherGame from './MathMuncherGame';
 
 interface GameOverlayProps {
   gameId: string;
@@ -49,6 +50,8 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
         return <RiverCrossingGame onClose={onClose} />;
       case 'minigame-wizards-vortex':
         return <WizardsVortexGame onClose={onClose} />;
+      case 'minigame-math-muncher':
+        return <MathMuncherGame onClose={onClose} />;
       default:
         return (
             <div className="w-full h-full flex flex-col items-center justify-center text-white text-center">

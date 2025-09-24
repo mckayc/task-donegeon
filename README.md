@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.42
+**Version:** 0.5.43
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of May 9, 2026 (v0.5.43):**
+    -   **New Minigame - Math Muncher:** A new educational minigame has been added to the Arcade. Inspired by the classic "Number Munchers," this game challenges players to solve math problems on a grid while avoiding enemies. The difficulty is structured by grade level, making it an engaging way to practice arithmetic and other math concepts.
 
 -   **Week of May 2, 2026 (v0.5.42):**
     -   **Currency Exchange Enhancements:** The Exchange Post has been upgraded to be more user-friendly. When a user selects an XP type to pay with, the system now automatically detects and pools the balances of all other XP types with the exact same real-world value. This maximizes the user's purchasing power without adding UI complexity. A new tooltip on the selected XP type provides transparency by showing exactly which XP balances are contributing to the transaction.

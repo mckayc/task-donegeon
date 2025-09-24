@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
-import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig, AITutor, RewardItem, RewardCategory, ImageSlide } from '../../types';
+import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig, AITutor, RewardItem, RewardCategory, ImageSlide, VideoSlide } from '../../types';
 import { Role } from '../users/types';
 import { BugReport } from '../dev/types';
 import Button from '../user-interface/Button';
@@ -21,11 +22,12 @@ import { useCommunityState } from '../../context/CommunityContext';
 import NumberInput from '../user-interface/NumberInput';
 import MediaBrowserDialog from '../video/MediaBrowserDialog';
 import EditSlideshowDialog from './EditSlideshowDialog';
+import { PlusIcon, TrashIcon } from '../user-interface/Icons';
 
 type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
 
 interface QuestDialogProps {
-  questToEdit?: Quest;
+  questToEdit?: Quest & { videoUrl?: string }; // Allow old property for migration
   initialData?: any; // Loosened type to accept raw AI data
   onClose: () => void;
   mode?: 'create' | 'edit' | 'ai-creation';
@@ -53,7 +55,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         kind: QuestKind.Personal,
         mediaType: undefined,
         aiTutorId: undefined,
-        videoUrl: '',
+        videos: [],
         pdfUrl: '',
         images: [],
         iconType: 'emoji' as 'emoji' | 'image',
@@ -82,8 +84,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
     // Mode: Edit
     if (mode === 'edit' && questToEdit) {
+      const videos = questToEdit.videos || (questToEdit.videoUrl ? [{ url: questToEdit.videoUrl, title: '' }] : []);
       return {
         ...questToEdit,
+        videos,
         startDateTime: questToEdit.startDateTime || null,
         endDateTime: questToEdit.endDateTime || null,
         allDay: questToEdit.allDay ?? true,
@@ -274,7 +278,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         kind: formData.kind,
         mediaType: formData.mediaType || undefined,
         aiTutorId: formData.mediaType === QuestMediaType.AITutor ? formData.aiTutorId : undefined,
-        videoUrl: formData.mediaType === QuestMediaType.Video ? formData.videoUrl : null,
+        videos: formData.mediaType === QuestMediaType.Video ? formData.videos?.filter(v => v.url.trim()) : undefined,
         pdfUrl: formData.mediaType === QuestMediaType.PDF ? formData.pdfUrl : null,
         images: formData.mediaType === QuestMediaType.Images ? formData.images : undefined,
         minigameId: formData.mediaType === QuestMediaType.PlayMiniGame ? formData.minigameId : undefined,
@@ -344,12 +348,29 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
   const handleMediaSelect = (path: string) => {
       if (formData.mediaType === QuestMediaType.Video) {
-          setFormData(p => ({...p, videoUrl: path}));
+          setFormData(p => ({...p, videos: [...(p.videos || []), { url: path, title: '' }]}));
       } else if (formData.mediaType === QuestMediaType.PDF) {
           setFormData(p => ({...p, pdfUrl: path}));
       }
       setIsMediaBrowserOpen(false);
   };
+
+  const handleVideoChange = (index: number, field: keyof VideoSlide, value: string) => {
+    setFormData(p => {
+        const newVideos = [...(p.videos || [])];
+        newVideos[index] = { ...newVideos[index], [field]: value };
+        return { ...p, videos: newVideos };
+    });
+  };
+
+  const handleAddVideo = () => {
+    setFormData(p => ({ ...p, videos: [...(p.videos || []), { url: '', title: '' }] }));
+  };
+
+  const handleRemoveVideo = (index: number) => {
+    setFormData(p => ({ ...p, videos: (p.videos || []).filter((_, i) => i !== index) }));
+  };
+
 
   const hasDeadlines = !!(formData.endTime || formData.endDateTime);
 
@@ -470,18 +491,20 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             </div>
              {formData.mediaType === QuestMediaType.Video && (
                 <div className="p-4 bg-stone-900/50 rounded-lg space-y-2">
-                    <div className="flex items-end gap-2">
-                        <Input 
-                            label="Video URL or Path" 
-                            name="videoUrl" 
-                            value={formData.videoUrl || ''} 
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, videoUrl: e.target.value}))} 
-                            placeholder="e.g., YouTube URL or /media/my-video.mp4"
-                            className="flex-grow"
-                        />
-                         <Button type="button" variant="secondary" onClick={() => setIsMediaBrowserOpen(true)}>Browse Library</Button>
-                    </div>
-                     <p className="text-xs text-stone-400">Enter a URL for a YouTube video or a local path to a video file in your media library (e.g., <code>/media/filename.mp4</code>).</p>
+                    <h4 className="font-semibold text-stone-200">Videos</h4>
+                    <p className="text-xs text-stone-400 -mt-2 mb-2">Enter a URL for a YouTube video or a local path to a video file in your media library (e.g., /media/filename.mp4).</p>
+                    {formData.videos?.map((video, index) => (
+                        <div key={index} className="flex items-end gap-2 p-2 bg-stone-800/50 rounded-md">
+                            <Input label={`Video ${index + 1} URL`} value={video.url} onChange={(e) => handleVideoChange(index, 'url', e.target.value)} placeholder="e.g., YouTube URL or /media/my-video.mp4" className="flex-grow"/>
+                            <Input label="Title (Optional)" value={video.title || ''} onChange={(e) => handleVideoChange(index, 'title', e.target.value)} placeholder="e.g., Part 1: Introduction" className="flex-grow" />
+                            <Button type="button" variant="destructive" size="icon" className="h-10 w-10" onClick={() => handleRemoveVideo(index)}>
+                                <TrashIcon className="w-5 h-5"/>
+                            </Button>
+                        </div>
+                    ))}
+                    <Button type="button" variant="secondary" onClick={handleAddVideo} className="w-full flex items-center justify-center gap-2">
+                        <PlusIcon className="w-5 h-5" /> Add Video
+                    </Button>
                 </div>
             )}
              {formData.mediaType === QuestMediaType.PDF && (

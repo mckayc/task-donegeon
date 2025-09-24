@@ -1,3 +1,4 @@
+
 import type { RewardItem } from '../rewards/types';
 import type { AITutorSessionLog } from '../tutors/types';
 
@@ -28,6 +29,11 @@ export interface ImageSlide {
   caption: string;
 }
 
+export interface VideoSlide {
+  url: string;
+  title?: string;
+}
+
 export interface Checkpoint {
   id: string;
   description: string;
@@ -54,7 +60,7 @@ export interface Quest {
   kind: QuestKind;
   mediaType?: QuestMediaType;
   aiTutorId?: string;
-  videoUrl?: string | null;
+  videos?: VideoSlide[];
   pdfUrl?: string | null;
   images?: ImageSlide[];
   iconType: 'emoji' | 'image';

@@ -1,7 +1,7 @@
 
 # Task Donegeon
 
-**Version:** 0.5.51
+**Version:** 0.5.52
 
 ---
 
@@ -15,6 +15,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of July 4, 2026 (v0.5.52):**
+    -   **Multi-Video Quest Support:** The "Video" quest media type has been enhanced to support multiple videos. Administrators can now add a list of videos, each with an optional title, to a single quest. This is ideal for multi-part lessons or providing a playlist of related content. The user interface for creating and viewing these quests has been updated to support the new format.
 
 -   **Week of June 27, 2026 (v0.5.51):**
     -   **Math Muncher Curriculum Expansion:** This major update massively expands the "Math Muncher" minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges based on common core standards. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Finally, enemy AI has been improved for more varied and challenging movement patterns.

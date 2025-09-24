@@ -11,12 +11,29 @@ import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { RewardCategory } from '../../types';
 import { useEconomyState } from '../../context/EconomyContext';
+import { getRandomInt } from './MathMuncherHelpers';
 
 interface MathMuncherGameProps {
   onClose: () => void;
 }
 
 const INITIAL_LIVES = 3;
+
+const getDynamicFontSize = (value: string | number, gridSize: 6 | 12): string => {
+    const text = String(value);
+    const len = text.length;
+
+    if (gridSize === 12) { // 40px box
+        if (len > 7) return 'text-[10px] leading-tight';
+        if (len > 5) return 'text-xs'; // 12px
+        if (len > 3) return 'text-sm'; // 14px
+        return 'text-lg'; // 18px
+    } else { // gridSize === 6, 80px box
+        if (len > 9) return 'text-lg'; // 18px
+        if (len > 6) return 'text-xl'; // 20px
+        return 'text-2xl'; // 24px
+    }
+};
 
 const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const { minigames } = useSystemState();
@@ -43,11 +60,12 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     
     const [shieldActive, setShieldActive] = useState(false);
     const [freezeActive, setFreezeActive] = useState(false);
+    const [isHit, setIsHit] = useState(false);
     
     const gameLoopRef = useRef<number | null>(null);
     const correctAnswersLeft = useRef(0);
     
-    const gameSpeed = useMemo(() => 800 - (round - 1) * 50, [round]);
+    const gameSpeed = useMemo(() => Math.max(200, 800 - (round - 1) * 50), [round]);
     const currentChallenge = useMemo(() => challengePlaylist[challengeIndex], [challengePlaylist, challengeIndex]);
 
     const startChallenge = useCallback((index: number, playlist: any[]) => {
@@ -82,8 +100,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         const gradeChallenges = challenges[gradeKey];
         if (!gradeChallenges) return;
 
+        const newPlaylist = shuffleArray(gradeChallenges.challenges);
         setSelectedGradeKey(gradeKey);
-        setChallengePlaylist(shuffleArray(gradeChallenges.challenges));
+        setChallengePlaylist(newPlaylist);
         setChallengeIndex(0);
         setRound(1);
         setScore(0);
@@ -91,7 +110,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         setLives(INITIAL_LIVES);
         setShieldActive(false);
         setFreezeActive(false);
-        startChallenge(0, shuffleArray(gradeChallenges.challenges));
+        startChallenge(0, newPlaylist);
     }, [startChallenge]);
     
     const startNextChallenge = useCallback(() => {
@@ -117,7 +136,6 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         if (!cell || cell.isEaten) return;
 
         if (cell.item) {
-            // Collect power-up
             if (cell.item === 'life') setLives(l => l + 1);
             if (cell.item === 'shield') setShieldActive(true);
             if (cell.item === 'freeze') {
@@ -143,6 +161,8 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             eatenCell.feedback = 'correct';
         } else {
             setLives(l => l - 1);
+            setIsHit(true);
+            setTimeout(() => setIsHit(false), 500);
             setCombo(0);
             eatenCell.feedback = 'incorrect';
         }
@@ -162,6 +182,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [gameState, grid, playerPos, combo]);
 
     const spawnPowerUp = useCallback(() => {
+        if (!currentChallenge) return;
         const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / currentChallenge.gridSize), x: i % currentChallenge.gridSize } : null).filter(Boolean);
         if (eatenCellsPos.length > 0) {
             const pos = eatenCellsPos[Math.floor(Math.random() * eatenCellsPos.length)]!;
@@ -177,13 +198,36 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [grid, currentChallenge]);
     
     const moveTroggles = useCallback(() => {
+        if (!currentChallenge) return;
+        const gridSize = currentChallenge.gridSize;
         setTroggles(prev => prev.map(troggle => {
-            // ... (troggle movement logic from previous implementation)
-            return troggle; // Placeholder for new logic
+            const newPos = { ...troggle.pos };
+            if (troggle.type === 'patroller') {
+                newPos.x += troggle.dir!.x;
+                if (newPos.x >= gridSize || newPos.x < 0) {
+                    troggle.dir!.x *= -1;
+                    newPos.x += troggle.dir!.x * 2;
+                }
+            } else if (troggle.type === 'hunter') {
+                const dx = playerPos.x - troggle.pos.x;
+                const dy = playerPos.y - troggle.pos.y;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    newPos.x += Math.sign(dx);
+                } else {
+                    newPos.y += Math.sign(dy);
+                }
+            } else if (troggle.type === 'jumper') {
+                if (Math.random() < 0.2) {
+                    newPos.x = getRandomInt(0, gridSize - 1);
+                    newPos.y = getRandomInt(0, gridSize - 1);
+                }
+            }
+            return { ...troggle, pos: newPos };
         }));
-    }, []);
+    }, [currentChallenge, playerPos]);
 
     const handlePlayerMove = useCallback((dx: number, dy: number) => {
+        if (!currentChallenge) return;
         setPlayerPos(prev => {
             const newPos = { x: prev.x + dx, y: prev.y + dy };
             if (newPos.x < 0 || newPos.x >= currentChallenge.gridSize || newPos.y < 0 || newPos.y >= currentChallenge.gridSize) {
@@ -191,14 +235,28 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
             return newPos;
         });
-    }, [currentChallenge?.gridSize]);
+    }, [currentChallenge]);
     
+    // FIX: Define the missing `resetGame` function. This resolves the `Cannot find name 'resetGame'` error in the `useEffect` dependency array.
+    const resetGame = useCallback(() => {
+        setSelectedGradeKey(null);
+        setChallengePlaylist([]);
+        setChallengeIndex(0);
+        setRound(1);
+        setScore(0);
+        setCombo(0);
+        setLives(INITIAL_LIVES);
+        setShieldActive(false);
+        setFreezeActive(false);
+        setGameState('select-level');
+    }, []);
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (gameState === 'select-level') return;
 
             if (gameState === 'game-over' || gameState === 'level-cleared') {
-                if(e.key === 'Enter') gameState === 'game-over' ? setGameState('select-level') : startNextChallenge();
+                if(e.key === 'Enter') gameState === 'game-over' ? resetGame() : startNextChallenge();
                 return;
             }
 
@@ -212,7 +270,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [gameState, handlePlayerMove, handleMunch, startNextChallenge]);
+    }, [gameState, handlePlayerMove, handleMunch, startNextChallenge, resetGame]);
     
     // Countdown
     useEffect(() => {
@@ -242,6 +300,22 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     // Check win/loss conditions
     useEffect(() => {
         if (gameState !== 'playing') return;
+        
+        if (shieldActive) {
+            const onTroggle = troggles.some(t => t.pos.x === playerPos.x && t.pos.y === playerPos.y);
+            if (onTroggle) {
+                setTroggles(prev => prev.filter(t => t.pos.x !== playerPos.x || t.pos.y !== playerPos.y));
+                setShieldActive(false);
+            }
+        } else {
+             const playerHit = troggles.some(t => t.pos.x === playerPos.x && t.pos.y === playerPos.y);
+             if (playerHit) {
+                setLives(l => l - 1);
+                setIsHit(true);
+                setTimeout(() => setIsHit(false), 500);
+                setPlayerPos({ x: Math.floor(grid.length / 2), y: Math.floor(grid.length / 2) });
+             }
+        }
 
         if (lives <= 0) {
             setGameState('game-over');
@@ -262,13 +336,13 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 }
             }
         }
-    }, [lives, correctAnswersLeft.current, gameState, score, submitScore, minigames, rewardTypes, addNotification, currentUser, challengeIndex]);
+    }, [lives, correctAnswersLeft.current, gameState, score, submitScore, minigames, rewardTypes, addNotification, currentUser, challengeIndex, troggles, playerPos, shieldActive, grid.length]);
     
-    const gridSize = currentChallenge?.gridSize || 12;
-    const cellSizeClass = gridSize === 12 ? 'w-10 h-10 text-lg' : 'w-20 h-20 text-2xl';
+    const gridSize = currentChallenge?.gridSize || 6;
+    const cellSizeClass = gridSize === 12 ? 'w-10 h-10' : 'w-20 h-20';
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center p-4">
+        <div className={`w-full h-full flex flex-col items-center justify-center p-4 ${isHit ? 'animate-shake' : ''}`}>
              {gameState === 'select-level' && (
                 <div className="text-center text-white">
                     <h1 className="text-5xl font-medieval text-emerald-400">Math Muncher</h1>
@@ -285,11 +359,11 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
             {gameState !== 'select-level' && (
                  <>
-                    <div className="w-full max-w-[900px] mb-4">
+                    <div className="w-full max-w-[550px] mb-4">
                         <div className="flex justify-between items-center text-white font-bold text-lg p-3 bg-stone-800/50 rounded-lg">
                             <span>Score: {score}</span>
                              <span>Round {round} - Level {challengeIndex + 1}</span>
-                            <span>Lives: {'❤️'.repeat(lives)}</span>
+                             <span>Lives: {'❤️'.repeat(lives)}</span>
                         </div>
                          <p className="text-center text-amber-300 font-semibold mt-2">{currentChallenge?.title}</p>
                     </div>
@@ -301,17 +375,48 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                 const y = Math.floor(index / gridSize);
                                 const isPlayer = playerPos.x === x && playerPos.y === y;
                                 const troggle = troggles.find(t => t.pos.x === x && t.pos.y === y);
+                                const fontSizeClass = getDynamicFontSize(cell.value, gridSize);
                                 return (
                                     <div key={index} className={`flex items-center justify-center font-bold rounded bg-sky-800 relative transition-colors duration-200 ${cellSizeClass}`}
                                          style={{ backgroundColor: cell.feedback === 'correct' ? '#22c55e' : cell.feedback === 'incorrect' ? '#ef4444' : '#0c4a6e' }}>
-                                        {!cell.isEaten && <span>{cell.value}</span>}
-                                        {isPlayer && <span className="absolute text-3xl">😋</span>}
+                                        {!cell.isEaten && <span className={fontSizeClass}>{cell.value}</span>}
+                                        {isPlayer && <span className={`absolute text-3xl ${shieldActive ? 'animate-pulse' : ''}`}>{shieldActive ? '🛡️' : '😋'}</span>}
                                         {troggle && <span className="absolute text-3xl">👿</span>}
+                                        {cell.item && <span className="absolute text-3xl">{cell.item === 'life' ? '❤️' : cell.item === 'shield' ? '🛡️' : cell.item === 'freeze' ? '❄️' : '❓'}</span>}
+                                        <AnimatePresence>
+                                            {cell.feedback && (
+                                            <motion.div
+                                                key={`${x}-${y}-feedback`}
+                                                initial={{ scale: 0, y: 0, opacity: 1 }}
+                                                animate={{ scale: 2, y: -20, opacity: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.5 }}
+                                                className="absolute text-3xl pointer-events-none z-10"
+                                            >
+                                                {cell.feedback === 'correct' ? '✅' : '❌'}
+                                            </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 );
                             })}
                         </div>
-                        {/* Overlays */}
+                        <AnimatePresence>
+                            {(gameState === 'countdown' || gameState === 'game-over' || gameState === 'level-cleared') && (
+                                <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="absolute inset-0 bg-black/70 rounded-md flex flex-col items-center justify-center text-white">
+                                    {gameState === 'countdown' && <p className="text-6xl font-bold font-medieval text-emerald-400 animate-ping" style={{animationDuration: '0.7s'}}>{countdown > 0 ? countdown : 'GO!'}</p>}
+                                    {gameState === 'game-over' && <>
+                                        <h2 className="text-4xl font-bold font-medieval text-red-500">Game Over</h2>
+                                        <p className="text-xl mt-2">Final Score: {score}</p>
+                                        <Button onClick={resetGame} className="mt-6">Back to Levels</Button>
+                                    </>}
+                                    {gameState === 'level-cleared' && <>
+                                        <h2 className="text-4xl font-bold font-medieval text-amber-300">Level Cleared!</h2>
+                                        <Button onClick={startNextChallenge} className="mt-6">Next Level</Button>
+                                    </>}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                      <div className="flex items-center gap-8 mt-4">
                         <div className="grid grid-cols-3 gap-2 w-40">

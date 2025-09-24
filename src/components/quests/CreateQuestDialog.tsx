@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig, AITutor, RewardItem, RewardCategory, ImageSlide, VideoSlide } from '../../types';
@@ -276,13 +277,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         description: formData.description,
         type: formData.type,
         kind: formData.kind,
-        mediaType: formData.mediaType || undefined,
-        aiTutorId: formData.mediaType === QuestMediaType.AITutor ? formData.aiTutorId : undefined,
-        videos: formData.mediaType === QuestMediaType.Video ? formData.videos?.filter(v => v.url.trim()) : undefined,
+        mediaType: formData.mediaType || null,
+        aiTutorId: formData.mediaType === QuestMediaType.AITutor ? formData.aiTutorId : null,
+        videos: formData.mediaType === QuestMediaType.Video ? formData.videos?.filter(v => v.url.trim()) : null,
         pdfUrl: formData.mediaType === QuestMediaType.PDF ? formData.pdfUrl : null,
-        images: formData.mediaType === QuestMediaType.Images ? formData.images : undefined,
-        minigameId: formData.mediaType === QuestMediaType.PlayMiniGame ? formData.minigameId : undefined,
-        minigameMinScore: formData.mediaType === QuestMediaType.PlayMiniGame ? formData.minigameMinScore : undefined,
+        images: formData.mediaType === QuestMediaType.Images ? formData.images : null,
+        minigameId: formData.mediaType === QuestMediaType.PlayMiniGame ? formData.minigameId : null,
+        minigameMinScore: formData.mediaType === QuestMediaType.PlayMiniGame ? formData.minigameMinScore : null,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,

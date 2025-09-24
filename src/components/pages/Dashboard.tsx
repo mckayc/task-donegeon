@@ -225,7 +225,8 @@ const Dashboard: React.FC = () => {
 
         const handledCardIds = new Set([
             ...newLayout.columns.main.order,
-            ...newLayout.columns.side.order
+            ...newLayout.columns.side.order,
+            ...newLayout.hidden,
         ]);
         
         // Add any new cards from `allCardComponents` that aren't in the user's layout yet

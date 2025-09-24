@@ -1,10 +1,10 @@
 
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
-// FIX: Corrected type imports to use the main types barrel file.
-import { RewardTypeDefinition, Market, RewardItem, RewardCategory, ScheduledEvent } from '../../types';
+import { RewardTypeDefinition, Market, RewardItem, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';
@@ -12,6 +12,7 @@ import { ArrowRightIcon, InfoIcon } from '../user-interface/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import NumberInput from '../user-interface/NumberInput';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface ExchangeViewProps {
     market: Market;
@@ -22,26 +23,35 @@ const RewardButton: React.FC<{
     balance?: number;
     isSelected: boolean;
     isDisabled: boolean;
+    highlightColor?: string;
     onClick: () => void;
-}> = ({ reward, balance, isSelected, isDisabled, onClick }) => (
-    <button
-        onClick={onClick}
-        disabled={isDisabled}
-        className={`p-2 rounded-lg text-center transition-all duration-200 relative ${
-            isSelected 
-                ? 'bg-emerald-800/60 border-2 border-emerald-500 ring-2 ring-emerald-500/50 scale-105' 
-                : isDisabled 
+}> = ({ reward, balance, isSelected, isDisabled, highlightColor, onClick }) => {
+    const borderStyle = isSelected
+        ? 'border-emerald-500 ring-2 ring-emerald-500/50'
+        : 'border-transparent';
+
+    return (
+        <button
+            onClick={onClick}
+            disabled={isDisabled}
+            className={`p-2 rounded-lg text-center transition-all duration-200 relative border-2 ${borderStyle} ${
+                isDisabled 
                 ? 'bg-stone-800 opacity-40 cursor-not-allowed'
-                : 'bg-stone-900/50 border-2 border-transparent hover:border-emerald-600'
-        }`}
-        title={balance !== undefined ? `${reward.name}: ${Math.floor(balance)}` : reward.name}
-    >
-        <div className="text-3xl">{reward.icon}</div>
-        {balance !== undefined && (
-             <p className="text-xs text-stone-300 font-semibold">{Math.floor(balance)}</p>
-        )}
-    </button>
-);
+                : 'bg-stone-900/50 hover:border-emerald-600'
+            }`}
+            style={{
+                borderColor: isSelected ? 'hsl(var(--primary))' : highlightColor,
+                boxShadow: isSelected ? '0 0 8px hsl(var(--primary))' : 'none',
+            }}
+            title={balance !== undefined ? `${reward.name}: ${Math.floor(balance)}` : reward.name}
+        >
+            <div className="text-3xl">{reward.icon}</div>
+            {balance !== undefined && (
+                 <p className="text-xs text-stone-300 font-semibold">{Math.floor(balance)}</p>
+            )}
+        </button>
+    );
+};
 
 
 const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
@@ -54,20 +64,15 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const { addNotification } = useNotificationsDispatch();
 
     const [fromRewardId, setFromRewardId] = useState<string>('');
+    const [pooledPayIds, setPooledPayIds] = useState<Set<string>>(new Set());
     const [toRewardId, setToRewardId] = useState<string>('');
     const [toAmount, setToAmount] = useState<number>(0);
+    const [isCombineModeEnabled, setIsCombineModeEnabled] = useState<boolean>(false);
 
     const exchangeableRewardTypes = useMemo(() => {
         return rewardTypes.filter(rt => rt.baseValue > 0 && rt.isExchangeable !== false);
     }, [rewardTypes]);
 
-    const { payWithRewards, receiveRewards } = useMemo(() => {
-        return {
-            payWithRewards: exchangeableRewardTypes,
-            receiveRewards: exchangeableRewardTypes
-        }
-    }, [exchangeableRewardTypes]);
-    
     const balances = useMemo(() => {
         if (!currentUser) return new Map<string, number>();
         const purse = appMode.mode === 'personal' ? currentUser.personalPurse : currentUser.guildBalances[appMode.guildId]?.purse || {};
@@ -79,51 +84,92 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         });
         return combined;
     }, [currentUser, appMode, rewardTypes]);
+
+    const valueGroups = useMemo(() => {
+        const groups: Map<number, RewardTypeDefinition[]> = new Map();
+        exchangeableRewardTypes.forEach(rt => {
+            if (rt.baseValue > 0) {
+                if (!groups.has(rt.baseValue)) {
+                    groups.set(rt.baseValue, []);
+                }
+                groups.get(rt.baseValue)!.push(rt);
+            }
+        });
+        return groups;
+    }, [exchangeableRewardTypes]);
+
+    const groupColors = useMemo(() => {
+        const colors = ['#3b82f6', '#ef4444', '#22c55e', '#eab308', '#8b5cf6', '#ec4899']; // blue, red, green, yellow, purple, pink
+        const colorMap = new Map<number, string>();
+        let colorIndex = 0;
+        for (const value of valueGroups.keys()) {
+            if ((valueGroups.get(value)?.length || 0) > 1) {
+                colorMap.set(value, colors[colorIndex % colors.length]);
+                colorIndex++;
+            }
+        }
+        return colorMap;
+    }, [valueGroups]);
     
     const fromReward = useMemo(() => rewardTypes.find(rt => rt.id === fromRewardId), [fromRewardId, rewardTypes]);
     const toReward = useMemo(() => rewardTypes.find(rt => rt.id === toRewardId), [toRewardId, rewardTypes]);
 
-    const fromBalanceDetails = useMemo(() => {
-        const defaultReturn = { total: 0, isPooled: false, pooledItems: [] as { name: string, icon: string, amount: number }[] };
-        if (!fromReward) return defaultReturn;
+    const handleFromSelect = (id: string) => {
+        const newReward = exchangeableRewardTypes.find(rt => rt.id === id);
+        if (!newReward) return;
 
-        const fromBalance = balances.get(fromReward.id) || 0;
-
-        // Pooling only applies to exchangeable XP types with a base value
-        if (fromReward.category !== RewardCategory.XP || !fromReward.baseValue || fromReward.baseValue <= 0 || fromReward.isExchangeable === false) {
-            return { ...defaultReturn, total: fromBalance };
+        if (!isCombineModeEnabled) {
+            setFromRewardId(fromRewardId === id ? '' : id);
+            setPooledPayIds(new Set());
+            setToAmount(0);
+            return;
         }
 
-        // Find other XP types with the exact same base value
-        const matchingXpTypes = exchangeableRewardTypes.filter(
-            rt => rt.id !== fromReward.id &&
-                  rt.category === RewardCategory.XP &&
-                  rt.baseValue === fromReward.baseValue &&
-                  rt.isExchangeable !== false
-        );
-        
-        const allRelevantTypes = [fromReward, ...matchingXpTypes];
+        const currentPrimaryReward = fromRewardId ? exchangeableRewardTypes.find(rt => rt.id === fromRewardId) : null;
 
-        const pooledItems = allRelevantTypes.map(rt => ({
-            name: rt.name,
-            icon: rt.icon,
-            amount: balances.get(rt.id) || 0,
-        })).filter(item => item.amount > 0);
-        
-        // Only consider it "pooled" if there's more than one item with a balance contributing
-        if (pooledItems.length <= 1) {
-            return { total: fromBalance, isPooled: false, pooledItems: [] };
+        if (!currentPrimaryReward || newReward.baseValue !== currentPrimaryReward.baseValue) {
+            setFromRewardId(id);
+            setPooledPayIds(new Set());
+        } else {
+            if (id === fromRewardId) {
+                setFromRewardId('');
+                setPooledPayIds(new Set());
+            } else {
+                setPooledPayIds(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(id)) newSet.delete(id);
+                    else newSet.add(id);
+                    return newSet;
+                });
+            }
         }
+        setToAmount(0);
+    };
 
-        const totalPooledBalance = pooledItems.reduce((sum, item) => sum + item.amount, 0);
+    const handleToSelect = (id: string) => { setToRewardId(id); setToAmount(0); };
+
+    const { currentFromBalance, pooledItems } = useMemo(() => {
+        if (!fromRewardId) return { currentFromBalance: 0, pooledItems: [] };
+
+        const fromBalance = balances.get(fromRewardId) || 0;
+        const pooledBalances = Array.from(pooledPayIds).reduce((sum, id) => sum + (balances.get(id) || 0), 0);
+
+        const primaryItem = rewardTypes.find(rt => rt.id === fromRewardId);
+        const pooled = Array.from(pooledPayIds).map(id => rewardTypes.find(rt => rt.id === id)).filter(Boolean) as RewardTypeDefinition[];
+
+        const allItems = primaryItem ? [primaryItem, ...pooled] : pooled;
+        const itemsWithBalances = allItems.map(item => ({
+            name: item.name,
+            icon: item.icon,
+            amount: balances.get(item.id) || 0,
+        }));
 
         return {
-            total: totalPooledBalance,
-            isPooled: true,
-            pooledItems: pooledItems
+            currentFromBalance: fromBalance + pooledBalances,
+            pooledItems: itemsWithBalances
         };
-    }, [fromReward, balances, exchangeableRewardTypes]);
-
+    }, [fromRewardId, pooledPayIds, balances, rewardTypes]);
+    
     const exchangeRate = useMemo(() => {
         if (!fromReward || !toReward || !fromReward.baseValue || !toReward.baseValue) {
             return null;
@@ -143,12 +189,10 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         }
 
         const { currencyExchangeFeePercent, xpExchangeFeePercent } = settings.rewardValuation;
-        const fromBalance = fromBalanceDetails.isPooled ? fromBalanceDetails.total : (balances.get(fromReward.id) || 0);
         const feePercent = fromReward.category === RewardCategory.Currency ? currencyExchangeFeePercent : xpExchangeFeePercent;
         const feeMultiplier = 1 + (Number(feePercent) / 100);
 
-        // Calculate maximum possible receive amount based on balance
-        const fromValueAfterFee = (fromBalance / feeMultiplier) * fromReward.baseValue;
+        const fromValueAfterFee = (currentFromBalance / feeMultiplier) * fromReward.baseValue;
         const maxToAmount = Math.floor(fromValueAfterFee / toReward.baseValue);
 
         if (toAmountNum === 0) {
@@ -166,19 +210,20 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
 
         return { fromAmountBase, fee, roundingFee, totalCost, maxToAmount };
 
-    }, [toAmount, fromReward, toReward, settings.rewardValuation, balances, fromBalanceDetails]);
+    }, [toAmount, fromReward, toReward, settings.rewardValuation, currentFromBalance]);
     
     const recommendedAmounts = useMemo(() => {
         if (!fromReward || !toReward || calculation.maxToAmount <= 0) return [];
 
         const suggestions: { amount: number; loss: number }[] = [];
-        const limit = Math.min(calculation.maxToAmount, 250); // Scan a reasonable range
+        const limit = Math.min(calculation.maxToAmount, 250);
 
         for (let i = 1; i <= limit; i++) {
             const toValueInReal = i * toReward.baseValue;
             const fromAmountBase = toValueInReal / fromReward.baseValue;
             const feePercent = fromReward.category === RewardCategory.Currency ? settings.rewardValuation.currencyExchangeFeePercent : settings.rewardValuation.xpExchangeFeePercent;
             const feeMultiplier = 1 + (Number(feePercent) / 100);
+            // FIX: Removed incorrect function call `()` on the numeric variable `feeMultiplier`.
             const provisionalTotalCost = fromAmountBase * feeMultiplier;
             const totalCost = Math.ceil(provisionalTotalCost);
             const roundingLoss = totalCost - provisionalTotalCost;
@@ -203,9 +248,6 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         return bestAmounts.filter(a => a > 0).sort((a, b) => a - b).slice(0, 4);
 
     }, [fromReward, toReward, calculation.maxToAmount, settings.rewardValuation]);
-
-    const handleFromSelect = (id: string) => { setFromRewardId(id); setToAmount(0); };
-    const handleToSelect = (id: string) => { setToRewardId(id); setToAmount(0); };
     
     const handleExchange = () => {
         if (!currentUser || !fromReward || !toReward) return;
@@ -214,19 +256,17 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
             return;
         }
 
-        const totalCost = calculation.totalCost;
-
-        const payItem: RewardItem = { rewardTypeId: fromRewardId, amount: totalCost };
+        const payItem: RewardItem = { rewardTypeId: fromRewardId, amount: calculation.totalCost };
         const receiveItem: RewardItem = { rewardTypeId: toRewardId, amount: toAmount };
         const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         executeExchange(currentUser.id, payItem, receiveItem, guildId);
         setToAmount(0);
+        setFromRewardId('');
+        setPooledPayIds(new Set());
     };
 
-    const currentFromBalance = useMemo(() => {
-        return fromBalanceDetails.isPooled ? fromBalanceDetails.total : (balances.get(fromRewardId) || 0);
-    }, [fromBalanceDetails, balances, fromRewardId]);
+    const selectedPaySet = new Set([fromRewardId, ...pooledPayIds]);
 
     return (
         <div>
@@ -234,19 +274,21 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                 &larr; Back to the {settings.terminology.shoppingCenter}
             </Button>
             <Card title="Currency & XP Exchange">
+                <div className="flex justify-end mb-4 -mt-2">
+                     <ToggleSwitch enabled={isCombineModeEnabled} setEnabled={setIsCombineModeEnabled} label="Combine Same-Value Items" />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Left Column: Selection */}
                     <div className="space-y-6">
                          <div>
                             <h3 className="font-bold text-lg text-stone-200 mb-3 flex items-center gap-2">
                                 You Pay
-                                {fromBalanceDetails.isPooled && (
+                                {isCombineModeEnabled && selectedPaySet.size > 1 && (
                                     <div className="relative group">
                                         <InfoIcon className="w-4 h-4 text-sky-400 cursor-help" />
-                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 p-2 text-xs bg-stone-900 text-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-stone-700">
-                                            <p className="font-bold mb-1">XP Value Pooled:</p>
+                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 p-2 text-xs bg-stone-900 text-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 border border-stone-700">
+                                            <p className="font-bold mb-1">Pooled Items:</p>
                                             <ul className="space-y-1">
-                                                {fromBalanceDetails.pooledItems.map(item => (
+                                                {pooledItems.map(item => (
                                                     <li key={item.name} className="flex justify-between">
                                                         <span>{item.icon} {item.name}</span>
                                                         <span>{Math.floor(item.amount)}</span>
@@ -255,7 +297,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                             </ul>
                                             <p className="font-bold mt-1 pt-1 border-t border-stone-700 flex justify-between">
                                                 <span>Total Available:</span>
-                                                <span>{Math.floor(fromBalanceDetails.total)}</span>
+                                                <span>{Math.floor(currentFromBalance)}</span>
                                             </p>
                                             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-stone-900 transform rotate-45 border-r border-b border-stone-700"></div>
                                         </div>
@@ -263,17 +305,21 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                 )}
                             </h3>
                              <div className="grid grid-cols-4 gap-2">
-                                {payWithRewards.map(r => <RewardButton key={r.id} reward={r} balance={balances.get(r.id) || 0} isSelected={fromRewardId === r.id} isDisabled={toRewardId === r.id} onClick={() => handleFromSelect(r.id)} />)}
+                                {exchangeableRewardTypes.map(r => {
+                                    const highlightColor = isCombineModeEnabled ? groupColors.get(r.baseValue) : undefined;
+                                    return (
+                                        <RewardButton key={r.id} reward={r} balance={balances.get(r.id) || 0} isSelected={selectedPaySet.has(r.id)} isDisabled={toRewardId === r.id} highlightColor={highlightColor} onClick={() => handleFromSelect(r.id)} />
+                                    )
+                                })}
                             </div>
                         </div>
                          <div>
                             <h3 className="font-bold text-lg text-stone-200 mb-3">You Receive</h3>
                              <div className="grid grid-cols-4 gap-2">
-                                {receiveRewards.map(r => <RewardButton key={r.id} reward={r} isSelected={toRewardId === r.id} isDisabled={fromRewardId === r.id} onClick={() => handleToSelect(r.id)} />)}
+                                {exchangeableRewardTypes.map(r => <RewardButton key={r.id} reward={r} isSelected={toRewardId === r.id} isDisabled={selectedPaySet.has(r.id)} onClick={() => handleToSelect(r.id)} />)}
                             </div>
                         </div>
                     </div>
-                    {/* Right Column: Calculator */}
                     <div className="bg-stone-900/40 p-6 rounded-lg flex flex-col justify-center">
                         {fromReward && toReward ? (
                              <div className="space-y-6 text-center">

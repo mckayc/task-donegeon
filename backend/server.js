@@ -195,4 +195,121 @@ const initializeApp = async () => {
 
     // MIGRATION/SYNC: Add new minigames if they don't exist
     const newMinigames = [
-        { id: 'minigame-snake
+        { id: 'minigame-snake', name: 'Snake', description: 'The classic game of snake.', icon: '🐍', cost: 1 },
+        { id: 'minigame-dragons-dice', name: "Dragon's Dice", description: 'A game of luck and risk. Roll to score, but don\'t get too greedy!', icon: '🎲', cost: 1 },
+        { id: 'minigame-rune-breaker', name: 'Rune Breaker', description: 'A fantasy-themed version of the classic Breakout.', icon: '🧱', cost: 1 },
+        { id: 'minigame-dungeon-dash', name: 'Dungeon Dash', description: 'An endless runner. Jump and slide to avoid obstacles!', icon: '🏃', cost: 1 },
+        { id: 'minigame-forge-master', name: 'Forge Master', description: 'Time your strikes to forge the perfect weapon.', icon: '🔨', cost: 1 },
+        { id: 'minigame-archers-folly', name: "Archer's Folly", description: 'Hit the moving targets before you run out of arrows.', icon: '🏹', cost: 1 },
+        { id: 'minigame-tetris', name: 'Tetris', description: 'The timeless puzzle game of falling blocks.', icon: '🧱', cost: 1 },
+        { id: 'minigame-gemstone-mines', name: 'Gemstone Mines', description: 'A classic match-3 game with a fruity twist.', icon: '💎', cost: 1 },
+        { id: 'minigame-labyrinth', name: 'Labyrinth of the Minotaur', description: 'Find the exit before the Minotaur finds you!', icon: '🗺️', cost: 1 },
+        { id: 'minigame-alchemists-trial', name: "Alchemist's Trial", description: 'A "Simon"-style memory game with magical ingredients.', icon: '🧪', cost: 1 },
+        { id: 'minigame-goblin-ambush', name: 'Goblin Ambush', description: 'A "whack-a-mole" style game. Avoid the gnomes!', icon: '👺', cost: 1 },
+        { id: 'minigame-river-crossing', name: 'River Crossing', description: 'A "Frogger"-style game. Get your hero to safety!', icon: '🐸', cost: 1 },
+        { id: 'minigame-wizards-vortex', name: "Wizard's Vortex", description: 'A top-down shooter where you defend a central point.', icon: '🧙', cost: 1 },
+        { id: 'minigame-math-muncher', name: 'Math Muncher', description: 'An educational game to practice math skills.', icon: '😋', cost: 1 },
+    ];
+    
+    const minigameRepo = manager.getRepository(MinigameEntity);
+    const existingMinigames = await minigameRepo.find();
+    const existingIds = new Set(existingMinigames.map(g => g.id));
+    const gamesToAdd = newMinigames.filter(g => !existingIds.has(g.id));
+
+    if (gamesToAdd.length > 0) {
+        console.log(`[Data Sync] Adding ${gamesToAdd.length} new minigames to the database...`);
+        const games = minigameRepo.create(gamesToAdd);
+        await minigameRepo.save(games.map(g => updateTimestamps(g, true)));
+    }
+    
+    // MIGRATION/SYNC: Ensure core reward types exist and are up-to-date
+    const rewardRepo = manager.getRepository(RewardTypeDefinitionEntity);
+    for (const coreReward of INITIAL_REWARD_TYPES) {
+        const existing = await rewardRepo.findOneBy({ id: coreReward.id });
+        if (!existing) {
+            console.log(`[Data Sync] Creating core reward: ${coreReward.name}`);
+            const newReward = rewardRepo.create(coreReward);
+            await rewardRepo.save(updateTimestamps(newReward, true));
+        } else {
+            // This allows updating descriptions or baseValues of core rewards on startup
+            const { id, ...updatedData } = coreReward;
+            rewardRepo.merge(existing, updatedData);
+            await rewardRepo.save(updateTimestamps(existing));
+        }
+    }
+    
+    // MIGRATION/SYNC: Ensure core birthday trophies exist
+    const trophyRepo = manager.getRepository(TrophyEntity);
+    const birthdayTrophies = INITIAL_TROPHIES.filter(t => t.id.startsWith('trophy-bday-'));
+    for (const bdayTrophy of birthdayTrophies) {
+        const existing = await trophyRepo.findOneBy({ id: bdayTrophy.id });
+        if (!existing) {
+            console.log(`[Data Sync] Creating birthday trophy: ${bdayTrophy.name}`);
+            const newTrophy = trophyRepo.create(bdayTrophy);
+            await trophyRepo.save(updateTimestamps(newTrophy, true));
+        }
+    }
+
+    // === API Routes ===
+    app.use('/api/quests', questsRouter);
+    app.use('/api/users', usersRouter);
+    app.use('/api/markets', marketsRouter);
+    app.use('/api/reward-types', rewardsRouter);
+    app.use('/api/ranks', ranksRouter);
+    app.use('/api/trophies', trophiesRouter);
+    app.use('/api/assets', assetsRouter);
+    app.use('/api/quest-groups', questGroupsRouter);
+    app.use('/api/themes', themesRouter);
+    app.use('/api/events', eventsRouter);
+    app.use('/api/rotations', rotationsRouter);
+    app.use('/api/applied-modifiers', appliedModifiersRouter);
+    app.use('/api/trades', tradesRouter);
+    app.use('/api/gifts', giftsRouter);
+    app.use('/api/guilds', guildsRouter);
+    app.use('/api/settings', settingsRouter);
+    app.use('/api/chat', chatRouter);
+    app.use('/api/bug-reports', bugReportsRouter);
+    app.use('/api/notifications', notificationsRouter);
+    app.use('/api/setbacks', setbacksRouter);
+    app.use('/api/minigames', minigamesRouter);
+    app.use('/api/ai-tutors', aiTutorRouter);
+    // --- NEW MODULAR ROUTERS ---
+    app.use('/api/data', dataRouter);
+    app.use('/api/asset-packs', managementRouters.assetPacksRouter);
+    app.use('/api/image-packs', managementRouters.imagePacksRouter);
+    app.use('/api/backups', managementRouters.backupsRouter);
+    app.use('/api/media', managementRouters.mediaRouter);
+    app.use('/api/ai', aiRouter);
+    app.use('/api/system', systemRouter);
+    app.use('/api/chronicles', chroniclesRouter);
+
+    // === Serve Static Assets ===
+    // Serve the built Vite app
+    const buildPath = path.resolve(__dirname, '..', 'dist');
+    app.use(express.static(buildPath));
+    // Serve the 'data/assets' directory for uploads
+    app.use('/uploads', express.static(UPLOADS_DIR));
+    // Serve the media directory
+    app.use('/media', express.static(MEDIA_DIR));
+
+    // For any other request, serve the index.html file to support client-side routing
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(buildPath, 'index.html'));
+    });
+    
+    // === Error Handling Middleware ===
+    app.use((err, req, res, next) => {
+      console.error(err.stack);
+      res.status(500).send({ error: 'Something went wrong!' });
+    });
+
+    // === Start Server ===
+    app.listen(port, () => {
+        console.log(`Server listening at http://localhost:${port}`);
+        ensureDefaultAssetPacksExist();
+        startAutomatedBackupScheduler();
+        startAutomatedRotationScheduler();
+    });
+};
+
+initializeApp().catch(error => console.log(error));

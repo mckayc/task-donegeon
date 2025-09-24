@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { Quest, QuestType, QuestKind, Checkpoint, QuestMediaType, QuestTimerConfig, AITutor, RewardItem, RewardCategory, ImageSlide, VideoSlide } from '../../types';
@@ -288,18 +289,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         }
     }
 
-    const questPayload: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> = {
+    const questData: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> = {
         title: formData.title,
         description: formData.description,
         type: formData.type,
         kind: formData.kind,
-        mediaType: formData.mediaType || null,
-        aiTutorId: formData.mediaType === QuestMediaType.AITutor ? (formData.aiTutorId || null) : null,
-        videos: formData.mediaType === QuestMediaType.Video ? (formData.videos?.filter(v => v.url.trim()) || null) : null,
-        pdfUrl: formData.mediaType === QuestMediaType.PDF ? (formData.pdfUrl || null) : null,
-        images: formData.mediaType === QuestMediaType.Images ? (formData.images || null) : null,
-        minigameId: formData.mediaType === QuestMediaType.PlayMiniGame ? (formData.minigameId || null) : null,
-        minigameMinScore: formData.mediaType === QuestMediaType.PlayMiniGame ? (formData.minigameMinScore || null) : null,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -330,15 +324,44 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         approvedClaims: formData.approvedClaims || [],
         conditionSetIds: formData.conditionSetIds?.length ? formData.conditionSetIds : undefined,
         timerConfig: formData.timerConfig || undefined,
+        
+        // Explicitly null all media fields
+        mediaType: formData.mediaType || null,
+        aiTutorId: null,
+        videos: null,
+        pdfUrl: null,
+        images: null,
+        minigameId: null,
+        minigameMinScore: null,
     };
+    
+    // Repopulate the active media field
+    switch (formData.mediaType) {
+        case QuestMediaType.AITutor:
+            questData.aiTutorId = formData.aiTutorId || null;
+            break;
+        case QuestMediaType.Video:
+            questData.videos = formData.videos?.filter(v => v.url.trim()) || null;
+            break;
+        case QuestMediaType.PDF:
+            questData.pdfUrl = formData.pdfUrl || null;
+            break;
+        case QuestMediaType.Images:
+            questData.images = formData.images || null;
+            break;
+        case QuestMediaType.PlayMiniGame:
+            questData.minigameId = formData.minigameId || null;
+            questData.minigameMinScore = formData.minigameMinScore || null;
+            break;
+    }
 
     if (onSave) {
-        onSave(questPayload);
+        onSave(questData);
     } else if (mode === 'edit' && questToEdit) {
-        await updateQuest({ ...questToEdit, ...questPayload });
+        await updateQuest({ ...questToEdit, ...questData });
         onClose();
     } else {
-        await addQuest(questPayload);
+        await addQuest(questData);
         onClose();
     }
   };

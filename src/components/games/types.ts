@@ -45,4 +45,4 @@ export interface GameGrade {
 }
 
 export type GameGrades = Record<string, GameGrade>;
-export { Cell, Troggle, PowerUpType };
+export type { Cell, Troggle, PowerUpType };

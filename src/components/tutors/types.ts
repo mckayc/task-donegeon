@@ -43,3 +43,14 @@ export interface AITutorSessionLog {
     createdAt?: string;
     updatedAt?: string;
 }
+
+// FIX: Added QuizChoice and QuizQuestion types for AI Tutor quizzes.
+export interface QuizChoice {
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  question: string;
+  choices: QuizChoice[];
+}

@@ -31,13 +31,13 @@ const formatTime = (totalSeconds: number) => {
 };
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle, userForView }) => {
-    const { settings } = useSystemState();
+    const { settings, gameScores } = useSystemState();
     const { rewardTypes } = useEconomyState();
     const { questCompletions } = useQuestsState();
     const { currentUser: loggedInUser } = useAuthState();
     const { completeCheckpoint, claimQuest, unclaimQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { setReadingPdfQuest, startTimer, stopTimer, pauseTimer, resumeTimer } = useUIDispatch();
+    const { setReadingPdfQuest, startTimer, stopTimer, pauseTimer, resumeTimer, setActiveGame } = useUIDispatch();
     const { activeTimer } = useUIState();
     
     const [isTutorSessionOpen, setIsTutorSessionOpen] = useState(false);
@@ -47,6 +47,14 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const [displaySeconds, setDisplaySeconds] = useState(0);
 
     const currentUser = userForView || loggedInUser;
+
+    const userHighScore = useMemo(() => {
+        if (!currentUser || !quest.minigameId) return 0;
+        const scoresForGame = gameScores
+            .filter(s => s.userId === currentUser.id && s.gameId === quest.minigameId)
+            .map(s => s.score);
+        return Math.max(0, ...scoresForGame);
+    }, [gameScores, currentUser, quest.minigameId]);
 
     const thisQuestsTimer = useMemo(() => {
         if (!currentUser) return null;
@@ -179,34 +187,31 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 
     const renderActionButtons = () => {
         if (onComplete) {
+            let buttonText = 'Complete';
+            let isCompleteDisabled = false;
+            
             if (quest.timerConfig) {
-                // Logic for TIMED quests that can be completed
-                if (thisQuestsTimer) {
-                    // Timer is active: Button should stop timer and complete.
-                    return (<Button onClick={handleStopAndComplete}>Stop & Complete</Button>);
-                } else {
-                    const isJourney = quest.type === QuestType.Journey;
-                    const isAiQuest = quest.mediaType === QuestMediaType.AITutor;
-                    const canCompleteAiQuest = isAiQuest && !!tutorSessionLog;
-                    const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
-                    let buttonText = 'Complete Manually';
-                    if (isJourney) buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
-                    else if (isAiQuest) buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Complete Session to Enable';
-                    return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
-                }
-            } else {
-                // Logic for NON-TIMED quests that can be completed
-                const isJourney = quest.type === QuestType.Journey;
-                const isAiQuest = quest.mediaType === QuestMediaType.AITutor;
-                const canCompleteAiQuest = isAiQuest && !!tutorSessionLog;
-                const disabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
-                
-                let buttonText = 'Complete';
-                if (isJourney) buttonText = disabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
-                else if (isAiQuest) buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Complete Session to Enable';
-    
-                return <Button onClick={handleComplete} disabled={disabled}>{buttonText}</Button>;
+                if (thisQuestsTimer) return (<Button onClick={handleStopAndComplete}>Stop & Complete</Button>);
+                buttonText = 'Complete Manually';
             }
+            
+            const isJourney = quest.type === QuestType.Journey;
+            const isAiQuest = quest.mediaType === QuestMediaType.AITutor;
+            const canCompleteAiQuest = isAiQuest && !!tutorSessionLog;
+            
+            isCompleteDisabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
+            
+            if (isJourney) buttonText = isCompleteDisabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
+            else if (isAiQuest) buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Complete Session to Enable';
+
+            if (quest.mediaType === QuestMediaType.PlayMiniGame && quest.minigameMinScore) {
+                if (userHighScore < quest.minigameMinScore) {
+                    isCompleteDisabled = true;
+                    buttonText = `Score ${quest.minigameMinScore} to Complete (Best: ${userHighScore})`;
+                }
+            }
+            
+            return <Button onClick={handleComplete} disabled={isCompleteDisabled}>{buttonText}</Button>;
         }
     
         // Logic for claimable quests (when onComplete is not provided)
@@ -264,6 +269,14 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             {quest.mediaType === QuestMediaType.AITutor && <Button variant="secondary" onClick={() => setIsTutorSessionOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Start AI Tutor</Button>}
                             {quest.mediaType === QuestMediaType.AIStory && <Button variant="secondary" onClick={() => setIsAiStoryOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Read AI Story</Button>}
                             {quest.mediaType === QuestMediaType.Video && quest.videoUrl && <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>▶️ Watch Video</Button>}
+                            {quest.mediaType === QuestMediaType.PlayMiniGame && quest.minigameId && (
+                                <Button variant="secondary" onClick={() => {
+                                    setActiveGame(quest.minigameId!);
+                                    onClose();
+                                }}>
+                                    ▶️ Play Game
+                                </Button>
+                            )}
                             {quest.pdfUrl && <Button variant="secondary" onClick={handleOpenPdfReader}>📖 Read PDF</Button>}
                             {onToggleTodo && quest.type === QuestType.Venture && <ToggleSwitch enabled={!!isTodo} setEnabled={() => onToggleTodo()} label="To-Do"/>}
                             {renderActionButtons()}

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.45 - Math Muncher Expansion",
-  "version": "0.5.45",
-  "description": "This update massively expands the 'Math Muncher' minigame. It now includes a full curriculum for grades 1-6, with 10 unique challenges per grade. The game features a dynamic grid that adapts to problem complexity (12x12 or 6x6) and an endless progression system where the game speeds up after a player masters all 10 challenges in a grade.",
+  "name": "Task Donegeon 2.0 - 0.5.47 - Play Mini Game Quests",
+  "version": "0.5.47",
+  "description": "This update introduces a new interactive quest media type: 'Play Mini Game'. Administrators can now create quests that require users to play a specific minigame from the Arcade. This feature is enhanced with an optional 'Minimum Score' requirement to ensure active participation. The quest completion logic is now aware of user high scores, and the 'Complete' button will remain disabled until the score requirement is met.",
   "requestFramePermissions": [
     "camera"
   ],

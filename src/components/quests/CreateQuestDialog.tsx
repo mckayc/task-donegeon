@@ -36,7 +36,7 @@ interface QuestDialogProps {
 }
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
-  const { settings, aiTutors } = useSystemState();
+  const { settings, aiTutors, minigames } = useSystemState();
   const { guilds } = useCommunityState();
   const { allTags, questGroups } = useQuestsState();
   const { rewardTypes } = useEconomyState();
@@ -76,6 +76,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         approvedClaims: [],
         conditionSetIds: undefined,
         timerConfig: undefined,
+        minigameId: undefined,
+        minigameMinScore: undefined,
     };
 
     // Mode: Edit
@@ -275,6 +277,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         videoUrl: formData.mediaType === QuestMediaType.Video ? formData.videoUrl : null,
         pdfUrl: formData.mediaType === QuestMediaType.PDF ? formData.pdfUrl : null,
         images: formData.mediaType === QuestMediaType.Images ? formData.images : undefined,
+        minigameId: formData.mediaType === QuestMediaType.PlayMiniGame ? formData.minigameId : undefined,
+        minigameMinScore: formData.mediaType === QuestMediaType.PlayMiniGame ? formData.minigameMinScore : undefined,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -445,6 +449,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                   <option value={QuestMediaType.Video}>Video</option>
                   <option value={QuestMediaType.PDF}>PDF</option>
                   <option value={QuestMediaType.Images}>Image Slideshow</option>
+                  <option value={QuestMediaType.PlayMiniGame}>Play Mini Game</option>
               </Input>
               {formData.mediaType === QuestMediaType.AITutor && (
                 <Input
@@ -509,6 +514,17 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                     >
                         Manage Slides ({formData.images?.length || 0})
                     </Button>
+                </div>
+            )}
+            {formData.mediaType === QuestMediaType.PlayMiniGame && (
+                <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+                    <Input as="select" label="Select Minigame" name="minigameId" value={formData.minigameId || ''} onChange={(e) => setFormData(p => ({ ...p, minigameId: e.target.value }))} required>
+                        <option value="">-- Choose a Game --</option>
+                        {minigames.map(game => (
+                            <option key={game.id} value={game.id}>{game.name}</option>
+                        ))}
+                    </Input>
+                    <NumberInput label="Minimum Score (Optional)" value={formData.minigameMinScore || 0} onChange={val => setFormData(p => ({...p, minigameMinScore: val > 0 ? val : undefined }))} min={0} />
                 </div>
             )}
            <div>

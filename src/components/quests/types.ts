@@ -1,5 +1,4 @@
 import type { RewardItem } from '../rewards/types';
-import { Role } from '../users/types';
 import type { AITutorSessionLog } from '../tutors/types';
 
 export enum QuestType {
@@ -9,18 +8,10 @@ export enum QuestType {
 }
 
 export enum QuestKind {
-    Personal = 'Personal', // Personal scope, personal rewards
-    Guild = 'Guild', // Guild scope, but each person completes it for themselves
-    GuildCollaborative = 'GuildCollaborative', // Guild scope, requires multiple people to complete
-    Redemption = 'Redemption', // A quest to redeem a setback
-}
-
-export enum QuestAvailability {
-    Daily = 'Daily',
-    Weekly = 'Weekly',
-    Monthly = 'Monthly',
-    Frequency = 'Frequency',
-    Unlimited = 'Unlimited',
+    Personal = 'Personal',
+    Guild = 'Guild',
+    GuildCollaborative = 'GuildCollaborative',
+    Redemption = 'Redemption',
 }
 
 export enum QuestMediaType {
@@ -29,6 +20,7 @@ export enum QuestMediaType {
   Video = 'Video',
   PDF = 'PDF',
   Images = 'Images',
+  PlayMiniGame = 'PlayMiniGame',
 }
 
 export interface ImageSlide {
@@ -41,20 +33,6 @@ export interface Checkpoint {
   description: string;
   rewards: RewardItem[];
   trophyId?: string;
-}
-
-export interface QuizChoice {
-    text: string;
-    isCorrect: boolean;
-}
-
-export interface QuizQuestion {
-    question: string;
-    choices: QuizChoice[];
-}
-
-export interface QuizState {
-    questions: QuizQuestion[];
 }
 
 export interface Bookmark {
@@ -73,7 +51,7 @@ export interface Quest {
   title: string;
   description: string;
   type: QuestType;
-  kind: QuestKind; // New field to distinguish quest types
+  kind: QuestKind;
   mediaType?: QuestMediaType;
   aiTutorId?: string;
   videoUrl?: string | null;
@@ -84,22 +62,20 @@ export interface Quest {
   imageUrl?: string;
   tags: string[];
   
-  // New Unified Scheduling Model
-  startDateTime: string | null; // Full ISO string for one-time events (Ventures).
-  endDateTime: string | null;   // Full ISO string for one-time events (Ventures).
-  allDay: boolean;              // Indicates if the event is for the whole day.
-  rrule: string | null;         // iCalendar RRULE string for recurring events (Duties).
-  startTime: string | null;     // 'HH:mm' for recurring events (Duties).
-  endTime: string | null;       // 'HH:mm' for recurring events (Duties).
+  startDateTime: string | null;
+  endDateTime: string | null;
+  allDay: boolean;
+  rrule: string | null;
+  startTime: string | null;
+  endTime: string | null;
   
-  dailyCompletionsLimit?: number; // How many times it can be completed per day. 0 for unlimited.
-  totalCompletionsLimit?: number; // How many times it can be completed in total. 0 for unlimited.
-  completionGoal?: number; // For collaborative quests
-  checkpoints?: Checkpoint[]; // For Journeys
-  checkpointCompletionTimestamps?: { [userId: string]: { [checkpointId: string]: string } }; // For Journeys
-  contributions?: { userId: string, contributedAt: string }[]; // For collaborative quests
+  dailyCompletionsLimit?: number;
+  totalCompletionsLimit?: number;
+  completionGoal?: number;
+  checkpoints?: Checkpoint[];
+  checkpointCompletionTimestamps?: { [userId: string]: { [checkpointId: string]: string } };
+  contributions?: { userId: string, contributedAt: string }[];
 
-  // Claiming Feature
   requiresClaim?: boolean;
   claimLimit?: number;
   pendingClaims?: { userId: string; claimedAt: string; }[];
@@ -116,11 +92,15 @@ export interface Quest {
   requiresApproval: boolean;
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
-  todoUserIds?: string[]; // Kept for Ventures
+  todoUserIds?: string[];
   timerConfig?: QuestTimerConfig;
   conditionSetIds?: string[];
-  isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
+  isRedemptionFor?: string;
   readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
+  
+  minigameId?: string;
+  minigameMinScore?: number;
+  
   createdAt?: string;
   updatedAt?: string;
 }
@@ -162,7 +142,7 @@ export interface BulkQuestUpdates {
     isActive?: boolean;
     isOptional?: boolean;
     requiresApproval?: boolean;
-    groupId?: string | null; // null to set as uncategorized
+    groupId?: string | null;
     addTags?: string[];
     removeTags?: string[];
     assignUsers?: string[];

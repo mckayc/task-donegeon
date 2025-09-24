@@ -196,6 +196,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
              <li>
                 <strong>Image Slideshows:</strong> A new media type that allows admins to create a sequence of images with captions. This is ideal for visual guides, storytelling, or showcasing multiple pictures related to a task. Users can launch a full-screen viewer to navigate through the slides.
             </li>
+            <li>
+                <strong>Play Mini Game:</strong> A new media type that turns any game in the Arcade into a quest objective. Administrators can require users to play a game and achieve a certain score to complete the quest. This works with the existing timer system, allowing for quests that require both a minimum play time and a minimum score.
+            </li>
         </ul>
         <h3>The Arcade & Minigames</h3>
         <p>The "Arcade" is a special market where users can spend "Game Tokens" to play minigames.</p>

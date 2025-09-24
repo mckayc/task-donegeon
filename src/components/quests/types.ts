@@ -58,11 +58,11 @@ export interface Quest {
   description: string;
   type: QuestType;
   kind: QuestKind;
-  mediaType?: QuestMediaType;
-  aiTutorId?: string;
-  videos?: VideoSlide[];
+  mediaType?: QuestMediaType | null;
+  aiTutorId?: string | null;
+  videos?: VideoSlide[] | null;
   pdfUrl?: string | null;
-  images?: ImageSlide[];
+  images?: ImageSlide[] | null;
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
@@ -104,8 +104,8 @@ export interface Quest {
   isRedemptionFor?: string;
   readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
   
-  minigameId?: string;
-  minigameMinScore?: number;
+  minigameId?: string | null;
+  minigameMinScore?: number | null;
   
   createdAt?: string;
   updatedAt?: string;

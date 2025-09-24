@@ -123,23 +123,28 @@ const exchange = async (userId, payItem, receiveItem, guildId) => {
 
         let costRemaining = totalCost;
 
-        const deductFrom = (reward) => {
-            if (costRemaining <= 0) return;
-            const balanceDict = reward.category === 'Currency' ? balances.purse : balances.experience;
-            const balance = balanceDict[reward.id] || 0;
-            if (balance > 0) {
-                const amountToDeduct = Math.min(balance, costRemaining);
-                balanceDict[reward.id] = balance - amountToDeduct;
-                costRemaining -= amountToDeduct;
+        // Distribute cost deduction across all available sources in a round-robin fashion
+        while (costRemaining > 0) {
+            const availableSources = allPayRewards.filter(reward => {
+                const balanceDict = reward.category === 'Currency' ? balances.purse : balances.experience;
+                return (balanceDict[reward.id] || 0) > 0;
+            });
+
+            if (availableSources.length === 0) {
+                // This should not happen if the initial balance check passed, but it's a safeguard.
+                console.error(`[Exchange Error] Insufficient funds found mid-deduction. Cost remaining: ${costRemaining}`);
+                return null;
             }
-        };
-        
-        // Deduct from primary first, then pooled items
-        deductFrom(fromReward);
-        pooledRewardTypeIds.forEach(id => {
-            const reward = rewardTypes.find(rt => rt.id === id);
-            if (reward) deductFrom(reward);
-        });
+            
+            // Pull one unit from each available source in a round-robin fashion
+            for (const source of availableSources) {
+                if (costRemaining <= 0) break;
+
+                const balanceDict = source.category === 'Currency' ? balances.purse : balances.experience;
+                balanceDict[source.id] -= 1;
+                costRemaining -= 1;
+            }
+        }
         
         const toBalance = (toReward.category === 'Currency' ? balances.purse[toReward.id] : balances.experience[toReward.id]) || 0;
         if (toReward.category === 'Currency') balances.purse[toReward.id] = toBalance + receiveItem.amount;

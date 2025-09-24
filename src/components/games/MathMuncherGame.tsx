@@ -364,7 +364,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 return currentPlPos;
             });
 
-            if(Math.random() < 0.08) spawnPowerUp();
+            if(Math.random() < 0.05) spawnPowerUp();
         }, gameSpeed);
         
         return () => { if (gameLoopRef.current) clearInterval(gameLoopRef.current); };

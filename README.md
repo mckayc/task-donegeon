@@ -1,7 +1,7 @@
 
 # Task Donegeon
 
-**Version:** 0.5.50
+**Version:** 0.5.51
 
 ---
 
@@ -15,6 +15,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of June 27, 2026 (v0.5.51):**
+    -   **Math Muncher Curriculum Expansion:** This major update massively expands the "Math Muncher" minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges based on common core standards. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Finally, enemy AI has been improved for more varied and challenging movement patterns.
 
 -   **Week of June 20, 2026 (v0.5.50):**
     -   **Math Muncher Bug Fixes & Polish:** Implemented another round of significant improvements to the "Math Muncher" minigame based on user feedback. The spawn rate for power-ups has been reduced for better game balance, and they can now be collected directly with the "Munch" action. A critical stability issue that could cause the game to crash when the player was hit has been resolved. To improve the connection with the main app's economy, the game now displays the player's current balance of the earnable reward and shows a clear animation when more are gained after clearing a level. Troggle AI has also been enhanced for more varied and challenging movement patterns.

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.50 - Math Muncher Gameplay Polish",
-  "version": "0.5.50",
-  "description": "This update implements significant improvements to the 'Math Muncher' minigame based on user feedback. The spawn rate for power-ups has been reduced for better balance, and they can now be collected with the 'Munch' action. A critical bug causing random crashes when the player is hit has been fixed. The game now displays the user's current balance for earnable rewards and shows a clear animation when more are gained. Enemy AI has also been improved for more varied and challenging gameplay.",
+  "name": "Task Donegeon 2.0 - 0.5.51 - Math Muncher Curriculum Expansion",
+  "version": "0.5.51",
+  "description": "This major update massively expands the 'Math Muncher' minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the 'Munch' action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Finally, enemy AI has been improved for more varied and challenging movement patterns.",
   "requestFramePermissions": [
     "camera"
   ],

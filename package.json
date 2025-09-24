@@ -2,7 +2,7 @@
 {
   "name": "task-donegeon",
   "private": true,
-  "version": "0.5.50",
+  "version": "0.5.51",
   "type": "module",
   "scripts": {
     "dev": "vite",

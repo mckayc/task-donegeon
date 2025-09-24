@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.40 - Backup Management Overhaul",
-  "version": "0.5.40",
-  "description": "This update overhauls the automated backup system to prevent old backups from accumulating and introduces a new interface for bulk-deleting manual and automated backups, giving administrators more control over their data.",
+  "name": "Task Donegeon 2.0 - 0.5.42 - Currency Exchange Enhancements",
+  "version": "0.5.42",
+  "description": "This update enhances the currency exchange by automatically pooling same-value XP types, maximizing user purchasing power without complicating the UI. It also introduces a tooltip for transparency, showing users which XP balances are contributing to a transaction.",
   "requestFramePermissions": [
     "camera"
   ],

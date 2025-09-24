@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
@@ -9,7 +8,7 @@ import { RewardTypeDefinition, Market, RewardItem, RewardCategory, ScheduledEven
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';
-import { ArrowRightIcon } from '../user-interface/Icons';
+import { ArrowRightIcon, InfoIcon } from '../user-interface/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import NumberInput from '../user-interface/NumberInput';
@@ -84,6 +83,47 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const fromReward = useMemo(() => rewardTypes.find(rt => rt.id === fromRewardId), [fromRewardId, rewardTypes]);
     const toReward = useMemo(() => rewardTypes.find(rt => rt.id === toRewardId), [toRewardId, rewardTypes]);
 
+    const fromBalanceDetails = useMemo(() => {
+        const defaultReturn = { total: 0, isPooled: false, pooledItems: [] as { name: string, icon: string, amount: number }[] };
+        if (!fromReward) return defaultReturn;
+
+        const fromBalance = balances.get(fromReward.id) || 0;
+
+        // Pooling only applies to exchangeable XP types with a base value
+        if (fromReward.category !== RewardCategory.XP || !fromReward.baseValue || fromReward.baseValue <= 0 || fromReward.isExchangeable === false) {
+            return { ...defaultReturn, total: fromBalance };
+        }
+
+        // Find other XP types with the exact same base value
+        const matchingXpTypes = exchangeableRewardTypes.filter(
+            rt => rt.id !== fromReward.id &&
+                  rt.category === RewardCategory.XP &&
+                  rt.baseValue === fromReward.baseValue &&
+                  rt.isExchangeable !== false
+        );
+        
+        const allRelevantTypes = [fromReward, ...matchingXpTypes];
+
+        const pooledItems = allRelevantTypes.map(rt => ({
+            name: rt.name,
+            icon: rt.icon,
+            amount: balances.get(rt.id) || 0,
+        })).filter(item => item.amount > 0);
+        
+        // Only consider it "pooled" if there's more than one item with a balance contributing
+        if (pooledItems.length <= 1) {
+            return { total: fromBalance, isPooled: false, pooledItems: [] };
+        }
+
+        const totalPooledBalance = pooledItems.reduce((sum, item) => sum + item.amount, 0);
+
+        return {
+            total: totalPooledBalance,
+            isPooled: true,
+            pooledItems: pooledItems
+        };
+    }, [fromReward, balances, exchangeableRewardTypes]);
+
     const exchangeRate = useMemo(() => {
         if (!fromReward || !toReward || !fromReward.baseValue || !toReward.baseValue) {
             return null;
@@ -103,7 +143,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         }
 
         const { currencyExchangeFeePercent, xpExchangeFeePercent } = settings.rewardValuation;
-        const fromBalance = balances.get(fromReward.id) || 0;
+        const fromBalance = fromBalanceDetails.isPooled ? fromBalanceDetails.total : (balances.get(fromReward.id) || 0);
         const feePercent = fromReward.category === RewardCategory.Currency ? currencyExchangeFeePercent : xpExchangeFeePercent;
         const feeMultiplier = 1 + (Number(feePercent) / 100);
 
@@ -126,7 +166,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
 
         return { fromAmountBase, fee, roundingFee, totalCost, maxToAmount };
 
-    }, [toAmount, fromReward, toReward, settings.rewardValuation, balances]);
+    }, [toAmount, fromReward, toReward, settings.rewardValuation, balances, fromBalanceDetails]);
     
     const recommendedAmounts = useMemo(() => {
         if (!fromReward || !toReward || calculation.maxToAmount <= 0) return [];
@@ -184,6 +224,10 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         setToAmount(0);
     };
 
+    const currentFromBalance = useMemo(() => {
+        return fromBalanceDetails.isPooled ? fromBalanceDetails.total : (balances.get(fromRewardId) || 0);
+    }, [fromBalanceDetails, balances, fromRewardId]);
+
     return (
         <div>
             <Button variant="secondary" onClick={() => setActiveMarketId(null)} className="mb-6">
@@ -194,7 +238,30 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                     {/* Left Column: Selection */}
                     <div className="space-y-6">
                          <div>
-                            <h3 className="font-bold text-lg text-stone-200 mb-3">You Pay</h3>
+                            <h3 className="font-bold text-lg text-stone-200 mb-3 flex items-center gap-2">
+                                You Pay
+                                {fromBalanceDetails.isPooled && (
+                                    <div className="relative group">
+                                        <InfoIcon className="w-4 h-4 text-sky-400 cursor-help" />
+                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 p-2 text-xs bg-stone-900 text-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-stone-700">
+                                            <p className="font-bold mb-1">XP Value Pooled:</p>
+                                            <ul className="space-y-1">
+                                                {fromBalanceDetails.pooledItems.map(item => (
+                                                    <li key={item.name} className="flex justify-between">
+                                                        <span>{item.icon} {item.name}</span>
+                                                        <span>{Math.floor(item.amount)}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <p className="font-bold mt-1 pt-1 border-t border-stone-700 flex justify-between">
+                                                <span>Total Available:</span>
+                                                <span>{Math.floor(fromBalanceDetails.total)}</span>
+                                            </p>
+                                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-stone-900 transform rotate-45 border-r border-b border-stone-700"></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </h3>
                              <div className="grid grid-cols-4 gap-2">
                                 {payWithRewards.map(r => <RewardButton key={r.id} reward={r} balance={balances.get(r.id) || 0} isSelected={fromRewardId === r.id} isDisabled={toRewardId === r.id} onClick={() => handleFromSelect(r.id)} />)}
                             </div>
@@ -256,14 +323,14 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                             <p className="text-stone-400 font-bold border-t border-stone-600/50 mt-1 pt-1">Total Cost:</p>
                                         </div>
                                         <div className="text-left font-semibold">
-                                            <p className="text-stone-200">{Math.floor(balances.get(fromRewardId) || 0)} &rarr; <span className="text-red-400">{Math.floor((balances.get(fromRewardId) || 0) - calculation.totalCost)}</span></p>
+                                            <p className="text-stone-200">{Math.floor(currentFromBalance)} &rarr; <span className="text-red-400">{Math.floor(currentFromBalance - calculation.totalCost)}</span></p>
                                             <p className="text-stone-200">{Math.floor(balances.get(toRewardId) || 0)} &rarr; <span className="text-green-400">{Math.floor((balances.get(toRewardId) || 0) + toAmount)}</span></p>
                                             <p className="text-stone-300">{calculation.fee.toFixed(2)} {fromReward.icon}</p>
                                             <p className="text-stone-300">{calculation.roundingFee.toFixed(2)} {fromReward.icon}</p>
                                             <p className="text-stone-100 font-bold border-t border-stone-600/50 mt-1 pt-1">{calculation.totalCost} {fromReward.icon}</p>
                                         </div>
                                     </div>
-                                    <Button onClick={handleExchange} disabled={calculation.totalCost <= 0 || calculation.totalCost > (balances.get(fromRewardId) || 0)}>
+                                    <Button onClick={handleExchange} disabled={calculation.totalCost <= 0 || calculation.totalCost > currentFromBalance}>
                                         Confirm Exchange
                                     </Button>
                                 </div>

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.41
+**Version:** 0.5.42
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of May 2, 2026 (v0.5.42):**
+    -   **Currency Exchange Enhancements:** The Exchange Post has been upgraded to be more user-friendly. When a user selects an XP type to pay with, the system now automatically detects and pools the balances of all other XP types with the exact same real-world value. This maximizes the user's purchasing power without adding UI complexity. A new tooltip on the selected XP type provides transparency by showing exactly which XP balances are contributing to the transaction.
 
 -   **Week of April 25, 2026 (v0.5.41):**
     -   **Backup System Refinement:** The backup filename format has been updated to a cleaner, more readable `YYYY-MM-DD_HHMMSS_type.extension` structure. An automatic cleanup process has been added to the server startup sequence, which will find and delete any backups created with older filename formats, ensuring a smooth, one-time migration to the new system.

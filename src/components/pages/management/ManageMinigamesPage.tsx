@@ -25,7 +25,7 @@ const ManageMinigamesPage: React.FC = () => {
     return (
         <>
             <Card title={settings.terminology.link_manage_minigames}>
-                <p className="text-stone-400 mb-4 -mt-2">View statistics for available games. New games are added via application updates.</p>
+                <p className="text-stone-400 mb-4 -mt-2">View statistics and edit settings for available games. New games are added via application updates.</p>
                 <div className="space-y-3">
                     {minigames.map(game => (
                         <div key={game.id} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-center">

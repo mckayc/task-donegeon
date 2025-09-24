@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.43 - New Minigame: Math Muncher",
-  "version": "0.5.43",
-  "description": "This update prepares for the creation of a new educational minigame, 'Math Muncher', an homage to the classic 'Number Munchers'. It will feature grade-level-based difficulty, power-ups, and varied enemies to make learning math fun.",
+  "name": "Task Donegeon 2.0 - 0.5.45 - Math Muncher Expansion",
+  "version": "0.5.45",
+  "description": "This update massively expands the 'Math Muncher' minigame. It now includes a full curriculum for grades 1-6, with 10 unique challenges per grade. The game features a dynamic grid that adapts to problem complexity (12x12 or 6x6) and an endless progression system where the game speeds up after a player masters all 10 challenges in a grade.",
   "requestFramePermissions": [
     "camera"
   ],

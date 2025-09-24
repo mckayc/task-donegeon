@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -204,7 +202,14 @@ const FunctionalSpecificationsContent: React.FC = () => (
          <ul className="list-disc list-inside space-y-2">
             <li><strong>UI Overhaul:</strong> The action buttons on game cards have been redesigned for clarity. The "Play" button is now a prominent, primary action and clearly displays the cost to play. Placeholder or under-construction games are now disabled to prevent users from spending tokens on them.</li>
             <li><strong>Game Rules:</strong> A new "Rules" button has been added to every game card in the Arcade. Clicking it will open a dialog explaining the objective and how to play.</li>
-            <li><strong>Math Muncher:</strong> A grid-based educational game where players navigate a "Muncher" to eat numbers and expressions that match a specific mathematical rule (e.g., "Multiples of 5", "Prime Numbers"). Players must avoid patrolling "Troggle" enemies. The game features multiple levels, various enemy types, and a choice of math subjects, from basic arithmetic to more advanced concepts, categorized by grade level.</li>
+            <li><strong>Math Muncher Expansion:</strong> The educational math game has been massively expanded with a full curriculum for grades 1-6.
+                <ul className="list-disc list-inside pl-6 mt-2">
+                    <li><strong>New Content:</strong> The game now features 10 unique, randomly selected challenges for each grade level, covering topics from basic arithmetic to one-step algebra equations.</li>
+                    <li><strong>Dynamic Grid:</strong> The play area intelligently switches between a 12x12 grid for simple numbers and a larger 6x6 grid for complex expressions, ensuring readability.</li>
+                    <li><strong>Endless Progression:</strong> After a player masters all 10 challenges in a grade, the game speed increases, and the challenges are re-shuffled for a new, faster round.</li>
+                    <li>All previous features like manual munching, power-ups, varied enemy types, combos, and admin-configurable rewards are retained.</li>
+                </ul>
+            </li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Bug Fix & UI Improvement:</strong> Fixed a bug where the game would sometimes fail to recognize a "bust," causing it to get stuck. When you bust now, a large, impactful "BUSTED!" message will appear to make the outcome clear.</li>
@@ -346,7 +351,7 @@ const VersionHistoryContent: React.FC = () => (
             </ul>
         </div>
         <div>
-            <h4 className="text-lg font-bold text-stone-100">Week of January 10, 2026 (v0.5.5)</h4>
+            <h4 className="text-lg font-bold text-stone-100">Week of January 10, 2025 (v0.5.5)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Quest Timers:</strong> Implemented a new feature allowing administrators to add timers to quests. This includes a "Stopwatch" mode for tracking time spent and a "Countdown" mode for tasks requiring a minimum duration (e.g., reading for 20 minutes).</li>
                 <li><strong>Persistent Timer Widget:</strong> When a timed quest is started, a persistent widget appears in the header, allowing users to navigate the app while keeping track of their active quest. Clicking the widget returns the user to the quest details.</li>

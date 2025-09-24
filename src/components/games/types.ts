@@ -1,4 +1,5 @@
 import { RewardItem } from "../rewards/types";
+import { Cell } from './MathMuncherTypes';
 
 export interface PrizeThreshold {
     score: number;
@@ -15,6 +16,11 @@ export interface Minigame {
     playsPerToken?: number;
     prizesEnabled?: boolean;
     prizeThresholds?: PrizeThreshold[];
+    rewardSettings?: {
+        rewardTypeId: string;
+        amount: number;
+        levelFrequency: number;
+    };
 }
 
 export interface GameScore {
@@ -26,3 +32,16 @@ export interface GameScore {
     createdAt?: string;
     updatedAt?: string;
 }
+
+export interface MathChallenge {
+    title: string;
+    gridSize: 6 | 12;
+    generateGrid: () => Cell[][];
+}
+
+export interface GameGrade {
+    name: string;
+    challenges: MathChallenge[];
+}
+
+export type GameGrades = Record<string, GameGrade>;

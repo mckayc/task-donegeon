@@ -32,6 +32,7 @@ const EditMinigameDialog: React.FC<EditMinigameDialogProps> = ({ game, onClose }
         isActive: game.isActive !== false, // Default to true if undefined
         prizesEnabled: game.prizesEnabled || false,
         prizeThresholds: game.prizeThresholds || [],
+        rewardSettings: game.rewardSettings || { rewardTypeId: '', amount: 10, levelFrequency: 1 },
     });
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState<'resetAll' | 'resetSelected' | null>(null);
@@ -44,6 +45,7 @@ const EditMinigameDialog: React.FC<EditMinigameDialogProps> = ({ game, onClose }
     const handleSave = () => {
         const payload = {
             ...formData,
+            rewardSettings: formData.rewardSettings?.rewardTypeId ? formData.rewardSettings : undefined,
             prizeThresholds: formData.prizesEnabled ? formData.prizeThresholds : [],
         };
         updateMinigame(game.id, payload);
@@ -125,6 +127,29 @@ const EditMinigameDialog: React.FC<EditMinigameDialogProps> = ({ game, onClose }
                             <NumberInput label="Plays per Token" value={formData.playsPerToken} onChange={val => setFormData(p => ({...p, playsPerToken: val}))} min={1} />
                         </div>
                          <ToggleSwitch enabled={formData.isActive} setEnabled={val => setFormData(p => ({...p, isActive: val}))} label="Game is Active" />
+
+                        <div className="pt-4 mt-4 border-t border-stone-700/60 space-y-4">
+                            <h3 className="font-bold text-lg text-stone-200">Level Completion Rewards</h3>
+                             <ToggleSwitch 
+                                enabled={!!formData.rewardSettings?.rewardTypeId} 
+                                setEnabled={val => setFormData(p => ({...p, rewardSettings: val ? { rewardTypeId: 'core-diligence', amount: 10, levelFrequency: 3 } : { rewardTypeId: '', amount: 0, levelFrequency: 0 }}))}
+                                label="Enable Rewards for Completing Levels"
+                            />
+                            {formData.rewardSettings?.rewardTypeId && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-6 border-l-2 border-stone-700/60 pt-2">
+                                    <Input as="select" label="Reward Type" value={formData.rewardSettings.rewardTypeId} onChange={e => setFormData(p => ({...p, rewardSettings: {...p.rewardSettings!, rewardTypeId: e.target.value}}))}>
+                                        <optgroup label="XP">
+                                            {rewardTypes.filter(rt => rt.category === RewardCategory.XP).map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+                                        </optgroup>
+                                        <optgroup label="Currency">
+                                            {rewardTypes.filter(rt => rt.category === RewardCategory.Currency).map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+                                        </optgroup>
+                                    </Input>
+                                    <NumberInput label="Amount" value={formData.rewardSettings.amount} onChange={val => setFormData(p => ({...p, rewardSettings: {...p.rewardSettings!, amount: val}}))} min={1} />
+                                    <NumberInput label="Every X Levels" value={formData.rewardSettings.levelFrequency} onChange={val => setFormData(p => ({...p, rewardSettings: {...p.rewardSettings!, levelFrequency: val}}))} min={1} />
+                                </div>
+                            )}
+                        </div>
 
                         <div className="pt-4 mt-4 border-t border-stone-700/60 space-y-4">
                             <h3 className="font-bold text-lg text-stone-200">Prizes</h3>

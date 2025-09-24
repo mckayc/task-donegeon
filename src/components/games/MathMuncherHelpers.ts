@@ -61,37 +61,37 @@ export const generateChallengeGrid = (
     const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
     const totalCells = gridSize * gridSize;
     const targetCorrect = Math.floor(totalCells * 0.4);
+    const targetIncorrect = totalCells - targetCorrect;
 
-    const allPositions: { r: number, c: number }[] = [];
+    const values: { value: CellValue, isCorrect: boolean }[] = [];
+    
+    // Generate correct values
+    for (let i = 0; i < targetCorrect; i++) {
+        let value: CellValue;
+        do { value = correctGenerator(); } while (!checker(value));
+        values.push({ value, isCorrect: true });
+    }
+    
+    // Generate incorrect values
+    for (let i = 0; i < targetIncorrect; i++) {
+        let value: CellValue;
+        do { value = incorrectGenerator(); } while (checker(value));
+        values.push({ value, isCorrect: false });
+    }
+
+    // Shuffle the generated values
+    shuffleArray(values);
+
+    // Place values into the grid
     for (let r = 0; r < gridSize; r++) {
         for (let c = 0; c < gridSize; c++) {
-            allPositions.push({ r, c });
+            const val = values.pop();
+            if (val) {
+                 grid[r][c] = { ...val, isEaten: false };
+            }
         }
     }
-    shuffleArray(allPositions);
-
-    // Fill with correct answers
-    for (let i = 0; i < targetCorrect; i++) {
-        const pos = allPositions[i];
-        if (!pos) continue;
-        let value: CellValue;
-        do {
-            value = correctGenerator();
-        } while (!checker(value)); // Ensure generator is correct
-        grid[pos.r][pos.c] = { value, isCorrect: true, isEaten: false };
-    }
-
-    // Fill the rest with incorrect answers
-    for (let i = targetCorrect; i < totalCells; i++) {
-        const pos = allPositions[i];
-        if (!pos) continue;
-        let value: CellValue;
-        do {
-            value = incorrectGenerator();
-        } while (checker(value)); // Ensure generator is actually incorrect
-        grid[pos.r][pos.c] = { value, isCorrect: false, isEaten: false };
-    }
-
+    
     return grid;
 };
 

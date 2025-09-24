@@ -1,6 +1,7 @@
+
 # Task Donegeon
 
-**Version:** 0.5.47
+**Version:** 0.5.49
 
 ---
 
@@ -14,6 +15,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of June 13, 2026 (v0.5.49):**
+    -   **Math Muncher Gameplay Polish:** Implemented significant improvements to the "Math Muncher" minigame based on user feedback. Troggle (enemy) movement is now more dynamic and less predictable. A clearer, longer animation and a brief game pause now occur when the player is hit, improving visual feedback. The logic for selecting different troggle types (Hunter, Jumper, Patroller) has been fixed to ensure a proper variety of enemies appear. The spawn rate for in-game power-ups has also been increased.
 
 -   **Week of June 6, 2026 (v0.5.47):**
     -   **New Quest Type - Play Mini Game:** A new interactive media type has been added for quests. Administrators can now create tasks that require a user to play a specific minigame from the Arcade. This feature is enhanced with an optional **Minimum Score Requirement** to ensure active participation. The quest completion logic is now aware of user high scores, and the 'Complete' button will remain disabled until the score requirement is met, transforming any game into a flexible and engaging quest objective.
@@ -251,29 +255,12 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 
 ### Phase 1: Foundational Features & Quality of Life
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
--   **Enhanced Security:--- a/src/components/games/types.ts
-+++ b/src/components/games/types.ts
-@@ -1,5 +1,6 @@
- import { RewardItem } from "../rewards/types";
-+import { Cell } from './MathMuncherTypes';
- 
- export interface PrizeThreshold {
-     score: number;
-@@ -19,3 +20,17 @@
-     playedAt: string; // ISO Date string
-     createdAt?: string;
-     updatedAt?: string;
- }
-+
-+export interface MathChallenge {
-+    title: string;
-+    gridSize: 6 | 12;
-+    generateGrid: () => Cell[][];
-+}
-+
-+export interface GameGrade {
-+    name: string;
-+    challenges: MathChallenge[];
-+}
-+
-+export type GameGrades = Record<string, GameGrade>;
+-   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
+-   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
+-   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
+-   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.
+-   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
+
+### Phase 2: Core Gameplay &amp; Personalization
+-   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
+-   **Reward Rework:** Overhaul the reward system to allow for more complex and interesting rewards, such as items that grant temporary bonuses or unlock special abilities.

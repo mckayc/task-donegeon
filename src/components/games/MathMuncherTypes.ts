@@ -15,7 +15,7 @@ export type Troggle = {
     id: number;
     type: 'patroller' | 'hunter' | 'jumper';
     dir?: { x: number; y: number };
-    lastJump?: number;
+    stepsToGo?: number;
 };
 
 export interface MathChallenge {

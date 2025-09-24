@@ -1,7 +1,8 @@
+
 {
-  "name": "Task Donegeon 2.0 - 0.5.47 - Play Mini Game Quests",
-  "version": "0.5.47",
-  "description": "This update introduces a new interactive quest media type: 'Play Mini Game'. Administrators can now create quests that require users to play a specific minigame from the Arcade. This feature is enhanced with an optional 'Minimum Score' requirement to ensure active participation. The quest completion logic is now aware of user high scores, and the 'Complete' button will remain disabled until the score requirement is met.",
+  "name": "Task Donegeon 2.0 - 0.5.49 - Math Muncher Gameplay Polish",
+  "version": "0.5.49",
+  "description": "This update implements significant improvements to the 'Math Muncher' minigame based on user feedback. Troggle (enemy) movement is now more dynamic and less predictable. A clearer, longer animation and a brief game pause now occur when the player is hit, improving visual feedback. The logic for selecting different troggle types has been fixed to ensure a proper variety of enemies appear. The spawn rate for in-game power-ups has also been increased.",
   "requestFramePermissions": [
     "camera"
   ],

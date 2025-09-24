@@ -210,7 +210,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                     <li><strong>New Content:</strong> The game now features 10 unique, randomly selected challenges for each grade level, covering topics from basic arithmetic to one-step algebra equations.</li>
                     <li><strong>Dynamic Grid:</strong> The play area intelligently switches between a 12x12 grid for simple numbers and a larger 6x6 grid for complex expressions, ensuring readability.</li>
                     <li><strong>Endless Progression:</strong> After a player masters all 10 challenges in a grade, the game speed increases, and the challenges are re-shuffled for a new, faster round.</li>
-                    <li>All previous features like manual munching, power-ups, varied enemy types, combos, and admin-configurable rewards are retained.</li>
+                    <li><strong>Gameplay Polish:</strong> Based on user feedback, several aspects of the game have been polished. Enemy movement is now more varied and less predictable, with different monster types having distinct visual appearances and behaviors. The spawn rate for in-game power-ups has been increased. When the player is hit by a monster, a clearer and longer animation now plays to provide better visual feedback. The distribution of correct and incorrect answers on the grid has been improved to be more random.</li>
                 </ul>
             </li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!

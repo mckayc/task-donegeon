@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
@@ -9,7 +8,7 @@ import { challenges } from './MathMuncherChallenges';
 import { shuffleArray } from './MathMuncherHelpers';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { RewardCategory } from '../../types';
+import { RewardCategory, RewardTypeDefinition } from '../../types';
 import { useEconomyState } from '../../context/EconomyContext';
 import { getRandomInt } from './MathMuncherHelpers';
 
@@ -62,12 +61,23 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const [shieldActive, setShieldActive] = useState(false);
     const [freezeActive, setFreezeActive] = useState(false);
     const [isHit, setIsHit] = useState(false);
+    const [lastReward, setLastReward] = useState<{ amount: number, icon: string } | null>(null);
     
     const gameLoopRef = useRef<number | null>(null);
     const correctAnswersLeft = useRef(0);
     
     const gameSpeed = useMemo(() => Math.max(200, 800 - (round - 1) * 50), [round]);
     const currentChallenge = useMemo(() => challengePlaylist[challengeIndex], [challengePlaylist, challengeIndex]);
+    
+    const gameConfig = useMemo(() => minigames.find(g => g.id === 'minigame-math-muncher'), [minigames]);
+    const rewardSettings = useMemo(() => gameConfig?.rewardSettings, [gameConfig]);
+    const rewardDef = useMemo(() => rewardTypes.find(rt => rt.id === rewardSettings?.rewardTypeId), [rewardTypes, rewardSettings]);
+
+    const userBalance = useMemo(() => {
+        if (!currentUser || !rewardSettings || !rewardDef) return 0;
+        const balanceSource = rewardDef.category === RewardCategory.Currency ? currentUser.personalPurse : currentUser.personalExperience;
+        return balanceSource[rewardSettings.rewardTypeId] || 0;
+    }, [currentUser, rewardSettings, rewardDef]);
 
     const startChallenge = useCallback((index: number, playlist: any[]) => {
         const challenge = playlist[index];
@@ -144,6 +154,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
         const cell = grid[playerPos.y]?.[playerPos.x];
         if (!cell || cell.isEaten) return;
+        
+        const newGrid = grid.map(row => [...row]);
+        const eatenCell = { ...newGrid[playerPos.y][playerPos.x], isEaten: true };
 
         if (cell.item) {
             if (cell.item === 'life') setLives(l => l + 1);
@@ -159,11 +172,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                      setGrid(prev => prev.map(row => row.map(c => ({...c, feedback: undefined}))));
                 }, 1000);
             }
+            eatenCell.item = undefined;
         }
         
-        const newGrid = grid.map(row => [...row]);
-        const eatenCell = { ...newGrid[playerPos.y][playerPos.x], isEaten: true, item: undefined };
-
         if (eatenCell.isCorrect) {
             setScore(s => s + 10 * (1 + combo));
             setCombo(c => c + 1);
@@ -228,7 +239,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     let nextX = newPos.x + newDir.x;
                     let nextY = newPos.y + newDir.y;
                     if (nextX < 0 || nextX >= gridSize || nextY < 0 || nextY >= gridSize) {
-                        newStepsToGo = 0;
+                        newStepsToGo = 0; // Hit a wall, force direction change next tick
                     } else {
                         newPos.x = nextX;
                         newPos.y = nextY;
@@ -353,51 +364,50 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 return currentPlPos;
             });
 
-            if(Math.random() < 0.15) spawnPowerUp();
+            if(Math.random() < 0.08) spawnPowerUp();
         }, gameSpeed);
         
         return () => { if (gameLoopRef.current) clearInterval(gameLoopRef.current); };
     }, [gameState, gameSpeed, freezeActive, spawnPowerUp, moveTroggles, troggles, shieldActive]);
     
     useEffect(() => {
-        if (gameState === 'player-hit') {
-            const newLives = lives - 1;
-            setLives(newLives);
-            setIsHit(true);
+        if (gameState !== 'player-hit') return;
 
-            const hitTimeout = setTimeout(() => {
-                setIsHit(false);
-                if (newLives <= 0) {
-                    setGameState('game-over');
-                    submitScore('minigame-math-muncher', score);
-                } else {
+        setIsHit(true);
+        const newLives = lives - 1;
+        setLives(newLives);
+        
+        const hitTimeout = setTimeout(() => {
+            setIsHit(false);
+            if (newLives <= 0) {
+                setGameState('game-over');
+                submitScore('minigame-math-muncher', score);
+            } else {
+                if (grid && grid.length > 0) {
                     setPlayerPos({ x: Math.floor(grid.length / 2), y: Math.floor(grid.length / 2) });
-                    setGameState('playing');
                 }
-            }, 2000);
-            
-            return () => clearTimeout(hitTimeout);
-        }
-    }, [gameState, lives, score, grid.length, submitScore]);
+                setGameState('playing');
+            }
+        }, 1500);
+
+        return () => clearTimeout(hitTimeout);
+    }, [gameState, grid, lives, score, submitScore]);
     
     useEffect(() => {
          if (gameState === 'playing' && correctAnswersLeft.current <= 0) {
             setGameState('level-cleared');
             
-            const gameConfig = minigames.find(g => g.id === 'minigame-math-muncher');
-            const rewardSettings = gameConfig?.rewardSettings;
-            if (currentUser && rewardSettings && rewardSettings.rewardTypeId && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
-                const rewardDef = rewardTypes.find(rt => rt.id === rewardSettings.rewardTypeId);
-                if (rewardDef) {
-                    addNotification({
-                        type: 'success',
-                        message: `+${rewardSettings.amount} ${rewardDef.name}`,
-                        icon: rewardDef.icon
-                    });
-                }
+            if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
+                addNotification({
+                    type: 'success',
+                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
+                    icon: rewardDef.icon
+                });
+                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
+                setTimeout(() => setLastReward(null), 2000);
             }
         }
-    }, [correctAnswersLeft.current, gameState, addNotification, challengeIndex, currentUser, minigames, rewardTypes]);
+    }, [correctAnswersLeft.current, gameState, addNotification, challengeIndex, currentUser, minigames, rewardTypes, rewardDef, rewardSettings]);
     
     const gridSize = currentChallenge?.gridSize || 6;
     const cellSizeClass = gridSize === 12 ? 'w-10 h-10' : 'w-20 h-20';
@@ -422,7 +432,27 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                  <>
                     <div className="w-full max-w-[550px] mb-4">
                         <div className="flex justify-between items-center text-white font-bold text-lg p-3 bg-stone-800/50 rounded-lg">
-                            <span>Score: {score}</span>
+                            <div className="flex items-center gap-4">
+                                <span>Score: {score}</span>
+                                {rewardDef && (
+                                    <div className="relative flex items-center gap-1 font-semibold text-stone-200">
+                                        <span>{rewardDef.icon}</span>
+                                        <span>{userBalance}</span>
+                                        <AnimatePresence>
+                                        {lastReward && (
+                                            <motion.span
+                                                initial={{ y: 0, opacity: 1 }}
+                                                animate={{ y: -20, opacity: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                className="absolute left-full ml-1 text-emerald-400 font-bold"
+                                            >
+                                                +{lastReward.amount}
+                                            </motion.span>
+                                        )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                            </div>
                              <span>Round {round} - Level {challengeIndex + 1}</span>
                              <span>Lives: {'❤️'.repeat(lives)}</span>
                         </div>

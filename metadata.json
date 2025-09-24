@@ -1,8 +1,7 @@
-
 {
-  "name": "Task Donegeon 2.0 - 0.5.49 - Math Muncher Gameplay Polish",
-  "version": "0.5.49",
-  "description": "This update implements significant improvements to the 'Math Muncher' minigame based on user feedback. Troggle (enemy) movement is now more dynamic and less predictable. A clearer, longer animation and a brief game pause now occur when the player is hit, improving visual feedback. The logic for selecting different troggle types has been fixed to ensure a proper variety of enemies appear. The spawn rate for in-game power-ups has also been increased.",
+  "name": "Task Donegeon 2.0 - 0.5.50 - Math Muncher Gameplay Polish",
+  "version": "0.5.50",
+  "description": "This update implements significant improvements to the 'Math Muncher' minigame based on user feedback. The spawn rate for power-ups has been reduced for better balance, and they can now be collected with the 'Munch' action. A critical bug causing random crashes when the player is hit has been fixed. The game now displays the user's current balance for earnable rewards and shows a clear animation when more are gained. Enemy AI has also been improved for more varied and challenging gameplay.",
   "requestFramePermissions": [
     "camera"
   ],

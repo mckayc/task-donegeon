@@ -1,6 +1,5 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
-import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User, QuestMediaType, AITutorSessionLog, VideoSlide } from '../../types';
+import { Quest, RewardCategory, RewardItem, QuestType, QuestCompletionStatus, User, QuestMediaType, AITutorSessionLog } from '../../types';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
@@ -14,7 +13,6 @@ import { AITutorPanel } from '../chat/AITutorPanel';
 import AiStoryPanel from '../chat/AiStoryPanel';
 import VideoPlayerOverlay from '../video/VideoPlayerOverlay';
 import { useUIDispatch, useUIState } from '../../context/UIContext';
-import ImageSlideshowOverlay from './ImageSlideshowOverlay';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -45,8 +43,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const [isTutorSessionOpen, setIsTutorSessionOpen] = useState(false);
     const [tutorSessionLog, setTutorSessionLog] = useState<Omit<AITutorSessionLog, 'id' | 'completionId'> | null>(null);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
-    const [playingVideoUrl, setPlayingVideoUrl] = useState<string | null>(null);
-    const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
+    const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
     const [displaySeconds, setDisplaySeconds] = useState(0);
 
     const currentUser = userForView || loggedInUser;
@@ -268,13 +265,10 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                     </div>
                     <div className="p-4 bg-black/20 rounded-b-xl flex justify-between items-center gap-2 flex-wrap">
                         <Button variant="secondary" onClick={handleClose}>Close</Button>
-                        <div className="flex items-center gap-4 flex-wrap justify-end">
+                        <div className="flex items-center gap-4">
                             {quest.mediaType === QuestMediaType.AITutor && <Button variant="secondary" onClick={() => setIsTutorSessionOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Start AI Tutor</Button>}
                             {quest.mediaType === QuestMediaType.AIStory && <Button variant="secondary" onClick={() => setIsAiStoryOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Read AI Story</Button>}
-                            {quest.mediaType === QuestMediaType.Video && quest.videos && quest.videos.map((video, index) => (
-                                <Button key={index} variant="secondary" onClick={() => setPlayingVideoUrl(video.url)}>▶️ {video.title || `Watch Video ${index + 1}`}</Button>
-                            ))}
-                            {quest.mediaType === QuestMediaType.Images && quest.images && quest.images.length > 0 && <Button variant="secondary" onClick={() => setIsSlideshowOpen(true)}>🖼️ View Slideshow</Button>}
+                            {quest.mediaType === QuestMediaType.Video && quest.videoUrl && <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>▶️ Watch Video</Button>}
                             {quest.mediaType === QuestMediaType.PlayMiniGame && quest.minigameId && (
                                 <Button variant="secondary" onClick={() => {
                                     setActiveGame(quest.minigameId!);
@@ -296,8 +290,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                 addNotification({ type: 'success', message: 'Tutor session complete! You can now submit the quest.' });
             }}/>}
             {isAiStoryOpen && currentUser && <AiStoryPanel quest={quest} user={currentUser} onClose={() => setIsAiStoryOpen(false)} onStoryFinished={handleComplete}/>}
-            {playingVideoUrl && <VideoPlayerOverlay videoUrl={playingVideoUrl} onClose={() => setPlayingVideoUrl(null)}/>}
-            {isSlideshowOpen && quest.images && <ImageSlideshowOverlay images={quest.images} onClose={() => setIsSlideshowOpen(false)} />}
+            {isVideoPlayerOpen && quest.videoUrl && <VideoPlayerOverlay videoUrl={quest.videoUrl} onClose={() => setIsVideoPlayerOpen(false)}/>}
         </>
     );
 };

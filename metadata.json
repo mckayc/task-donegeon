@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.53 - Media Type Bug Fix",
-  "version": "0.5.53",
-  "description": "Fixed a critical bug where changing a quest's interactive media type (e.g., from Video to PDF) would not properly clear the old media data, potentially leading to data corruption and application errors. The quest editor now correctly nullifies data from unused media types upon saving.",
+  "name": "Task Donegeon 2.0 - 0.5.51 - Math Muncher Curriculum Expansion",
+  "version": "0.5.51",
+  "description": "This major update massively expands the 'Math Muncher' minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the 'Munch' action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Finally, enemy AI has been improved for more varied and challenging movement patterns.",
   "requestFramePermissions": [
     "camera"
   ],

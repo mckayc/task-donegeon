@@ -14,7 +14,7 @@ import AlchemistsTrialGame from './AlchemistsTrialGame';
 import GoblinAmbushGame from './GoblinAmbushGame';
 import RiverCrossingGame from './RiverCrossingGame';
 import WizardsVortexGame from './WizardsVortexGame';
-import MathMuncherGame from './math-muncher/MathMuncherGame';
+import MathMuncherGame from './MathMuncherGame';
 
 interface GameOverlayProps {
   gameId: string;

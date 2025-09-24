@@ -1,4 +1,3 @@
-
 import type { RewardItem } from '../rewards/types';
 import type { AITutorSessionLog } from '../tutors/types';
 
@@ -29,11 +28,6 @@ export interface ImageSlide {
   caption: string;
 }
 
-export interface VideoSlide {
-  url: string;
-  title?: string;
-}
-
 export interface Checkpoint {
   id: string;
   description: string;
@@ -58,11 +52,11 @@ export interface Quest {
   description: string;
   type: QuestType;
   kind: QuestKind;
-  mediaType?: QuestMediaType | null;
-  aiTutorId?: string | null;
-  videos?: VideoSlide[] | null;
+  mediaType?: QuestMediaType;
+  aiTutorId?: string;
+  videoUrl?: string | null;
   pdfUrl?: string | null;
-  images?: ImageSlide[] | null;
+  images?: ImageSlide[];
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
@@ -104,8 +98,8 @@ export interface Quest {
   isRedemptionFor?: string;
   readingProgress?: { [userId: string]: { totalSeconds?: number; sessionSeconds?: number; pageNumber?: number; bookmarks?: Bookmark[]; locationCfi?: string; } };
   
-  minigameId?: string | null;
-  minigameMinScore?: number | null;
+  minigameId?: string;
+  minigameMinScore?: number;
   
   createdAt?: string;
   updatedAt?: string;

@@ -1,5 +1,5 @@
 import { RewardItem } from "../rewards/types";
-import { Cell, Troggle, PowerUpType, GameState, GameAction, MathChallenge, GameGrade, GameGrades } from './math-muncher/MathMuncherTypes';
+import { Cell, Troggle, PowerUpType } from './MathMuncherTypes';
 
 export interface PrizeThreshold {
     score: number;
@@ -33,5 +33,16 @@ export interface GameScore {
     updatedAt?: string;
 }
 
-// Re-export for convenience in other files
-export type { Cell, Troggle, PowerUpType, GameState, GameAction, MathChallenge, GameGrade, GameGrades };
+export interface MathChallenge {
+    title: string;
+    gridSize: 6 | 12;
+    generateGrid: () => Cell[][];
+}
+
+export interface GameGrade {
+    name: string;
+    challenges: MathChallenge[];
+}
+
+export type GameGrades = Record<string, GameGrade>;
+export { Cell, Troggle, PowerUpType };

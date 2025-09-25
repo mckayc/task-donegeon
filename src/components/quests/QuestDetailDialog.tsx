@@ -43,7 +43,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const [isTutorSessionOpen, setIsTutorSessionOpen] = useState(false);
     const [tutorSessionLog, setTutorSessionLog] = useState<Omit<AITutorSessionLog, 'id' | 'completionId'> | null>(null);
     const [isAiStoryOpen, setIsAiStoryOpen] = useState(false);
-    const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
+    const [playingVideoUrl, setPlayingVideoUrl] = useState<string | null>(null);
     const [displaySeconds, setDisplaySeconds] = useState(0);
 
     const currentUser = userForView || loggedInUser;
@@ -261,6 +261,21 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         <p className="text-stone-300 whitespace-pre-wrap">{quest.description || 'No description provided.'}</p>
                         {(quest.startDateTime || quest.startTime || quest.endDateTime || quest.endTime) && <div className="space-y-2 pt-4 border-t border-white/10"><p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Deadlines</p><div className="text-sm space-y-1 text-stone-200">{quest.startDateTime && <p><span className="font-semibold text-green-400">Starts:</span> {new Date(quest.startDateTime).toLocaleString()}</p>}{quest.startTime && <p><span className="font-semibold text-green-400">Due:</span> Daily at {new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>}{quest.endDateTime && <p><span className="font-semibold text-red-400">Due:</span> {new Date(quest.endDateTime).toLocaleString()}</p>}{quest.endTime && <p><span className="font-semibold text-amber-400">Incomplete at:</span> Daily at {new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>}</div></div>}
                         {quest.type === QuestType.Journey && quest.checkpoints && <div className="space-y-3 pt-4 border-t border-white/10"><h3 className="font-bold text-lg text-stone-200">Checkpoints ({journeyProgress.completed}/{journeyProgress.total})</h3>{quest.checkpoints.map((cp, idx) => { const isCompleted = idx < journeyProgress.completed; const isCurrent = idx === journeyProgress.currentIdx; const isObfuscated = isCurrent && hasPendingCompletion; return <div key={cp.id} className={`p-3 rounded-lg border-l-4 transition-all duration-300 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}><div className="flex items-center gap-2">{isCompleted && <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />}<p className={`font-semibold ${isCompleted ? 'text-stone-400 line-through' : 'text-stone-200'}`}>Checkpoint {idx + 1}</p></div><p className={`text-sm text-stone-300 mt-1 transition-all duration-300 ${isObfuscated ? 'filter blur-sm select-none' : ''}`}>{isObfuscated ? 'Awaiting approval...' : cp.description}</p><div className="mt-2">{renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', isObfuscated)}</div></div>; })}</div>}
+                        
+                        {quest.mediaType === QuestMediaType.Video && quest.videos && quest.videos.length > 0 && (
+                            <div className="space-y-3 pt-4 border-t border-white/10">
+                                <h3 className="font-bold text-lg text-stone-200">Video Playlist</h3>
+                                <div className="space-y-2">
+                                    {quest.videos.map((video) => (
+                                        <button key={video.id} onClick={() => setPlayingVideoUrl(video.url)} className="w-full text-left p-3 rounded-lg bg-stone-900/50 hover:bg-stone-700/50 transition-colors">
+                                            <p className="font-semibold text-emerald-300 flex items-center gap-2">▶️ {video.title}</p>
+                                            {video.description && <p className="text-sm text-stone-400 mt-1">{video.description}</p>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-3 pt-4 border-t border-white/10">{renderRewardList(quest.rewards, `Final ${settings.terminology.points}`, 'text-green-400')}{renderRewardList(quest.lateSetbacks, `Late ${settings.terminology.negativePoints}`, 'text-yellow-400')}{renderRewardList(quest.incompleteSetbacks, `Incomplete ${settings.terminology.negativePoints}`, 'text-red-400')}</div>
                     </div>
                     <div className="p-4 bg-black/20 rounded-b-xl flex justify-between items-center gap-2 flex-wrap">
@@ -268,7 +283,6 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         <div className="flex items-center gap-4">
                             {quest.mediaType === QuestMediaType.AITutor && <Button variant="secondary" onClick={() => setIsTutorSessionOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Start AI Tutor</Button>}
                             {quest.mediaType === QuestMediaType.AIStory && <Button variant="secondary" onClick={() => setIsAiStoryOpen(true)}><SparklesIcon className="w-5 h-5 mr-2" />Read AI Story</Button>}
-                            {quest.mediaType === QuestMediaType.Video && quest.videoUrl && <Button variant="secondary" onClick={() => setIsVideoPlayerOpen(true)}>▶️ Watch Video</Button>}
                             {quest.mediaType === QuestMediaType.PlayMiniGame && quest.minigameId && (
                                 <Button variant="secondary" onClick={() => {
                                     setActiveGame(quest.minigameId!);
@@ -290,7 +304,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                 addNotification({ type: 'success', message: 'Tutor session complete! You can now submit the quest.' });
             }}/>}
             {isAiStoryOpen && currentUser && <AiStoryPanel quest={quest} user={currentUser} onClose={() => setIsAiStoryOpen(false)} onStoryFinished={handleComplete}/>}
-            {isVideoPlayerOpen && quest.videoUrl && <VideoPlayerOverlay videoUrl={quest.videoUrl} onClose={() => setIsVideoPlayerOpen(false)}/>}
+            {playingVideoUrl && <VideoPlayerOverlay videoUrl={playingVideoUrl} onClose={() => setPlayingVideoUrl(null)}/>}
         </>
     );
 };

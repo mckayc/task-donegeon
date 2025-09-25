@@ -28,6 +28,13 @@ export interface ImageSlide {
   caption: string;
 }
 
+export interface QuestVideo {
+  id: string;
+  url: string;
+  title: string;
+  description?: string;
+}
+
 export interface Checkpoint {
   id: string;
   description: string;
@@ -54,7 +61,7 @@ export interface Quest {
   kind: QuestKind;
   mediaType?: QuestMediaType;
   aiTutorId?: string;
-  videoUrl?: string | null;
+  videos?: QuestVideo[] | null;
   pdfUrl?: string | null;
   images?: ImageSlide[];
   iconType: 'emoji' | 'image';

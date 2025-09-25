@@ -1,7 +1,3 @@
-// FIX: Removed re-export of AdminAdjustmentType to resolve a name clash in the main types barrel file.
-// The type is correctly sourced from `users/types.ts` via the main barrel file.
-import { AdminAdjustmentType as GlobalAdminAdjustmentType } from '../../users/types';
-
 export type PowerUpType = 'life' | 'shield' | 'freeze' | 'reveal';
 
 export type CellValue = string | number;
@@ -34,7 +30,3 @@ export interface GameGrade {
 }
 
 export type GameGrades = Record<string, GameGrade>;
-
-// Re-exporting for local use to avoid circular dependency issues.
-// This was causing a duplicate export error in the main barrel file.
-export const AdminAdjustmentType = GlobalAdminAdjustmentType;

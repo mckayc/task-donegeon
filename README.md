@@ -1,7 +1,7 @@
 
 # Task Donegeon
 
-**Version:** 0.5.56
+**Version:** 0.5.57
 
 ---
 
@@ -16,8 +16,8 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of July 25, 2026 (v0.5.56):**
-    -   **Build & Dependency Fix:** Resolved a critical TypeScript build error caused by a duplicate type export (`AdminAdjustmentType`). This was preventing the application from compiling. The fix involved refactoring type imports to remove the conflict and ensure a stable build process.
+-   **Week of August 1, 2026 (v0.5.57):**
+    -   **Critical Build Fix:** Resolved a persistent TypeScript build error (`TS2308`) caused by a duplicate export of the `AdminAdjustmentType`. A previous attempt to fix this was insufficient. This update completely removes the redundant re-export from the Math Muncher game's type definitions, resolving the name clash in the main types barrel file and allowing the application to compile successfully.
 
 -   **Week of July 18, 2026 (v0.5.55):**
     -   **Math Muncher Freeze Fix:** Fixed a critical bug that caused the "Math Muncher" game to freeze indefinitely when a player selected a grade level. The problem was traced to an infinite loop in the logic that generates incorrect answers for certain challenges. The generation algorithm has been rewritten to be more robust, ensuring the game starts correctly and is fully playable.

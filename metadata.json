@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.56 - Build Fix",
-  "version": "0.5.56",
-  "description": "Fixes a TypeScript build error caused by a duplicate type export, which prevented the application from compiling.",
+  "name": "Task Donegeon 2.0 - 0.5.57 - Build Fix",
+  "version": "0.5.57",
+  "description": "Resolves a critical TypeScript build error (TS2308) caused by a duplicate type export for 'AdminAdjustmentType', ensuring the application can compile successfully.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -1,4 +1,6 @@
-export type PowerUpType = 'life' | 'shield' | 'freeze' | 'reveal';
+
+// FIX: Added 'reward' to the PowerUpType to allow for in-game reward collection items.
+export type PowerUpType = 'life' | 'shield' | 'freeze' | 'reveal' | 'reward';
 
 export type CellValue = string | number;
 

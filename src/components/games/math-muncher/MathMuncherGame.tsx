@@ -54,7 +54,6 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const [freezeActive, setFreezeActive] = useState(false);
     const [isHit, setIsHit] = useState(false);
     const [lastReward, setLastReward] = useState<{ amount: number, icon: string } | null>(null);
-    const [isProcessingLevelClear, setIsProcessingLevelClear] = useState(false);
     
     const gameLoopRef = useRef<number | null>(null);
     const correctAnswersLeft = useRef(0);
@@ -190,46 +189,64 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         setCountdown(3);
     }, []);
 
-    const handleLevelCleared = useCallback(async () => {
+    const handleLevelCleared = useCallback(() => {
         setGameState('level-cleared');
-        setIsProcessingLevelClear(true);
-        try {
-            if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
-                const success = await applyManualAdjustment({
-                    userId: currentUser.id,
-                    adjusterId: 'system',
-                    reason: `Reward for clearing round ${round}, level ${challengeIndex + 1} in Math Muncher.`,
-                    type: AdminAdjustmentType.Reward,
-                    rewards: [{
-                        rewardTypeId: rewardSettings.rewardTypeId,
-                        amount: rewardSettings.amount
-                    }],
-                    setbacks: []
-                });
+    }, []);
 
-                if (success) {
-                    // Show animation only after success is confirmed from server
-                    setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
-                    addNotification({
-                        type: 'success',
-                        message: `+${rewardSettings.amount} ${rewardDef.name}`,
-                        icon: rewardDef.icon
-                    });
-                } else {
-                    throw new Error("Server failed to grant reward.");
-                }
+    const handleRewardCollection = useCallback(async () => {
+        if (!currentUser || !rewardSettings || !rewardDef) return;
+
+        try {
+            const success = await applyManualAdjustment({
+                userId: currentUser.id,
+                adjusterId: 'system',
+                reason: `Reward from Math Muncher round ${round}, level ${challengeIndex + 1}.`,
+                type: AdminAdjustmentType.Reward,
+                rewards: [{
+                    rewardTypeId: rewardSettings.rewardTypeId,
+                    amount: rewardSettings.amount
+                }],
+                setbacks: []
+            });
+            
+            if (success) {
+                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
+                addNotification({
+                    type: 'success',
+                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
+                    icon: rewardDef.icon
+                });
+            } else {
+                throw new Error("Server failed to grant reward.");
             }
         } catch (error) {
-            console.error("Failed to apply level clear reward:", error);
-            addNotification({
+             console.error("Failed to apply reward:", error);
+             addNotification({
                 type: 'error',
-                message: 'There was a problem granting your reward. Please contact support.'
-            });
-            setLastReward(null);
-        } finally {
-            setIsProcessingLevelClear(false);
+                message: 'There was a problem granting your reward.'
+             });
         }
-    }, [currentUser, rewardSettings, rewardDef, challengeIndex, round, addNotification, applyManualAdjustment]);
+    }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, applyManualAdjustment, addNotification]);
+
+    const spawnReward = useCallback(() => {
+        if (!currentUser || !rewardSettings || !rewardDef || (challengeIndex + 1) % rewardSettings.levelFrequency !== 0) {
+            return;
+        }
+
+        const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
+
+        if (eatenCellsPos.length > 0) {
+            const pos = eatenCellsPos[Math.floor(Math.random() * eatenCellsPos.length)]!;
+            
+            setGrid(prev => {
+                const newGrid = [...prev.map(r => [...r])];
+                if(newGrid[pos.y]?.[pos.x]) {
+                    newGrid[pos.y][pos.x].item = 'reward';
+                }
+                return newGrid;
+            });
+        }
+    }, [grid, currentUser, rewardSettings, rewardDef, challengeIndex]);
 
     const handleMunch = useCallback(() => {
         if (gameState !== 'playing') return;
@@ -256,6 +273,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     setGrid(prev => prev.map(row => row.map(c => ({...c, feedback: undefined}))));
                 }, 1000);
             }
+            if (cellToUpdate.item === 'reward') {
+                handleRewardCollection();
+            }
             cellToUpdate.item = undefined;
         }
     
@@ -267,6 +287,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 correctAnswersLeft.current--;
                 cellToUpdate.feedback = 'correct';
                 wasCorrectMunch = true;
+                if (correctAnswersLeft.current === 2) {
+                    spawnReward();
+                }
             } else {
                 if (!shieldActive) {
                     handleLifeLost();
@@ -295,7 +318,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 return finalGrid;
             });
         }, 300);
-    }, [gameState, grid, playerPos, combo, shieldActive, handleLifeLost, handleLevelCleared]);
+    }, [gameState, grid, playerPos, combo, shieldActive, handleLifeLost, handleLevelCleared, spawnReward, handleRewardCollection]);
 
     const spawnPowerUp = useCallback(() => {
         const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
@@ -462,7 +485,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [playerPos, troggles, shieldActive, gameState, isHit, handleLifeLost]);
 
     useEffect(() => {
-        if (gameState === 'level-cleared' && !isProcessingLevelClear) {
+        if (gameState === 'level-cleared') {
             nextLevelTimerRef.current = window.setTimeout(() => {
                 startNextChallenge();
             }, 4000); // 4 seconds
@@ -473,7 +496,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 clearTimeout(nextLevelTimerRef.current);
             }
         };
-    }, [gameState, isProcessingLevelClear, startNextChallenge]);
+    }, [gameState, startNextChallenge]);
 
     const cellSizeClass = 'w-20 h-20';
 
@@ -551,7 +574,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         {!cell.isEaten && <span className={fontSizeClass}>{cell.value}</span>}
                                         {isPlayer && <span className={`absolute text-3xl ${shieldActive ? 'animate-pulse' : ''}`}>{isHit ? '😵' : shieldActive ? '🛡️' : '😋'}</span>}
                                         {troggle && <span className="absolute text-3xl">{troggle.type === 'hunter' ? '👹' : troggle.type === 'jumper' ? '👺' : '👻'}</span>}
-                                        {cell.item && <span className="absolute text-3xl">{cell.item === 'life' ? '❤️' : cell.item === 'shield' ? '🛡️' : cell.item === 'freeze' ? '❄️' : '❓'}</span>}
+                                        {cell.item && <span className="absolute text-3xl">{cell.item === 'life' ? '❤️' : cell.item === 'shield' ? '🛡️' : cell.item === 'freeze' ? '❄️' : cell.item === 'reveal' ? '❓' : cell.item === 'reward' ? '🏆' : '❔'}</span>}
                                         <AnimatePresence>
                                             {cell.feedback && (
                                             <motion.div
@@ -580,25 +603,8 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         <Button onClick={resetGame} className="mt-6">Back to Levels</Button>
                                     </>}
                                     {gameState === 'level-cleared' && <>
-                                        {lastReward ? (
-                                            <>
-                                                <h2 className="text-4xl font-bold font-medieval text-green-400">Reward Won!</h2>
-                                                <div className="text-9xl my-4 animate-bounce">{lastReward.icon}</div>
-                                                <p className="text-2xl font-bold">+ {lastReward.amount}</p>
-                                            </>
-                                        ) : (
-                                            <h2 className="text-4xl font-bold font-medieval text-amber-300">Level Cleared!</h2>
-                                        )}
-                                        <Button
-                                            onClick={() => {
-                                                if (nextLevelTimerRef.current) clearTimeout(nextLevelTimerRef.current);
-                                                startNextChallenge();
-                                            }}
-                                            className="mt-6"
-                                            disabled={isProcessingLevelClear}
-                                        >
-                                            {isProcessingLevelClear ? 'Processing...' : 'Next Level'}
-                                        </Button>
+                                        <h2 className="text-4xl font-bold font-medieval text-amber-300">Level Cleared!</h2>
+                                        <Button onClick={startNextChallenge} className="mt-6">Next Level</Button>
                                     </>}
                                     {gameState === 'get-ready' && <>
                                         <h2 className="text-4xl font-bold font-medieval text-red-500">Life Lost!</h2>

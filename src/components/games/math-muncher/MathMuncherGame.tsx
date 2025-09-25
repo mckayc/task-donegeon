@@ -53,11 +53,13 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const [shieldActive, setShieldActive] = useState(false);
     const [freezeActive, setFreezeActive] = useState(false);
     const [isHit, setIsHit] = useState(false);
-    const [lastReward, setLastReward] = useState<{ amount: number, icon: string } | null>(null);
+    const [lastReward, setLastReward] = useState<{ amount: number, icon: string, key: number } | null>(null);
+    const [powerUpMessage, setPowerUpMessage] = useState<string | null>(null);
     
     const gameLoopRef = useRef<number | null>(null);
     const correctAnswersLeft = useRef(0);
     const nextLevelTimerRef = useRef<number | null>(null);
+    const powerUpMessageTimerRef = useRef<number | null>(null);
     
     const gameSpeed = useMemo(() => Math.max(200, 800 - (round - 1) * 50), [round]);
     const currentChallenge = useMemo(() => challengePlaylist[challengeIndex], [challengePlaylist, challengeIndex]);
@@ -210,12 +212,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             });
             
             if (success) {
-                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
-                addNotification({
-                    type: 'success',
-                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
-                    icon: rewardDef.icon
-                });
+                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon, key: Date.now() });
             } else {
                 throw new Error("Server failed to grant reward.");
             }
@@ -229,7 +226,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, applyManualAdjustment, addNotification]);
 
     const spawnReward = useCallback(() => {
-        if (!currentUser || !rewardSettings || !rewardDef || (challengeIndex + 1) % rewardSettings.levelFrequency !== 0) {
+        if (!currentUser || !rewardSettings || !rewardDef || (round) % rewardSettings.levelFrequency !== 0) {
             return;
         }
 
@@ -246,7 +243,17 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 return newGrid;
             });
         }
-    }, [grid, currentUser, rewardSettings, rewardDef, challengeIndex]);
+    }, [grid, currentUser, rewardSettings, rewardDef, round]);
+
+    const showPowerUpMessage = (message: string) => {
+        if (powerUpMessageTimerRef.current) {
+            clearTimeout(powerUpMessageTimerRef.current);
+        }
+        setPowerUpMessage(message);
+        powerUpMessageTimerRef.current = window.setTimeout(() => {
+            setPowerUpMessage(null);
+        }, 2500);
+    };
 
     const handleMunch = useCallback(() => {
         if (gameState !== 'playing') return;
@@ -261,13 +268,15 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         let wasCorrectMunch = false;
     
         if (cellToUpdate.item) {
-            if (cellToUpdate.item === 'life') setLives(l => l + 1);
-            if (cellToUpdate.item === 'shield') setShieldActive(true);
+            if (cellToUpdate.item === 'life') { setLives(l => l + 1); showPowerUpMessage('+1 Life!'); }
+            if (cellToUpdate.item === 'shield') { setShieldActive(true); showPowerUpMessage('Shield Activated!'); }
             if (cellToUpdate.item === 'freeze') {
                 setFreezeActive(true);
+                showPowerUpMessage('Troggles Frozen!');
                 setTimeout(() => setFreezeActive(false), 5000);
             }
             if (cellToUpdate.item === 'reveal') {
+                showPowerUpMessage('Answers Revealed!');
                 newGrid = newGrid.map(row => row.map(c => c.isCorrect ? { ...c, feedback: 'correct' as const } : c));
                 setTimeout(() => {
                     setGrid(prev => prev.map(row => row.map(c => ({...c, feedback: undefined}))));
@@ -275,6 +284,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
             if (cellToUpdate.item === 'reward') {
                 handleRewardCollection();
+                showPowerUpMessage('Reward Collected!');
             }
             cellToUpdate.item = undefined;
         }
@@ -295,6 +305,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     handleLifeLost();
                 } else {
                     setShieldActive(false);
+                    showPowerUpMessage('Shield Broken!');
                 }
                 setCombo(0);
                 cellToUpdate.feedback = 'incorrect';
@@ -477,6 +488,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 if (shieldActive) {
                     setTroggles(prevTroggles => prevTroggles.filter(t => t.pos.x !== playerPos.x || t.pos.y !== playerPos.y));
                     setShieldActive(false);
+                    showPowerUpMessage('Shield Broken!');
                 } else {
                     handleLifeLost();
                 }
@@ -542,9 +554,11 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         <AnimatePresence>
                                         {lastReward && (
                                             <motion.span
+                                                key={lastReward.key}
                                                 initial={{ y: 0, opacity: 1 }}
                                                 animate={{ y: -20, opacity: 0 }}
                                                 exit={{ opacity: 0 }}
+                                                transition={{ duration: 1.5 }}
                                                 className="absolute left-full ml-1 text-emerald-400 font-bold"
                                             >
                                                 +{lastReward.amount}
@@ -561,6 +575,22 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     </div>
 
                     <div className="relative">
+                        <AnimatePresence>
+                            {powerUpMessage && (
+                                <motion.div
+                                    key={powerUpMessageTimerRef.current}
+                                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+                                >
+                                    <div className="bg-black/70 text-white font-bold text-2xl px-6 py-3 rounded-lg shadow-lg">
+                                        {powerUpMessage}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                         <div className="grid gap-1 bg-stone-900 p-2 rounded-lg" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
                             {grid.flat().map((cell, index) => {
                                 const x = index % GRID_SIZE;

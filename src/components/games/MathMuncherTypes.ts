@@ -1,3 +1,4 @@
+
 export type PowerUpType = 'life' | 'shield' | 'freeze' | 'reveal';
 
 export type CellValue = string | number;

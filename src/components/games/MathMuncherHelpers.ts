@@ -1,3 +1,4 @@
+
 import { Cell, CellValue } from "./MathMuncherTypes";
 
 export const getRandomInt = (min: number, max: number): number => {

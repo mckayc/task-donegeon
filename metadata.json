@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.57 - Build Fix",
-  "version": "0.5.57",
-  "description": "Resolves a critical TypeScript build error (TS2308) caused by a duplicate type export for 'AdminAdjustmentType', ensuring the application can compile successfully.",
+  "name": "Task Donegeon 2.0 - 0.5.58 - Math Muncher Polish",
+  "version": "0.5.58",
+  "description": "Adds Chronicle entries for rewards won in Math Muncher, improves the game's header UI, and updates the service worker.",
   "requestFramePermissions": [
     "camera"
   ],

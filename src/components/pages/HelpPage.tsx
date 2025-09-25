@@ -207,7 +207,15 @@ const FunctionalSpecificationsContent: React.FC = () => (
          <ul className="list-disc list-inside space-y-2">
             <li><strong>UI Overhaul:</strong> The action buttons on game cards have been redesigned for clarity. The "Play" button is now a prominent, primary action and clearly displays the cost to play. Placeholder or under-construction games are now disabled to prevent users from spending tokens on them.</li>
             <li><strong>Game Rules:</strong> A new "Rules" button has been added to every game card in the Arcade. Clicking it will open a dialog explaining the objective and how to play.</li>
-            <li><strong>Math Muncher Stability Fix:</strong> Resolved a critical bug causing the "Math Muncher" minigame to freeze the page when a player selected a grade. The issue was traced to an infinite loop in the question-generation logic, which has been rewritten for stability and performance.</li>
+            <li>
+                <strong>Math Muncher:</strong> This educational game has received several stability fixes and enhancements.
+                <ul className="list-disc list-inside pl-6 mt-2">
+                    <li><strong>Stability Fix:</strong> Resolved a critical bug causing the game to freeze when a player selected a grade. The issue was traced to an infinite loop in the question-generation logic, which has been rewritten for stability and performance.</li>
+                    <li><strong>UI & AI Enhancements:</strong> The game header has been cleaned up to prevent text wrapping issues. Enemy AI has been improved to be more challenging and less predictable.</li>
+                    <li><strong>Real-time Rewards:</strong> Rewards earned in the game are now instantly reflected in your total balance in the main application header.</li>
+                    <li><strong>Reward Chronicles:</strong> Each time a reward is collected in the game, a "Prize Won" event is automatically recorded in the player's Chronicles, providing a clear history of in-game earnings.</li>
+                </ul>
+            </li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Bug Fix & UI Improvement:</strong> Fixed a bug where the game would sometimes fail to recognize a "bust," causing it to get stuck. When you bust now, a large, impactful "BUSTED!" message will appear to make the outcome clear.</li>
@@ -297,7 +305,7 @@ const VersionHistoryContent: React.FC = () => (
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of June 27, 2026 (v0.5.52)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Math Muncher Curriculum Expansion:</strong> This major update massively expands the "Math Muncher" minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges based on common core standards. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Finally, enemy AI has been improved for more varied and challenging movement patterns.</li>
+                <li><strong>Math Muncher Curriculum Expansion:</strong> This major update massively expands the "Math Muncher" minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges based on common core standards. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained after clearing a level. Finally, enemy AI has been improved for more varied and challenging movement patterns.</li>
             </ul>
         </div>
         <div>
@@ -330,7 +338,7 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Minigame Bonanza:</strong> A major update to the Arcade!
                     <ul className="list-disc list-inside pl-6 mt-2">
-                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time!</li>
+                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time you play!</li>
                         <li><strong>Arcade UI Overhaul:</strong> Game cards now have a primary "Play" button that clearly shows the cost in Game Tokens. Under-construction games are now disabled to prevent accidental spending.</li>
                         <li><strong>Gemstone Mines Visual Upgrade:</strong> The classic match-3 game now uses vibrant fruit emojis instead of plain colors and features a satisfying particle burst effect for matches.</li>
                     </ul>

@@ -585,7 +585,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                  <>
                     <div className="w-full max-w-[450px] mb-4">
                         <div className="flex justify-between items-center text-white font-bold text-lg p-3 bg-stone-800/50 rounded-lg">
-                            <div className="flex items-center gap-4">
+                            <div className="flex-1 text-left flex items-center gap-4">
                                 <span>Score: {score}</span>
                                 {rewardDef && (
                                     <div className="relative flex items-center gap-1 font-semibold text-stone-200">
@@ -608,8 +608,12 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                     </div>
                                 )}
                             </div>
-                             <span>Round {round} - Level {challengeIndex + 1}</span>
-                             <span>Lives: {'❤️'.repeat(lives)}</span>
+                            <div className="flex-1 text-center">
+                                <span className="whitespace-nowrap">Round {round} - Level {challengeIndex + 1}</span>
+                            </div>
+                            <div className="flex-1 text-right">
+                                <span>Lives: {'❤️'.repeat(lives)}</span>
+                            </div>
                         </div>
                          <p className="text-center text-amber-300 font-semibold mt-2">{currentChallenge?.title}</p>
                     </div>

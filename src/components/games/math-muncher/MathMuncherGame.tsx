@@ -7,7 +7,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 import { Cell, Troggle, PowerUpType, MathChallenge } from './types';
 import { gradeManifest } from './challenges';
 import { shuffleArray, getRandomInt } from './helpers';
-import { useAuthState } from '../../../context/AuthContext';
+import { useAuthState, useAuthDispatch } from '../../../context/AuthContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { RewardCategory, RewardTypeDefinition, AdminAdjustmentType } from '../../../types';
 import { useEconomyState } from '../../../context/EconomyContext';
@@ -32,6 +32,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const { minigames } = useSystemState();
     const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
+    const { updateUser } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { submitScore, applyManualAdjustment } = useSystemDispatch();
     
@@ -232,6 +233,11 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 const errorData = await claimResponse.json();
                 throw new Error(errorData.error || 'Failed to claim reward token.');
             }
+            
+            const result = await claimResponse.json();
+            if (result.updatedUser) {
+                updateUser(currentUser.id, result.updatedUser);
+            }
     
             setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon, key: Date.now() });
     
@@ -242,7 +248,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 message: error instanceof Error ? error.message : 'There was a problem granting your reward.'
              });
         }
-    }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, addNotification]);
+    }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, addNotification, updateUser]);
 
     const spawnReward = useCallback(() => {
         if (!currentUser || !rewardSettings || !rewardDef || (round) % rewardSettings.levelFrequency !== 0) {
@@ -374,6 +380,22 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
             switch (troggle.type) {
                 case 'patroller':
+                    // 20% chance to hunt for a turn
+                    if (Math.random() < 0.2) {
+                        const dx = playerPos.x - troggle.pos.x;
+                        const dy = playerPos.y - troggle.pos.y;
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            newPos.x += Math.sign(dx);
+                        } else if (dy !== 0) {
+                            newPos.y += Math.sign(dy);
+                        }
+                        newPos.x = Math.max(0, Math.min(GRID_SIZE - 1, newPos.x));
+                        newPos.y = Math.max(0, Math.min(GRID_SIZE - 1, newPos.y));
+                        // Don't update direction or steps, it will revert to patrolling next tick
+                        return { ...troggle, pos: newPos };
+                    }
+
+                    // Default patrol logic
                     if (newStepsToGo <= 0) {
                         const directions = [{x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}];
                         newDir = directions[getRandomInt(0, 3)];

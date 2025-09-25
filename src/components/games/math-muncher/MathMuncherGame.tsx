@@ -195,13 +195,6 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         setIsProcessingLevelClear(true);
         try {
             if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
-                addNotification({
-                    type: 'success',
-                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
-                    icon: rewardDef.icon
-                });
-                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
-                
                 const success = await applyManualAdjustment({
                     userId: currentUser.id,
                     adjusterId: 'system',
@@ -213,7 +206,15 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     }],
                     setbacks: []
                 });
-                if (!success) {
+
+                if (success) {
+                    addNotification({
+                        type: 'success',
+                        message: `+${rewardSettings.amount} ${rewardDef.name}`,
+                        icon: rewardDef.icon
+                    });
+                    setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
+                } else {
                     throw new Error("Server failed to grant reward.");
                 }
             }
@@ -223,6 +224,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 type: 'error',
                 message: 'There was a problem granting your reward. Please contact support.'
             });
+            setLastReward(null);
         } finally {
             setIsProcessingLevelClear(false);
         }
@@ -494,6 +496,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         {gradeData.name}
                                     </Button>
                                 ))}
+                            </div>
+                            <div className="mt-8">
+                                <Button variant="secondary" onClick={onClose}>Exit Game</Button>
                             </div>
                         </>
                     )}

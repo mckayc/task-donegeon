@@ -20,7 +20,6 @@ export type Troggle = {
 
 export interface MathChallenge {
   title: string;
-  // FIX: The game is implemented with a 5x5 grid. The type was incorrectly set to 6.
   gridSize: 5;
   generateGrid: () => Cell[][];
 }

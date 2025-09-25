@@ -33,7 +33,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const { addNotification } = useNotificationsDispatch();
     const { submitScore, applyManualAdjustment } = useSystemDispatch();
     
-    const [gameState, setGameState] = useState<'select-level' | 'countdown' | 'playing' | 'get-ready' | 'level-cleared' | 'game-over'>('select-level');
+    const [gameState, setGameState] = useState<'select-level' | 'loading-challenges' | 'countdown' | 'playing' | 'get-ready' | 'level-cleared' | 'game-over'>('select-level');
     const [selectedGradeKey, setSelectedGradeKey] = useState<string | null>(null);
     
     const [challengePlaylist, setChallengePlaylist] = useState<MathChallenge[]>([]);
@@ -109,21 +109,28 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [round]);
 
     const startGame = useCallback(async (gradeKey: string) => {
-        const gradeModule = await gradeManifest[gradeKey].import();
-        const gradeChallenges = gradeModule.challenges;
-
-        const newPlaylist = shuffleArray(gradeChallenges);
-        setSelectedGradeKey(gradeKey);
-        setChallengePlaylist(newPlaylist);
-        setChallengeIndex(0);
-        setRound(1);
-        setScore(0);
-        setCombo(0);
-        setLives(INITIAL_LIVES);
-        setShieldActive(false);
-        setFreezeActive(false);
-        startChallenge(0, newPlaylist);
-    }, [startChallenge]);
+        setGameState('loading-challenges');
+        try {
+            const gradeModule = await gradeManifest[gradeKey].import();
+            const gradeChallenges = gradeModule.challenges;
+            
+            const newPlaylist = shuffleArray(gradeChallenges);
+            setSelectedGradeKey(gradeKey);
+            setChallengePlaylist(newPlaylist);
+            setChallengeIndex(0);
+            setRound(1);
+            setScore(0);
+            setCombo(0);
+            setLives(INITIAL_LIVES);
+            setShieldActive(false);
+            setFreezeActive(false);
+            startChallenge(0, newPlaylist);
+        } catch (error) {
+            console.error("Failed to load challenges:", error);
+            addNotification({type: 'error', message: 'Could not load math challenges.'});
+            setGameState('select-level');
+        }
+    }, [startChallenge, addNotification]);
     
     const startNextChallenge = useCallback(async () => {
         if (nextLevelTimerRef.current) {
@@ -133,21 +140,27 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         let nextIndex = challengeIndex + 1;
         let nextRound = round;
         let nextPlaylist = challengePlaylist;
-        let newChallenges = challengePlaylist;
 
         if (nextIndex >= challengePlaylist.length) {
             nextIndex = 0;
             nextRound++;
-            const gradeModule = await gradeManifest[selectedGradeKey!].import();
-            newChallenges = gradeModule.challenges;
-            nextPlaylist = shuffleArray(newChallenges);
-            setRound(nextRound);
-            setChallengePlaylist(nextPlaylist);
+            try {
+                const gradeModule = await gradeManifest[selectedGradeKey!].import();
+                const newChallenges = gradeModule.challenges;
+                nextPlaylist = shuffleArray(newChallenges);
+                setRound(nextRound);
+                setChallengePlaylist(nextPlaylist);
+            } catch(error) {
+                console.error("Failed to load next level challenges:", error);
+                addNotification({type: 'error', message: 'Could not load next level.'});
+                setGameState('select-level');
+                return;
+            }
         }
         setChallengeIndex(nextIndex);
         setLastReward(null);
         startChallenge(nextIndex, nextPlaylist);
-    }, [challengeIndex, round, challengePlaylist, selectedGradeKey, startChallenge]);
+    }, [challengeIndex, round, challengePlaylist, selectedGradeKey, startChallenge, addNotification]);
 
     const handleLifeLost = useCallback(() => {
         if (isHit || gameState === 'game-over' || gameState === 'get-ready') return;
@@ -450,21 +463,31 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
     return (
         <div className={`w-full h-full flex flex-col items-center justify-center p-4 ${isHit ? 'animate-shake' : ''}`}>
-             {gameState === 'select-level' && (
+             {(gameState === 'select-level' || gameState === 'loading-challenges') && (
                 <div className="text-center text-white relative z-20">
                     <h1 className="text-5xl font-medieval text-emerald-400">Math Muncher</h1>
-                    <p className="mt-4 mb-8 text-lg">Select a grade level to begin!</p>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(gradeManifest).map(([gradeKey, gradeData]) => (
-                            <Button key={gradeKey} onClick={() => startGame(gradeKey)} className="text-xl p-6">
-                                {gradeData.name}
-                            </Button>
-                        ))}
-                    </div>
+                    
+                    {gameState === 'loading-challenges' ? (
+                         <div className="flex flex-col items-center justify-center h-full text-center mt-8">
+                            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-emerald-400"></div>
+                            <p className="mt-4 text-stone-300">Loading Challenges...</p>
+                        </div>
+                    ) : (
+                        <>
+                            <p className="mt-4 mb-8 text-lg">Select a grade level to begin!</p>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                {Object.entries(gradeManifest).map(([gradeKey, gradeData]) => (
+                                    <Button key={gradeKey} onClick={() => startGame(gradeKey)} className="text-xl p-6">
+                                        {gradeData.name}
+                                    </Button>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
-            {gameState !== 'select-level' && (
+            {gameState !== 'select-level' && gameState !== 'loading-challenges' && (
                  <>
                     <div className="w-full max-w-[450px] mb-4">
                         <div className="flex justify-between items-center text-white font-bold text-lg p-3 bg-stone-800/50 rounded-lg">

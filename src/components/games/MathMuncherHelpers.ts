@@ -50,18 +50,17 @@ export const simplifyFraction = (numerator: number, denominator: number): [numbe
 
 /**
  * Fills a grid with a mix of correct and incorrect answers using a shuffling method for better randomness.
- * @param gridSize The size of the grid (e.g., 6 for 6x6).
  * @param correctGenerator A function that returns a correct value.
  * @param incorrectGenerator A function that returns an incorrect value.
  * @param checker A function to double-check that incorrect values are not accidentally correct.
  * @returns A 2D array of Cells.
  */
 export const generateChallengeGrid = (
-    gridSize: 6 | 12,
     correctGenerator: () => CellValue,
     incorrectGenerator: () => CellValue,
     checker: (val: CellValue) => boolean
 ): Cell[][] => {
+    const gridSize = 6;
     const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize));
     const totalCells = gridSize * gridSize;
     const targetCorrect = Math.floor(totalCells * 0.4);
@@ -111,26 +110,4 @@ export const generateChallengeGrid = (
     }
     
     return grid;
-};
-
-/**
- * Generates a simple number grid.
- */
-export const generateSimpleNumberGrid = (
-    gridSize: 6 | 12,
-    checker: (n: number) => boolean,
-    range: [number, number],
-    isFloat: boolean = false
-): Cell[][] => {
-    const correctGen = () => {
-        let num;
-        do { num = getRandomInt(range[0], range[1]); } while (!checker(num));
-        return num;
-    };
-    const incorrectGen = () => {
-        let num;
-        do { num = getRandomInt(range[0], range[1]); } while (checker(num));
-        return num;
-    };
-    return generateChallengeGrid(gridSize, correctGen, incorrectGen, (v) => checker(v as number));
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
@@ -16,23 +17,15 @@ interface MathMuncherGameProps {
 }
 
 const INITIAL_LIVES = 3;
+const GRID_SIZE = 6;
 
-const getDynamicFontSize = (value: string | number, gridSize: 6 | 12): string => {
+const getDynamicFontSize = (value: string | number): string => {
     const text = String(value);
     const len = text.length;
-
-    if (gridSize === 12) { // ~40px box
-        if (len > 7) return 'text-[10px] leading-tight';
-        if (len > 5) return 'text-xs';
-        if (len > 3) return 'text-sm';
-        return 'text-lg';
-    } else { // gridSize === 6, ~80px box
-        if (len > 9) return 'text-lg';
-        if (len > 6) return 'text-xl';
-        return 'text-2xl';
-    }
+    if (len > 9) return 'text-lg';
+    if (len > 6) return 'text-xl';
+    return 'text-2xl';
 };
-
 
 const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const { minigames } = useSystemState();
@@ -64,6 +57,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     
     const gameLoopRef = useRef<number | null>(null);
     const correctAnswersLeft = useRef(0);
+    const isProcessingHit = useRef(false);
     
     const gameSpeed = useMemo(() => Math.max(200, 800 - (round - 1) * 50), [round]);
     const currentChallenge = useMemo(() => challengePlaylist[challengeIndex], [challengePlaylist, challengeIndex]);
@@ -83,8 +77,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         const newGrid = challenge.generateGrid();
         setGrid(newGrid);
         
-        const gridSize = challenge.gridSize;
-        const newPlayerPos = { x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) };
+        const newPlayerPos = { x: Math.floor(GRID_SIZE / 2), y: Math.floor(GRID_SIZE / 2) };
         setPlayerPos(newPlayerPos);
 
         correctAnswersLeft.current = newGrid.flat().filter((c: Cell) => c.isCorrect).length;
@@ -103,7 +96,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
             newTroggles.push({
                 id: Date.now() + i,
-                pos: { x: i % 2 === 0 ? 0 : gridSize - 1, y: i < 2 ? 0 : gridSize - 1 },
+                pos: { x: i % 2 === 0 ? 0 : GRID_SIZE - 1, y: i < 2 ? 0 : GRID_SIZE - 1 },
                 type,
                 dir: { x: 1, y: 0 },
                 stepsToGo: 0,
@@ -204,8 +197,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [gameState, grid, playerPos, combo, shieldActive]);
 
     const spawnPowerUp = useCallback(() => {
-        if (!currentChallenge) return;
-        const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / currentChallenge.gridSize), x: i % currentChallenge.gridSize } : null).filter(Boolean);
+        const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
         if (eatenCellsPos.length > 0) {
             const pos = eatenCellsPos[Math.floor(Math.random() * eatenCellsPos.length)]!;
             const powerUpTypes: PowerUpType[] = ['life', 'shield', 'freeze', 'reveal'];
@@ -217,12 +209,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 return newGrid;
             });
         }
-    }, [grid, currentChallenge]);
+    }, [grid]);
     
     const moveTroggles = useCallback(() => {
-        if (!currentChallenge) return;
-        const gridSize = currentChallenge.gridSize;
-
         setTroggles(prev => prev.map(troggle => {
             const newPos = { ...troggle.pos };
             let newDir = troggle.dir ? { ...troggle.dir } : { x: 1, y: 0 };
@@ -237,7 +226,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     }
                     let nextX = newPos.x + newDir.x;
                     let nextY = newPos.y + newDir.y;
-                    if (nextX < 0 || nextX >= gridSize || nextY < 0 || nextY >= gridSize) {
+                    if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
                         newStepsToGo = 0; // Hit a wall, force direction change next tick
                     } else {
                         newPos.x = nextX;
@@ -249,7 +238,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 case 'hunter':
                     const dx = playerPos.x - troggle.pos.x;
                     const dy = playerPos.y - troggle.pos.y;
-                    if (Math.random() < 0.2) { // 20% chance to move randomly
+                    if (Math.random() < 0.2) {
                         const moves = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
                         const move = moves[getRandomInt(0,3)];
                         newPos.x += move.x;
@@ -261,20 +250,20 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                             newPos.y += Math.sign(dy);
                         }
                     }
-                    newPos.x = Math.max(0, Math.min(gridSize - 1, newPos.x));
-                    newPos.y = Math.max(0, Math.min(gridSize - 1, newPos.y));
+                    newPos.x = Math.max(0, Math.min(GRID_SIZE - 1, newPos.x));
+                    newPos.y = Math.max(0, Math.min(GRID_SIZE - 1, newPos.y));
                     return { ...troggle, pos: newPos };
 
                 case 'jumper':
                     if (Math.random() < 0.25) {
-                        newPos.x = getRandomInt(0, gridSize - 1);
-                        newPos.y = getRandomInt(0, gridSize - 1);
-                    } else { // Move randomly like a patroller
+                        newPos.x = getRandomInt(0, GRID_SIZE - 1);
+                        newPos.y = getRandomInt(0, GRID_SIZE - 1);
+                    } else {
                         const moves = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
                         const move = moves[getRandomInt(0,3)];
                         const potentialX = newPos.x + move.x;
                         const potentialY = newPos.y + move.y;
-                        if (potentialX >= 0 && potentialX < gridSize && potentialY >= 0 && potentialY < gridSize) {
+                        if (potentialX >= 0 && potentialX < GRID_SIZE && potentialY >= 0 && potentialY < GRID_SIZE) {
                             newPos.x = potentialX;
                             newPos.y = potentialY;
                         }
@@ -283,19 +272,18 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
             return troggle;
         }));
-    }, [currentChallenge, playerPos]);
+    }, [playerPos]);
 
 
     const handlePlayerMove = useCallback((dx: number, dy: number) => {
-        if (!currentChallenge) return;
         setPlayerPos(prev => {
             const newPos = { x: prev.x + dx, y: prev.y + dy };
-            if (newPos.x < 0 || newPos.x >= currentChallenge.gridSize || newPos.y < 0 || newPos.y >= currentChallenge.gridSize) {
+            if (newPos.x < 0 || newPos.x >= GRID_SIZE || newPos.y < 0 || newPos.y >= GRID_SIZE) {
                 return prev;
             }
             return newPos;
         });
-    }, [currentChallenge]);
+    }, []);
     
     const resetGame = useCallback(() => {
         setSelectedGradeKey(null);
@@ -350,15 +338,37 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
         gameLoopRef.current = window.setInterval(() => {
             if(!freezeActive) moveTroggles();
-            
-            // Collision check is now its own effect
-            if(Math.random() < 0.02) spawnPowerUp(); // Reduced spawn rate
+            if(Math.random() < 0.02) spawnPowerUp();
         }, gameSpeed);
         
         return () => { if (gameLoopRef.current) clearInterval(gameLoopRef.current); };
     }, [gameState, gameSpeed, freezeActive, spawnPowerUp, moveTroggles]);
     
-    // Collision detection effect
+    useEffect(() => {
+        if (gameState !== 'player-hit' || isProcessingHit.current) return;
+
+        isProcessingHit.current = true;
+        setIsHit(true);
+        const newLives = lives - 1;
+        setLives(newLives);
+
+        const hitTimeout = setTimeout(() => {
+            setIsHit(false);
+            if (newLives <= 0) {
+                setGameState('game-over');
+                submitScore('minigame-math-muncher', score);
+            } else {
+                const respawnPos = { x: Math.floor(GRID_SIZE / 2), y: Math.floor(GRID_SIZE / 2) };
+                setPlayerPos(respawnPos);
+                setTroggles(prev => prev.filter(t => t.pos.x !== respawnPos.x || t.pos.y !== respawnPos.y));
+                setGameState('playing');
+            }
+            isProcessingHit.current = false;
+        }, 1500);
+
+        return () => clearTimeout(hitTimeout);
+    }, [gameState, lives, score, submitScore]);
+    
     useEffect(() => {
         if(gameState !== 'playing' || isHit) return;
 
@@ -371,33 +381,6 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
         }
     }, [playerPos, troggles, shieldActive, gameState, isHit]);
-    
-    useEffect(() => {
-        if (gameState !== 'player-hit') return;
-
-        setIsHit(true);
-        const newLives = lives - 1;
-        setLives(newLives);
-        
-        const hitTimeout = setTimeout(() => {
-            setIsHit(false);
-            if (newLives <= 0) {
-                setGameState('game-over');
-                submitScore('minigame-math-muncher', score);
-            } else {
-                if (grid && grid.length > 0 && currentChallenge) {
-                    const gridSize = currentChallenge.gridSize;
-                    const respawnPos = { x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) };
-                    setPlayerPos(respawnPos);
-                    // Make respawn safe by removing any troggles at the center
-                    setTroggles(prev => prev.filter(t => t.pos.x !== respawnPos.x || t.pos.y !== respawnPos.y));
-                }
-                setGameState('playing');
-            }
-        }, 1500);
-
-        return () => clearTimeout(hitTimeout);
-    }, [gameState, grid, lives, score, submitScore, currentChallenge]);
     
     useEffect(() => {
          if (gameState === 'playing' && correctAnswersLeft.current <= 0) {
@@ -415,8 +398,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         }
     }, [correctAnswersLeft.current, gameState, addNotification, challengeIndex, currentUser, minigames, rewardTypes, rewardDef, rewardSettings]);
     
-    const gridSize = currentChallenge?.gridSize || 6;
-    const cellSizeClass = gridSize === 12 ? 'w-10 h-10' : 'w-20 h-20';
+    const cellSizeClass = 'w-20 h-20';
 
     return (
         <div className={`w-full h-full flex flex-col items-center justify-center p-4 ${isHit ? 'animate-shake' : ''}`}>
@@ -460,19 +442,19 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                 )}
                             </div>
                              <span>Round {round} - Level {challengeIndex + 1}</span>
-                             <span>Lives: {'❤️'.repeat(lives)}</span>
+                             <span>Lives: {'❤️'.repeat(Math.max(0, lives))}</span>
                         </div>
                          <p className="text-center text-amber-300 font-semibold mt-2">{currentChallenge?.title}</p>
                     </div>
 
                     <div className="relative">
-                        <div className="grid gap-1 bg-stone-900 p-2 rounded-lg" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
+                        <div className="grid gap-1 bg-stone-900 p-2 rounded-lg" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
                             {grid.flat().map((cell, index) => {
-                                const x = index % gridSize;
-                                const y = Math.floor(index / gridSize);
+                                const x = index % GRID_SIZE;
+                                const y = Math.floor(index / GRID_SIZE);
                                 const isPlayer = playerPos.x === x && playerPos.y === y;
                                 const troggle = troggles.find(t => t.pos.x === x && t.pos.y === y);
-                                const fontSizeClass = getDynamicFontSize(cell.value, gridSize);
+                                const fontSizeClass = getDynamicFontSize(cell.value);
                                 return (
                                     <div key={index} className={`flex items-center justify-center font-bold rounded bg-sky-800 relative transition-colors duration-200 ${cellSizeClass}`}
                                          style={{ backgroundColor: cell.feedback === 'correct' ? '#22c55e' : cell.feedback === 'incorrect' ? '#ef4444' : '#0c4a6e' }}>

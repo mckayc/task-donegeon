@@ -161,7 +161,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li><strong>Scheduled Duties:</strong> Duties (recurring quests) that are not scheduled to be active on the current day will now be fully disabled. While they may still appear dimmed on the Quest Page for informational purposes, they cannot be selected or completed until their scheduled day. This prevents accidental completions on non-active days and clarifies user expectations.</li>
             <li><strong>Quest Completion Timing:</strong> Server-side validation has been strengthened to strictly enforce quest deadlines. The system now prevents users from submitting a quest completion after its defined "incomplete" time has passed. This resolves an issue where completions could be logged with a timestamp that was after the quest's cutoff, ensuring that all completion data is accurate and adheres to the established rules.</li>
             <li>
-                <strong>Quest Locking Logic:</strong> Fixed a critical bug that caused circular dependencies in quest requirements. A quest can no longer be locked by a condition that requires the quest itself to be completed. Additionally, quests that are unavailable (e.g., not scheduled for today, expired) are now correctly ignored when checking lock conditions. The "Quest Locked" dialog now clearly indicates which requirements are self-exempt or unavailable, so users know exactly what they need to do.
+                <strong>Quest Locking Logic:</strong> Fixed a critical bug that caused circular dependencies in quest requirements. A quest can no longer be locked by a condition that requires the quest itself to be completed. Additionally, quests that are unavailable (e.g., expired or not scheduled for today) are now correctly ignored when checking lock conditions. The "Quest Locked" dialog now clearly indicates which requirements are self-exempt or unavailable, so users know exactly what they need to do.
             </li>
         </ul>
         <h3>Rank & Leaderboard Calculations</h3>
@@ -207,7 +207,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
          <ul className="list-disc list-inside space-y-2">
             <li><strong>UI Overhaul:</strong> The action buttons on game cards have been redesigned for clarity. The "Play" button is now a prominent, primary action and clearly displays the cost to play. Placeholder or under-construction games are now disabled to prevent users from spending tokens on them.</li>
             <li><strong>Game Rules:</strong> A new "Rules" button has been added to every game card in the Arcade. Clicking it will open a dialog explaining the objective and how to play.</li>
-            <li><strong>Math Muncher Expansion:</strong> The educational math game "Math Muncher" has been massively expanded with a full curriculum for grades 1 through 6. It now features 10 unique, randomly generated challenges for each grade level, covering topics from basic arithmetic to simple algebra. Based on extensive user feedback, gameplay has been polished: enemy AI is more varied, power-ups are collected via the 'Munch' action and have been rebalanced, a critical crash bug has been fixed, and the game provides clear UI feedback for any earnable rewards.</li>
+            <li><strong>Math Muncher Expansion & Fixes:</strong> The educational math game "Math Muncher" has been massively expanded with a full curriculum for grades 1 through 6, featuring 10 unique, randomly generated challenges for each grade level. A critical bug that caused the game to crash when losing a life has been fixed. The game grid has been standardized to a 6x6 layout for all challenges to improve consistency and readability.</li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Bug Fix & UI Improvement:</strong> Fixed a bug where the game would sometimes fail to recognize a "bust," causing it to get stuck. When you bust now, a large, impactful "BUSTED!" message will appear to make the outcome clear.</li>
@@ -277,6 +277,18 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of July 4, 2026 (v0.5.53)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Math Muncher Fixes:</strong> Addressed a critical crash that occurred when losing a life in the Math Muncher minigame. The game grid has been standardized to a 6x6 layout for all challenges to improve consistency and readability.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of June 27, 2026 (v0.5.52)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Math Muncher Curriculum Expansion:</strong> This major update massively expands the "Math Muncher" minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges based on common core standards. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Finally, enemy AI has been improved for more varied and challenging movement patterns.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of March 7, 2026 (v0.5.33)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Arcade Overhaul:</strong> A major update to the Arcade with new games and gameplay improvements.
@@ -306,7 +318,7 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Minigame Bonanza:</strong> A major update to the Arcade!
                     <ul className="list-disc list-inside pl-6 mt-2">
-                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time you play!</li>
+                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time!</li>
                         <li><strong>Arcade UI Overhaul:</strong> Game cards now have a primary "Play" button that clearly shows the cost in Game Tokens. Under-construction games are now disabled to prevent accidental spending.</li>
                         <li><strong>Gemstone Mines Visual Upgrade:</strong> The classic match-3 game now uses vibrant fruit emojis instead of plain colors and features a satisfying particle burst effect for matches.</li>
                     </ul>

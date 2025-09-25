@@ -1,6 +1,4 @@
-
 import { RewardItem } from "../rewards/types";
-import { Cell, Troggle, PowerUpType } from './MathMuncherTypes';
 
 export interface PrizeThreshold {
     score: number;
@@ -33,17 +31,3 @@ export interface GameScore {
     createdAt?: string;
     updatedAt?: string;
 }
-
-export interface MathChallenge {
-  title: string;
-  gridSize: 6 | 12;
-  generateGrid: () => Cell[][];
-}
-
-export interface GameGrade {
-    name: string;
-    challenges: MathChallenge[];
-}
-
-export type GameGrades = Record<string, GameGrade>;
-export type { Cell, Troggle, PowerUpType };

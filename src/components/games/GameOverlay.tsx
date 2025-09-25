@@ -1,4 +1,3 @@
-
 import React from 'react';
 import SnakeGame from './SnakeGame';
 import DragonsDiceGame from './DragonsDiceGame';
@@ -15,7 +14,7 @@ import AlchemistsTrialGame from './AlchemistsTrialGame';
 import GoblinAmbushGame from './GoblinAmbushGame';
 import RiverCrossingGame from './RiverCrossingGame';
 import WizardsVortexGame from './WizardsVortexGame';
-import MathMuncherGame from './MathMuncherGame';
+import MathMuncherGame from './math-muncher/MathMuncherGame';
 
 interface GameOverlayProps {
   gameId: string;

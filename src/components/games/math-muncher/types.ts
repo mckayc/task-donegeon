@@ -1,3 +1,4 @@
+import { AdminAdjustmentType as GlobalAdminAdjustmentType } from '../../users/types';
 
 export type PowerUpType = 'life' | 'shield' | 'freeze' | 'reveal';
 
@@ -31,3 +32,6 @@ export interface GameGrade {
 }
 
 export type GameGrades = Record<string, GameGrade>;
+
+// Re-exporting for local use to avoid circular dependency issues.
+export const AdminAdjustmentType = GlobalAdminAdjustmentType;

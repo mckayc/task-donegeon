@@ -1,4 +1,3 @@
-
 // This is the primary entry point for all application types.
 // Re-export all the modularized types
 export * from './types/app';
@@ -22,3 +21,4 @@ export * from './components/trading/types';
 export * from './components/chronicles/types';
 export * from './components/conditions/types';
 export * from './components/games/types';
+export * from './components/games/math-muncher/types';

@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
-import Button from '../user-interface/Button';
+import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
+import Button from '../../user-interface/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
-import { Cell, Troggle, PowerUpType, AdminAdjustmentType } from '../../types';
-import { challenges } from './MathMuncherChallenges';
-import { shuffleArray, getRandomInt } from './MathMuncherHelpers';
-import { useAuthState } from '../../context/AuthContext';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { RewardCategory, RewardTypeDefinition } from '../../types';
-import { useEconomyState } from '../../context/EconomyContext';
+// FIX: Removed AdminAdjustmentType from local import to fix circular dependency.
+import { Cell, Troggle, PowerUpType, MathChallenge } from './types';
+import { gradeManifest } from './challenges';
+import { shuffleArray, getRandomInt } from './helpers';
+import { useAuthState } from '../../../context/AuthContext';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+// FIX: Corrected type imports to use the main barrel file.
+import { RewardCategory, RewardTypeDefinition, AdminAdjustmentType } from '../../../types';
+import { useEconomyState } from '../../../context/EconomyContext';
 
 interface MathMuncherGameProps {
   onClose: () => void;
@@ -37,7 +38,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const [gameState, setGameState] = useState<'select-level' | 'countdown' | 'playing' | 'get-ready' | 'level-cleared' | 'game-over'>('select-level');
     const [selectedGradeKey, setSelectedGradeKey] = useState<string | null>(null);
     
-    const [challengePlaylist, setChallengePlaylist] = useState<any[]>([]);
+    const [challengePlaylist, setChallengePlaylist] = useState<MathChallenge[]>([]);
     const [challengeIndex, setChallengeIndex] = useState(0);
     const [round, setRound] = useState(1);
     
@@ -71,7 +72,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         return balanceSource[rewardSettings.rewardTypeId] || 0;
     }, [currentUser, rewardSettings, rewardDef]);
 
-    const startChallenge = useCallback((index: number, playlist: any[]) => {
+    const startChallenge = useCallback((index: number, playlist: MathChallenge[]) => {
         const challenge = playlist[index];
         const newGrid = challenge.generateGrid();
         setGrid(newGrid);
@@ -107,11 +108,11 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         setGameState('countdown');
     }, [round]);
 
-    const startGame = useCallback((gradeKey: string) => {
-        const gradeChallenges = challenges[gradeKey];
-        if (!gradeChallenges) return;
+    const startGame = useCallback(async (gradeKey: string) => {
+        const gradeModule = await gradeManifest[gradeKey].import();
+        const gradeChallenges = gradeModule.challenges;
 
-        const newPlaylist = shuffleArray(gradeChallenges.challenges);
+        const newPlaylist = shuffleArray(gradeChallenges);
         setSelectedGradeKey(gradeKey);
         setChallengePlaylist(newPlaylist);
         setChallengeIndex(0);
@@ -124,15 +125,18 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         startChallenge(0, newPlaylist);
     }, [startChallenge]);
     
-    const startNextChallenge = useCallback(() => {
+    const startNextChallenge = useCallback(async () => {
         let nextIndex = challengeIndex + 1;
         let nextRound = round;
         let nextPlaylist = challengePlaylist;
+        let newChallenges = challengePlaylist;
 
         if (nextIndex >= challengePlaylist.length) {
             nextIndex = 0;
             nextRound++;
-            nextPlaylist = shuffleArray(challenges[selectedGradeKey!].challenges);
+            const gradeModule = await gradeManifest[selectedGradeKey!].import();
+            newChallenges = gradeModule.challenges;
+            nextPlaylist = shuffleArray(newChallenges);
             setRound(nextRound);
             setChallengePlaylist(nextPlaylist);
         }
@@ -259,7 +263,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [gameState, grid, playerPos, combo, shieldActive, handleLifeLost, handleLevelCleared]);
 
     const spawnPowerUp = useCallback(() => {
-        const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(GRID_SIZE / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
+        const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
         if (eatenCellsPos.length > 0) {
             const pos = eatenCellsPos[Math.floor(Math.random() * eatenCellsPos.length)]!;
             const powerUpTypes: PowerUpType[] = ['life', 'shield', 'freeze', 'reveal'];
@@ -267,7 +271,9 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             
             setGrid(prev => {
                 const newGrid = [...prev.map(r => [...r])];
-                newGrid[pos.y][pos.x].item = type;
+                if(newGrid[pos.y]?.[pos.x]) {
+                    newGrid[pos.y][pos.x].item = type;
+                }
                 return newGrid;
             });
         }
@@ -429,7 +435,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     <h1 className="text-5xl font-medieval text-emerald-400">Math Muncher</h1>
                     <p className="mt-4 mb-8 text-lg">Select a grade level to begin!</p>
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(challenges).map(([gradeKey, gradeData]) => (
+                        {Object.entries(gradeManifest).map(([gradeKey, gradeData]) => (
                             <Button key={gradeKey} onClick={() => startGame(gradeKey)} className="text-xl p-6">
                                 {gradeData.name}
                             </Button>

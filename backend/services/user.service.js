@@ -6,7 +6,95 @@ const trophyRepository = require('../repositories/trophy.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { logGeneralAdminAction, updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
-const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserEntity } = require('../entities');
+const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserEntity, UserTrophyEntity } = require('../entities');
+
+/**
+ * A centralized function to grant rewards and trophies to a user. This is the single source of truth.
+ * This function must be called from within a transaction.
+ */
+const grantRewards = async (manager, details) => {
+    const { 
+        userId, rewards = [], setbacks = [], trophyId, actorId,
+        chronicleTitle, chronicleNote, chronicleType, chronicleIcon, chronicleColor,
+        originalId
+    } = details;
+    
+    const userRepo = manager.getRepository(UserEntity);
+    const user = await userRepo.findOneBy({ id: userId });
+    if (!user) throw new Error(`User with ID ${userId} not found during reward grant.`);
+
+    // --- Balance Initialization and Update ---
+    user.personalPurse = user.personalPurse || {};
+    user.personalExperience = user.personalExperience || {};
+    const balances = { purse: user.personalPurse, experience: user.personalExperience };
+
+    const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+    const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+    let rewardsText = '';
+    
+    const allChanges = [
+        ...rewards.map(r => ({ ...r, amount: r.amount })),
+        ...setbacks.map(s => ({ ...s, amount: -s.amount }))
+    ];
+
+    allChanges.forEach(reward => {
+        const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+        if (rewardDef) {
+            const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+            const currentAmount = target[reward.rewardTypeId] || 0;
+            target[reward.rewardTypeId] = Math.max(0, currentAmount + reward.amount);
+            
+            if (reward.amount > 0) rewardsText += `+${reward.amount}${getRewardInfo(reward.rewardTypeId).icon} `;
+            else if (reward.amount < 0) rewardsText += `${reward.amount}${getRewardInfo(reward.rewardTypeId).icon} `;
+        }
+    });
+
+    // --- Manual Trophy Award ---
+    let manuallyAwardedTrophy = null;
+    if (trophyId) {
+        const trophy = await manager.getRepository(TrophyEntity).findOneBy({ id: trophyId });
+        if (trophy) {
+            const userTrophyRepo = manager.getRepository(UserTrophyEntity);
+            const newTrophyData = {
+                id: `usertrophy-${Date.now()}-${Math.random()}`,
+                userId, trophyId, awardedAt: new Date().toISOString(), guildId: undefined // Personal scope
+            };
+            manuallyAwardedTrophy = await userTrophyRepo.save(updateTimestamps(userTrophyRepo.create(newTrophyData), true));
+            rewardsText += ` 🏆 ${trophy.name}`;
+        }
+    }
+    
+    const updatedUser = await userRepo.save(updateTimestamps(user));
+    
+    const actor = await userRepo.findOneBy({ id: actorId });
+
+    // --- Chronicle Entry ---
+    const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+    const eventData = {
+        id: `chron-${chronicleType.toLowerCase()}-${userId}-${Date.now()}`,
+        originalId: originalId || `reward-grant-${Date.now()}`,
+        date: new Date().toISOString(),
+        type: chronicleType,
+        title: chronicleTitle,
+        note: chronicleNote,
+        status: 'Awarded',
+        icon: chronicleIcon,
+        color: chronicleColor,
+        userId,
+        userName: user.gameName,
+        actorId,
+        actorName: actor?.gameName || 'System',
+        guildId: undefined, // Personal only
+        rewardsText: rewardsText.trim() || undefined,
+    };
+    await manager.save(chronicleRepo.create(updateTimestamps(eventData, true)));
+    
+    // --- Automatic Trophy Check ---
+    const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, userId, undefined);
+    if (manuallyAwardedTrophy) newUserTrophies.push(manuallyAwardedTrophy);
+
+    return { updatedUser, newUserTrophies, newNotifications };
+};
 
 const getAll = (options) => userRepository.findAll(options);
 
@@ -102,92 +190,27 @@ const deleteMany = async (ids, actorId) => {
 
 const adjust = async (adjustmentData) => {
     return await dataSource.transaction(async manager => {
-        const userRepo = manager.getRepository(UserEntity);
-        const trophyRepo = manager.getRepository(TrophyEntity);
-        const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
-        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
-        const userTrophyRepo = manager.getRepository(UserTrophyEntity);
-
-        const user = await userRepo.findOneBy({ id: adjustmentData.userId });
-        if (!user) return null;
-
-        // Ensure personal balances objects exist
-        user.personalPurse = user.personalPurse || {};
-        user.personalExperience = user.personalExperience || {};
-        const balances = { purse: user.personalPurse, experience: user.personalExperience };
+        const { userId, adjusterId, reason, rewards, setbacks, trophyId } = adjustmentData;
         
-        const rewardTypes = await rewardTypeRepo.find();
-        
-        adjustmentData.rewards?.forEach(reward => {
-            const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-            if(rewardDef) {
-                const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
-            }
-        });
-        
-        adjustmentData.setbacks?.forEach(setback => {
-            const rewardDef = rewardTypes.find(rt => rt.id === setback.rewardTypeId);
-             if(rewardDef) {
-                const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                target[reward.rewardTypeId] = Math.max(0, (target[reward.rewardTypeId] || 0) - setback.amount);
-            }
-        });
+        const isPrize = reason?.startsWith('Reward from');
 
-        let newUserTrophy = null;
-        if (adjustmentData.trophyId) {
-            const trophy = await trophyRepo.findOneBy({ id: adjustmentData.trophyId });
-            if (trophy) {
-                const newTrophyData = {
-                    id: `usertrophy-${Date.now()}-${Math.random()}`,
-                    userId: user.id,
-                    trophyId: trophy.id,
-                    awardedAt: new Date().toISOString(),
-                    guildId: undefined // Personal scope only
-                };
-                newUserTrophy = await userTrophyRepo.save(updateTimestamps(userTrophyRepo.create(newTrophyData), true));
-            }
-        }
-
-        const updatedUser = await userRepo.save(updateTimestamps(user));
-        const newAdjustment = await adminAdjustmentRepository.create({ ...adjustmentData, adjustedAt: new Date().toISOString() });
-        
-        // --- Chronicle Logging ---
-        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
-        const rewardsText = (adjustmentData.rewards || []).map(r => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
-        const setbacksText = (adjustmentData.setbacks || []).map(s => `-${s.amount}${getRewardInfo(s.rewardTypeId).icon}`).join(' ');
-        const trophy = adjustmentData.trophyId ? await trophyRepo.findOneBy({ id: adjustmentData.trophyId }) : null;
-        const trophyText = trophy ? ` 🏆 ${trophy.name}` : '';
-
-        const actor = await manager.findOneBy(UserEntity, { id: adjustmentData.adjusterId });
-
-        const isPrize = adjustmentData.reason?.startsWith('Reward from');
-
-        const eventData = {
-            id: `chron-adj-${newAdjustment.id}`,
-            originalId: newAdjustment.id,
-            date: newAdjustment.adjustedAt,
-            type: isPrize ? 'PrizeWon' : 'AdminAdjustment',
-            title: isPrize ? 'Prize Won!' : 'Manual Adjustment',
-            note: adjustmentData.reason,
-            status: 'Awarded',
-            icon: isPrize ? '🏆' : '⚖️',
-            color: isPrize ? '#facc15' : '#a855f7',
-            userId: user.id,
-            userName: user.gameName,
-            actorId: adjustmentData.adjusterId,
-            actorName: actor?.gameName || 'System',
-            guildId: undefined, // Personal scope only
-            rewardsText: `${rewardsText} ${setbacksText}${trophyText}`.trim() || undefined,
+        const grantDetails = {
+            userId,
+            rewards,
+            setbacks,
+            trophyId,
+            actorId: adjusterId,
+            chronicleTitle: isPrize ? 'Prize Won' : 'Manual Adjustment',
+            chronicleNote: reason,
+            chronicleType: isPrize ? 'PrizeWon' : 'AdminAdjustment',
+            chronicleIcon: isPrize ? '🏆' : '⚖️',
+            chronicleColor: isPrize ? '#facc15' : '#a855f7'
         };
 
-        const newEvent = chronicleRepo.create(eventData);
-        await manager.save(updateTimestamps(newEvent, true));
+        const { updatedUser, newUserTrophies, newNotifications } = await grantRewards(manager, grantDetails);
         
-        // Check for auto-awarded trophies
-        const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, undefined);
-        if (newUserTrophy) newUserTrophies.push(newUserTrophy);
-
+        const newAdjustment = await adminAdjustmentRepository.create({ ...adjustmentData, adjustedAt: new Date().toISOString() });
+        
         updateEmitter.emit('update');
         return { updatedUser, newAdjustment, newUserTrophies, newNotifications };
     });
@@ -220,4 +243,5 @@ module.exports = {
     deleteMany,
     adjust,
     getPendingItems,
+    grantRewards,
 };

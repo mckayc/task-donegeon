@@ -21,7 +21,7 @@ export type Troggle = {
 
 export interface MathChallenge {
   title: string;
-  gridSize: 6 | 12;
+  gridSize: 6;
   generateGrid: () => Cell[][];
 }
 

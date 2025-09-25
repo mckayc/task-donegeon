@@ -35,9 +35,9 @@ export interface GameScore {
 }
 
 export interface MathChallenge {
-    title: string;
-    gridSize: 6 | 12;
-    generateGrid: () => Cell[][];
+  title: string;
+  gridSize: 6 | 12;
+  generateGrid: () => Cell[][];
 }
 
 export interface GameGrade {

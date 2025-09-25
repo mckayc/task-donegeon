@@ -49,10 +49,10 @@ export const simplifyFraction = (numerator: number, denominator: number): [numbe
 
 
 /**
- * Fills a grid with a mix of correct and incorrect answers using a shuffling method for better randomness.
+ * Fills a 6x6 grid with a mix of correct and incorrect answers, preventing infinite loops.
  * @param correctGenerator A function that returns a correct value.
  * @param incorrectGenerator A function that returns an incorrect value.
- * @param checker A function to double-check that incorrect values are not accidentally correct.
+ * @param checker A function to verify if a value is correct.
  * @returns A 2D array of Cells.
  */
 export const generateChallengeGrid = (
@@ -63,49 +63,64 @@ export const generateChallengeGrid = (
     const gridSize = 6;
     const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize));
     const totalCells = gridSize * gridSize;
-    const targetCorrect = Math.floor(totalCells * 0.4);
+    const targetCorrect = Math.floor(totalCells * 0.4); // Approx 40% correct answers
     const targetIncorrect = totalCells - targetCorrect;
 
     const values: { value: CellValue, isCorrect: boolean }[] = [];
-    const usedCorrectValues = new Set<string>();
+    const usedValues = new Set<string>();
     
     // Generate unique correct values
     while (values.filter(v => v.isCorrect).length < targetCorrect) {
         let value: CellValue;
-        let valueStr: string;
         let attempts = 0;
         do { 
             value = correctGenerator();
-            valueStr = String(value);
             attempts++;
-        } while (usedCorrectValues.has(valueStr) && attempts < 20);
+        } while (usedValues.has(String(value)) && attempts < 50); // Prevent infinite loop if generator is not varied enough
         
         if (checker(value)) {
             values.push({ value, isCorrect: true });
-            usedCorrectValues.add(valueStr);
+            usedValues.add(String(value));
+        } else if (attempts >= 50) {
+            console.warn("Could not generate a unique correct value.");
+            break;
         }
     }
     
-    // Generate incorrect values
+    // Generate unique incorrect values
     while (values.filter(v => !v.isCorrect).length < targetIncorrect) {
         let value: CellValue;
+        let attempts = 0;
         do { 
             value = incorrectGenerator(); 
-        } while (checker(value) || usedCorrectValues.has(String(value)));
-        values.push({ value, isCorrect: false });
-        usedCorrectValues.add(String(value)); // Also add incorrect to prevent any duplicates
+            attempts++;
+        } while ((checker(value) || usedValues.has(String(value))) && attempts < 50);
+
+        if (attempts < 50) {
+            values.push({ value, isCorrect: false });
+            usedValues.add(String(value));
+        } else {
+             console.warn("Could not generate a unique incorrect value.");
+            break;
+        }
     }
 
-    // Shuffle the generated values
     const shuffledValues = shuffleArray(values);
 
-    // Place values into the grid
     for (let i = 0; i < totalCells; i++) {
         const row = Math.floor(i / gridSize);
         const col = i % gridSize;
         const val = shuffledValues[i];
         if (val) {
              grid[row][col] = { ...val, isEaten: false };
+        } else {
+             // Fallback if generators failed
+             let fallbackValue: CellValue;
+             do {
+                 fallbackValue = incorrectGenerator();
+             } while(checker(fallbackValue) || usedValues.has(String(fallbackValue)));
+             grid[row][col] = { value: fallbackValue, isCorrect: false, isEaten: false };
+             usedValues.add(String(fallbackValue));
         }
     }
     

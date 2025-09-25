@@ -1,8 +1,8 @@
 
 {
-  "name": "Task Donegeon 2.0 - 0.5.54 - Math Muncher Click & Crash Fix",
-  "version": "0.5.54",
-  "description": "This update fixes a critical crash in the 'Math Muncher' minigame that occurred when the player lost a life. It also addresses an issue where the grade selection buttons could become unclickable.",
+  "name": "Task Donegeon 2.0 - 0.5.55 - Math Muncher Freeze Fix",
+  "version": "0.5.55",
+  "description": "This critical update fixes a bug that caused the 'Math Muncher' minigame to freeze the page upon selecting a grade level. The issue was traced to an infinite loop in the question generation logic, which has now been resolved.",
   "requestFramePermissions": [
     "camera"
   ],

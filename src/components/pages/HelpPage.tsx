@@ -207,7 +207,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
          <ul className="list-disc list-inside space-y-2">
             <li><strong>UI Overhaul:</strong> The action buttons on game cards have been redesigned for clarity. The "Play" button is now a prominent, primary action and clearly displays the cost to play. Placeholder or under-construction games are now disabled to prevent users from spending tokens on them.</li>
             <li><strong>Game Rules:</strong> A new "Rules" button has been added to every game card in the Arcade. Clicking it will open a dialog explaining the objective and how to play.</li>
-            <li><strong>Math Muncher Fixes & Improvements:</strong> Addressed multiple issues with the "Math Muncher" minigame. A critical `RangeError` crash that occurred when the player lost a life has been fixed. An issue preventing players from clicking the grade selection buttons has also been resolved, making the game fully playable again.</li>
+            <li><strong>Math Muncher Stability Fix:</strong> Resolved a critical bug causing the "Math Muncher" minigame to freeze the page when a player selected a grade. The issue was traced to an infinite loop in the question-generation logic, which has been rewritten for stability and performance.</li>
             <li><strong>Dragon's Dice (Farkle):</strong> A classic dice game of risk and reward. Roll the dice and set aside scoring combinations. Bust, and you lose your points for the turn. Know when to stop and bank your score to reach the goal!
                 <ul className="list-disc list-inside pl-6 mt-2">
                     <li><strong>Bug Fix & UI Improvement:</strong> Fixed a bug where the game would sometimes fail to recognize a "bust," causing it to get stuck. When you bust now, a large, impactful "BUSTED!" message will appear to make the outcome clear.</li>
@@ -276,6 +276,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of July 18, 2026 (v0.5.55)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Math Muncher Freeze Fix:</strong> Fixed a critical bug that caused the "Math Muncher" game to freeze indefinitely when a player selected a grade level. The problem was traced to an infinite loop in the logic that generates incorrect answers for certain challenges. The generation algorithm has been rewritten to be more robust, ensuring the game starts correctly and is fully playable.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of July 11, 2026 (v0.5.54)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

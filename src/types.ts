@@ -1,6 +1,7 @@
+
+// This is the primary entry point for all application types.
 // Re-export all the modularized types
 export * from './types/app';
-// FIX: Removed duplicate re-exports to resolve ambiguity error. The types are available via rewards/types.
 export * from './components/rewards/types';
 export * from './components/users/types';
 export * from './components/items/types';

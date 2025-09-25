@@ -4,7 +4,7 @@ import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
-import { Cell, Troggle, PowerUpType } from './types';
+import { Cell, Troggle, PowerUpType, AdminAdjustmentType } from '../../types';
 import { challenges } from './MathMuncherChallenges';
 import { shuffleArray, getRandomInt } from './MathMuncherHelpers';
 import { useAuthState } from '../../context/AuthContext';
@@ -32,7 +32,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
-    const { submitScore } = useSystemDispatch();
+    const { submitScore, applyManualAdjustment } = useSystemDispatch();
     
     const [gameState, setGameState] = useState<'select-level' | 'countdown' | 'playing' | 'get-ready' | 'level-cleared' | 'game-over'>('select-level');
     const [selectedGradeKey, setSelectedGradeKey] = useState<string | null>(null);
@@ -168,20 +168,42 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         setCountdown(3);
     }, []);
 
+    const handleLevelCleared = useCallback(async () => {
+        setGameState('level-cleared');
+        if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
+            addNotification({
+                type: 'success',
+                message: `+${rewardSettings.amount} ${rewardDef.name}`,
+                icon: rewardDef.icon
+            });
+            setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
+            
+            await applyManualAdjustment({
+                userId: currentUser.id,
+                adjusterId: 'system',
+                reason: `Reward for clearing round ${round}, level ${challengeIndex + 1} in Math Muncher.`,
+                type: AdminAdjustmentType.Reward,
+                rewards: [{
+                    rewardTypeId: rewardSettings.rewardTypeId,
+                    amount: rewardSettings.amount
+                }],
+                setbacks: []
+            });
+        }
+    }, [currentUser, rewardSettings, rewardDef, challengeIndex, addNotification, applyManualAdjustment, round]);
+
     const handleMunch = useCallback(() => {
         if (gameState !== 'playing') return;
     
         const cell = grid[playerPos.y]?.[playerPos.x];
         if (!cell) return;
     
-        // Allow munching only if the cell has a power-up OR has not been eaten yet.
         if (cell.isEaten && !cell.item) return;
     
         let newGrid = grid.map(row => [...row]);
         const cellToUpdate = { ...newGrid[playerPos.y][playerPos.x] };
         let wasCorrectMunch = false;
     
-        // 1. Handle Power-up collection first.
         if (cellToUpdate.item) {
             if (cellToUpdate.item === 'life') setLives(l => l + 1);
             if (cellToUpdate.item === 'shield') setShieldActive(true);
@@ -198,7 +220,6 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             cellToUpdate.item = undefined;
         }
     
-        // 2. Handle number munching, only if it hasn't been eaten yet.
         if (!cell.isEaten) {
             cellToUpdate.isEaten = true;
             if (cellToUpdate.isCorrect) {
@@ -221,20 +242,10 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         newGrid[playerPos.y][playerPos.x] = cellToUpdate;
         setGrid(newGrid);
     
-        // 3. Check for level completion
         if (wasCorrectMunch && correctAnswersLeft.current <= 0) {
-            setGameState('level-cleared');
-            if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
-                addNotification({
-                    type: 'success',
-                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
-                    icon: rewardDef.icon
-                });
-                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
-            }
+            handleLevelCleared();
         }
     
-        // Clear feedback animation after a short delay
         setTimeout(() => {
             setGrid(prevGrid => {
                 const finalGrid = [...prevGrid.map(row => [...row])];
@@ -245,10 +256,10 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 return finalGrid;
             });
         }, 300);
-    }, [gameState, grid, playerPos, combo, shieldActive, handleLifeLost, currentUser, rewardSettings, rewardDef, challengeIndex, addNotification]);
+    }, [gameState, grid, playerPos, combo, shieldActive, handleLifeLost, handleLevelCleared]);
 
     const spawnPowerUp = useCallback(() => {
-        const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
+        const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(GRID_SIZE / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
         if (eatenCellsPos.length > 0) {
             const pos = eatenCellsPos[Math.floor(Math.random() * eatenCellsPos.length)]!;
             const powerUpTypes: PowerUpType[] = ['life', 'shield', 'freeze', 'reveal'];

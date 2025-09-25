@@ -574,7 +574,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         {!cell.isEaten && <span className={fontSizeClass}>{cell.value}</span>}
                                         {isPlayer && <span className={`absolute text-3xl ${shieldActive ? 'animate-pulse' : ''}`}>{isHit ? '😵' : shieldActive ? '🛡️' : '😋'}</span>}
                                         {troggle && <span className="absolute text-3xl">{troggle.type === 'hunter' ? '👹' : troggle.type === 'jumper' ? '👺' : '👻'}</span>}
-                                        {cell.item && <span className="absolute text-3xl">{cell.item === 'life' ? '❤️' : cell.item === 'shield' ? '🛡️' : cell.item === 'freeze' ? '❄️' : cell.item === 'reveal' ? '❓' : cell.item === 'reward' ? '🏆' : '❔'}</span>}
+                                        {cell.item && <span className="absolute text-3xl">{cell.item === 'life' ? '❤️' : cell.item === 'shield' ? '🛡️' : cell.item === 'freeze' ? '❄️' : cell.item === 'reveal' ? '❓' : cell.item === 'reward' ? (rewardDef?.icon || '🏆') : '❔'}</span>}
                                         <AnimatePresence>
                                             {cell.feedback && (
                                             <motion.div

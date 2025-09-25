@@ -208,12 +208,13 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 });
 
                 if (success) {
+                    // Show animation only after success is confirmed from server
+                    setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
                     addNotification({
                         type: 'success',
                         message: `+${rewardSettings.amount} ${rewardDef.name}`,
                         icon: rewardDef.icon
                     });
-                    setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
                 } else {
                     throw new Error("Server failed to grant reward.");
                 }

@@ -11,6 +11,7 @@ import { useAuthState } from '../../../context/AuthContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { RewardCategory, RewardTypeDefinition, AdminAdjustmentType } from '../../../types';
 import { useEconomyState } from '../../../context/EconomyContext';
+import { useUIState } from '../../../context/UIContext';
 
 interface MathMuncherGameProps {
   onClose: () => void;
@@ -31,6 +32,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const { minigames } = useSystemState();
     const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
+    const { appMode } = useUIState();
     const { addNotification } = useNotificationsDispatch();
     const { submitScore, applyManualAdjustment } = useSystemDispatch();
     
@@ -197,13 +199,14 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
     const handleRewardCollection = useCallback(async () => {
         if (!currentUser || !rewardSettings || !rewardDef) return;
-
+    
         try {
             const success = await applyManualAdjustment({
                 userId: currentUser.id,
                 adjusterId: 'system',
                 reason: `Reward from Math Muncher round ${round}, level ${challengeIndex + 1}.`,
                 type: AdminAdjustmentType.Reward,
+                guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
                 rewards: [{
                     rewardTypeId: rewardSettings.rewardTypeId,
                     amount: rewardSettings.amount
@@ -223,7 +226,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 message: 'There was a problem granting your reward.'
              });
         }
-    }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, applyManualAdjustment, addNotification]);
+    }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, appMode, applyManualAdjustment, addNotification]);
 
     const spawnReward = useCallback(() => {
         if (!currentUser || !rewardSettings || !rewardDef || (round) % rewardSettings.levelFrequency !== 0) {

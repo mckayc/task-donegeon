@@ -1,10 +1,11 @@
 
+
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
 const trophyRepository = require('../repositories/trophy.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
-const { logGeneralAdminAction, updateTimestamps } = require('../utils/helpers');
+const { logGeneralAdminAction, updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
 const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserEntity } = require('../entities');
 
@@ -112,7 +113,20 @@ const adjust = async (adjustmentData) => {
         if (!user) return null;
 
         const isGuildScope = !!adjustmentData.guildId;
-        const balances = isGuildScope ? user.guildBalances[adjustmentData.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+        
+        // Robustly get balances, initializing if necessary
+        const balances = (() => {
+            if (isGuildScope) {
+                if (!user.guildBalances) user.guildBalances = {};
+                if (!user.guildBalances[adjustmentData.guildId]) user.guildBalances[adjustmentData.guildId] = { purse: {}, experience: {} };
+                user.guildBalances[adjustmentData.guildId].purse = user.guildBalances[adjustmentData.guildId].purse || {};
+                user.guildBalances[adjustmentData.guildId].experience = user.guildBalances[adjustmentData.guildId].experience || {};
+                return user.guildBalances[adjustmentData.guildId];
+            }
+            user.personalPurse = user.personalPurse || {};
+            user.personalExperience = user.personalExperience || {};
+            return { purse: user.personalPurse, experience: user.personalExperience };
+        })();
         
         const rewardTypes = await rewardTypeRepo.find();
         
@@ -131,11 +145,6 @@ const adjust = async (adjustmentData) => {
                 target[reward.rewardTypeId] = Math.max(0, (target[reward.rewardTypeId] || 0) - setback.amount);
             }
         });
-
-        if (isGuildScope) {
-            if (!user.guildBalances) user.guildBalances = {};
-            user.guildBalances[adjustmentData.guildId] = balances;
-        }
 
         let newUserTrophy = null;
         if (adjustmentData.trophyId) {
@@ -164,29 +173,35 @@ const adjust = async (adjustmentData) => {
 
         const actor = await manager.findOneBy(UserEntity, { id: adjustmentData.adjusterId });
 
+        const isPrize = adjustmentData.reason?.startsWith('Reward from');
+
         const eventData = {
             id: `chron-adj-${newAdjustment.id}`,
             originalId: newAdjustment.id,
             date: newAdjustment.adjustedAt,
-            type: 'AdminAdjustment',
-            title: `Manual Adjustment`,
+            type: isPrize ? 'PrizeWon' : 'AdminAdjustment',
+            title: isPrize ? 'Prize Won!' : 'Manual Adjustment',
             note: adjustmentData.reason,
-            status: 'Executed',
-            icon: '⚖️',
-            color: '#a855f7', // purple-500
+            status: 'Awarded',
+            icon: isPrize ? '🏆' : '⚖️',
+            color: isPrize ? '#facc15' : '#a855f7',
             userId: user.id,
             userName: user.gameName,
             actorId: adjustmentData.adjusterId,
-            actorName: actor?.gameName || 'Admin',
+            actorName: actor?.gameName || 'System',
             guildId: adjustmentData.guildId || undefined,
             rewardsText: `${rewardsText} ${setbacksText}${trophyText}`.trim() || undefined,
         };
 
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
+        
+        // Check for auto-awarded trophies
+        const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, adjustmentData.guildId);
+        if (newUserTrophy) newUserTrophies.push(newUserTrophy);
 
         updateEmitter.emit('update');
-        return { updatedUser, newAdjustment, newUserTrophy };
+        return { updatedUser, newAdjustment, newUserTrophies, newNotifications };
     });
 };
 

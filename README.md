@@ -1,7 +1,7 @@
 
 # Task Donegeon
 
-**Version:** 0.5.51
+**Version:** 0.5.56
 
 ---
 
@@ -16,59 +16,26 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of June 27, 2026 (v0.5.51):**
-    -   **Math Muncher Curriculum Expansion:** This major update massively expands the "Math Muncher" minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges based on common core standards. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained. Finally, enemy AI has been improved for more varied and challenging movement patterns.
+-   **Week of July 25, 2026 (v0.5.56):**
+    -   **Build & Dependency Fix:** Resolved a critical TypeScript build error caused by a duplicate type export (`AdminAdjustmentType`). This was preventing the application from compiling. The fix involved refactoring type imports to remove the conflict and ensure a stable build process.
 
--   **Week of June 20, 2026 (v0.5.50):**
-    -   **Math Muncher Bug Fixes & Polish:** Implemented another round of significant improvements to the "Math Muncher" minigame based on user feedback. The spawn rate for power-ups has been reduced for better game balance, and they can now be collected directly with the "Munch" action. A critical stability issue that could cause the game to crash when the player was hit has been resolved. To improve the connection with the main app's economy, the game now displays the player's current balance of the earnable reward and shows a clear animation when more are gained after clearing a level. Troggle AI has also been enhanced for more varied and challenging movement patterns.
+-   **Week of July 18, 2026 (v0.5.55):**
+    -   **Math Muncher Freeze Fix:** Fixed a critical bug that caused the "Math Muncher" game to freeze indefinitely when a player selected a grade level. The problem was traced to an infinite loop in the logic that generates incorrect answers for certain challenges. The generation algorithm has been rewritten to be more robust, ensuring the game starts correctly and is fully playable.
 
--   **Week of June 13, 2026 (v0.5.49):**
-    -   **Math Muncher Gameplay Polish:** Implemented significant improvements to the "Math Muncher" minigame based on user feedback. Troggle (enemy) movement is now more dynamic and less predictable. A clearer, longer animation and a brief game pause now occur when the player is hit, improving visual feedback. The logic for selecting different troggle types (Hunter, Jumper, Patroller) has been fixed to ensure a proper variety of enemies appear. The spawn rate for in-game power-ups has also been increased.
+-   **Week of July 11, 2026 (v0.5.54):**
+    -   **Math Muncher Fixes:** Addressed a critical crash that occurred when losing a life in the Math Muncher minigame. Also resolved an issue where the grade selection buttons were unclickable.
 
--   **Week of June 6, 2026 (v0.5.47):**
-    -   **New Quest Type - Play Mini Game:** A new interactive media type has been added for quests. Administrators can now create tasks that require a user to play a specific minigame from the Arcade. This feature is enhanced with an optional **Minimum Score Requirement** to ensure active participation. The quest completion logic is now aware of user high scores, and the 'Complete' button will remain disabled until the score requirement is met, transforming any game into a flexible and engaging quest objective.
+-   **Week of July 4, 2026 (v0.5.53):**
+    -   **Math Muncher Fixes:** Addressed a critical crash that occurred when losing a life in the Math Muncher minigame. The game grid has been standardized to a 6x6 layout for all challenges to improve consistency and readability.
 
--   **Week of May 23, 2026 (v0.5.45):**
-    -   **Math Muncher Expansion:** The "Math Muncher" minigame has been massively expanded into a full-featured educational tool. It now includes a curriculum for grades 1-6, each with 10 unique and randomly-selected challenges covering topics from basic arithmetic to simple algebra. To accommodate more complex problems, the game's grid is now dynamic, switching between a `12x12` layout for simple numbers and a `6x6` layout for longer expressions. A new endless progression system has been added: after a player masters all 10 challenges for a grade, the game speed increases for a greater challenge. All previous features like power-ups, combos, and admin-configurable rewards are retained in this new version.
-
--   **Week of May 16, 2026 (v0.5.44):**
-    -   **Math Muncher Overhaul:** The "Math Muncher" minigame has been significantly enhanced with new gameplay mechanics and administrative controls. Key features include: a manual "Munch" action for more skillful play, on-screen controls for mobile devices, a structured level progression system, a score combo multiplier, and various power-ups like extra lives, shields, and enemy freezes. Donegeon Masters can now also configure automatic rewards (XP or Currency) to be given to players for completing a set number of levels, adding a new layer of progression.
-
--   **Week of May 9, 2026 (v0.5.43):**
-    -   **New Minigame - Math Muncher:** A new educational minigame has been added to the Arcade. Inspired by the classic "Number Munchers," this game challenges players to solve math problems on a grid while avoiding enemies. The difficulty is structured by grade level, making it an engaging way to practice arithmetic and other math concepts.
-
--   **Week of May 2, 2026 (v0.5.42):**
-    -   **Currency Exchange Enhancements:** The Exchange Post has been upgraded to be more user-friendly. When a user selects an XP type to pay with, the system now automatically detects and pools the balances of all other XP types with the exact same real-world value. This maximizes the user's purchasing power without adding UI complexity. A new tooltip on the selected XP type provides transparency by showing exactly which XP balances are contributing to the transaction.
-
--   **Week of April 25, 2026 (v0.5.41):**
-    -   **Backup System Refinement:** The backup filename format has been updated to a cleaner, more readable `YYYY-MM-DD_HHMMSS_type.extension` structure. An automatic cleanup process has been added to the server startup sequence, which will find and delete any backups created with older filename formats, ensuring a smooth, one-time migration to the new system.
-
--   **Week of April 18, 2026 (v0.5.40):**
-    -   **Backup Management Overhaul:** This update overhauls the automated backup system to prevent old backups from accumulating and introduces a new interface for bulk-deleting manual and automated backups, giving administrators more control over their data. A new "Danger Zone" action has been added to the Settings page to clean up any backups created with the old filename format. The internal application version was also synchronized to ensure new backups are always created in the correct format.
-
--   **Week of April 11, 2026 (v0.5.39):**
-    -   **Suggestion Engine Overhaul:** The Suggestion Engine has been completely overhauled to support generating multiple assets of different types simultaneously. Administrators can now select various asset types (including the newly added Quest Groups), specify quantities for each, and receive a comprehensive list of AI-generated content in a new interactive results view. Each suggestion can be instantly added, edited before adding, or discarded, dramatically accelerating content creation.
-
--   **Week of April 4, 2026 (v0.5.38):**
-    -   **New Media Type - Image Slideshows:** Introduced a new interactive media type for quests. Admins can now create engaging visual narratives or guides by uploading a series of images with captions that users can view in a full-screen slideshow.
-
--   **Week of March 21, 2026 (v0.5.35):**
-    -   **Quest Locking Logic Fix:** Resolved a critical bug where a quest could be locked by a condition that requires the quest itself to be completed. The system now also correctly ignores unavailable quests (e.g., expired or not scheduled for today) when determining lock status.
-    -   **Improved Lock Dialog:** The "Quest Locked" dialog has been enhanced to visually distinguish exempted requirements. Self-exempted quests are highlighted in orange, and unavailable quests are greyed out, providing clear information on what tasks are actually required to unlock content.
-
--   **Week of March 14, 2026 (v0.5.34):**
-    -   **Minigame Polish & New Game:** A major update to the Arcade, implementing a new game and refining several others based on user feedback.
-        -   **New Game - Wizard's Vortex:** The previously unimplemented "Wizard's Vortex" is now playable! It's a top-down shooter where you defend a central point from waves of monsters by aiming with the mouse and clicking to fire.
-        -   **Forge Master Redesign:** The gameplay has been visually overhauled. A sword emoji now swings back and forth, and the player controls a hammer emoji to strike it. The sword's swing speed increases over time for a greater challenge.
-        -   **Goblin Ambush Enhancements:** Added a new lose condition where players have three lives and lose one for hitting a friendly gnome. Added "whack" and "ouch" animations for hitting characters.
-        -   **Alchemist's Trial Fix:** Corrected a logic bug that prevented the game from advancing past the first round. Added animations for button presses.
-        -   **River Crossing Fixes:** Fixed faulty collision detection that caused unfair deaths. The player character is now a classic frog emoji `🐸`.
+-   **Week of June 27, 2026 (v0.5.52):**
+    -   **Math Muncher Curriculum Expansion:** This major update massively expands the "Math Muncher" minigame with a full curriculum for grades 1-6, featuring dozens of unique, auto-generated challenges based on common core standards. Gameplay has been polished based on user feedback: the power-up spawn rate has been reduced for better balance, and power-ups can now be collected with the "Munch" action. A critical stability issue causing random crashes when the player is hit has been fixed. The game now displays the player's current balance for any earnable rewards and shows a clear animation when more are gained after clearing a level. Finally, enemy AI has been improved for more varied and challenging movement patterns.
 
 -   **Week of March 7, 2026 (v0.5.33):**
     -   **Arcade Overhaul:** A major update to the Arcade with new games and gameplay improvements.
-        -   **New Games:** Implemented three new playable games: **Alchemist's Trial** (a Simon-style memory game), **Goblin Ambush** (a whack-a-mole game), and **River Crossing** (a Frogger-style game).
+        -   **New Games Implemented:** Three new games are now fully playable: **Alchemist's Trial** (a Simon-style memory game), **Goblin Ambush** (a whack-a-mole game), and **River Crossing** (a Frogger-style game).
         -   **Forge Master Rework:** Completely redesigned the Forge Master game. It now features a more interactive heat-based mechanic where players must time their strikes to the metal's temperature for optimal scores.
-        -   **Dungeon Dash Fixes:** The runner emoji now faces the correct direction, and flying ghost obstacles have been repositioned to make the slide mechanic functional.
+        -   **Dungeon Dash Fixes:** The runner emoji now correctly faces the direction of movement, and flying ghost obstacles have been repositioned to make the slide mechanic functional.
 
 -   **Week of February 28, 2026 (v0.5.32):**
     -   **Minigame Mania:** A massive update to the Arcade based on user feedback!

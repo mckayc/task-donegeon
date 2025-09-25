@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
 import Button from '../../user-interface/Button';
@@ -192,28 +193,40 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const handleLevelCleared = useCallback(async () => {
         setGameState('level-cleared');
         setIsProcessingLevelClear(true);
-        if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
+        try {
+            if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
+                addNotification({
+                    type: 'success',
+                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
+                    icon: rewardDef.icon
+                });
+                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
+                
+                const success = await applyManualAdjustment({
+                    userId: currentUser.id,
+                    adjusterId: 'system',
+                    reason: `Reward for clearing round ${round}, level ${challengeIndex + 1} in Math Muncher.`,
+                    type: AdminAdjustmentType.Reward,
+                    rewards: [{
+                        rewardTypeId: rewardSettings.rewardTypeId,
+                        amount: rewardSettings.amount
+                    }],
+                    setbacks: []
+                });
+                if (!success) {
+                    throw new Error("Server failed to grant reward.");
+                }
+            }
+        } catch (error) {
+            console.error("Failed to apply level clear reward:", error);
             addNotification({
-                type: 'success',
-                message: `+${rewardSettings.amount} ${rewardDef.name}`,
-                icon: rewardDef.icon
+                type: 'error',
+                message: 'There was a problem granting your reward. Please contact support.'
             });
-            setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
-            
-            await applyManualAdjustment({
-                userId: currentUser.id,
-                adjusterId: 'system',
-                reason: `Reward for clearing round ${round}, level ${challengeIndex + 1} in Math Muncher.`,
-                type: AdminAdjustmentType.Reward,
-                rewards: [{
-                    rewardTypeId: rewardSettings.rewardTypeId,
-                    amount: rewardSettings.amount
-                }],
-                setbacks: []
-            });
+        } finally {
+            setIsProcessingLevelClear(false);
         }
-        setIsProcessingLevelClear(false);
-    }, [currentUser, rewardSettings, rewardDef, challengeIndex, addNotification, applyManualAdjustment, round]);
+    }, [currentUser, rewardSettings, rewardDef, challengeIndex, round, addNotification, applyManualAdjustment]);
 
     const handleMunch = useCallback(() => {
         if (gameState !== 'playing') return;

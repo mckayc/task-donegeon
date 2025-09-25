@@ -346,12 +346,13 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     
     useEffect(() => {
         if (gameState !== 'player-hit' || isProcessingHit.current) return;
-
+    
         isProcessingHit.current = true;
         setIsHit(true);
-        const newLives = lives - 1;
+    
+        const newLives = Math.max(0, lives - 1);
         setLives(newLives);
-
+    
         const hitTimeout = setTimeout(() => {
             setIsHit(false);
             if (newLives <= 0) {
@@ -365,19 +366,19 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
             isProcessingHit.current = false;
         }, 1500);
-
+    
         return () => clearTimeout(hitTimeout);
     }, [gameState, lives, score, submitScore]);
     
     useEffect(() => {
-        if(gameState !== 'playing' || isHit) return;
-
-        if (troggles.some(t => t.pos.x === playerPos.x && t.pos.y === playerPos.y)) {
-             if (shieldActive) {
-                setTroggles(prevTroggles => prevTroggles.filter(t => t.pos.x !== playerPos.x || t.pos.y !== playerPos.y));
-                setShieldActive(false);
-            } else {
-                setGameState('player-hit');
+         if (gameState === 'playing' && !isHit && !isProcessingHit.current) {
+            if (troggles.some(t => t.pos.x === playerPos.x && t.pos.y === playerPos.y)) {
+                if (shieldActive) {
+                    setTroggles(prevTroggles => prevTroggles.filter(t => t.pos.x !== playerPos.x || t.pos.y !== playerPos.y));
+                    setShieldActive(false);
+                } else {
+                    setGameState('player-hit');
+                }
             }
         }
     }, [playerPos, troggles, shieldActive, gameState, isHit]);
@@ -403,7 +404,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     return (
         <div className={`w-full h-full flex flex-col items-center justify-center p-4 ${isHit ? 'animate-shake' : ''}`}>
              {gameState === 'select-level' && (
-                <div className="text-center text-white">
+                <div className="text-center text-white relative z-20">
                     <h1 className="text-5xl font-medieval text-emerald-400">Math Muncher</h1>
                     <p className="mt-4 mb-8 text-lg">Select a grade level to begin!</p>
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -442,7 +443,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                 )}
                             </div>
                              <span>Round {round} - Level {challengeIndex + 1}</span>
-                             <span>Lives: {'❤️'.repeat(Math.max(0, lives))}</span>
+                             <span>Lives: {'❤️'.repeat(lives)}</span>
                         </div>
                          <p className="text-center text-amber-300 font-semibold mt-2">{currentChallenge?.title}</p>
                     </div>

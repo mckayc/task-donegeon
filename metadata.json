@@ -1,8 +1,8 @@
 
 {
-  "name": "Task Donegeon 2.0 - 0.5.53 - Math Muncher Fixes",
-  "version": "0.5.53",
-  "description": "This update fixes a critical crash in the 'Math Muncher' minigame that occurred when the player lost a life. The game grid has also been standardized to a 6x6 layout for all challenges to improve consistency and readability.",
+  "name": "Task Donegeon 2.0 - 0.5.54 - Math Muncher Click & Crash Fix",
+  "version": "0.5.54",
+  "description": "This update fixes a critical crash in the 'Math Muncher' minigame that occurred when the player lost a life. It also addresses an issue where the grade selection buttons could become unclickable.",
   "requestFramePermissions": [
     "camera"
   ],

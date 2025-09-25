@@ -1,4 +1,3 @@
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -129,6 +128,42 @@ const initializeApp = async () => {
     console.log("Data Source has been initialized!");
 
     const manager = dataSource.manager;
+
+    // --- ONE-TIME DATA MIGRATION ---
+    // This script fixes an issue where the `quests` table's `videos` column might contain
+    // a plain text URL from before the multi-video feature, instead of the expected JSON array.
+    // This would cause the server to crash on startup when trying to parse the invalid data.
+    console.log('[Data Fixup] Checking for legacy videoUrl data in quests...');
+    try {
+        const questsWithLegacyVideoUrl = await manager.query("SELECT id, videos FROM quest WHERE json_valid(videos) = 0 AND videos IS NOT NULL AND videos != ''");
+        if (questsWithLegacyVideoUrl.length > 0) {
+            console.log(`[Data Fixup] Found ${questsWithLegacyVideoUrl.length} quests with invalid video data. Migrating...`);
+            for (const quest of questsWithLegacyVideoUrl) {
+                const videoUrl = quest.videos; // In this state, `videos` holds the old string URL.
+                
+                // Create the new JSON array structure that the application now expects.
+                const newVideosArray = [{
+                    id: `migrated-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                    url: videoUrl,
+                    title: 'Video', // Provide a sensible default title.
+                    description: ''
+                }];
+                const newVideosJson = JSON.stringify(newVideosArray);
+                
+                // Update the row with a parameterized query to safely store the new JSON string.
+                await manager.query("UPDATE quest SET videos = ? WHERE id = ?", [newVideosJson, quest.id]);
+            }
+            console.log('[Data Fixup] Video data migration complete.');
+        } else {
+            console.log('[Data Fixup] No legacy video data found. Schema is up to date.');
+        }
+    } catch (e) {
+        // This might fail if the `videos` column doesn't exist yet (e.g., on a fresh install)
+        // or if another schema issue exists. We can safely ignore this error as it's a best-effort fix.
+        console.warn('[Data Fixup] Could not run video data migration check. This is normal on a fresh install.', e.message);
+    }
+    // --- END MIGRATION ---
+
 
     // MIGRATION/SYNC: Ensure a default guild exists and all users are members.
     let defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });

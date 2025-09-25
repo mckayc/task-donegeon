@@ -3,13 +3,11 @@ import { useSystemDispatch, useSystemState } from '../../../context/SystemContex
 import Button from '../../user-interface/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
-// FIX: Removed AdminAdjustmentType from local import to fix circular dependency.
 import { Cell, Troggle, PowerUpType, MathChallenge } from './types';
 import { gradeManifest } from './challenges';
 import { shuffleArray, getRandomInt } from './helpers';
 import { useAuthState } from '../../../context/AuthContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-// FIX: Corrected type imports to use the main barrel file.
 import { RewardCategory, RewardTypeDefinition, AdminAdjustmentType } from '../../../types';
 import { useEconomyState } from '../../../context/EconomyContext';
 
@@ -18,7 +16,7 @@ interface MathMuncherGameProps {
 }
 
 const INITIAL_LIVES = 3;
-const GRID_SIZE = 6;
+const GRID_SIZE = 5;
 
 const getDynamicFontSize = (value: string | number): string => {
     const text = String(value);
@@ -55,9 +53,11 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const [freezeActive, setFreezeActive] = useState(false);
     const [isHit, setIsHit] = useState(false);
     const [lastReward, setLastReward] = useState<{ amount: number, icon: string } | null>(null);
+    const [isProcessingLevelClear, setIsProcessingLevelClear] = useState(false);
     
     const gameLoopRef = useRef<number | null>(null);
     const correctAnswersLeft = useRef(0);
+    const nextLevelTimerRef = useRef<number | null>(null);
     
     const gameSpeed = useMemo(() => Math.max(200, 800 - (round - 1) * 50), [round]);
     const currentChallenge = useMemo(() => challengePlaylist[challengeIndex], [challengePlaylist, challengeIndex]);
@@ -126,6 +126,10 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     }, [startChallenge]);
     
     const startNextChallenge = useCallback(async () => {
+        if (nextLevelTimerRef.current) {
+            clearTimeout(nextLevelTimerRef.current);
+        }
+
         let nextIndex = challengeIndex + 1;
         let nextRound = round;
         let nextPlaylist = challengePlaylist;
@@ -174,6 +178,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
     const handleLevelCleared = useCallback(async () => {
         setGameState('level-cleared');
+        setIsProcessingLevelClear(true);
         if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
             addNotification({
                 type: 'success',
@@ -194,6 +199,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                 setbacks: []
             });
         }
+        setIsProcessingLevelClear(false);
     }, [currentUser, rewardSettings, rewardDef, challengeIndex, addNotification, applyManualAdjustment, round]);
 
     const handleMunch = useCallback(() => {
@@ -426,6 +432,20 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
         }
     }, [playerPos, troggles, shieldActive, gameState, isHit, handleLifeLost]);
 
+    useEffect(() => {
+        if (gameState === 'level-cleared' && !isProcessingLevelClear) {
+            nextLevelTimerRef.current = window.setTimeout(() => {
+                startNextChallenge();
+            }, 4000); // 4 seconds
+        }
+
+        return () => {
+            if (nextLevelTimerRef.current) {
+                clearTimeout(nextLevelTimerRef.current);
+            }
+        };
+    }, [gameState, isProcessingLevelClear, startNextChallenge]);
+
     const cellSizeClass = 'w-20 h-20';
 
     return (
@@ -446,7 +466,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
             {gameState !== 'select-level' && (
                  <>
-                    <div className="w-full max-w-[550px] mb-4">
+                    <div className="w-full max-w-[450px] mb-4">
                         <div className="flex justify-between items-center text-white font-bold text-lg p-3 bg-stone-800/50 rounded-lg">
                             <div className="flex items-center gap-4">
                                 <span>Score: {score}</span>
@@ -527,7 +547,16 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         ) : (
                                             <h2 className="text-4xl font-bold font-medieval text-amber-300">Level Cleared!</h2>
                                         )}
-                                        <Button onClick={startNextChallenge} className="mt-6">Next Level</Button>
+                                        <Button
+                                            onClick={() => {
+                                                if (nextLevelTimerRef.current) clearTimeout(nextLevelTimerRef.current);
+                                                startNextChallenge();
+                                            }}
+                                            className="mt-6"
+                                            disabled={isProcessingLevelClear}
+                                        >
+                                            {isProcessingLevelClear ? 'Processing...' : 'Next Level'}
+                                        </Button>
                                     </>}
                                     {gameState === 'get-ready' && <>
                                         <h2 className="text-4xl font-bold font-medieval text-red-500">Life Lost!</h2>

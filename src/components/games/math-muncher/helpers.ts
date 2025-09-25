@@ -48,7 +48,7 @@ export const simplifyFraction = (numerator: number, denominator: number): [numbe
 
 
 /**
- * Fills a 6x6 grid with a mix of correct and incorrect answers, preventing infinite loops.
+ * Fills a 5x5 grid with a mix of correct and incorrect answers, preventing infinite loops.
  * @param correctGenerator A function that returns a correct value.
  * @param incorrectGenerator A function that returns an incorrect value.
  * @param checker A function to verify if a value is correct.
@@ -59,7 +59,7 @@ export const generateChallengeGrid = (
     incorrectGenerator: () => CellValue,
     checker: (val: CellValue) => boolean
 ): Cell[][] => {
-    const gridSize = 6;
+    const gridSize = 5;
     const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize));
     const totalCells = gridSize * gridSize;
     const targetCorrect = Math.floor(totalCells * 0.4); // Approx 40% correct answers

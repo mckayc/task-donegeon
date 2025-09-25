@@ -60,67 +60,60 @@ export const generateChallengeGrid = (
     checker: (val: CellValue) => boolean
 ): Cell[][] => {
     const gridSize = 5;
-    const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize));
     const totalCells = gridSize * gridSize;
-    const targetCorrect = Math.floor(totalCells * 0.4); // Approx 40% correct answers
-    const targetIncorrect = totalCells - targetCorrect;
+    const targetCorrect = Math.floor(totalCells * 0.4); // ~40% correct answers
 
     const values: { value: CellValue, isCorrect: boolean }[] = [];
     const usedValues = new Set<string>();
-    
-    // Generate unique correct values
-    while (values.filter(v => v.isCorrect).length < targetCorrect) {
-        let value: CellValue;
-        let attempts = 0;
-        do { 
-            value = correctGenerator();
-            attempts++;
-        } while (usedValues.has(String(value)) && attempts < 50); // Prevent infinite loop if generator is not varied enough
-        
-        if (checker(value)) {
+    const MAX_TOTAL_ATTEMPTS = 500;
+    let totalAttempts = 0;
+
+    // 1. Generate unique correct values
+    while (values.filter(v => v.isCorrect).length < targetCorrect && totalAttempts < MAX_TOTAL_ATTEMPTS) {
+        const value = correctGenerator();
+        if (!usedValues.has(String(value)) && checker(value)) {
             values.push({ value, isCorrect: true });
             usedValues.add(String(value));
-        } else if (attempts >= 50) {
-            console.warn("Could not generate a unique correct value.");
-            break;
         }
+        totalAttempts++;
     }
-    
-    // Generate unique incorrect values
-    while (values.filter(v => !v.isCorrect).length < targetIncorrect) {
-        let value: CellValue;
-        let attempts = 0;
-        do { 
-            value = incorrectGenerator(); 
-            attempts++;
-        } while ((checker(value) || usedValues.has(String(value))) && attempts < 50);
 
-        if (attempts < 50) {
+    // 2. Fill the rest with unique incorrect values
+    while (values.length < totalCells && totalAttempts < MAX_TOTAL_ATTEMPTS) {
+        const value = incorrectGenerator();
+        if (!usedValues.has(String(value)) && !checker(value)) {
             values.push({ value, isCorrect: false });
             usedValues.add(String(value));
-        } else {
-             console.warn("Could not generate a unique incorrect value.");
-            break;
         }
+        totalAttempts++;
+    }
+    
+    // 3. Fallback: If generators struggled, fill remaining cells to ensure grid is full.
+    while (values.length < totalCells) {
+        let fallbackValue: CellValue;
+        let isCorrect: boolean;
+        let fallbackAttempts = 0;
+        do {
+            fallbackValue = Math.random() > 0.5 ? correctGenerator() : incorrectGenerator();
+            isCorrect = checker(fallbackValue);
+            fallbackAttempts++;
+        } while (usedValues.has(String(fallbackValue)) && fallbackAttempts < 50);
+        
+        values.push({ value: fallbackValue, isCorrect });
+        usedValues.add(String(fallbackValue));
     }
 
-    const shuffledValues = shuffleArray(values);
+    if (totalAttempts >= MAX_TOTAL_ATTEMPTS) {
+        console.warn("generateChallengeGrid reached max attempts. The grid may not be perfectly balanced.");
+    }
 
+    // 4. Shuffle and build the grid
+    const shuffledValues = shuffleArray(values);
+    const grid: Cell[][] = Array.from({ length: gridSize }, () => Array(gridSize));
     for (let i = 0; i < totalCells; i++) {
         const row = Math.floor(i / gridSize);
         const col = i % gridSize;
-        const val = shuffledValues[i];
-        if (val) {
-             grid[row][col] = { ...val, isEaten: false };
-        } else {
-             // Fallback if generators failed
-             let fallbackValue: CellValue;
-             do {
-                 fallbackValue = incorrectGenerator();
-             } while(checker(fallbackValue) || usedValues.has(String(fallbackValue)));
-             grid[row][col] = { value: fallbackValue, isCorrect: false, isEaten: false };
-             usedValues.add(String(fallbackValue));
-        }
+        grid[row][col] = { ...shuffledValues[i], isEaten: false };
     }
     
     return grid;

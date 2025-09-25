@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useMemo } from 'react';
 import { useAuthState } from './context/AuthContext';
 import { useUIState, useUIDispatch } from './context/UIContext';
@@ -33,15 +34,9 @@ const App: React.FC = () => {
     }, [currentUser]);
 
     const activeThemeId = useMemo(() => {
-        let themeId: string | undefined = settings.theme;
-        if (appMode.mode === 'guild') {
-            const currentGuild = guilds.find(g => g.id === appMode.guildId);
-            themeId = currentGuild?.themeId || currentUser?.theme;
-        } else {
-            themeId = currentUser?.theme;
-        }
+        const themeId = currentUser?.theme || settings.theme;
         return themeId || 'default';
-    }, [settings.theme, currentUser, appMode, guilds]);
+    }, [settings.theme, currentUser]);
 
     useEffect(() => {
         const theme = themes.find(t => t.id === activeThemeId);

@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 // FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { AppMode, Page, Quest } from '../../types';
@@ -38,7 +39,6 @@ export interface UIDispatch {
   toggleSidebar: () => void;
   toggleChat: () => void;
   setIsMobileView: (isMobile: boolean) => void;
-  setAppMode: (mode: AppMode) => void;
   setActiveMarketId: (marketId: string | null) => void;
   setActiveGame: (gameId: string | null) => void;
   setReadingQuest: (quest: Quest | null) => void;
@@ -51,6 +51,8 @@ export interface UIDispatch {
   stopTimer: () => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
+  // FIX: Add setAppMode to allow changing the application's view scope (e.g., to a guild view).
+  setAppMode: (mode: AppMode) => void;
 }
 
 const UIStateContext = createContext<UIState | undefined>(undefined);
@@ -68,6 +70,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   });
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  // FIX: Changed appMode from a static value to a state variable to allow dynamic scope changes.
   const [appMode, _setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [activeMarketId, _setActiveMarketId] = useState<string | null>(null);
   const [activeGame, _setActiveGame] = useState<string | null>(null);
@@ -108,6 +111,11 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       setIsChatOpen(prev => !prev);
   };
 
+  // FIX: Added setAppMode implementation.
+  const setAppMode = useCallback((mode: AppMode) => {
+    _setAppMode(mode);
+  }, []);
+
   const setScreenDimmed = useCallback((dimmed: boolean, level?: number) => {
     setIsScreenDimmed(dimmed);
     if (dimmed && level !== undefined) {
@@ -116,17 +124,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         setScreenDimOverride(null);
     }
   }, []);
-
-  const setAppMode = (mode: AppMode) => {
-    if (bugLogger.isRecording()) {
-        bugLogger.add({
-            type: 'NAVIGATION',
-            message: `Switched to ${mode.mode} mode${mode.mode === 'guild' ? ` (Guild ID: ${mode.guildId})` : ''}`
-        });
-    }
-    _setAppMode(mode);
-    _setActiveMarketId(null);
-  };
 
   const setActiveMarketId = (marketId: string | null) => {
      if (bugLogger.isRecording()) {
@@ -220,7 +217,6 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     toggleSidebar,
     toggleChat,
     setIsMobileView,
-    setAppMode,
     setActiveMarketId,
     setActiveGame,
     setReadingQuest,
@@ -232,6 +228,8 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     stopTimer,
     pauseTimer,
     resumeTimer,
+    // FIX: Added setAppMode to the dispatch object.
+    setAppMode,
   };
 
   return (

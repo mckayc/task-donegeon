@@ -69,30 +69,24 @@ const ViewModeToggle: React.FC = () => {
 const Header: React.FC = () => {
   const { settings, isUpdateAvailable } = useSystemState();
   const { installUpdate } = useSystemDispatch();
-  const { guilds } = useCommunityState();
-  const { appMode, isMobileView, isKioskDevice } = useUIState();
-  const { setAppMode, toggleSidebar, setActivePage } = useUIDispatch();
+  const { isMobileView, isKioskDevice } = useUIState();
+  const { toggleSidebar, setActivePage } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { logout, setIsSwitchingUser } = useAuthDispatch();
   const { quests } = useQuestsState();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [guildDropdownOpen, setGuildDropdownOpen] = useState(false);
   const [pendingDropdownOpen, setPendingDropdownOpen] = useState(false);
   const [viewingQuest, setViewingQuest] = useState<Quest | null>(null);
   
   const [pendingApprovals, setPendingApprovals] = useState<PendingApprovals>({ quests: [], purchases: [] });
   
   const profileDropdownRef = useRef<HTMLDivElement>(null);
-  const guildDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
         if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
             setProfileDropdownOpen(false);
-        }
-        if (guildDropdownRef.current && !guildDropdownRef.current.contains(event.target as Node)) {
-            setGuildDropdownOpen(false);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -139,30 +133,12 @@ const Header: React.FC = () => {
     setProfileDropdownOpen(false);
   }
   
-  const handleModeChange = (mode: AppMode) => {
-    setAppMode(mode);
-    setGuildDropdownOpen(false);
-    setActivePage('Dashboard');
-  };
-  
   const handleKioskToggle = () => {
       const newKioskState = !isKioskDevice;
       localStorage.setItem('isKioskDevice', String(newKioskState));
       // Reload the page to apply the new mode from the root component
       window.location.href = '/';
   };
-
-  const userGuilds = useMemo(() => {
-    if (!currentUser) return [];
-    return guilds.filter(g => g.memberIds.includes(currentUser.id));
-  }, [currentUser, guilds]);
-  
-  const currentGuildName = useMemo(() => {
-      if (appMode.mode === 'guild') {
-          return guilds.find(g => g.id === appMode.guildId)?.name || 'Guild';
-      }
-      return 'Guild';
-  }, [appMode, guilds]);
 
   if (!currentUser) return null;
 
@@ -176,35 +152,8 @@ const Header: React.FC = () => {
                 <MenuIcon className="w-6 h-6" />
             </button>
         )}
-        <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60">
-            <button data-log-id="header-mode-personal" onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
-                Personal
-            </button>
-            <div className="relative" ref={guildDropdownRef}>
-                <button
-                    data-log-id="header-mode-guild-dropdown"
-                    onClick={() => {
-                        if (userGuilds.length === 1) {
-                            handleModeChange({ mode: 'guild', guildId: userGuilds[0].id });
-                        } else {
-                            setGuildDropdownOpen(p => !p);
-                        }
-                    }}
-                    disabled={userGuilds.length === 0}
-                    className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors flex items-center gap-1 ${appMode.mode === 'guild' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700 disabled:opacity-50'}`}
-                >
-                    <span>{currentGuildName}</span>
-                    {userGuilds.length > 1 && <ChevronDownIcon className="w-4 h-4" />}
-                </button>
-                 {guildDropdownOpen && userGuilds.length > 1 && (
-                    <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-                        <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Select a {settings.terminology.group}</div>
-                         {userGuilds.map(guild => (
-                            <a href="#" key={guild.id} data-log-id={`header-mode-guild-select-${guild.id}`} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
-                        ))}
-                    </div>
-                 )}
-            </div>
+        <div className="hidden sm:block">
+            <h1 className="font-semibold text-lg text-stone-200">Personal Dashboard</h1>
         </div>
       </div>
 

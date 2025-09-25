@@ -210,6 +210,9 @@ const Sidebar: React.FC = () => {
     const userRoleIndex = roleOrder.indexOf(currentUser.role);
     
     const visibleItems = sidebarConfig.filter(item => {
+        if (item.id === 'Guild' || item.id === 'Manage Guilds') {
+            return false;
+        }
         if (!item.isVisible) return false;
         const itemRoleIndex = roleOrder.indexOf(item.role as Role);
         return userRoleIndex >= itemRoleIndex;

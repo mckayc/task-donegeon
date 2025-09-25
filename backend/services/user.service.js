@@ -1,5 +1,4 @@
 
-
 const userRepository = require('../repositories/user.repository');
 const guildRepository = require('../repositories/guild.repository');
 const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
@@ -112,21 +111,10 @@ const adjust = async (adjustmentData) => {
         const user = await userRepo.findOneBy({ id: adjustmentData.userId });
         if (!user) return null;
 
-        const isGuildScope = !!adjustmentData.guildId;
-        
-        // Robustly get balances, initializing if necessary
-        const balances = (() => {
-            if (isGuildScope) {
-                if (!user.guildBalances) user.guildBalances = {};
-                if (!user.guildBalances[adjustmentData.guildId]) user.guildBalances[adjustmentData.guildId] = { purse: {}, experience: {} };
-                user.guildBalances[adjustmentData.guildId].purse = user.guildBalances[adjustmentData.guildId].purse || {};
-                user.guildBalances[adjustmentData.guildId].experience = user.guildBalances[adjustmentData.guildId].experience || {};
-                return user.guildBalances[adjustmentData.guildId];
-            }
-            user.personalPurse = user.personalPurse || {};
-            user.personalExperience = user.personalExperience || {};
-            return { purse: user.personalPurse, experience: user.personalExperience };
-        })();
+        // Ensure personal balances objects exist
+        user.personalPurse = user.personalPurse || {};
+        user.personalExperience = user.personalExperience || {};
+        const balances = { purse: user.personalPurse, experience: user.personalExperience };
         
         const rewardTypes = await rewardTypeRepo.find();
         
@@ -155,7 +143,7 @@ const adjust = async (adjustmentData) => {
                     userId: user.id,
                     trophyId: trophy.id,
                     awardedAt: new Date().toISOString(),
-                    guildId: adjustmentData.guildId || undefined
+                    guildId: undefined // Personal scope only
                 };
                 newUserTrophy = await userTrophyRepo.save(updateTimestamps(userTrophyRepo.create(newTrophyData), true));
             }
@@ -189,7 +177,7 @@ const adjust = async (adjustmentData) => {
             userName: user.gameName,
             actorId: adjustmentData.adjusterId,
             actorName: actor?.gameName || 'System',
-            guildId: adjustmentData.guildId || undefined,
+            guildId: undefined, // Personal scope only
             rewardsText: `${rewardsText} ${setbacksText}${trophyText}`.trim() || undefined,
         };
 
@@ -197,7 +185,7 @@ const adjust = async (adjustmentData) => {
         await manager.save(updateTimestamps(newEvent, true));
         
         // Check for auto-awarded trophies
-        const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, adjustmentData.guildId);
+        const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, undefined);
         if (newUserTrophy) newUserTrophies.push(newUserTrophy);
 
         updateEmitter.emit('update');

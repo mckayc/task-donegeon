@@ -170,58 +170,82 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
 
     const handleMunch = useCallback(() => {
         if (gameState !== 'playing') return;
-
+    
         const cell = grid[playerPos.y]?.[playerPos.x];
-        if (!cell || cell.isEaten) return;
-        
-        const newGrid = grid.map(row => [...row]);
-        const eatenCell = { ...newGrid[playerPos.y][playerPos.x], isEaten: true };
-
-        if (cell.item) {
-            if (cell.item === 'life') setLives(l => l + 1);
-            if (cell.item === 'shield') setShieldActive(true);
-            if (cell.item === 'freeze') {
+        if (!cell) return;
+    
+        // Allow munching only if the cell has a power-up OR has not been eaten yet.
+        if (cell.isEaten && !cell.item) return;
+    
+        let newGrid = grid.map(row => [...row]);
+        const cellToUpdate = { ...newGrid[playerPos.y][playerPos.x] };
+        let wasCorrectMunch = false;
+    
+        // 1. Handle Power-up collection first.
+        if (cellToUpdate.item) {
+            if (cellToUpdate.item === 'life') setLives(l => l + 1);
+            if (cellToUpdate.item === 'shield') setShieldActive(true);
+            if (cellToUpdate.item === 'freeze') {
                 setFreezeActive(true);
                 setTimeout(() => setFreezeActive(false), 5000);
             }
-            if (cell.item === 'reveal') {
-                const revealedGrid = grid.map(row => row.map(c => c.isCorrect ? { ...c, feedback: 'correct' as const } : c));
-                setGrid(revealedGrid);
+            if (cellToUpdate.item === 'reveal') {
+                newGrid = newGrid.map(row => row.map(c => c.isCorrect ? { ...c, feedback: 'correct' as const } : c));
                 setTimeout(() => {
-                     setGrid(prev => prev.map(row => row.map(c => ({...c, feedback: undefined}))));
+                    setGrid(prev => prev.map(row => row.map(c => ({...c, feedback: undefined}))));
                 }, 1000);
             }
-            eatenCell.item = undefined;
+            cellToUpdate.item = undefined;
         }
-        
-        if (eatenCell.isCorrect) {
-            setScore(s => s + 10 * (1 + combo));
-            setCombo(c => c + 1);
-            correctAnswersLeft.current--;
-            eatenCell.feedback = 'correct';
-        } else {
-            if (!shieldActive) {
-                handleLifeLost();
+    
+        // 2. Handle number munching, only if it hasn't been eaten yet.
+        if (!cell.isEaten) {
+            cellToUpdate.isEaten = true;
+            if (cellToUpdate.isCorrect) {
+                setScore(s => s + 10 * (1 + combo));
+                setCombo(c => c + 1);
+                correctAnswersLeft.current--;
+                cellToUpdate.feedback = 'correct';
+                wasCorrectMunch = true;
             } else {
-                setShieldActive(false);
+                if (!shieldActive) {
+                    handleLifeLost();
+                } else {
+                    setShieldActive(false);
+                }
+                setCombo(0);
+                cellToUpdate.feedback = 'incorrect';
             }
-            setCombo(0);
-            eatenCell.feedback = 'incorrect';
         }
-
-        newGrid[playerPos.y][playerPos.x] = eatenCell;
+    
+        newGrid[playerPos.y][playerPos.x] = cellToUpdate;
         setGrid(newGrid);
-
+    
+        // 3. Check for level completion
+        if (wasCorrectMunch && correctAnswersLeft.current <= 0) {
+            setGameState('level-cleared');
+            if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
+                addNotification({
+                    type: 'success',
+                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
+                    icon: rewardDef.icon
+                });
+                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
+            }
+        }
+    
+        // Clear feedback animation after a short delay
         setTimeout(() => {
             setGrid(prevGrid => {
                 const finalGrid = [...prevGrid.map(row => [...row])];
-                if(finalGrid[playerPos.y]?.[playerPos.x]) {
-                    finalGrid[playerPos.y][playerPos.x] = { ...finalGrid[playerPos.y][playerPos.x], feedback: undefined };
+                const targetCell = finalGrid[playerPos.y]?.[playerPos.x];
+                if(targetCell && (targetCell.feedback === 'correct' || targetCell.feedback === 'incorrect')) {
+                     targetCell.feedback = undefined;
                 }
                 return finalGrid;
             });
         }, 300);
-    }, [gameState, grid, playerPos, combo, shieldActive, handleLifeLost]);
+    }, [gameState, grid, playerPos, combo, shieldActive, handleLifeLost, currentUser, rewardSettings, rewardDef, challengeIndex, addNotification]);
 
     const spawnPowerUp = useCallback(() => {
         const eatenCellsPos = grid.flat().map((cell, i) => cell.isEaten && !cell.item ? { y: Math.floor(i / GRID_SIZE), x: i % GRID_SIZE } : null).filter(Boolean);
@@ -384,22 +408,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
         }
     }, [playerPos, troggles, shieldActive, gameState, isHit, handleLifeLost]);
-    
-    useEffect(() => {
-        if (gameState === 'playing' && correctAnswersLeft.current <= 0) {
-            setGameState('level-cleared');
-            
-            if (currentUser && rewardSettings && rewardDef && (challengeIndex + 1) % rewardSettings.levelFrequency === 0) {
-                addNotification({
-                    type: 'success',
-                    message: `+${rewardSettings.amount} ${rewardDef.name}`,
-                    icon: rewardDef.icon
-                });
-                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon });
-            }
-        }
-    }, [gameState, addNotification, challengeIndex, currentUser, rewardSettings, rewardDef]);
-    
+
     const cellSizeClass = 'w-20 h-20';
 
     return (

@@ -199,32 +199,50 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
     const handleRewardCollection = useCallback(async () => {
         if (!currentUser || !rewardSettings || !rewardDef) return;
     
+        showPowerUpMessage('Reward Collected!');
+    
         try {
-            const success = await applyManualAdjustment({
-                userId: currentUser.id,
-                adjusterId: 'system',
-                reason: `Reward from Math Muncher round ${round}, level ${challengeIndex + 1}.`,
-                type: AdminAdjustmentType.Reward,
-                rewards: [{
-                    rewardTypeId: rewardSettings.rewardTypeId,
-                    amount: rewardSettings.amount
-                }],
-                setbacks: []
+            const tokenResponse = await fetch('/api/users/generate-reward-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: currentUser.id,
+                    rewards: [{
+                        rewardTypeId: rewardSettings.rewardTypeId,
+                        amount: rewardSettings.amount
+                    }],
+                    source: `Math Muncher round ${round}, level ${challengeIndex + 1}.`,
+                })
+            });
+    
+            if (!tokenResponse.ok) {
+                const errorData = await tokenResponse.json();
+                throw new Error(errorData.error || 'Failed to generate reward token.');
+            }
+    
+            const { token } = await tokenResponse.json();
+    
+            const claimResponse = await fetch('/api/users/claim-reward-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
             });
             
-            if (success) {
-                setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon, key: Date.now() });
-            } else {
-                throw new Error("Server failed to grant reward.");
+            if (!claimResponse.ok) {
+                const errorData = await claimResponse.json();
+                throw new Error(errorData.error || 'Failed to claim reward token.');
             }
+    
+            setLastReward({ amount: rewardSettings.amount, icon: rewardDef.icon, key: Date.now() });
+    
         } catch (error) {
-             console.error("Failed to apply reward:", error);
+             console.error("Failed to process reward:", error);
              addNotification({
                 type: 'error',
-                message: 'There was a problem granting your reward.'
+                message: error instanceof Error ? error.message : 'There was a problem granting your reward.'
              });
         }
-    }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, applyManualAdjustment, addNotification]);
+    }, [currentUser, rewardSettings, rewardDef, round, challengeIndex, addNotification]);
 
     const spawnReward = useCallback(() => {
         if (!currentUser || !rewardSettings || !rewardDef || (round) % rewardSettings.levelFrequency !== 0) {
@@ -285,7 +303,6 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
             }
             if (cellToUpdate.item === 'reward') {
                 handleRewardCollection();
-                showPowerUpMessage('Reward Collected!');
             }
             cellToUpdate.item = undefined;
         }

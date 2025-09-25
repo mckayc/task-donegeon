@@ -6,7 +6,7 @@ const trophyRepository = require('../repositories/trophy.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { logGeneralAdminAction, updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
-const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserEntity, UserTrophyEntity } = require('../entities');
+const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserEntity, UserTrophyEntity, PendingRewardEntity } = require('../entities');
 
 /**
  * A centralized function to grant rewards and trophies to a user. This is the single source of truth.
@@ -216,6 +216,59 @@ const adjust = async (adjustmentData) => {
     });
 };
 
+const generateRewardToken = async (details) => {
+    const { userId, rewards, source } = details;
+    return await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        if (!user) throw new Error('User not found.');
+
+        const token = `rew_tok_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+        const pendingRewardRepo = manager.getRepository(PendingRewardEntity);
+        const newPendingReward = pendingRewardRepo.create({
+            id: token,
+            userId,
+            rewards,
+            source,
+            status: 'pending'
+        });
+        await pendingRewardRepo.save(updateTimestamps(newPendingReward, true));
+        return token;
+    });
+};
+
+const claimRewardToken = async (token) => {
+    return await dataSource.transaction(async manager => {
+        const pendingRewardRepo = manager.getRepository(PendingRewardEntity);
+        const pendingReward = await pendingRewardRepo.findOneBy({ id: token });
+
+        if (!pendingReward) throw new Error('Reward token not found.');
+        if (pendingReward.status !== 'pending') throw new Error('Reward token has already been claimed.');
+        
+        const grantDetails = {
+            userId: pendingReward.userId,
+            rewards: pendingReward.rewards,
+            actorId: 'system',
+            chronicleTitle: 'Prize Won',
+            chronicleNote: pendingReward.source,
+            chronicleType: 'PrizeWon',
+            chronicleIcon: '🏆',
+            chronicleColor: '#facc15',
+            originalId: pendingReward.id,
+        };
+
+        const grantResult = await grantRewards(manager, grantDetails);
+        
+        pendingReward.status = 'claimed';
+        await pendingRewardRepo.save(updateTimestamps(pendingReward));
+
+        // Let the normal server-sent event handle the data update
+        updateEmitter.emit('update');
+
+        return grantResult;
+    });
+};
+
 
 const getPendingItems = async (userId) => {
     const questCompletions = await dataSource.getRepository(QuestCompletionEntity).find({
@@ -244,4 +297,6 @@ module.exports = {
     adjust,
     getPendingItems,
     grantRewards,
+    generateRewardToken,
+    claimRewardToken,
 };

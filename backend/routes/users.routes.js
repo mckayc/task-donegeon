@@ -9,6 +9,8 @@ const {
     deleteUsers,
     applyManualAdjustment,
     getPendingItemsForUser,
+    generateRewardToken,
+    claimRewardToken,
 } = require('../controllers/users.controller');
 
 const router = express.Router();
@@ -22,5 +24,7 @@ router.get('/:userId/pending-items', asyncMiddleware(getPendingItemsForUser));
 
 // --- Actions ---
 router.post('/adjust', asyncMiddleware(applyManualAdjustment));
+router.post('/generate-reward-token', asyncMiddleware(generateRewardToken));
+router.post('/claim-reward-token', asyncMiddleware(claimRewardToken));
 
 module.exports = router;

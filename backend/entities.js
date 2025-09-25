@@ -33,6 +33,7 @@ class Minigame {}
 class GameScore {}
 class AITutor {}
 class AITutorSessionLog {}
+class PendingReward {}
 
 const ChronicleEventEntity = new EntitySchema({
     name: "ChronicleEvent",
@@ -471,6 +472,28 @@ const GiftEntity = new EntitySchema({ name: "Gift", target: Gift, columns: { id:
 const MinigameEntity = new EntitySchema({ name: "Minigame", target: Minigame, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, icon: { type: "varchar" }, cost: { type: "integer" }, isActive: { type: 'boolean', default: true, nullable: true }, playsPerToken: { type: 'integer', default: 1, nullable: true }, prizesEnabled: { type: 'boolean', default: false, nullable: true }, prizeThresholds: { type: 'simple-json', nullable: true }, rewardSettings: { type: 'simple-json', nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const GameScoreEntity = new EntitySchema({ name: "GameScore", target: GameScore, columns: { id: { primary: true, type: "varchar" }, gameId: { type: "varchar" }, userId: { type: "varchar" }, score: { type: "integer" }, playedAt: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 
+const PendingRewardEntity = new EntitySchema({
+    name: "PendingReward",
+    target: PendingReward,
+    columns: {
+        id: { primary: true, type: "varchar" }, // This will be the token
+        userId: { type: "varchar" },
+        rewards: { type: "simple-json" }, // e.g., [{ rewardTypeId: '...', amount: 10 }]
+        source: { type: "varchar" }, // e.g., 'Math Muncher Round 1'
+        status: { type: "varchar", default: 'pending' }, // 'pending' or 'claimed'
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    },
+    relations: {
+        user: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: { name: "userId", referencedColumnName: "id" },
+            onDelete: "CASCADE",
+        }
+    }
+});
+
 const allEntities = [
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
@@ -478,6 +501,7 @@ const allEntities = [
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
     ChronicleEventEntity, MinigameEntity, GameScoreEntity, AITutorEntity, AITutorSessionLogEntity,
+    PendingRewardEntity,
 ];
 
 module.exports = { 
@@ -488,4 +512,5 @@ module.exports = {
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
     BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity,
     ChronicleEventEntity, MinigameEntity, GameScoreEntity, AITutorEntity, AITutorSessionLogEntity,
+    PendingRewardEntity,
 };

@@ -57,6 +57,17 @@ const getPendingItemsForUser = async (req, res) => {
     res.json(items);
 };
 
+const generateRewardToken = async (req, res) => {
+    const token = await userService.generateRewardToken(req.body);
+    res.status(201).json({ token });
+};
+
+const claimRewardToken = async (req, res) => {
+    const { token } = req.body;
+    const result = await userService.claimRewardToken(token);
+    res.status(200).json(result);
+};
+
 module.exports = {
     getAllUsers,
     createUser,
@@ -65,4 +76,6 @@ module.exports = {
     deleteUsers,
     applyManualAdjustment,
     getPendingItemsForUser,
+    generateRewardToken,
+    claimRewardToken,
 };

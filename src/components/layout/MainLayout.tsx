@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 // FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { Role, Page, Quest, AITutorSessionLog, SystemNotification } from '../../types';
-import VacationModeBanner from '../settings/VacationModeBanner';
+import GraceModeBanner from '../settings/GraceModeBanner';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -251,7 +251,7 @@ const MainLayout: React.FC = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
           <main className="main-content flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
-            <VacationModeBanner />
+            <GraceModeBanner />
             <Suspense fallback={<LoadingSpinner />}>
                 {renderPage()}
             </Suspense>

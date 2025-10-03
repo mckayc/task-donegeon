@@ -60,6 +60,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
+        allowSetbackSubstitution: (settings.questDefaults as any).allowSetbackSubstitution ?? false,
         isActive: settings.questDefaults.isActive,
         requiresApproval: settings.questDefaults.requiresApproval,
         isOptional: settings.questDefaults.isOptional,
@@ -317,6 +318,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         rewards: (formData.rewards || []).filter(r => r.rewardTypeId && r.amount > 0),
         lateSetbacks: (formData.lateSetbacks || []).filter(s => s.rewardTypeId && s.amount > 0),
         incompleteSetbacks: (formData.incompleteSetbacks || []).filter(s => s.rewardTypeId && s.amount > 0),
+        allowSetbackSubstitution: formData.allowSetbackSubstitution,
         isActive: formData.isActive,
         isOptional: formData.isOptional,
         assignedUserIds: formData.assignedUserIds,
@@ -722,6 +724,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
               <h3 className="font-semibold text-lg text-stone-200">Time-based {settings.terminology.negativePoints}</h3>
               <p className="text-sm text-stone-400 -mt-2">Assign {settings.terminology.negativePoints.toLowerCase()} for being late or incomplete.</p>
+              <ToggleSwitch
+                enabled={formData.allowSetbackSubstitution ?? false}
+                setEnabled={(val: boolean) => setFormData(p => ({...p, allowSetbackSubstitution: val}))}
+                label="Allow substituting other rewards if user balance is low"
+              />
               <RewardInputGroup category='lateSetbacks' items={formData.lateSetbacks} onChange={handleRewardChange('lateSetbacks')} onAdd={handleAddRewardForCategory('lateSetbacks')} onRemove={handleRemoveReward('lateSetbacks')} />
               <RewardInputGroup category='incompleteSetbacks' items={formData.incompleteSetbacks} onChange={handleRewardChange('incompleteSetbacks')} onAdd={handleAddRewardForCategory('incompleteSetbacks')} onRemove={handleRemoveReward('incompleteSetbacks')} />
             </div>

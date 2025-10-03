@@ -11,6 +11,7 @@ const {
     completeQuest,
     approveQuestCompletion,
     rejectQuestCompletion,
+    revertQuestApproval,
     markQuestAsTodo,
     unmarkQuestAsTodo,
     completeCheckpoint,
@@ -35,6 +36,7 @@ router.put('/bulk-update', asyncMiddleware(bulkUpdateQuests));
 router.post('/complete', asyncMiddleware(completeQuest));
 router.post('/approve/:id', asyncMiddleware(approveQuestCompletion));
 router.post('/reject/:id', asyncMiddleware(rejectQuestCompletion));
+router.post('/revert-approval/:id', asyncMiddleware(revertQuestApproval));
 router.post('/mark-todo', asyncMiddleware(markQuestAsTodo));
 router.post('/unmark-todo', asyncMiddleware(unmarkQuestAsTodo));
 router.post('/complete-checkpoint', asyncMiddleware(completeCheckpoint));

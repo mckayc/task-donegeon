@@ -88,6 +88,47 @@ const generateContent = async (req, res) => {
     }
 };
 
+const suggestHolidays = async (req, res) => {
+    if (!ai) {
+        return res.status(400).json({ error: 'AI features are not configured on the server.' });
+    }
+    const { region = 'USA' } = req.body;
+    const prompt = `List the next 5 major public holidays in the ${region} starting from today, ${new Date().toISOString().split('T')[0]}. For each holiday, provide its name and date in YYYY-MM-DD format.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        holidays: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    date: { type: Type.STRING, description: 'Date in YYYY-MM-DD format.' }
+                                },
+                                required: ['name', 'date']
+                            }
+                        }
+                    },
+                    required: ['holidays']
+                }
+            }
+        });
+
+        const holidayData = JSON.parse(response.text);
+        res.json(holidayData);
+    } catch (error) {
+        console.error("Gemini Holiday Suggestion Error:", error);
+        res.status(500).json({ error: 'Failed to generate holiday suggestions.' });
+    }
+};
+
 // Helper function to calculate age from a YYYY-MM-DD birthday string
 function calculateAge(birthdayString) {
     if (!birthdayString) return null;
@@ -310,5 +351,6 @@ module.exports = {
     sendMessageToTutor: asyncMiddleware(sendMessageToTutor),
     generateFinalQuiz: asyncMiddleware(generateFinalQuiz),
     generateStory: asyncMiddleware(generateStory),
+    suggestHolidays: asyncMiddleware(suggestHolidays),
     isAiConfigured: () => !!ai,
 };

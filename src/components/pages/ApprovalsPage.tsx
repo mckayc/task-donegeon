@@ -38,6 +38,7 @@ const QuestApprovalTable: React.FC<{
                 <tr>
                     <th className="p-4 font-semibold">User</th>
                     <th className="p-4 font-semibold">Quest</th>
+                    <th className="p-4 font-semibold">Submitted At</th>
                     <th className="p-4 font-semibold">Time Taken</th>
                     <th className="p-4 font-semibold">User Note</th>
                     <th className="p-4 font-semibold w-1/4">Admin Note</th>
@@ -57,6 +58,7 @@ const QuestApprovalTable: React.FC<{
                                     </button>
                                 ) : 'Unknown Quest'}
                             </td>
+                            <td className="p-4 text-stone-400">{new Date(c.completedAt).toLocaleString()}</td>
                              <td className="p-4 text-stone-400 font-mono">
                                 {c.timerDurationSeconds ? formatDuration(c.timerDurationSeconds) : 'N/A'}
                             </td>

@@ -1,7 +1,6 @@
-
 # Task Donegeon
 
-**Version:** 0.5.57
+**Version:** 0.5.63
 
 ---
 
@@ -15,6 +14,19 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 3, 2025 (v0.5.63):**
+    -   **Grace Period Overhaul:** Renamed "Vacation Mode" to "Grace Period" across the UI. Administrators can now enable a global, indefinite Grace Period from the Settings page. Additionally, Grace Period events can now be set to recur weekly on specific days. An AI-powered "Suggest Holidays" feature has been added to the Manage Events page to quickly create grace periods for upcoming public holidays.
+
+-   **Week of October 3, 2025 (v0.5.62):**
+    -   **Setback Substitution:** Added a new quest option to allow time-based setbacks (e.g., for being late) to deduct value from alternate reward types if the user has an insufficient balance of the primary type. This only applies to rewards that share the same configured `baseValue`.
+
+-   **Week of October 3, 2025 (v0.5.61):**
+    -   **Approval Timestamps:** Added a "Submitted At" timestamp to all pending quest completions in the Approvals Queue to provide administrators with better context for reviewing tasks.
+
+-   **Week of October 2, 2025 (v0.5.60):**
+    -   **Approval Queue Sorting:** Implemented sorting on all tables in the Approvals Queue page, allowing admins to sort by user, quest, date, etc.
+    -   **Chronicles Undo Feature:** Added an "Undo" button for Donegeon Masters on approved quest completions in the Chronicles, allowing for the reversal of accidental approvals.
 
 -   **Week of August 1, 2026 (v0.5.57):**
     -   **Critical Build Fix:** Resolved a persistent TypeScript build error (`TS2308`) caused by a duplicate export of the `AdminAdjustmentType`. A previous attempt to fix this was insufficient. This update completely removes the redundant re-export from the Math Muncher game's type definitions, resolving the name clash in the main types barrel file and allowing the application to compile successfully.

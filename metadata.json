@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.58 - Math Muncher Polish",
-  "version": "0.5.58",
-  "description": "Adds Chronicle entries for rewards won in Math Muncher, improves the game's header UI, and updates the service worker.",
+  "name": "Task Donegeon 2.0 - 0.5.63 - Grace Period Enhancements",
+  "version": "0.5.63",
+  "description": "Renames 'Vacation Mode' to 'Grace Period' and adds recurrence, a global toggle, and AI-powered holiday suggestions.",
   "requestFramePermissions": [
     "camera"
   ],

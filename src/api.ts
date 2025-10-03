@@ -81,6 +81,7 @@ export const bulkUpdateQuestsAPI = (ids: string[], updates: BulkQuestUpdates) =>
 export const completeQuestAPI = (completionData: Omit<QuestCompletion, 'id'> & { aiTutorSessionLog?: any }) => apiRequest('POST', '/api/quests/complete', { completionData });
 export const approveQuestCompletionAPI = (id: string, approverId: string, note?: string) => apiRequest('POST', `/api/quests/approve/${id}`, { approverId, note });
 export const rejectQuestCompletionAPI = (id: string, rejecterId: string, note?: string) => apiRequest('POST', `/api/quests/reject/${id}`, { rejecterId, note });
+export const revertQuestCompletionAPI = (id: string, adminId: string) => apiRequest('POST', `/api/quests/revert-approval/${id}`, { adminId });
 export const markQuestAsTodoAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/mark-todo', { questId, userId });
 export const unmarkQuestAsTodoAPI = (questId: string, userId: string) => apiRequest('POST', '/api/quests/unmark-todo', { questId, userId });
 export const addQuestGroupAPI = (data: Omit<QuestGroup, 'id'> & { questIds?: string[] }) => apiRequest('POST', '/api/quest-groups', data);

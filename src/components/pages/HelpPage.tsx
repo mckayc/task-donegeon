@@ -69,6 +69,21 @@ const FunctionalSpecificationsContent: React.FC = () => (
                  </ul>
             </li>
         </ul>
+        <h3>Approvals Queue & Chronicles</h3>
+        <p>
+            The Approvals Queue and Chronicles pages have been enhanced to provide more context and control for administrators.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Sortable Tables:</strong> All tables in the Approvals Queue (Quests, Claims, Purchases, Trades) are now sortable. Click any column header to sort the data, making it easier to find specific items.
+            </li>
+            <li>
+                <strong>Timestamps:</strong> All pending items now display the exact time they were submitted. This helps administrators prioritize and understand the context of each request.
+            </li>
+            <li>
+                <strong>Undo Approvals:</strong> Donegeon Masters can now undo an accidental quest approval directly from the Chronicles page. This will revert the quest to "Rejected" status, remove any rewards granted, and log the reversal for a clear audit trail.
+            </li>
+        </ul>
         <h3>Shared / Kiosk Mode</h3>
         <p>
             Kiosk mode is designed for shared devices, like a family tablet. It provides a simplified interface focused on user switching and at-a-glance information.
@@ -284,6 +299,19 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 3, 2025 (v0.5.61)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Approval Timestamps:</strong> Added a "Submitted At" timestamp to all pending quest completions in the Approvals Queue to provide administrators with better context for reviewing tasks.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 2, 2025 (v0.5.60)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Approval Queue Sorting:</strong> Implemented sorting on all tables in the Approvals Queue page, allowing admins to sort by user, quest, date, etc.</li>
+                <li><strong>Chronicles Undo Feature:</strong> Added an "Undo" button for Donegeon Masters on approved quest completions in the Chronicles, allowing for the reversal of accidental approvals.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of July 18, 2026 (v0.5.55)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

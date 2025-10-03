@@ -69,6 +69,14 @@ const rejectQuestCompletion = async (req, res) => {
     res.json(result);
 };
 
+const revertQuestApproval = async (req, res) => {
+    const { id } = req.params;
+    const { adminId } = req.body;
+    const result = await questService.revertQuestCompletion(id, adminId);
+    if (!result) return res.status(404).json({ error: 'Completion not found or could not be reverted.' });
+    res.json(result);
+};
+
 const markQuestAsTodo = async (req, res) => {
     const { questId, userId } = req.body;
     const updatedQuest = await questService.markAsTodo(questId, userId);
@@ -148,6 +156,7 @@ module.exports = {
     completeQuest,
     approveQuestCompletion,
     rejectQuestCompletion,
+    revertQuestApproval,
     markQuestAsTodo,
     unmarkQuestAsTodo,
     completeCheckpoint,

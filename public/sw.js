@@ -1,5 +1,5 @@
-// v178
-const CACHE_NAME = 'task-donegeon-cache-v178';
+// v183
+const CACHE_NAME = 'task-donegeon-cache-v183';
 const urlsToCache = [
   '/',
   '/index.html',

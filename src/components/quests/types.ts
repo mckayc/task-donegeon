@@ -91,6 +91,7 @@ export interface Quest {
   rewards: RewardItem[];
   lateSetbacks: RewardItem[];
   incompleteSetbacks: RewardItem[];
+  allowSetbackSubstitution?: boolean;
   isActive: boolean;
   isOptional: boolean;
   assignedUserIds: string[];

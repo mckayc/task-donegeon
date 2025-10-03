@@ -1,3 +1,5 @@
+
+
 import { Role } from '../components/users/types';
 import { ConditionSet } from '../components/conditions/types';
 import { SystemState } from '../context/SystemContext';
@@ -116,6 +118,9 @@ export interface AppSettings {
         currencyExchangeFeePercent: number;
         xpExchangeFeePercent: number;
     };
+    gracePeriod: {
+        isGlobalGracePeriodActive: boolean;
+    };
     setbacks: {
         enabled: boolean;
         forgiveLate: boolean;
@@ -124,6 +129,8 @@ export interface AppSettings {
         requiresApproval: boolean;
         isOptional: boolean;
         isActive: boolean;
+        // FIX: Added missing 'allowSetbackSubstitution' property to questDefaults.
+        allowSetbackSubstitution?: boolean;
     };
     security: {
         requirePinForUsers: boolean;

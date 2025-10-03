@@ -5,7 +5,9 @@ export interface ScheduledEvent {
     startDate: string; // YYYY-MM-DD
     endDate: string;   // YYYY-MM-DD
     isAllDay: boolean;
-    eventType: 'Announcement' | 'BonusXP' | 'MarketSale' | 'Vacation';
+    // FIX: Added 'Vacation' to the eventType union to allow its use throughout the application.
+    eventType: 'Announcement' | 'BonusXP' | 'MarketSale' | 'Grace Period' | 'Vacation';
+    rrule?: string | null;
     guildId?: string;
     icon?: string;
     color?: string;

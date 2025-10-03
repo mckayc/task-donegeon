@@ -13,6 +13,8 @@ import AITutorReportDialog from '../tutors/AITutorReportDialog';
 
 const CHRONICLE_EVENT_TYPES = [
     ChronicleEventType.QuestCompletion,
+    ChronicleEventType.QuestIncomplete,
+    ChronicleEventType.QuestLate,
     ChronicleEventType.Checkpoint,
     ChronicleEventType.QuestClaimed,
     ChronicleEventType.QuestClaimApproved,

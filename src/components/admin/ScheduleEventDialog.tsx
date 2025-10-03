@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
@@ -6,11 +7,15 @@ import EmojiPicker from '../user-interface/EmojiPicker';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
+import { RRule } from 'rrule';
 
 interface ScheduleEventDialogProps {
   event: ScheduledEvent | null;
   onClose: () => void;
 }
+
+const WEEKDAYS = [{label: 'S', value: 'SU'}, {label: 'M', value: 'MO'}, {label: 'T', value: 'TU'}, {label: 'W', value: 'WE'}, {label: 'T', value: 'TH'}, {label: 'F', value: 'FR'}, {label: 'S', value: 'SA'}];
+
 
 const colorPalette = [
     '4 89% 51%',   // Red
@@ -33,13 +38,27 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
     const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>({
         title: '', description: '', startDate: '', endDate: '', isAllDay: true, eventType: 'Announcement', guildId: '',
         icon: '🎉', color: colorPalette[7], // Default to blue
-        modifiers: {}
+        modifiers: {}, rrule: null
     });
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+    const [recurrenceType, setRecurrenceType] = useState('NONE');
+    const [weeklyDays, setWeeklyDays] = useState<string[]>([]);
 
     useEffect(() => {
         if (event) {
-            setFormData({ ...event });
+            const { id, ...eventData } = event; // Exclude ID when setting form data
+            setFormData({ ...eventData });
+            if (event.rrule) {
+                const rule = RRule.fromString(event.rrule);
+                const options = rule.options;
+                if (options.freq === RRule.WEEKLY) {
+                    setRecurrenceType('WEEKLY');
+                    setWeeklyDays(options.byweekday.map(day => WEEKDAYS[day].value));
+                }
+            } else {
+                setRecurrenceType('NONE');
+                setWeeklyDays([]);
+            }
         } else {
             // Default new event to today
             const today = new Date().toISOString().split('T')[0];
@@ -58,10 +77,31 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
             modifiers: { ...prev.modifiers, [field]: value }
         }));
     };
+    
+    const handleRecurrenceChange = (newType: string) => {
+        setRecurrenceType(newType);
+        if (newType === 'NONE') {
+            setFormData(p => ({ ...p, rrule: null }));
+        } else if (newType === 'WEEKLY') {
+            const rule = new RRule({ freq: RRule.WEEKLY, byweekday: [] });
+            setFormData(p => ({ ...p, rrule: rule.toString() }));
+        }
+    };
+    
+    const handleWeeklyDayToggle = (dayValue: string) => {
+        const newWeeklyDays = weeklyDays.includes(dayValue)
+            ? weeklyDays.filter(d => d !== dayValue)
+            : [...weeklyDays, dayValue];
+        
+        setWeeklyDays(newWeeklyDays);
+        const dayIndices = newWeeklyDays.map(d => WEEKDAYS.findIndex(wd => wd.value === d));
+        const rule = new RRule({ freq: RRule.WEEKLY, byweekday: dayIndices });
+        setFormData(p => ({...p, rrule: rule.toString()}));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (event) {
+        if (event && event.id) {
             updateScheduledEvent({ ...formData, id: event.id });
         } else {
             addScheduledEvent(formData);
@@ -71,12 +111,12 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
 
     const xpRewardTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
     
-    const showModifiers = formData.eventType !== 'Announcement' && formData.eventType !== 'Vacation';
+    const showModifiers = formData.eventType !== 'Announcement' && formData.eventType !== 'Grace Period' && formData.eventType !== 'Vacation';
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col">
-                <h2 className="text-3xl font-medieval text-accent p-8">{event ? 'Edit Event' : 'Schedule New Event'}</h2>
+                <h2 className="text-3xl font-medieval text-accent p-8">{event && event.id ? 'Edit Event' : 'Schedule New Event'}</h2>
                 <form id="event-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <Input label="Title" name="title" value={formData.title} onChange={handleChange} required />
                     <Input as="textarea" label="Description" name="description" value={formData.description} onChange={handleChange} />
@@ -96,15 +136,39 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                     </div>
                      <Input as="select" label="Event Type" name="eventType" value={formData.eventType} onChange={handleChange}>
                         <option value="Announcement">Announcement</option>
+                        <option value="Grace Period">Grace Period</option>
+                        {/* FIX: Add 'Vacation' as an option for event types. */}
+                        <option value="Vacation">Vacation</option>
                         <option value="BonusXP">Bonus XP</option>
                         <option value="MarketSale">Market Sale</option>
-                        <option value="Vacation">Vacation</option>
                     </Input>
 
                     <div className="grid grid-cols-2 gap-4">
                         <Input label="Start Date" name="startDate" type="date" value={formData.startDate} onChange={handleChange} required />
                         <Input label="End Date" name="endDate" type="date" value={formData.endDate} onChange={handleChange} required />
                     </div>
+                    
+                    {(formData.eventType === 'Grace Period' || formData.eventType === 'Vacation') && (
+                        <div className="p-4 bg-stone-900/50 rounded-lg">
+                            <h4 className="font-semibold text-stone-200 mb-2">Recurrence</h4>
+                             <Input as="select" label="Repeats" value={recurrenceType} onChange={e => handleRecurrenceChange(e.target.value)}>
+                                <option value="NONE">Does not repeat</option>
+                                <option value="WEEKLY">Weekly</option>
+                            </Input>
+                            {recurrenceType === 'WEEKLY' && (
+                                <div className="mt-2">
+                                    <label className="block text-sm font-medium text-stone-300 mb-1">On Days</label>
+                                    <div className="flex justify-center gap-1">
+                                        {WEEKDAYS.map(day => (
+                                            <button key={day.value} type="button" onClick={() => handleWeeklyDayToggle(day.value)} className={`w-10 h-10 rounded-full font-bold transition-colors ${weeklyDays.includes(day.value) ? 'bg-emerald-600 text-white' : 'bg-stone-700 text-stone-300 hover:bg-stone-600'}`}>
+                                                {day.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div>
                         <label className="block text-sm font-medium text-stone-300 mb-1">Banner Color</label>
@@ -155,13 +219,13 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                 </form>
                 <div className="p-6 border-t border-stone-700/60 flex justify-between items-center">
                     <div>
-                        {event && (
+                        {event && event.id && (
                              <Button variant="destructive" onClick={() => { if(event) deleteScheduledEvent(event.id); onClose(); }}>Delete</Button>
                         )}
                     </div>
                     <div className="flex gap-4">
                         <Button variant="secondary" onClick={onClose}>Cancel</Button>
-                        <Button type="submit" form="event-form">{event ? 'Save Changes' : 'Schedule Event'}</Button>
+                        <Button type="submit" form="event-form">{event && event.id ? 'Save Changes' : 'Schedule Event'}</Button>
                     </div>
                 </div>
             </div>

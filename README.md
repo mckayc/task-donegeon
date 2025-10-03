@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.63
+**Version:** 0.5.64
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 3, 2025 (v0.5.64):**
+    -   **Chronicle Logging for Incomplete Quests:** Implemented new "Quest Incomplete" and "Quest Late" event types in the Chronicles. These events are now logged automatically whenever a user fails to complete a quest by its deadline or submits it late, providing a clearer history of setbacks.
 
 -   **Week of October 3, 2025 (v0.5.63):**
     -   **Grace Period Overhaul:** Renamed "Vacation Mode" to "Grace Period" across the UI. Administrators can now enable a global, indefinite Grace Period from the Settings page. Additionally, Grace Period events can now be set to recur weekly on specific days. An AI-powered "Suggest Holidays" feature has been added to the Manage Events page to quickly create grace periods for upcoming public holidays.

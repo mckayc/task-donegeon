@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ScheduledEvent } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -9,7 +10,9 @@ import { useSystemState, useSystemDispatch } from '../../../context/SystemContex
 import EventList from '../../events/EventList';
 import { useUIState } from '../../../context/UIContext';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
-import { EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { EllipsisVerticalIcon, SparklesIcon } from '../../user-interface/Icons';
+import { suggestHolidaysAPI } from '../../../api';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 
 const EventCard: React.FC<{
     event: ScheduledEvent;
@@ -67,12 +70,15 @@ const EventCard: React.FC<{
 const ManageEventsPage: React.FC = () => {
     const { settings, scheduledEvents } = useSystemState();
     const { deleteScheduledEvent } = useSystemDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const { isMobileView } = useUIState();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
     const [deletingEvent, setDeletingEvent] = useState<ScheduledEvent | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const [holidaySuggestions, setHolidaySuggestions] = useState<{name: string; date: string}[] | null>(null);
     
     const { upcoming, past } = useMemo(() => {
         const todayYMD = toYMD(new Date());
@@ -95,8 +101,8 @@ const ManageEventsPage: React.FC = () => {
     const eventIds = useMemo(() => scheduledEvents.map(e => e.id), [scheduledEvents]);
     const handleCheckboxClick = useShiftSelect(eventIds, selectedEvents, setSelectedEvents);
 
-    const handleCreate = () => {
-        setEditingEvent(null);
+    const handleCreate = (initialData: Partial<ScheduledEvent> = {}) => {
+        setEditingEvent({ ...initialData, id: '' } as ScheduledEvent); // Hack to pass partial data
         setIsDialogOpen(true);
     };
 
@@ -116,11 +122,41 @@ const ManageEventsPage: React.FC = () => {
         setDeletingEvent(null);
     };
 
+    const handleSuggestHolidays = async () => {
+        setIsSuggesting(true);
+        try {
+            const result = await suggestHolidaysAPI();
+            setHolidaySuggestions(result.holidays);
+        } catch (error) {
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Could not fetch holiday suggestions.' });
+        } finally {
+            setIsSuggesting(false);
+        }
+    };
+
+    const handleCreateFromSuggestion = (holiday: {name: string, date: string}) => {
+        handleCreate({
+            title: holiday.name,
+            startDate: holiday.date,
+            endDate: holiday.date,
+            eventType: 'Grace Period'
+        });
+        setHolidaySuggestions(null);
+    };
+
     return (
         <div className="space-y-6">
             <Card
                 title={settings.terminology.link_manage_events}
-                headerAction={<Button onClick={handleCreate}>Schedule New Event</Button>}
+                headerAction={
+                    <div className="flex gap-2">
+                        <Button onClick={handleSuggestHolidays} size="sm" variant="secondary" disabled={isSuggesting}>
+                            <SparklesIcon className="w-4 h-4 mr-2" />
+                            {isSuggesting ? 'Suggesting...' : 'Suggest Holidays with AI'}
+                        </Button>
+                        <Button onClick={() => handleCreate()} size="sm">Schedule New Event</Button>
+                    </div>
+                }
             >
                 {isMobileView ? (
                     <div className="space-y-3">
@@ -146,6 +182,28 @@ const ManageEventsPage: React.FC = () => {
             </Card>
 
             {isDialogOpen && <ScheduleEventDialog event={editingEvent} onClose={() => setIsDialogOpen(false)} />}
+            
+            {holidaySuggestions && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-6 max-w-lg w-full">
+                        <h3 className="text-2xl font-medieval text-emerald-400 mb-4">Suggested Holidays</h3>
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                            {holidaySuggestions.map(holiday => (
+                                <div key={holiday.name} className="p-3 bg-stone-900/50 rounded-md flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold text-stone-200">{holiday.name}</p>
+                                        <p className="text-sm text-stone-400">{new Date(holiday.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    </div>
+                                    <Button size="sm" onClick={() => handleCreateFromSuggestion(holiday)}>Create Event</Button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-right mt-4">
+                             <Button variant="secondary" onClick={() => setHolidaySuggestions(null)}>Close</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             <ConfirmDialog
                 isOpen={!!deletingEvent}

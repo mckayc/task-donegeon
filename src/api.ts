@@ -153,3 +153,4 @@ export const deleteAppliedModifiersAPI = (ids: string[]) => apiRequest('DELETE',
 export const cloneUserAPI = (userId: string) => apiRequest('POST', `/api/users/clone/${userId}`);
 export const sendMessageAPI = (data: { senderId: string; recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => apiRequest('POST', '/api/chat/send', data);
 export const markMessagesAsReadAPI = (payload: { userId: string; partnerId?: string; guildId?: string }) => apiRequest('POST', '/api/chat/read', payload);
+export const suggestHolidaysAPI = () => apiRequest('POST', '/api/ai/suggest-holidays');

@@ -1,4 +1,5 @@
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -260,6 +261,16 @@ export const SettingsPage: React.FC = () => {
                             <ToggleSwitch enabled={formState.developerMode.enabled} setEnabled={(val: boolean) => handleSettingChange('developerMode', 'enabled', val)} label="Enable Developer Mode" />
                             <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val: boolean) => handleSettingChange('chat', 'enabled', val)} label="Enable Chat" />
                          </div>
+                    </div>
+                </CollapsibleSection>
+                <CollapsibleSection title="Grace Period">
+                    <div className="p-6 space-y-4">
+                        <ToggleSwitch
+                            enabled={formState.gracePeriod.isGlobalGracePeriodActive}
+                            setEnabled={(val: boolean) => handleSettingChange('gracePeriod', 'isGlobalGracePeriodActive', val)}
+                            label="Enable Global Grace Period"
+                        />
+                        <p className="text-sm text-stone-400">When enabled, all quest deadlines and time-based setbacks are paused indefinitely for all users.</p>
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Terminology">

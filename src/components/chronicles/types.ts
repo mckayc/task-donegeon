@@ -2,6 +2,8 @@ import { QuestType } from '../quests/types';
 
 export enum ChronicleEventType {
     QuestCompletion = 'QuestCompletion',
+    QuestIncomplete = 'QuestIncomplete',
+    QuestLate = 'QuestLate',
     QuestAssigned = 'QuestAssigned',
     QuestToDoChanged = 'QuestToDoChanged',
     Purchase = 'Purchase',

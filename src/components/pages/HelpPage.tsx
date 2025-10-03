@@ -1,5 +1,6 @@
 
 
+
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -82,6 +83,9 @@ const FunctionalSpecificationsContent: React.FC = () => (
             </li>
             <li>
                 <strong>Undo Approvals:</strong> Donegeon Masters can now undo an accidental quest approval directly from the Chronicles page. This will revert the quest to "Rejected" status, remove any rewards granted, and log the reversal for a clear audit trail.
+            </li>
+            <li>
+                <strong>Incomplete/Late Quest Logging:</strong> The system now logs specific "Quest Incomplete" and "Quest Late" events in the Chronicles whenever a setback is automatically applied. This provides a clearer audit trail than the generic "Trial" event used previously.
             </li>
         </ul>
         <h3>Shared / Kiosk Mode</h3>
@@ -300,6 +304,24 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 3, 2025 (v0.5.64)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Chronicle Logging for Incomplete Quests:</strong> Implemented new "Quest Incomplete" and "Quest Late" event types in the Chronicles. These events are now logged automatically whenever a user fails to complete a quest by its deadline or submits it late, providing a clearer history of setbacks.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 3, 2025 (v0.5.63)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Grace Period Overhaul:</strong> Renamed "Vacation Mode" to "Grace Period." Admins can now enable a global Grace Period from Settings, set recurring weekly Grace Periods (e.g., weekends), and get AI-powered suggestions for upcoming holidays on the Manage Events page.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 3, 2025 (v0.5.62)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Setback Substitution:</strong> Added an option on quests with time-based setbacks to allow the system to automatically substitute other reward types of equal value if a user has an insufficient balance of the primary penalty type.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 3, 2025 (v0.5.61)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Approval Timestamps:</strong> Added a "Submitted At" timestamp to all pending quest completions in the Approvals Queue to provide administrators with better context for reviewing tasks.</li>
@@ -366,7 +388,7 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Minigame Bonanza:</strong> A major update to the Arcade!
                     <ul className="list-disc list-inside pl-6 mt-2">
-                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time you play!</li>
+                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A brand new maze game where you must find the exit while being hunted by a minotaur. The maze is different every time!</li>
                         <li><strong>Arcade UI Overhaul:</strong> Game cards now have a primary "Play" button that clearly shows the cost in Game Tokens. Under-construction games are now disabled to prevent accidental spending.</li>
                         <li><strong>Gemstone Mines Visual Upgrade:</strong> The classic match-3 game now uses vibrant fruit emojis instead of plain colors and features a satisfying particle burst effect for matches.</li>
                     </ul>

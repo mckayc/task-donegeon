@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity, ScheduledEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
@@ -427,6 +428,134 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
     });
 };
 
+const revertQuestCompletion = async (completionId, adminId) => {
+    return await dataSource.transaction(async manager => {
+        const completionRepo = manager.getRepository(QuestCompletionEntity);
+        const userRepo = manager.getRepository(UserEntity);
+        const questRepo = manager.getRepository(QuestEntity);
+        const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
+        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const notificationRepo = manager.getRepository(SystemNotificationEntity);
+        const userTrophyRepo = manager.getRepository(UserTrophyEntity);
+
+        const completion = await completionRepo.findOne({
+            where: { id: completionId },
+            relations: ['user', 'quest']
+        });
+        
+        if (!completion || completion.status !== 'Approved') {
+            console.error(`[Revert Service] Completion not found or not approved. ID: ${completionId}, Status: ${completion?.status}`);
+            return null;
+        }
+
+        const admin = await userRepo.findOneBy({ id: adminId });
+        const user = completion.user;
+        const quest = completion.quest;
+        if (!admin || !user || !quest) {
+            console.error(`[Revert Service] Admin, user, or quest not found for completion ${completionId}`);
+            return null;
+        }
+
+        const actedAt = new Date().toISOString();
+        completion.status = 'Rejected';
+        completion.actedById = adminId;
+        completion.actedAt = actedAt;
+        completion.adminNote = (completion.adminNote ? completion.adminNote + '\n' : '') + `Reverted by ${admin.gameName} on ${new Date().toLocaleDateString()}.`;
+        const updatedCompletion = await completionRepo.save(updateTimestamps(completion));
+
+        // Figure out which rewards were granted for this specific completion
+        const allRewardsToRevert = [];
+        if (quest.type === 'Journey' && completion.checkpointId) {
+             const checkpoint = (quest.checkpoints || []).find(cp => cp.id === completion.checkpointId);
+             if (checkpoint) {
+                 allRewardsToRevert.push(...(checkpoint.rewards || []));
+             }
+             const approvedCount = await manager.count(QuestCompletionEntity, { where: { quest: { id: quest.id }, user: { id: user.id }, status: 'Approved' } });
+             const totalCheckpoints = quest.checkpoints?.length || 0;
+             // If the number of approved checkpoints now is one less than the total, it means the one we just reverted was the final one.
+             if (totalCheckpoints > 0 && (approvedCount + 1) === totalCheckpoints) {
+                 allRewardsToRevert.push(...(quest.rewards || []));
+             }
+        } else {
+            allRewardsToRevert.push(...(quest.rewards || []));
+        }
+
+        // Revert rewards
+        const rewardTypes = await rewardTypeRepo.find();
+        const balances = quest.guildId && user.guildBalances[quest.guildId] ? user.guildBalances[quest.guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+        
+        allRewardsToRevert.forEach(reward => {
+            const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+            if (rewardDef) {
+                const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                target[reward.rewardTypeId] = Math.max(0, (target[reward.rewardTypeId] || 0) - reward.amount);
+            }
+        });
+
+        if (quest.guildId) {
+            user.guildBalances[quest.guildId] = balances;
+        }
+        const userUpdatePayload = quest.guildId ? { guildBalances: user.guildBalances } : { personalPurse: balances.purse, personalExperience: balances.experience };
+        const updatedUser = await userRepo.save(updateTimestamps({ ...user, ...userUpdatePayload }));
+
+        // Revert trophy if one was awarded
+        if (quest.type === 'Journey' && completion.checkpointId) {
+             const checkpoint = (quest.checkpoints || []).find(cp => cp.id === completion.checkpointId);
+             if (checkpoint?.trophyId) {
+                 await userTrophyRepo.delete({
+                     userId: user.id,
+                     trophyId: checkpoint.trophyId,
+                     guildId: quest.guildId || undefined,
+                 });
+             }
+        }
+        
+        // Log to chronicles
+        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+        const rewardsText = allRewardsToRevert.map(r => `-${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+
+        const eventData = {
+            id: `chron-revert-${completion.id}`,
+            originalId: completion.id,
+            date: actedAt,
+            type: 'QuestCompletion',
+            title: `Reverted "${quest.title}"`,
+            status: 'Reverted',
+            color: '#f87171',
+            userId: user.id,
+            userName: user.gameName,
+            actorId: adminId,
+            actorName: admin.gameName,
+            guildId: quest.guildId || undefined,
+            rewardsText: rewardsText || undefined,
+            icon: quest.icon,
+            iconType: quest.iconType,
+            imageUrl: quest.imageUrl,
+        };
+        await manager.save(ChronicleEventEntity, updateTimestamps(chronicleRepo.create(eventData), true));
+
+        // Create notification
+        const notification = manager.create(SystemNotificationEntity, {
+            id: `sysnotif-revert-${completion.id}`,
+            type: 'QuestRejected',
+            message: `${admin.gameName} reverted your completion of "${quest.title}". Your rewards have been adjusted.`,
+            recipientUserIds: [user.id],
+            readByUserIds: [],
+            senderId: adminId,
+            timestamp: new Date().toISOString(),
+            link: 'Chronicles',
+            icon: quest.icon,
+            iconType: quest.iconType,
+            imageUrl: quest.imageUrl,
+            guildId: quest.guildId || undefined,
+        });
+        await manager.save(updateTimestamps(notification, true));
+
+        updateEmitter.emit('update');
+        return { updatedUser, updatedCompletion };
+    });
+};
+
 const markAsTodo = async (questId, userId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
@@ -729,7 +858,23 @@ const updateReadingProgress = async (questId, userId, progressData) => {
 
 
 module.exports = {
-    getAll, create, clone, update, deleteMany, bulkUpdateStatus, bulkUpdate, complete,
-    approveQuestCompletion, rejectQuestCompletion, markAsTodo, unmarkAsTodo, completeCheckpoint,
-    claimQuest, unclaimQuest, approveClaim, rejectClaim, updateReadingProgress,
+    getAll,
+    create,
+    clone,
+    update,
+    deleteMany,
+    bulkUpdateStatus,
+    bulkUpdate,
+    complete,
+    approveQuestCompletion,
+    rejectQuestCompletion,
+    revertQuestCompletion,
+    markAsTodo,
+    unmarkAsTodo,
+    completeCheckpoint,
+    claimQuest,
+    unclaimQuest,
+    approveClaim,
+    rejectClaim,
+    updateReadingProgress,
 };

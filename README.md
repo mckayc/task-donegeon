@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.69
+**Version:** 0.5.70
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 10, 2025 (v0.5.70):**
+    -   **Universal Undo Fix:** Corrected a logic error where the "Undo" button would not appear for auto-approved quests with an "Awarded" status. The feature now correctly works for all completed quest and purchase events in the Chronicles, regardless of their completion status, providing full administrative control.
 
 -   **Week of October 10, 2025 (v0.5.69):**
     -   **Expanded Undo Functionality:** Enhanced the administrative "Undo" feature on the Chronicles page. Donegeon Masters can now not only revert quest completions but also undo completed item purchases. This action reverses the transaction by refunding the currency and removing the item from the user's inventory, ensuring a complete and auditable correction process.

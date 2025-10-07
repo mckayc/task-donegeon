@@ -79,7 +79,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Timestamps:</strong> All pending items now display the exact time they were submitted. This helps administrators prioritize and understand the context of each request.
             </li>
             <li>
-                <strong>Undo Approvals:</strong> Donegeon Masters can now undo an accidental quest or item purchase approval directly from the Chronicles page. This will revert the item to "Rejected" status, remove any rewards that were granted (or refund the cost), and log the reversal for a clear audit trail.
+                <strong>Undo Completions:</strong> Donegeon Masters can now undo any completed quest (whether auto-approved with an 'Awarded' status or manually 'Approved') or a completed item purchase directly from the Chronicles page. This action reverts the completion status (typically to "Rejected"), reverses any rewards that were granted (or refunds the cost of a purchase), and logs the reversal for a clear audit trail.
             </li>
             <li>
                 <strong>Incomplete/Late Quest Logging:</strong> The system now logs specific "Quest Incomplete" and "Quest Late" events in the Chronicles whenever a setback is automatically applied. This provides a clearer audit trail than the generic "Trial" event used previously.

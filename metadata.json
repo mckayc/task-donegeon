@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.69 - Undo Purchases",
-  "version": "0.5.69",
-  "description": "Expands the 'Undo' feature on the Chronicles page to work for completed purchases, allowing administrators to revert transactions.",
+  "name": "Task Donegeon 2.0 - 0.5.70 - Universal Undo",
+  "version": "0.5.70",
+  "description": "Extends the 'Undo' feature to cover all completion states, including 'Awarded' for auto-approved quests, providing full administrative control in the Chronicles.",
   "requestFramePermissions": [
     "camera"
   ],

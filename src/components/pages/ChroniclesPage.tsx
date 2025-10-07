@@ -269,7 +269,7 @@ const ChroniclesPage: React.FC = () => {
                         <ul className="space-y-4">
                             {events.map(activity => {
                                 const canViewReport = (currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && activity.type === ChronicleEventType.QuestCompletion && isAiTutorCompletion(activity.originalId);
-                                const canUndoQuest = currentUser.role === Role.DonegeonMaster && activity.type === ChronicleEventType.QuestCompletion && activity.status === QuestCompletionStatus.Approved;
+                                const canUndoQuest = currentUser.role === Role.DonegeonMaster && activity.type === ChronicleEventType.QuestCompletion && (activity.status === QuestCompletionStatus.Approved || activity.status === 'Awarded');
                                 const canUndoPurchase = currentUser.role === Role.DonegeonMaster && activity.type === ChronicleEventType.Purchase && activity.status === 'Completed';
 
                                 const itemClass = `grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-3 bg-stone-800/60 rounded-lg border-l-4 transition-colors ${canViewReport ? 'cursor-pointer hover:bg-stone-700/50' : ''}`;

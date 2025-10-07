@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.72
+**Version:** 0.5.73
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 13, 2025 (v0.5.73):**
+    -   **User Deletion Logging Fix:** Fixed a server crash (`NOT NULL constraint failed: chronicle_event.title`) that occurred when deleting a user. The issue was caused by an incorrect logging function being called, which failed to provide a title for the chronicle entry. The deletion logic now uses the correct asset logging action, ensuring deletions are properly recorded.
 
 -   **Week of October 13, 2025 (v0.5.72):**
     -   **Cloned User Deletion Fix:** Fixed a critical server error that occurred when attempting to delete a newly cloned user. The backend deletion logic has been updated to correctly handle relational data (like guild memberships), preventing database constraint violations and ensuring users can be deleted cleanly.
@@ -40,4 +43,4 @@ Task Donegeon is a gamified task and chore management application designed for f
     -   **Calendar Completion Logic Fix:** Fixed a critical bug on the Calendar page where users could complete quests on days they were not scheduled or available (e.g., completing a Monday-only Duty on a Tuesday, or completing a quest for a future date). The "Complete" button is now correctly disabled and provides clear feedback in these scenarios.
 
 -   **Week of October 3, 2025 (v0.5.64):**
-    -   **Chronicle Logging for Incomplete Quests:
+    -   **Chronicle Logging for Incomplete Quests:---

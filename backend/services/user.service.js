@@ -1,18 +1,12 @@
 
 const userRepository = require('../repositories/user.repository');
-const guildRepository = require('../repositories/guild.repository');
-const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
-const trophyRepository = require('../repositories/trophy.repository');
-const { updateEmitter } = require('../utils/updateEmitter');
-const { logGeneralAdminAction, updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
-const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserEntity, UserTrophyEntity, PendingRewardEntity } = require('../entities');
+const { UserEntity, QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserTrophyEntity, PendingRewardEntity } = require('../entities');
 const { In } = require("typeorm");
+const { updateEmitter } = require('../utils/updateEmitter');
+const { logGeneralAdminAction, logAdminAssetAction, updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
+const adminAdjustmentRepository = require('../repositories/adminAdjustment.repository');
 
-/**
- * A centralized function to grant rewards and trophies to a user. This is the single source of truth.
- * This function must be called from within a transaction.
- */
 const grantRewards = async (manager, details) => {
     const { 
         userId, rewards = [], setbacks = [], trophyId, actorId,
@@ -24,7 +18,6 @@ const grantRewards = async (manager, details) => {
     const user = await userRepo.findOneBy({ id: userId });
     if (!user) throw new Error(`User with ID ${userId} not found during reward grant.`);
 
-    // --- Balance Initialization and Update ---
     user.personalPurse = user.personalPurse || {};
     user.personalExperience = user.personalExperience || {};
     const balances = { purse: user.personalPurse, experience: user.personalExperience };
@@ -50,7 +43,6 @@ const grantRewards = async (manager, details) => {
         }
     });
 
-    // --- Manual Trophy Award ---
     let manuallyAwardedTrophy = null;
     if (trophyId) {
         const trophy = await manager.getRepository(TrophyEntity).findOneBy({ id: trophyId });
@@ -58,7 +50,7 @@ const grantRewards = async (manager, details) => {
             const userTrophyRepo = manager.getRepository(UserTrophyEntity);
             const newTrophyData = {
                 id: `usertrophy-${Date.now()}-${Math.random()}`,
-                userId, trophyId, awardedAt: new Date().toISOString(), guildId: undefined // Personal scope
+                userId, trophyId, awardedAt: new Date().toISOString(), guildId: undefined
             };
             manuallyAwardedTrophy = await userTrophyRepo.save(updateTimestamps(userTrophyRepo.create(newTrophyData), true));
             rewardsText += ` 🏆 ${trophy.name}`;
@@ -69,7 +61,6 @@ const grantRewards = async (manager, details) => {
     
     const actor = await userRepo.findOneBy({ id: actorId });
 
-    // --- Chronicle Entry ---
     const chronicleRepo = manager.getRepository(ChronicleEventEntity);
     const eventData = {
         id: `chron-${chronicleType.toLowerCase()}-${userId}-${Date.now()}`,
@@ -85,12 +76,11 @@ const grantRewards = async (manager, details) => {
         userName: user.gameName,
         actorId,
         actorName: actor?.gameName || 'System',
-        guildId: undefined, // Personal only
+        guildId: undefined, // Personal only for now
         rewardsText: rewardsText.trim() || undefined,
     };
     await manager.save(chronicleRepo.create(updateTimestamps(eventData, true)));
     
-    // --- Automatic Trophy Check ---
     const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, userId, undefined);
     if (manuallyAwardedTrophy) newUserTrophies.push(manuallyAwardedTrophy);
 
@@ -121,8 +111,10 @@ const create = async (userData, actorId) => {
             await manager.save(updateTimestamps(defaultGuild));
         }
 
-        if (actorId) {
+        if (actorId && actorId !== 'system') {
             await logGeneralAdminAction(manager, { actorId, title: 'Created User', note: `User: ${savedUser.gameName}`, icon: '👤', color: '#84cc16' });
+        } else if (actorId === 'system') {
+             await logGeneralAdminAction(manager, { actorId, title: 'Cloned User', note: `New user: ${savedUser.gameName}`, icon: '👤', color: '#84cc16' });
         }
     });
 
@@ -130,17 +122,14 @@ const create = async (userData, actorId) => {
     return savedUser;
 };
 
-const clone = async (id) => {
+const clone = async (id, actorId) => {
     const userToClone = await userRepository.findById(id);
     if (!userToClone) return null;
-
     const { id: oldId, username, email, gameName, profilePictureUrl, ...restOfUser } = userToClone;
-    
     const timestamp = Date.now().toString().slice(-5);
     const newUsername = `${username}_clone_${timestamp}`;
     const newEmail = `clone_${timestamp}_${email}`;
     const newGameName = `${gameName} (Clone)`;
-
     const newUserData = {
         ...restOfUser,
         username: newUsername,
@@ -153,27 +142,22 @@ const clone = async (id) => {
         ownedThemes: ['emerald', 'rose', 'sky'],
         hasBeenOnboarded: false,
     };
-    
-    return create(newUserData, 'system');
+    return create(newUserData, actorId);
 };
 
 const update = async (id, userData) => {
-    // Add conflict check for username/email
     if (userData.username) {
         const existing = await userRepository.findByUsername(userData.username);
         if (existing && existing.id !== id) {
-            console.warn(`[Conflict] Update for user ${id} failed. Username '${userData.username}' is taken.`);
-            return null; // Return null on conflict
+            return null;
         }
     }
     if (userData.email) {
         const existing = await userRepository.findByEmail(userData.email);
         if (existing && existing.id !== id) {
-            console.warn(`[Conflict] Update for user ${id} failed. Email '${userData.email}' is taken.`);
-            return null; // Return null on conflict
+            return null;
         }
     }
-
     const result = await userRepository.update(id, userData);
     if (result) {
         updateEmitter.emit('update');
@@ -188,7 +172,7 @@ const deleteMany = async (ids, actorId) => {
         
         if (usersToRemove.length > 0) {
             await userRepo.remove(usersToRemove);
-            await logGeneralAdminAction(manager, { actorId, actionType: 'delete', assetType: 'User', assetCount: ids.length });
+            await logAdminAssetAction(manager, { actorId, actionType: 'delete', assetType: 'User', assetCount: ids.length });
         }
     });
     updateEmitter.emit('update');
@@ -197,9 +181,7 @@ const deleteMany = async (ids, actorId) => {
 const adjust = async (adjustmentData) => {
     return await dataSource.transaction(async manager => {
         const { userId, adjusterId, reason, rewards, setbacks, trophyId } = adjustmentData;
-        
         const isPrize = reason?.startsWith('Reward from');
-
         const grantDetails = {
             userId,
             rewards,
@@ -212,14 +194,29 @@ const adjust = async (adjustmentData) => {
             chronicleIcon: isPrize ? '🏆' : '⚖️',
             chronicleColor: isPrize ? '#facc15' : '#a855f7'
         };
-
         const { updatedUser, newUserTrophies, newNotifications } = await grantRewards(manager, grantDetails);
-        
         const newAdjustment = await adminAdjustmentRepository.create({ ...adjustmentData, adjustedAt: new Date().toISOString() });
-        
         updateEmitter.emit('update');
         return { updatedUser, newAdjustment, newUserTrophies, newNotifications };
     });
+};
+
+const getPendingItems = async (userId) => {
+    const questCompletions = await dataSource.getRepository(QuestCompletionEntity).find({
+        where: { user: { id: userId }, status: 'Pending' },
+        relations: ['quest'],
+        order: { completedAt: 'DESC' }
+    });
+    
+    const purchaseRequests = await dataSource.getRepository(PurchaseRequestEntity).find({
+        where: { userId, status: 'Pending' },
+        order: { requestedAt: 'DESC' }
+    });
+
+    return {
+        quests: questCompletions.map(c => ({ id: c.id, title: c.quest.title, submittedAt: c.completedAt, questId: c.quest.id })),
+        purchases: purchaseRequests.map(p => ({ id: p.id, title: p.assetDetails.name, submittedAt: p.requestedAt })),
+    };
 };
 
 const generateRewardToken = async (details) => {
@@ -227,9 +224,7 @@ const generateRewardToken = async (details) => {
     return await dataSource.transaction(async manager => {
         const user = await manager.findOneBy(UserEntity, { id: userId });
         if (!user) throw new Error('User not found.');
-
         const token = `rew_tok_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
         const pendingRewardRepo = manager.getRepository(PendingRewardEntity);
         const newPendingReward = pendingRewardRepo.create({
             id: token,
@@ -267,32 +262,11 @@ const claimRewardToken = async (token) => {
         
         pendingReward.status = 'claimed';
         await pendingRewardRepo.save(updateTimestamps(pendingReward));
-
-        // Let the normal server-sent event handle the data update
         updateEmitter.emit('update');
-
         return grantResult;
     });
 };
 
-
-const getPendingItems = async (userId) => {
-    const questCompletions = await dataSource.getRepository(QuestCompletionEntity).find({
-        where: { user: { id: userId }, status: 'Pending' },
-        relations: ['quest'],
-        order: { completedAt: 'DESC' }
-    });
-    
-    const purchaseRequests = await dataSource.getRepository(PurchaseRequestEntity).find({
-        where: { userId, status: 'Pending' },
-        order: { requestedAt: 'DESC' }
-    });
-
-    return {
-        quests: questCompletions.map(c => ({ id: c.id, title: c.quest.title, submittedAt: c.completedAt, questId: c.quest.id })),
-        purchases: purchaseRequests.map(p => ({ id: p.id, title: p.assetDetails.name, submittedAt: p.requestedAt })),
-    };
-};
 
 module.exports = {
     getAll,

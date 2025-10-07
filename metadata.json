@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.71 - Undo Fix",
-  "version": "0.5.71",
-  "description": "Fixes a server error when undoing a completed quest from the Chronicles page by adding more robust error handling to the backend controller.",
+  "name": "Task Donegeon 2.0 - 0.5.72 - Cloned User Deletion Fix",
+  "version": "0.5.72",
+  "description": "Fixes a server error when deleting a cloned user by changing the deletion logic to correctly handle database relations.",
   "requestFramePermissions": [
     "camera"
   ],

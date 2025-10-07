@@ -7,6 +7,7 @@ const { updateEmitter } = require('../utils/updateEmitter');
 const { logGeneralAdminAction, updateTimestamps, checkAndAwardTrophies } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
 const { QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserEntity, UserTrophyEntity, PendingRewardEntity } = require('../entities');
+const { In } = require("typeorm");
 
 /**
  * A centralized function to grant rewards and trophies to a user. This is the single source of truth.
@@ -182,8 +183,13 @@ const update = async (id, userData) => {
 
 const deleteMany = async (ids, actorId) => {
     await dataSource.transaction(async manager => {
-        await manager.getRepository('User').delete(ids);
-        await logGeneralAdminAction(manager, { actorId, actionType: 'delete', assetType: 'User', assetCount: ids.length });
+        const userRepo = manager.getRepository(UserEntity);
+        const usersToRemove = await userRepo.findBy({ id: In(ids) });
+        
+        if (usersToRemove.length > 0) {
+            await userRepo.remove(usersToRemove);
+            await logGeneralAdminAction(manager, { actorId, actionType: 'delete', assetType: 'User', assetCount: ids.length });
+        }
     });
     updateEmitter.emit('update');
 };

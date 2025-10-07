@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.71
+**Version:** 0.5.72
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 13, 2025 (v0.5.72):**
+    -   **Cloned User Deletion Fix:** Fixed a critical server error that occurred when attempting to delete a newly cloned user. The backend deletion logic has been updated to correctly handle relational data (like guild memberships), preventing database constraint violations and ensuring users can be deleted cleanly.
 
 -   **Week of October 10, 2025 (v0.5.71):**
     -   **Undo Quest Fix:** Fixed a critical server error that occurred when a Donegeon Master tried to undo a quest completion from the Chronicles page. The backend controller now has improved error handling to manage the complex process of reverting rewards, ensuring the feature works reliably.

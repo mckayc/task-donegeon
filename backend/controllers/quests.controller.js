@@ -72,9 +72,15 @@ const rejectQuestCompletion = async (req, res) => {
 const revertQuestApproval = async (req, res) => {
     const { id } = req.params;
     const { adminId } = req.body;
-    const result = await questService.revertQuestCompletion(id, adminId);
-    if (!result) return res.status(404).json({ error: 'Completion not found or could not be reverted.' });
-    res.json(result);
+    try {
+        const result = await questService.revertQuestCompletion(id, adminId);
+        if (!result) return res.status(404).json({ error: 'Completion not found or could not be reverted.' });
+        res.json(result);
+    } catch (error) {
+        console.error(`[Controller Error] Failed to revert quest approval for completion ${id}:`, error);
+        // Send a generic but informative error back to the client.
+        res.status(500).json({ error: error.message || 'An internal error occurred while reverting the quest.' });
+    }
 };
 
 const markQuestAsTodo = async (req, res) => {

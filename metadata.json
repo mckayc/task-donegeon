@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.70 - Universal Undo",
-  "version": "0.5.70",
-  "description": "Extends the 'Undo' feature to cover all completion states, including 'Awarded' for auto-approved quests, providing full administrative control in the Chronicles.",
+  "name": "Task Donegeon 2.0 - 0.5.71 - Undo Fix",
+  "version": "0.5.71",
+  "description": "Fixes a server error when undoing a completed quest from the Chronicles page by adding more robust error handling to the backend controller.",
   "requestFramePermissions": [
     "camera"
   ],

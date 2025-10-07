@@ -11,6 +11,7 @@ const {
     approvePurchaseRequest,
     rejectPurchaseRequest,
     cancelPurchaseRequest,
+    revertPurchaseRequest,
     executeExchange,
 } = require('../controllers/markets.controller');
 
@@ -28,6 +29,7 @@ router.post('/purchase', asyncMiddleware(purchaseMarketItem));
 router.post('/approve-purchase/:id', asyncMiddleware(approvePurchaseRequest));
 router.post('/reject-purchase/:id', asyncMiddleware(rejectPurchaseRequest));
 router.post('/cancel-purchase/:id', asyncMiddleware(cancelPurchaseRequest));
+router.post('/revert-purchase/:id', asyncMiddleware(revertPurchaseRequest));
 router.post('/exchange', asyncMiddleware(executeExchange));
 
 module.exports = router;

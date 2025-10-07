@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, RewardItem, User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -9,7 +8,7 @@ import {
     addGameAssetAPI, updateGameAssetAPI, cloneGameAssetAPI, 
     purchaseMarketItemAPI, approvePurchaseRequestAPI, rejectPurchaseRequestAPI, cancelPurchaseRequestAPI, 
     executeExchangeAPI, proposeTradeAPI, updateTradeOfferAPI, acceptTradeAPI, cancelOrRejectTradeAPI, 
-    sendGiftAPI, useItemAPI, craftItemAPI 
+    sendGiftAPI, useItemAPI, craftItemAPI, revertPurchaseAPI
 } from '../api';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -44,6 +43,7 @@ export interface EconomyDispatch {
   approvePurchaseRequest: (requestId: string, approverId: string) => Promise<void>;
   rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void>;
   cancelPurchaseRequest: (requestId: string) => Promise<void>;
+  revertPurchase: (purchaseId: string, adminId: string) => Promise<void>;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
@@ -186,6 +186,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         cancelPurchaseRequest: async (requestId) => {
             bugLogger.add({ type: 'ACTION', message: `[EconomyContext] Cancelling purchase request ID: ${requestId}` });
             await apiAction(() => cancelPurchaseRequestAPI(requestId), 'Purchase cancelled.');
+        },
+        revertPurchase: async (purchaseId, adminId) => {
+            bugLogger.add({ type: 'ACTION', message: `[EconomyContext] Reverting purchase ID: ${purchaseId}` });
+            await apiAction(() => revertPurchaseAPI(purchaseId, adminId), 'Purchase reverted.');
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId), 'Exchange successful!');

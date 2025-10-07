@@ -160,7 +160,7 @@ const approve = async (id, approverId) => {
             eventData.imageUrl = null;
             eventData.icon = market ? market.icon : '🛒';
         }
-
+        
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));
 
@@ -283,10 +283,88 @@ const rejectOrCancel = async (id, actorId, status) => {
 const reject = (id, rejecterId) => rejectOrCancel(id, rejecterId, 'Rejected');
 const cancel = (id, cancellerId) => rejectOrCancel(id, cancellerId, 'Cancelled');
 
+const revert = async (id, adminId) => {
+    return await dataSource.transaction(async manager => {
+        const requestRepo = manager.getRepository(PurchaseRequestEntity);
+        const userRepo = manager.getRepository(UserEntity);
+        const assetRepo = manager.getRepository(GameAssetEntity);
+        const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
+        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const notificationRepo = manager.getRepository(SystemNotificationEntity);
+
+        const request = await requestRepo.findOneBy({ id });
+        if (!request || request.status !== 'Completed') return null;
+
+        const actedAt = new Date().toISOString();
+        request.status = 'Rejected'; // Revert to rejected status
+        request.actedAt = actedAt;
+        request.actedById = adminId;
+        const updatedPurchaseRequest = await requestRepo.save(updateTimestamps(request));
+
+        const user = await userRepo.findOneBy({ id: request.userId });
+        const asset = await assetRepo.findOneBy({ id: request.assetId });
+        let updatedUser = null;
+
+        if (user && asset) {
+            // Refund the cost
+            const rewardTypes = await rewardTypeRepo.find();
+            const balances = request.guildId ? user.guildBalances[request.guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+            for (const item of request.assetDetails.cost) {
+                const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                if (rewardDef) {
+                    const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                    target[item.rewardTypeId] = (target[item.rewardTypeId] || 0) + item.amount;
+                }
+            }
+            const userUpdatePayload = request.guildId ? { guildBalances: user.guildBalances } : { personalPurse: user.personalPurse, personalExperience: user.personalExperience };
+            
+            // Remove the item from ownership
+            const itemIndex = user.ownedAssetIds.indexOf(asset.id);
+            if (itemIndex > -1) {
+                user.ownedAssetIds.splice(itemIndex, 1);
+            }
+            userUpdatePayload.ownedAssetIds = user.ownedAssetIds;
+            
+            updatedUser = await userRepo.save(updateTimestamps({ ...user, ...userUpdatePayload }));
+
+            // Decrement purchase count on the asset
+            asset.purchaseCount = Math.max(0, (asset.purchaseCount || 0) - 1);
+            await assetRepo.save(updateTimestamps(asset));
+        }
+
+        const admin = await userRepo.findOneBy({ id: adminId });
+        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+        const rewardsText = request.assetDetails.cost.map(c => `+${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' ');
+
+        const eventData = {
+            id: `chron-revert-${request.id}`, originalId: request.id, date: actedAt,
+            type: 'Purchase', title: `Reverted purchase of "${request.assetDetails.name}"`,
+            status: 'Reverted', color: '#f87171', userId: request.userId, userName: user.gameName,
+            actorId: adminId, actorName: admin?.gameName || 'System',
+            guildId: request.guildId || undefined, rewardsText, icon: asset.icon, iconType: asset.iconType, imageUrl: asset.imageUrl,
+        };
+        await manager.save(ChronicleEventEntity, updateTimestamps(chronicleRepo.create(eventData), true));
+        
+        const notification = manager.create(SystemNotificationEntity, {
+            id: `sysnotif-revert-${request.id}`, type: 'PurchaseRejected',
+            message: `${admin.gameName} reverted your purchase of "${request.assetDetails.name}". Your funds were returned.`,
+            recipientUserIds: [user.id], readByUserIds: [], senderId: adminId,
+            timestamp: new Date().toISOString(), link: 'Chronicles',
+            icon: asset.icon, iconType: asset.iconType, imageUrl: asset.imageUrl,
+            guildId: request.guildId || undefined,
+        });
+        await manager.save(updateTimestamps(notification, true));
+        
+        updateEmitter.emit('update');
+        return { updatedUser, updatedPurchaseRequest };
+    });
+};
+
 
 module.exports = {
     create,
     approve,
     reject,
     cancel,
+    revert,
 };

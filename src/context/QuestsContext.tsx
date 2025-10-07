@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates, Bookmark } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -11,7 +10,9 @@ import {
     claimQuestAPI, unclaimQuestAPI,
     approveClaimAPI, rejectClaimAPI,
     deleteSelectedAssetsAPI,
-    updateReadingProgressAPI
+    updateReadingProgressAPI,
+    revertQuestCompletionAPI,
+    revertPurchaseAPI
 } from '../api';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
@@ -43,6 +44,8 @@ export interface QuestsDispatch {
   completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
   approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void>;
   rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void>;
+  revertQuestApproval: (completionId: string, adminId: string) => Promise<void>;
+  revertPurchase: (purchaseId: string, adminId: string) => Promise<void>;
   markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
   unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
   addQuestGroup: (groupData: Omit<QuestGroup, 'id'> & { questIds?: string[] }) => Promise<QuestGroup | null>;
@@ -183,6 +186,14 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             bugLogger.add({ type: 'ACTION', message: `[QuestsContext] Rejecting quest completion ID: ${id}` });
             await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note), 'Quest rejected.');
             // State update is now handled by the server-sent event sync for consistency.
+        },
+        revertQuestApproval: async (completionId, adminId) => {
+            await apiAction(() => revertQuestCompletionAPI(completionId, adminId), 'Quest approval reverted.');
+            // State is updated via SSE
+        },
+        revertPurchase: async (purchaseId, adminId) => {
+            await apiAction(() => revertPurchaseAPI(purchaseId, adminId), 'Purchase reverted.');
+            // State is updated via SSE
         },
         markQuestAsTodo: async (questId, userId) => {
             const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));

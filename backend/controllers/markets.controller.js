@@ -65,6 +65,14 @@ const cancelPurchaseRequest = async (req, res) => {
     res.json(result);
 };
 
+const revertPurchaseRequest = async (req, res) => {
+    const { id } = req.params;
+    const { adminId } = req.body;
+    const result = await purchaseRequestService.revert(id, adminId);
+    if (!result) return res.status(404).json({ error: 'Request not found or could not be reverted.' });
+    res.json(result);
+};
+
 const executeExchange = async (req, res) => {
     const { userId, payItem, receiveItem, guildId } = req.body;
     const result = await marketService.exchange(userId, payItem, receiveItem, guildId);
@@ -83,5 +91,6 @@ module.exports = {
     approvePurchaseRequest,
     rejectPurchaseRequest,
     cancelPurchaseRequest,
+    revertPurchaseRequest,
     executeExchange,
 };

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.64 - Chronicle Incomplete Logging",
-  "version": "0.5.64",
-  "description": "Adds specific 'Quest Incomplete' and 'Quest Late' events to the Chronicles for clearer auditing of automated setbacks.",
+  "name": "Task Donegeon 2.0 - 0.5.69 - Undo Purchases",
+  "version": "0.5.69",
+  "description": "Expands the 'Undo' feature on the Chronicles page to work for completed purchases, allowing administrators to revert transactions.",
   "requestFramePermissions": [
     "camera"
   ],

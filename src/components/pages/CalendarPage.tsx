@@ -84,6 +84,22 @@ const CalendarPage: React.FC = () => {
 
     const viewingQuest = useMemo(() => viewingQuestId ? quests.find(q => q.id === viewingQuestId) : null, [viewingQuestId, quests]);
 
+    const isViewingQuestCompletable = useMemo(() => {
+        if (!viewingQuest || !viewingQuestDate || !currentUser) {
+            return false;
+        }
+        if (toYMD(viewingQuestDate) > toYMD(new Date())) {
+            return false;
+        }
+        return isQuestAvailableForUser(
+            viewingQuest,
+            questCompletions.filter(c => c.userId === currentUser.id),
+            viewingQuestDate,
+            scheduledEvents,
+            appMode
+        );
+    }, [viewingQuest, viewingQuestDate, currentUser, questCompletions, scheduledEvents, appMode]);
+
     const chronicles = useChronicles({
         startDate: viewRange?.start || new Date(),
         endDate: viewRange?.end || new Date(),
@@ -301,6 +317,7 @@ const CalendarPage: React.FC = () => {
                     onComplete={handleCompleteFromDialog}
                     onToggleTodo={handleToggleTodo}
                     isTodo={viewingQuest.type === QuestType.Venture && viewingQuest.todoUserIds?.includes(currentUser.id)}
+                    isCompletable={isViewingQuestCompletable}
                 />
             )}
             {completingQuest && currentUser && (

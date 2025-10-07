@@ -1,6 +1,3 @@
-
-
-
 import React, { useMemo, useState } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -82,7 +79,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 <strong>Timestamps:</strong> All pending items now display the exact time they were submitted. This helps administrators prioritize and understand the context of each request.
             </li>
             <li>
-                <strong>Undo Approvals:</strong> Donegeon Masters can now undo an accidental quest approval directly from the Chronicles page. This will revert the quest to "Rejected" status, remove any rewards granted, and log the reversal for a clear audit trail.
+                <strong>Undo Approvals:</strong> Donegeon Masters can now undo an accidental quest or item purchase approval directly from the Chronicles page. This will revert the item to "Rejected" status, remove any rewards that were granted (or refund the cost), and log the reversal for a clear audit trail.
             </li>
             <li>
                 <strong>Incomplete/Late Quest Logging:</strong> The system now logs specific "Quest Incomplete" and "Quest Late" events in the Chronicles whenever a setback is automatically applied. This provides a clearer audit trail than the generic "Trial" event used previously.
@@ -177,6 +174,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <h3>Quest Logic & Availability</h3>
         <p>To ensure fairness and clarity, the system now enforces stricter availability rules for quests:</p>
         <ul className="list-disc list-inside space-y-2 mt-2">
+            <li><strong>Calendar Completion Logic:</strong> The "Complete" button within the Quest Detail dialog (when opened from the Calendar) will now be disabled if the quest is not available for completion on the selected date. This prevents completing a quest scheduled for a future date, or completing a "Duty" on a day it's not scheduled to run. The button text will now change to "Cannot Complete" to provide clear user feedback.</li>
             <li><strong>Scheduled Duties:</strong> Duties (recurring quests) that are not scheduled to be active on the current day will now be fully disabled. While they may still appear dimmed on the Quest Page for informational purposes, they cannot be selected or completed until their scheduled day. This prevents accidental completions on non-active days and clarifies user expectations.</li>
             <li><strong>Quest Completion Timing:</strong> Server-side validation has been strengthened to strictly enforce quest deadlines. The system now prevents users from submitting a quest completion after its defined "incomplete" time has passed. This resolves an issue where completions could be logged with a timestamp that was after the quest's cutoff, ensuring that all completion data is accurate and adheres to the established rules.</li>
             <li>

@@ -22,6 +22,7 @@ interface QuestDetailDialogProps {
   isTodo?: boolean;
   dialogTitle?: string;
   userForView?: User;
+  isCompletable?: boolean;
 }
 
 const formatTime = (totalSeconds: number) => {
@@ -30,7 +31,7 @@ const formatTime = (totalSeconds: number) => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle, userForView }) => {
+const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle, userForView, isCompletable = true }) => {
     const { settings, gameScores } = useSystemState();
     const { rewardTypes } = useEconomyState();
     const { questCompletions } = useQuestsState();
@@ -97,6 +98,8 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     };
 
     const handleComplete = () => {
+        if (!isCompletable) return;
+
         if (quest.type === QuestType.Journey && currentUser) {
             const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.questId === quest.id);
             const approvedCount = userCompletions.filter(c => c.status === QuestCompletionStatus.Approved).length;
@@ -188,29 +191,37 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const renderActionButtons = () => {
         if (onComplete) {
             let buttonText = 'Complete';
-            let isCompleteDisabled = false;
-            
+            let isCompleteDisabled = !isCompletable;
+
             if (quest.timerConfig) {
                 if (thisQuestsTimer) return (<Button onClick={handleStopAndComplete}>Stop & Complete</Button>);
                 buttonText = 'Complete Manually';
             }
-            
+
             const isJourney = quest.type === QuestType.Journey;
             const isAiQuest = quest.mediaType === QuestMediaType.AITutor;
             const canCompleteAiQuest = isAiQuest && !!tutorSessionLog;
-            
-            isCompleteDisabled = (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
-            
-            if (isJourney) buttonText = isCompleteDisabled ? 'Awaiting Approval' : `Complete Checkpoint ${journeyProgress.completed + 1}`;
-            else if (isAiQuest) buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Complete Session to Enable';
 
+            isCompleteDisabled = isCompleteDisabled || (isJourney && hasPendingCompletion) || (isAiQuest && !canCompleteAiQuest);
+
+            if (isJourney) {
+                buttonText = `Complete Checkpoint ${journeyProgress.completed + 1}`;
+                if (hasPendingCompletion) buttonText = 'Awaiting Approval';
+            } else if (isAiQuest) {
+                buttonText = canCompleteAiQuest ? 'Submit Completion' : 'Complete Session to Enable';
+            }
+            
             if (quest.mediaType === QuestMediaType.PlayMiniGame && quest.minigameMinScore) {
                 if (userHighScore < quest.minigameMinScore) {
                     isCompleteDisabled = true;
                     buttonText = `Score ${quest.minigameMinScore} to Complete (Best: ${userHighScore})`;
                 }
             }
-            
+
+            if (!isCompletable) {
+                buttonText = 'Cannot Complete';
+            }
+
             return <Button onClick={handleComplete} disabled={isCompleteDisabled}>{buttonText}</Button>;
         }
     

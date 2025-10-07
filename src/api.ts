@@ -57,6 +57,7 @@ export const purchaseMarketItemAPI = (assetId: string, marketId: string, user: U
 export const approvePurchaseRequestAPI = (id: string, approverId: string) => apiRequest('POST', `/api/markets/approve-purchase/${id}`, { approverId });
 export const rejectPurchaseRequestAPI = (id: string, rejecterId: string) => apiRequest('POST', `/api/markets/reject-purchase/${id}`, { rejecterId });
 export const cancelPurchaseRequestAPI = (id: string) => apiRequest('POST', `/api/markets/cancel-purchase/${id}`);
+export const revertPurchaseAPI = (id: string, adminId: string) => apiRequest('POST', `/api/markets/revert-purchase/${id}`, { adminId });
 export const executeExchangeAPI = (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('POST', '/api/markets/exchange', { userId, payItem, receiveItem, guildId });
 export const proposeTradeAPI = (recipientId: string, guildId: string, initiatorId: string) => apiRequest('POST', '/api/trades/propose', { recipientId, guildId, initiatorId });
 export const updateTradeOfferAPI = (id: string, updates: Partial<TradeOffer>) => apiRequest('PUT', `/api/trades/${id}`, updates);

@@ -1,15 +1,14 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
-// FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
-import { Role, ChronicleEvent, ChronicleEventType, QuestMediaType, QuestCompletion } from '../../types';
+import { Role, ChronicleEvent, ChronicleEventType, QuestMediaType, QuestCompletion, QuestCompletionStatus, PurchaseRequestStatus } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
-// FIX: Corrected import for useEconomyDispatch hook.
-import { useEconomyDispatch } from '../../context/EconomyContext';
 import { FilterIcon, ChevronDownIcon } from '../user-interface/Icons';
-import { useQuestsState } from '../../context/QuestsContext';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import AITutorReportDialog from '../tutors/AITutorReportDialog';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 
 const CHRONICLE_EVENT_TYPES = [
     ChronicleEventType.QuestCompletion,
@@ -48,8 +47,8 @@ const DEFAULT_FILTERS = CHRONICLE_EVENT_TYPES
 const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { cancelPurchaseRequest } = useEconomyDispatch();
     const { quests, questCompletions } = useQuestsState();
+    const { revertQuestApproval, revertPurchase } = useQuestsDispatch();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -61,6 +60,8 @@ const ChroniclesPage: React.FC = () => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
     const [viewingReportFor, setViewingReportFor] = useState<string | null>(null);
+    const [revertingCompletion, setRevertingCompletion] = useState<ChronicleEvent | null>(null);
+    const [revertingPurchase, setRevertingPurchase] = useState<ChronicleEvent | null>(null);
 
     const [selectedFilters, setSelectedFilters] = useState<string[]>(() => {
         try {
@@ -216,11 +217,6 @@ const ChroniclesPage: React.FC = () => {
             <div className="font-semibold flex items-center justify-end gap-2">
                 {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
                 <span className={statusColor(activity.status)}>{activity.status}</span>
-                {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
-                    <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>
-                        Cancel
-                    </Button>
-                )}
             </div>
         );
     };
@@ -273,6 +269,9 @@ const ChroniclesPage: React.FC = () => {
                         <ul className="space-y-4">
                             {events.map(activity => {
                                 const canViewReport = (currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && activity.type === ChronicleEventType.QuestCompletion && isAiTutorCompletion(activity.originalId);
+                                const canUndoQuest = currentUser.role === Role.DonegeonMaster && activity.type === ChronicleEventType.QuestCompletion && activity.status === QuestCompletionStatus.Approved;
+                                const canUndoPurchase = currentUser.role === Role.DonegeonMaster && activity.type === ChronicleEventType.Purchase && activity.status === 'Completed';
+
                                 const itemClass = `grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-3 bg-stone-800/60 rounded-lg border-l-4 transition-colors ${canViewReport ? 'cursor-pointer hover:bg-stone-700/50' : ''}`;
                                 
                                 return (
@@ -299,7 +298,19 @@ const ChroniclesPage: React.FC = () => {
                                     
                                     {/* Column 3: Rewards, Status, Actor, & Date */}
                                     <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
-                                        {renderStatusAndRewards(activity)}
+                                        <div className="flex items-center gap-2">
+                                            {renderStatusAndRewards(activity)}
+                                            {canUndoQuest && (
+                                                <Button variant="secondary" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); setRevertingCompletion(activity); }}>
+                                                    Undo
+                                                </Button>
+                                            )}
+                                             {canUndoPurchase && (
+                                                <Button variant="secondary" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); setRevertingPurchase(activity); }}>
+                                                    Undo
+                                                </Button>
+                                            )}
+                                        </div>
                                         <div className="text-xs text-stone-400 mt-1 space-y-0.5">
                                             {activity.actorName && (isAdminView || (activity.actorName !== currentUser.gameName && activity.actorName !== activity.userName)) && (
                                                 <p>by {activity.actorName}</p>
@@ -324,6 +335,34 @@ const ChroniclesPage: React.FC = () => {
                 )}
             </Card>
             {viewingReportFor && <AITutorReportDialog completionId={viewingReportFor} onClose={() => setViewingReportFor(null)} />}
+            {revertingCompletion && (
+                <ConfirmDialog
+                    isOpen={!!revertingCompletion}
+                    onClose={() => setRevertingCompletion(null)}
+                    onConfirm={() => {
+                        if (revertingCompletion && currentUser) {
+                            revertQuestApproval(revertingCompletion.originalId, currentUser.id);
+                        }
+                        setRevertingCompletion(null);
+                    }}
+                    title="Undo Quest Approval"
+                    message={`Are you sure you want to undo the approval for "${revertingCompletion.title}"? This will revert the quest to 'Rejected' and remove any rewards granted.`}
+                />
+            )}
+             {revertingPurchase && (
+                <ConfirmDialog
+                    isOpen={!!revertingPurchase}
+                    onClose={() => setRevertingPurchase(null)}
+                    onConfirm={() => {
+                        if (revertingPurchase && currentUser) {
+                            revertPurchase(revertingPurchase.originalId, currentUser.id);
+                        }
+                        setRevertingPurchase(null);
+                    }}
+                    title="Undo Purchase"
+                    message={`Are you sure you want to undo the purchase for "${revertingPurchase.title}"? This will revert the purchase, remove the item, and refund the cost.`}
+                />
+            )}
         </div>
     );
 };

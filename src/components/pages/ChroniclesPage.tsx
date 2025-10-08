@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
@@ -64,6 +65,7 @@ const ChroniclesPage: React.FC = () => {
     const [viewingReportFor, setViewingReportFor] = useState<string | null>(null);
     const [revertingCompletion, setRevertingCompletion] = useState<ChronicleEvent | null>(null);
     const [revertingPurchase, setRevertingPurchase] = useState<ChronicleEvent | null>(null);
+    const [refetchTrigger, setRefetchTrigger] = useState(0);
 
     const [selectedFilters, setSelectedFilters] = useState<string[]>(() => {
         try {
@@ -126,9 +128,14 @@ const ChroniclesPage: React.FC = () => {
             }
         };
         fetchEvents();
-    }, [currentPage, itemsPerPage, viewMode, appMode, currentUser, selectedFilters]);
+    }, [currentPage, itemsPerPage, viewMode, appMode, currentUser, selectedFilters, refetchTrigger]);
 
     if (!currentUser) return null;
+
+    const handleAction = async (actionPromise: Promise<any>) => {
+        await actionPromise;
+        setRefetchTrigger(v => v + 1);
+    };
 
     const isAiTutorCompletion = (completionId: string) => {
         const completion = questCompletions.find(c => c.id === completionId);
@@ -157,6 +164,7 @@ const ChroniclesPage: React.FC = () => {
             return 'text-red-500 font-semibold';
           case "Rejected":
           case "Setback":
+          case "Reverted":
             return 'text-red-400';
           case "Cancelled":
           case "Unclaimed":
@@ -275,14 +283,14 @@ const ChroniclesPage: React.FC = () => {
                                                 <div className="flex gap-1">
                                                     {activity.type === ChronicleEventType.QuestCompletion && (
                                                         <>
-                                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); rejectQuestCompletion(activity.originalId, currentUser.id); }}>Reject</Button>
-                                                            <Button size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); approveQuestCompletion(activity.originalId, currentUser.id); }}>Approve</Button>
+                                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); handleAction(rejectQuestCompletion(activity.originalId, currentUser.id)); }}>Reject</Button>
+                                                            <Button size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); handleAction(approveQuestCompletion(activity.originalId, currentUser.id)); }}>Approve</Button>
                                                         </>
                                                     )}
                                                     {activity.type === ChronicleEventType.Purchase && (
                                                          <>
-                                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); rejectPurchaseRequest(activity.originalId, currentUser.id); }}>Reject</Button>
-                                                            <Button size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); approvePurchaseRequest(activity.originalId, currentUser.id); }}>Approve</Button>
+                                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); handleAction(rejectPurchaseRequest(activity.originalId, currentUser.id)); }}>Reject</Button>
+                                                            <Button size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); handleAction(approvePurchaseRequest(activity.originalId, currentUser.id)); }}>Approve</Button>
                                                         </>
                                                     )}
                                                 </div>
@@ -328,7 +336,7 @@ const ChroniclesPage: React.FC = () => {
                     onClose={() => setRevertingCompletion(null)}
                     onConfirm={() => {
                         if (revertingCompletion && currentUser) {
-                            revertQuestApproval(revertingCompletion.originalId, currentUser.id);
+                            handleAction(revertQuestApproval(revertingCompletion.originalId, currentUser.id));
                         }
                         setRevertingCompletion(null);
                     }}
@@ -342,7 +350,7 @@ const ChroniclesPage: React.FC = () => {
                     onClose={() => setRevertingPurchase(null)}
                     onConfirm={() => {
                         if (revertingPurchase && currentUser) {
-                            revertPurchase(revertingPurchase.originalId, currentUser.id);
+                            handleAction(revertPurchase(revertingPurchase.originalId, currentUser.id));
                         }
                         setRevertingPurchase(null);
                     }}

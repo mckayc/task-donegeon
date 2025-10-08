@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.73
+**Version:** 0.5.74
 
 ---
 
@@ -14,6 +14,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of October 13, 2025 (v0.5.74):**
+    -   **Chronicles Admin Actions:** The Chronicles page has been enhanced with administrative actions. Administrators can now approve or reject pending quest and purchase requests directly from the activity feed. Additionally, Donegeon Masters now have the ability to "Undo" previously approved completions or completed purchases, which reverts the action, reverses any associated rewards or costs, and creates a clear audit trail.
 
 -   **Week of October 13, 2025 (v0.5.73):**
     -   **User Deletion Logging Fix:** Fixed a server crash (`NOT NULL constraint failed: chronicle_event.title`) that occurred when deleting a user. The issue was caused by an incorrect logging function being called, which failed to provide a title for the chronicle entry. The deletion logic now uses the correct asset logging action, ensuring deletions are properly recorded.
@@ -43,4 +46,4 @@ Task Donegeon is a gamified task and chore management application designed for f
     -   **Calendar Completion Logic Fix:** Fixed a critical bug on the Calendar page where users could complete quests on days they were not scheduled or available (e.g., completing a Monday-only Duty on a Tuesday, or completing a quest for a future date). The "Complete" button is now correctly disabled and provides clear feedback in these scenarios.
 
 -   **Week of October 3, 2025 (v0.5.64):**
-    -   **Chronicle Logging for Incomplete Quests:---
+    -   **Chronicle Logging for Incomplete Quests:

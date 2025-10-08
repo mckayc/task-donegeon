@@ -73,13 +73,17 @@ const FunctionalSpecificationsContent: React.FC = () => (
         </p>
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li>
+                <strong>Chronicles Admin Actions:</strong> For streamlined management, administrators can now take action directly from the Chronicles page.
+                <ul className="list-disc list-inside pl-6 mt-2">
+                    <li><strong>Approve/Reject:</strong> `Gatekeeper`s and `Donegeon Master`s will see "Approve" and "Reject" buttons on any pending items in the activity feed.</li>
+                    <li><strong>Undo Actions:</strong> `Donegeon Master`s now have an "Undo" button on completed quests and purchases. This powerful feature reverts the action (e.g., changes status to 'Rejected'), reverses any rewards or costs, and creates a clear audit trail in the Chronicles.</li>
+                </ul>
+            </li>
+            <li>
                 <strong>Sortable Tables:</strong> All tables in the Approvals Queue (Quests, Claims, Purchases, Trades) are now sortable. Click any column header to sort the data, making it easier to find specific items.
             </li>
             <li>
                 <strong>Timestamps:</strong> All pending items now display the exact time they were submitted. This helps administrators prioritize and understand the context of each request.
-            </li>
-            <li>
-                <strong>Undo Completions:</strong> Donegeon Masters can now undo any completed quest (whether auto-approved with an 'Awarded' status or manually 'Approved') or a completed item purchase directly from the Chronicles page. This action reverts the completion status (typically to "Rejected"), reverses any rewards that were granted (or refunds the cost of a purchase), and logs the reversal for a clear audit trail.
             </li>
             <li>
                 <strong>Incomplete/Late Quest Logging:</strong> The system now logs specific "Quest Incomplete" and "Quest Late" events in the Chronicles whenever a setback is automatically applied. This provides a clearer audit trail than the generic "Trial" event used previously.
@@ -302,6 +306,12 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 13, 2025 (v0.5.74)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Chronicles Admin Actions:</strong> Enhanced the Chronicles page with administrative actions. Admins can now approve or reject pending requests directly from the activity feed. `Donegeon Master`s can also "Undo" completed quests or purchases to correct mistakes, which reverses the action and its associated rewards.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 3, 2025 (v0.5.64)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Chronicle Logging for Incomplete Quests:</strong> Implemented new "Quest Incomplete" and "Quest Late" event types in the Chronicles. These events are now logged automatically whenever a user fails to complete a quest by its deadline or submits it late, providing a clearer history of setbacks.</li>
@@ -373,7 +383,7 @@ const VersionHistoryContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Minigame Mania:</strong> A massive update to the Arcade based on user feedback!
                     <ul className="list-disc list-inside pl-6 mt-2">
-                        <li><strong>New Game - Alchemist's Trial:</strong> A "Simon"-style memory game where you must repeat increasingly long sequences of magical ingredients.</li>
+                        <li><strong>New Game - Labyrinth of the Minotaur:</strong> A "Simon"-style memory game where you must repeat increasingly long sequences of magical ingredients.</li>
                         <li><strong>Labyrinth Overhaul:</strong> The player and minotaur are now represented by emojis ('🦸' and '👹') for a more thematic experience.</li>
                         <li><strong>Dungeon Dash Overhaul:</strong> The player is now a running emoji ('🏃'). Added a new "slide" mechanic (down arrow) to dodge flying ghost obstacles ('👻') in addition to jumping over fire pits ('🔥').</li>
                         <li><strong>Forge Master Overhaul:</strong> This game has been completely rebuilt. Instead of a simple timing bar, you now strike a piece of metal on an anvil that heats and cools, with sparks flying. Time your strike to the "perfect" heat to maximize your weapon's quality and score.</li>
@@ -445,7 +455,7 @@ const VersionHistoryContent: React.FC = () => (
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of December 13, 2025 (v0.4.81)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>PDF Reader Fix:</strong> Fixed a bug where the PDF reader page would revert immediately after navigation due to a state synchronization issue. Reading progress is now stable.</li>
+                <li><strong>PDF Reader Fix:</strong> Fixed a bug in the PDF reader page where the page would revert immediately after navigation due to a state synchronization issue. Reading progress is now stable.</li>
             </ul>
         </div>
         <div>

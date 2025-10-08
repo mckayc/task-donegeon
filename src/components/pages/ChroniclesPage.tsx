@@ -7,6 +7,7 @@ import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 import { FilterIcon, ChevronDownIcon } from '../user-interface/Icons';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useEconomyDispatch } from '../../context/EconomyContext';
 import AITutorReportDialog from '../tutors/AITutorReportDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 
@@ -48,7 +49,8 @@ const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { quests, questCompletions } = useQuestsState();
-    const { revertQuestApproval, revertPurchase } = useQuestsDispatch();
+    const { revertQuestApproval, revertPurchase, approveQuestCompletion, rejectQuestCompletion } = useQuestsDispatch();
+    const { approvePurchaseRequest, rejectPurchaseRequest } = useEconomyDispatch();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -186,41 +188,6 @@ const ChroniclesPage: React.FC = () => {
 
     const isAdminView = currentUser.role !== Role.Explorer && viewMode === 'all';
 
-    const renderStatusAndRewards = (activity: ChronicleEvent) => {
-        const isPurchase = activity.type === ChronicleEventType.Purchase;
-        const isQuestCompletion = activity.type === ChronicleEventType.QuestCompletion;
-
-        // For rejected or cancelled purchases, show a refund.
-        if (isPurchase && (activity.status === 'Rejected' || activity.status === 'Cancelled')) {
-            const refundText = activity.rewardsText?.replace('-', '+');
-            return (
-                <div className="font-semibold flex items-center justify-end gap-2">
-                    {refundText && <span className="text-green-400">{refundText}</span>}
-                    <span className={statusColor(activity.status)}>Refunded</span>
-                </div>
-            );
-        }
-
-        // For completed/approved multi-step actions, hide the rewards text to avoid confusion.
-        if ((isPurchase || isQuestCompletion) && (activity.status === 'Completed' || activity.status === 'Approved')) {
-             return (
-                <div className="font-semibold flex items-center justify-end gap-2">
-                    <span className={statusColor(activity.status)}>
-                        {isPurchase ? 'Purchase Complete' : 'Quest Approved'}
-                    </span>
-                </div>
-            );
-        }
-
-        // Default rendering for all other cases.
-        return (
-            <div className="font-semibold flex items-center justify-end gap-2">
-                {activity.rewardsText && <span className="text-stone-300">{activity.rewardsText}</span>}
-                <span className={statusColor(activity.status)}>{activity.status}</span>
-            </div>
-        );
-    };
-
     return (
         <div>
             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
@@ -269,6 +236,8 @@ const ChroniclesPage: React.FC = () => {
                         <ul className="space-y-4">
                             {events.map(activity => {
                                 const canViewReport = (currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && activity.type === ChronicleEventType.QuestCompletion && isAiTutorCompletion(activity.originalId);
+                                
+                                const canApproveReject = (currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && activity.status === 'Pending';
                                 const canUndoQuest = currentUser.role === Role.DonegeonMaster && activity.type === ChronicleEventType.QuestCompletion && (activity.status === QuestCompletionStatus.Approved || activity.status === 'Awarded');
                                 const canUndoPurchase = currentUser.role === Role.DonegeonMaster && activity.type === ChronicleEventType.Purchase && activity.status === 'Completed';
 
@@ -298,8 +267,26 @@ const ChroniclesPage: React.FC = () => {
                                     
                                     {/* Column 3: Rewards, Status, Actor, & Date */}
                                     <div className="md:col-span-1 text-right flex flex-col items-end justify-center">
-                                        <div className="flex items-center gap-2">
-                                            {renderStatusAndRewards(activity)}
+                                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                                            {activity.rewardsText && <span className="font-semibold text-stone-300">{activity.rewardsText}</span>}
+                                            <span className={`font-semibold ${statusColor(activity.status)}`}>{activity.status}</span>
+                                            
+                                            {canApproveReject && (
+                                                <div className="flex gap-1">
+                                                    {activity.type === ChronicleEventType.QuestCompletion && (
+                                                        <>
+                                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); rejectQuestCompletion(activity.originalId, currentUser.id); }}>Reject</Button>
+                                                            <Button size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); approveQuestCompletion(activity.originalId, currentUser.id); }}>Approve</Button>
+                                                        </>
+                                                    )}
+                                                    {activity.type === ChronicleEventType.Purchase && (
+                                                         <>
+                                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); rejectPurchaseRequest(activity.originalId, currentUser.id); }}>Reject</Button>
+                                                            <Button size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); approvePurchaseRequest(activity.originalId, currentUser.id); }}>Approve</Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
                                             {canUndoQuest && (
                                                 <Button variant="secondary" size="sm" className="!text-xs !py-0.5" onClick={(e) => { e.stopPropagation(); setRevertingCompletion(activity); }}>
                                                     Undo

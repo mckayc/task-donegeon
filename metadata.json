@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.73 - User Deletion Logging Fix",
-  "version": "0.5.73",
-  "description": "Fixes a server crash when deleting a user by correcting the function used for chronicle logging.",
+  "name": "Task Donegeon 2.0 - 0.5.74 - Chronicles Admin Actions",
+  "version": "0.5.74",
+  "description": "Adds administrative actions (approve, reject, undo) directly to the Chronicles page for streamlined management.",
   "requestFramePermissions": [
     "camera"
   ],

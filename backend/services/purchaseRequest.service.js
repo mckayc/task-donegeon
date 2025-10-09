@@ -1,3 +1,4 @@
+
 const { dataSource } = require('../data-source');
 const { PurchaseRequestEntity, UserEntity, GameAssetEntity, RewardTypeDefinitionEntity, SettingEntity, ChronicleEventEntity, MarketEntity, SystemNotificationEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
@@ -95,7 +96,7 @@ const approve = async (id, approverId) => {
         const userRepo = manager.getRepository(UserEntity);
         const assetRepo = manager.getRepository(GameAssetEntity);
         const settingRepo = manager.getRepository(SettingEntity);
-        const marketRepo = manager.getRepository(MarketEntity);
+        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         
         const request = await requestRepo.findOneBy({ id });
         if (!request || request.status !== 'Pending') return null;
@@ -127,42 +128,18 @@ const approve = async (id, approverId) => {
             updatedUser = await userRepo.save(updateTimestamps({ ...user, ownedAssetIds: user.ownedAssetIds }));
         }
         
-        // --- New Chronicle Event for Approval ---
+        const existingEvent = await chronicleRepo.findOneBy({ originalId: id, status: 'Pending' });
         const approver = await userRepo.findOneBy({ id: approverId });
-        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
-        const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
-        const market = request.marketId ? await marketRepo.findOneBy({ id: request.marketId }) : null;
-        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
-        const rewardsText = request.assetDetails.cost.map(c => `-${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' ');
 
-        const eventData = {
-            id: `chron-approve-${request.id}`,
-            originalId: request.id,
-            date: actedAt,
-            type: 'Purchase',
-            title: `Purchased "${request.assetDetails.name}"`,
-            status: 'Completed',
-            color: '#4ade80',
-            userId: request.userId,
-            userName: user.gameName,
-            actorId: approverId,
-            actorName: approver?.gameName || 'System',
-            guildId: request.guildId || undefined,
-            rewardsText,
-        };
-
-        if (request.assetDetails.imageUrl && request.assetDetails.iconType === 'image') {
-            eventData.iconType = 'image';
-            eventData.imageUrl = request.assetDetails.imageUrl;
-            eventData.icon = '🖼️'; // Fallback emoji
-        } else {
-            eventData.iconType = 'emoji';
-            eventData.imageUrl = null;
-            eventData.icon = market ? market.icon : '🛒';
+        if (existingEvent) {
+            existingEvent.status = 'Completed';
+            existingEvent.title = `Purchased "${request.assetDetails.name}"`;
+            existingEvent.color = '#4ade80';
+            existingEvent.actorId = approverId;
+            existingEvent.actorName = approver?.gameName || 'System';
+            existingEvent.date = actedAt;
+            await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
         }
-        
-        const newEvent = chronicleRepo.create(eventData);
-        await manager.save(updateTimestamps(newEvent, true));
 
         const notification = manager.create(SystemNotificationEntity, {
             id: `sysnotif-approve-${request.id}`,
@@ -191,7 +168,6 @@ const rejectOrCancel = async (id, actorId, status) => {
         const userRepo = manager.getRepository(UserEntity);
         const rewardTypeRepo = manager.getRepository(RewardTypeDefinitionEntity);
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
-        const marketRepo = manager.getRepository(MarketEntity);
 
         const request = await requestRepo.findOneBy({ id });
         if (!request || request.status !== 'Pending') return null;
@@ -218,41 +194,22 @@ const rejectOrCancel = async (id, actorId, status) => {
             updatedUser = await userRepo.save(updateTimestamps({ ...user, ...userUpdatePayload }));
         }
         
-        // --- New Chronicle Event for Rejection/Cancellation ---
+        const existingEvent = await chronicleRepo.findOneBy({ originalId: id, status: 'Pending' });
         const actor = actorId ? await userRepo.findOneBy({ id: actorId }) : user;
-        const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
-        const market = request.marketId ? await marketRepo.findOneBy({ id: request.marketId }) : null;
-        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
-        const rewardsText = request.assetDetails.cost.map(c => `+${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' '); // Refunding
+        if (existingEvent) {
+            const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+            const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+            const rewardsText = request.assetDetails.cost.map(c => `+${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' ');
 
-        const eventData = {
-            id: `chron-${status.toLowerCase()}-${request.id}`,
-            originalId: request.id,
-            date: actedAt,
-            type: 'Purchase',
-            title: `${status} purchase of "${request.assetDetails.name}"`,
-            status: status,
-            color: status === 'Rejected' ? '#f87171' : '#a8a29e',
-            userId: request.userId,
-            userName: user.gameName,
-            actorId: actor?.id,
-            actorName: actor?.gameName,
-            guildId: request.guildId || undefined,
-            rewardsText,
-        };
-
-        if (request.assetDetails.imageUrl && request.assetDetails.iconType === 'image') {
-            eventData.iconType = 'image';
-            eventData.imageUrl = request.assetDetails.imageUrl;
-            eventData.icon = '🖼️'; // Fallback emoji
-        } else {
-            eventData.iconType = 'emoji';
-            eventData.imageUrl = null;
-            eventData.icon = market ? market.icon : '🛒';
+            existingEvent.status = status;
+            existingEvent.title = `${status} purchase of "${request.assetDetails.name}"`;
+            existingEvent.color = status === 'Rejected' ? '#f87171' : '#a8a29e';
+            existingEvent.actorId = actor?.id;
+            existingEvent.actorName = actor?.gameName;
+            existingEvent.date = actedAt;
+            existingEvent.rewardsText = rewardsText;
+            await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
         }
-        
-        const newEvent = chronicleRepo.create(eventData);
-        await manager.save(updateTimestamps(newEvent, true));
 
         const notificationType = status === 'Rejected' ? 'PurchaseRejected' : 'PurchaseCancelled';
         const message = status === 'Rejected'
@@ -333,17 +290,21 @@ const revert = async (id, adminId) => {
         }
 
         const admin = await userRepo.findOneBy({ id: adminId });
-        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
-        const rewardsText = request.assetDetails.cost.map(c => `+${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' ');
+        const existingEvent = await chronicleRepo.findOneBy({ originalId: id });
+        if (existingEvent) {
+            const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+            const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+            const rewardsText = request.assetDetails.cost.map(c => `+${c.amount}${getRewardInfo(c.rewardTypeId).icon}`).join(' ');
 
-        const eventData = {
-            id: `chron-revert-${request.id}`, originalId: request.id, date: actedAt,
-            type: 'Purchase', title: `Reverted purchase of "${request.assetDetails.name}"`,
-            status: 'Reverted', color: '#f87171', userId: request.userId, userName: user.gameName,
-            actorId: adminId, actorName: admin?.gameName || 'System',
-            guildId: request.guildId || undefined, rewardsText, icon: asset.icon, iconType: asset.iconType, imageUrl: asset.imageUrl,
-        };
-        await manager.save(ChronicleEventEntity, updateTimestamps(chronicleRepo.create(eventData), true));
+            existingEvent.status = 'Reverted';
+            existingEvent.title = `Reverted purchase of "${request.assetDetails.name}"`;
+            existingEvent.color = '#f87171';
+            existingEvent.actorId = adminId;
+            existingEvent.actorName = admin?.gameName || 'System';
+            existingEvent.date = actedAt;
+            existingEvent.rewardsText = rewardsText;
+            await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
+        }
         
         const notification = manager.create(SystemNotificationEntity, {
             id: `sysnotif-revert-${request.id}`, type: 'PurchaseRejected',

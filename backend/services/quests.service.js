@@ -301,9 +301,10 @@ const approveQuestCompletion = async (id, approverId, note) => {
             if (adminCount > 1) throw new Error('Self-approval is disabled. Another administrator must approve this quest.');
         }
 
+        const actedAt = new Date().toISOString();
         completion.status = 'Approved';
         completion.actedById = approverId;
-        completion.actedAt = new Date().toISOString();
+        completion.actedAt = actedAt;
         if (note) completion.adminNote = note;
         const updatedCompletion = await manager.save(updateTimestamps(completion));
 
@@ -343,16 +344,25 @@ const approveQuestCompletion = async (id, approverId, note) => {
             trophyId: trophyIdToApply,
             actorId: approverId,
             actorName: approver?.gameName || 'System',
-            chronicleTitle,
-            chronicleNote: note,
-            chronicleType,
-            chronicleIcon: quest.icon,
-            chronicleColor: '#4ade80',
-            originalId: completion.id,
-            guildId: undefined, // Personal scope
         };
+        const { updatedUser, newUserTrophies, newNotifications } = await userService.grantRewards(manager, grantDetails, { skipChronicle: true });
+        
+        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const existingEvent = await chronicleRepo.findOneBy({ originalId: id, status: 'Pending' });
+        if (existingEvent) {
+            const getRewardInfo = (rewardId) => rewardTypes.find(rt => rt.id === rewardId) || { name: '?', icon: '?' };
+            const rewardsText = rewardsToApply.map(r => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
 
-        const { updatedUser, newUserTrophies, newNotifications } = await userService.grantRewards(manager, grantDetails);
+            existingEvent.status = 'Approved';
+            existingEvent.title = chronicleTitle;
+            existingEvent.color = '#4ade80';
+            existingEvent.actorId = approverId;
+            existingEvent.actorName = approver?.gameName || 'System';
+            existingEvent.date = actedAt;
+            existingEvent.note = note;
+            existingEvent.rewardsText = rewardsText;
+            await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
+        }
 
         const notification = manager.create(SystemNotificationEntity, {
             id: `sysnotif-approve-${completion.id}`,
@@ -388,24 +398,29 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
         const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
         if (!completion || completion.status !== 'Pending') return null;
         
+        const actedAt = new Date().toISOString();
         completion.status = 'Rejected';
         completion.actedById = rejecterId;
-        completion.actedAt = new Date().toISOString();
+        completion.actedAt = actedAt;
         if (note) completion.adminNote = note;
         
         const updatedCompletion = await manager.save(updateTimestamps(completion));
 
-        // Chronicle Logging
+        // Update Chronicle Event
+        const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const existingEvent = await chronicleRepo.findOneBy({ originalId: id, status: 'Pending' });
         const rejecter = await manager.findOneBy(UserEntity, { id: rejecterId });
-        const eventData = {
-            id: `chron-reject-${completion.id}`, originalId: completion.id, date: completion.actedAt,
-            type: 'QuestCompletion', title: `Rejected "${completion.quest.title}"`, note: completion.adminNote,
-            status: 'Rejected', color: '#f87171', userId: completion.user.id, userName: completion.user.gameName,
-            actorId: rejecterId, actorName: rejecter?.gameName || 'System',
-            rewardsText: '', iconType: completion.quest.iconType, icon: completion.quest.icon,
-            imageUrl: completion.quest.imageUrl, questType: completion.quest.type, guildId: completion.quest.guildId
-        };
-        await manager.save(ChronicleEventEntity, updateTimestamps(manager.create(ChronicleEventEntity, eventData), true));
+
+        if (existingEvent) {
+            existingEvent.status = 'Rejected';
+            existingEvent.title = `Rejected "${completion.quest.title}"`;
+            existingEvent.color = '#f87171';
+            existingEvent.actorId = rejecterId;
+            existingEvent.actorName = rejecter?.gameName || 'System';
+            existingEvent.date = actedAt;
+            existingEvent.note = note;
+            await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
+        }
 
         const notification = manager.create(SystemNotificationEntity, {
             id: `sysnotif-reject-${completion.id}`,
@@ -510,43 +525,30 @@ const revertQuestCompletion = async (completionId, adminId) => {
              }
         }
         
-        // Log to chronicles
-        const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
-        const rewardsText = allRewardsToRevert.map(r => `-${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+        // Update chronicle
+        const existingEvent = await chronicleRepo.findOneBy({ originalId: completion.id });
+        if (existingEvent) {
+            const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
+            const rewardsText = allRewardsToRevert.map(r => `-${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
 
-        const eventData = {
-            id: `chron-revert-${completion.id}`,
-            originalId: completion.id,
-            date: actedAt,
-            type: 'QuestCompletion',
-            title: `Reverted "${quest.title}"`,
-            status: 'Reverted',
-            color: '#f87171',
-            userId: user.id,
-            userName: user.gameName,
-            actorId: adminId,
-            actorName: admin.gameName,
-            guildId: quest.guildId || undefined,
-            rewardsText: rewardsText || undefined,
-            icon: quest.icon,
-            iconType: quest.iconType,
-            imageUrl: quest.imageUrl,
-        };
-        await manager.save(ChronicleEventEntity, updateTimestamps(chronicleRepo.create(eventData), true));
-
+            existingEvent.status = 'Reverted';
+            existingEvent.title = `Reverted "${quest.title}"`;
+            existingEvent.color = '#f87171';
+            existingEvent.actorId = adminId;
+            existingEvent.actorName = admin.gameName;
+            existingEvent.date = actedAt;
+            existingEvent.note = `Reverted by ${admin.gameName}.`;
+            existingEvent.rewardsText = rewardsText.trim() || undefined;
+            await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
+        }
+        
         // Create notification
         const notification = manager.create(SystemNotificationEntity, {
-            id: `sysnotif-revert-${completion.id}`,
-            type: 'QuestRejected',
+            id: `sysnotif-revert-${completion.id}`, type: 'QuestRejected',
             message: `${admin.gameName} reverted your completion of "${quest.title}". Your rewards have been adjusted.`,
-            recipientUserIds: [user.id],
-            readByUserIds: [],
-            senderId: adminId,
-            timestamp: new Date().toISOString(),
-            link: 'Chronicles',
-            icon: quest.icon,
-            iconType: quest.iconType,
-            imageUrl: quest.imageUrl,
+            recipientUserIds: [user.id], readByUserIds: [], senderId: adminId,
+            timestamp: new Date().toISOString(), link: 'Chronicles',
+            icon: quest.icon, iconType: quest.iconType, imageUrl: quest.imageUrl,
             guildId: quest.guildId || undefined,
         });
         await manager.save(updateTimestamps(notification, true));
@@ -878,3 +880,4 @@ module.exports = {
     rejectClaim,
     updateReadingProgress,
 };
+

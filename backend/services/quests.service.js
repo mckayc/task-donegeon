@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity, ScheduledEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
@@ -350,6 +349,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         const existingEvent = await chronicleRepo.findOneBy({ originalId: id, status: 'Pending' });
         if (existingEvent) {
+            const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
             const getRewardInfo = (rewardId) => rewardTypes.find(rt => rt.id === rewardId) || { name: '?', icon: '?' };
             const rewardsText = rewardsToApply.map(r => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
 
@@ -880,4 +880,3 @@ module.exports = {
     rejectClaim,
     updateReadingProgress,
 };
-

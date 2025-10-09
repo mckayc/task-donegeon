@@ -64,7 +64,7 @@ export interface SystemDispatch {
   importBugReports: (reports: BugReport[], mode: 'merge' | 'replace') => Promise<void>;
   addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
   updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
-  applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
+  applyModifier: (userIds: string[], modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
   deleteAppliedModifier: (modifierId: string) => Promise<void>;
   cloneUser: (userId: string) => Promise<User | null>;
   sendMessage: (messageData: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => Promise<ChatMessage | null>;
@@ -253,7 +253,13 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         uploadFile: (file, category) => apiAction(() => uploadFileAPI(file, category)),
         addTheme: (data) => apiAction(() => addThemeAPI(data)),
         updateTheme: (data) => apiAction(() => updateThemeAPI(data)),
-        deleteTheme: (id) => apiAction(() => deleteThemeAPI(id)),
+        // FIX: The deleteTheme action was not updating the local state. Added a dispatch call to remove the theme from the context after a successful API call.
+        deleteTheme: async (id: string) => {
+            const result = await apiAction(() => deleteThemeAPI(id));
+            if (result === null) {
+                dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { themes: [id] } });
+            }
+        },
         updateSettings: (settings) => apiAction(() => updateSettingsAPI(settings), 'Settings saved!'),
         resetSettings: () => apiAction(() => resetSettingsAPI(), 'All application settings have been reset to their defaults.'),
         applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI(), 'Feature updates applied successfully. New default settings have been merged.'),
@@ -273,7 +279,13 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         markSystemNotificationsAsRead: (ids, userId) => apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)),
         addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
         updateScheduledEvent: (data) => apiAction(() => updateScheduledEventAPI(data)),
-        deleteScheduledEvent: (id) => apiAction(() => deleteScheduledEventAPI(id)),
+        // FIX: The deleteScheduledEvent action was not updating the local state. Added a dispatch call to remove the event from the context after a successful API call.
+        deleteScheduledEvent: async (id: string) => {
+            const result = await apiAction(() => deleteScheduledEventAPI(id));
+            if (result === null) {
+                dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { scheduledEvents: [id] } });
+            }
+        },
         importAssetPack: (pack, resolutions, userIdsToAssign) => {
             if (!currentUser) return Promise.resolve();
             return apiAction(() => importAssetPackAPI(pack, resolutions, currentUser.id, userIdsToAssign), 'Asset pack imported successfully!')
@@ -299,9 +311,9 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         addModifierDefinition: (data) => apiAction(() => addModifierDefinitionAPI(data)),
         updateModifierDefinition: (data) => apiAction(() => updateModifierDefinitionAPI(data)),
-        applyModifier: async (userId, modifierId, reason, overrides) => {
+        applyModifier: async (userIds, modifierId, reason, overrides) => {
             if (!currentUser) return false;
-            const result = await apiAction(() => applyModifierAPI(userId, modifierId, reason, currentUser.id, overrides));
+            const result = await apiAction(() => applyModifierAPI(userIds, modifierId, reason, currentUser.id, overrides));
             if (result) {
                 if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
                 if ((result as any).newAppliedModifier) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { appliedModifiers: [(result as any).newAppliedModifier] } });
@@ -385,7 +397,8 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { aiTutors: [result] } });
             return result;
         },
-        deleteAITutors: async (ids) => {
+        // FIX: Added explicit type annotation for `ids` to satisfy TypeScript's type checker, resolving the reported error.
+        deleteAITutors: async (ids: string[]) => {
             await apiAction(() => deleteSelectedAssetsAPI({ aiTutors: ids }, currentUser?.id || 'system'), `${ids.length} AI Tutor(s) deleted.`);
             dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { aiTutors: ids } });
         },

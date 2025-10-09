@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.74
+**Version:** 0.5.77
 
 ---
 
@@ -15,8 +15,14 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
+-   **Week of October 20, 2025 (v0.5.77):**
+    -   **Enhanced Modifier Application:** Overhauled the "Apply Modifier" dialog in the Triumphs & Trials page. Administrators can now apply a single Triumph or Trial to **multiple users at once**. Additionally, for Trials that deduct rewards, a new **"Allow Substitution"** toggle has been added. When enabled, if a user has an insufficient balance of the specified reward, the system will automatically deduct other currencies or XP of equivalent value to cover the deficit.
+
+-   **Week of October 13, 2025 (v0.5.76):**
+    -   **Chronicles Admin Actions:** Enhanced the Chronicles page with administrative actions. Admins can now approve or reject pending requests directly from the activity feed. `Donegeon Master`s can also "Undo" completed quests or purchases to correct mistakes, which reverses the action and its associated rewards.
+
 -   **Week of October 13, 2025 (v0.5.74):**
-    -   **Chronicles Admin Actions:** The Chronicles page has been enhanced with administrative actions. Administrators can now approve or reject pending quest and purchase requests directly from the activity feed. Additionally, Donegeon Masters now have the ability to "Undo" previously approved completions or completed purchases, which reverts the action, reverses any associated rewards or costs, and creates a clear audit trail.
+    -   **Chronicles Admin Actions:** Enhanced the Chronicles page with administrative actions. Admins can now approve or reject pending requests directly from the activity feed. `Donegeon Master`s can also "Undo" completed quests or purchases to correct mistakes, which reverses the action and its associated rewards.
 
 -   **Week of October 13, 2025 (v0.5.73):**
     -   **User Deletion Logging Fix:** Fixed a server crash (`NOT NULL constraint failed: chronicle_event.title`) that occurred when deleting a user. The issue was caused by an incorrect logging function being called, which failed to provide a title for the chronicle entry. The deletion logic now uses the correct asset logging action, ensuring deletions are properly recorded.

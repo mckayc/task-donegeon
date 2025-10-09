@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';

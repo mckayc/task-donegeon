@@ -1,4 +1,3 @@
-
 export interface ScheduledEvent {
     id: string;
     title: string;

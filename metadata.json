@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.74 - Chronicles Admin Actions",
-  "version": "0.5.74",
-  "description": "Adds administrative actions (approve, reject, undo) directly to the Chronicles page for streamlined management.",
+  "name": "Task Donegeon 2.0 - 0.5.77 - Apply Modifier Improvements",
+  "version": "0.5.77",
+  "description": "Enhances the Apply Modifier dialog with multi-user selection and an option for reward substitution on deductions.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -44,6 +44,18 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>Triumphs & Trials</h3>
+        <p>
+            The "Apply Modifier" functionality has been enhanced for greater flexibility and efficiency.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Multi-User Application:</strong> Administrators can now apply a single Triumph or Trial to multiple users at the same time from the "Apply Modifier" dialog.
+            </li>
+            <li>
+                <strong>Reward Substitution:</strong> For "Trial" modifiers that include a "Deduct Rewards" effect, a new "Allow Substitution" toggle is available. When enabled, if a user lacks the specific reward being deducted, the system will automatically use other currencies or XP of equivalent value to cover the difference. This prevents negative balances while still enforcing the penalty.
+            </li>
+        </ul>
         <h3>Suggestion Engine: The Foundry</h3>
         <p>
             The Suggestion Engine has been upgraded into a powerful "Foundry" that can generate multiple types of assets from a single prompt, dramatically speeding up content creation.
@@ -305,6 +317,12 @@ const RoadmapContent: React.FC = () => (
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Week of October 20, 2025 (v0.5.77)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Enhanced Modifier Application:</strong> Overhauled the "Apply Modifier" dialog in the Triumphs & Trials page. Administrators can now apply a single Triumph or Trial to **multiple users at once**. Additionally, for Trials that deduct rewards, a new **"Allow Substitution"** toggle has been added. When enabled, if a user has an insufficient balance of the specified reward, the system will automatically deduct other currencies or XP of equivalent value to cover the deficit.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">Week of October 13, 2025 (v0.5.74)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">

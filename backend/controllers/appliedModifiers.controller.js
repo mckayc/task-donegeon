@@ -22,11 +22,11 @@ const deleteAppliedModifiers = async (req, res) => {
 };
 
 const applyModifier = async (req, res) => {
-    const { userId, modifierDefinitionId, reason, overrides } = req.body;
+    const { userIds, modifierDefinitionId, reason, overrides } = req.body;
     // Assuming currentUser is available from some auth middleware in a real app
     const appliedById = req.body.appliedById || 'system'; 
     
-    const result = await modifierService.apply(userId, modifierDefinitionId, reason, appliedById, overrides);
+    const result = await modifierService.apply(userIds, modifierDefinitionId, reason, appliedById, overrides);
     if (!result) return res.status(404).json({ error: 'User or modifier definition not found.' });
     
     res.json(result);

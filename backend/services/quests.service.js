@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity, ScheduledEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
@@ -336,13 +337,16 @@ const approveQuestCompletion = async (id, approverId, note) => {
         }
 
         const approver = await manager.findOneBy(UserEntity, { id: approverId });
+        if (!approver) {
+            throw new Error(`Approving user with ID ${approverId} not found.`);
+        }
         
         const grantDetails = {
             userId: user.id,
             rewards: rewardsToApply,
             trophyId: trophyIdToApply,
             actorId: approverId,
-            actorName: approver?.gameName || 'System',
+            actorName: approver.gameName,
         };
         const { updatedUser, newUserTrophies, newNotifications } = await userService.grantRewards(manager, grantDetails, { skipChronicle: true });
         
@@ -357,7 +361,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
             existingEvent.title = chronicleTitle;
             existingEvent.color = '#4ade80';
             existingEvent.actorId = approverId;
-            existingEvent.actorName = approver?.gameName || 'System';
+            existingEvent.actorName = approver.gameName;
             existingEvent.date = actedAt;
             existingEvent.note = note;
             existingEvent.rewardsText = rewardsText;
@@ -410,13 +414,16 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         const existingEvent = await chronicleRepo.findOneBy({ originalId: id, status: 'Pending' });
         const rejecter = await manager.findOneBy(UserEntity, { id: rejecterId });
+        if (!rejecter) {
+            throw new Error(`Rejecting user with ID ${rejecterId} not found.`);
+        }
 
         if (existingEvent) {
             existingEvent.status = 'Rejected';
             existingEvent.title = `Rejected "${completion.quest.title}"`;
             existingEvent.color = '#f87171';
             existingEvent.actorId = rejecterId;
-            existingEvent.actorName = rejecter?.gameName || 'System';
+            existingEvent.actorName = rejecter.gameName;
             existingEvent.date = actedAt;
             existingEvent.note = note;
             await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
@@ -443,7 +450,7 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
     });
 };
 
-const revertQuestCompletion = async (completionId, adminId) => {
+const revertQuestApproval = async (completionId, adminId) => {
     return await dataSource.transaction(async manager => {
         const completionRepo = manager.getRepository(QuestCompletionEntity);
         const userRepo = manager.getRepository(UserEntity);
@@ -870,7 +877,7 @@ module.exports = {
     complete,
     approveQuestCompletion,
     rejectQuestCompletion,
-    revertQuestCompletion,
+    revertQuestApproval,
     markAsTodo,
     unmarkAsTodo,
     completeCheckpoint,

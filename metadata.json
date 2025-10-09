@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.77 - Apply Modifier Improvements",
-  "version": "0.5.77",
-  "description": "Enhances the Apply Modifier dialog with multi-user selection and an option for reward substitution on deductions.",
+  "name": "Task Donegeon 2.0 - 0.5.78 - Approval Stability Fix",
+  "version": "0.5.78",
+  "description": "Resolves a critical server error that could occur when approving or rejecting a quest completion.",
   "requestFramePermissions": [
     "camera"
   ],

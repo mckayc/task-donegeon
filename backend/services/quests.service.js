@@ -4,7 +4,7 @@ const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, QuestCompletionEntity, RewardTypeDefinitionEntity, UserTrophyEntity, SettingEntity, TrophyEntity, SystemNotificationEntity, ChronicleEventEntity, ScheduledEventEntity } = require('../entities');
 const { In, Between } = require("typeorm");
 const { updateEmitter } = require('../utils/updateEmitter');
-const { updateTimestamps, logGeneralAdminAction } = require('../utils/helpers');
+const { updateTimestamps, logGeneralAdminAction, checkAndAwardTrophies } = require('../utils/helpers');
 const { INITIAL_SETTINGS } = require('../initialData');
 const userService = require('./user.service');
 
@@ -342,19 +342,46 @@ const approveQuestCompletion = async (id, approverId, note) => {
         }
         const actorName = approver.gameName || approver.username;
         
-        const grantDetails = {
-            userId: user.id,
-            rewards: rewardsToApply,
-            trophyId: trophyIdToApply,
-            actorId: approverId,
-            actorName: actorName,
-        };
-        const { updatedUser, newUserTrophies, newNotifications } = await userService.grantRewards(manager, grantDetails, { skipChronicle: true });
+        // --- Inlined Reward Granting Logic ---
+        const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+        const balances = quest.guildId && user.guildBalances[quest.guildId] ? user.guildBalances[quest.guildId] : { purse: user.personalPurse, experience: user.personalExperience };
         
+        rewardsToApply.forEach(reward => {
+            const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+            if (rewardDef) {
+                const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+            }
+        });
+
+        if (quest.guildId) {
+            user.guildBalances[quest.guildId] = balances;
+        }
+        const userUpdatePayload = quest.guildId ? { guildBalances: user.guildBalances } : { personalPurse: balances.purse, personalExperience: balances.experience };
+        const updatedUser = await manager.save(UserEntity, updateTimestamps({ ...user, ...userUpdatePayload }));
+
+        let newUserTrophies = [];
+        if (trophyIdToApply) {
+             const trophy = await manager.findOneBy(TrophyEntity, { id: trophyIdToApply });
+             if (trophy) {
+                 const newUserTrophy = manager.create(UserTrophyEntity, {
+                     id: `usertrophy-${Date.now()}`,
+                     userId: user.id, trophyId: trophy.id, awardedAt: new Date().toISOString(),
+                     guildId: quest.guildId || undefined
+                 });
+                 const saved = await manager.save(UserTrophyEntity, updateTimestamps(newUserTrophy, true));
+                 newUserTrophies.push(saved);
+             }
+        }
+        
+        const autoTrophyResult = await checkAndAwardTrophies(manager, user.id, undefined);
+        newUserTrophies.push(...autoTrophyResult.newUserTrophies);
+        let newNotifications = [...autoTrophyResult.newNotifications];
+        // --- End Inlined Logic ---
+
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
         const existingEvent = await chronicleRepo.findOneBy({ originalId: id, status: 'Pending' });
         if (existingEvent) {
-            const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
             const getRewardInfo = (rewardId) => rewardTypes.find(rt => rt.id === rewardId) || { name: '?', icon: '?' };
             const rewardsText = rewardsToApply.map(r => `+${r.amount}${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
 

@@ -340,13 +340,14 @@ const approveQuestCompletion = async (id, approverId, note) => {
         if (!approver) {
             throw new Error(`Approving user with ID ${approverId} not found.`);
         }
+        const actorName = approver.gameName || approver.username;
         
         const grantDetails = {
             userId: user.id,
             rewards: rewardsToApply,
             trophyId: trophyIdToApply,
             actorId: approverId,
-            actorName: approver.gameName,
+            actorName: actorName,
         };
         const { updatedUser, newUserTrophies, newNotifications } = await userService.grantRewards(manager, grantDetails, { skipChronicle: true });
         
@@ -361,7 +362,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
             existingEvent.title = chronicleTitle;
             existingEvent.color = '#4ade80';
             existingEvent.actorId = approverId;
-            existingEvent.actorName = approver.gameName;
+            existingEvent.actorName = actorName;
             existingEvent.date = actedAt;
             existingEvent.note = note;
             existingEvent.rewardsText = rewardsText;
@@ -371,7 +372,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
         const notification = manager.create(SystemNotificationEntity, {
             id: `sysnotif-approve-${completion.id}`,
             type: 'QuestApproved',
-            message: `${approver.gameName} approved your completion of "${quest.title}".`,
+            message: `${actorName} approved your completion of "${quest.title}".`,
             recipientUserIds: [user.id],
             readByUserIds: [],
             senderId: approverId,
@@ -417,13 +418,14 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
         if (!rejecter) {
             throw new Error(`Rejecting user with ID ${rejecterId} not found.`);
         }
+        const actorName = rejecter.gameName || rejecter.username;
 
         if (existingEvent) {
             existingEvent.status = 'Rejected';
             existingEvent.title = `Rejected "${completion.quest.title}"`;
             existingEvent.color = '#f87171';
             existingEvent.actorId = rejecterId;
-            existingEvent.actorName = rejecter.gameName;
+            existingEvent.actorName = actorName;
             existingEvent.date = actedAt;
             existingEvent.note = note;
             await manager.save(ChronicleEventEntity, updateTimestamps(existingEvent));
@@ -432,7 +434,7 @@ const rejectQuestCompletion = async (id, rejecterId, note) => {
         const notification = manager.create(SystemNotificationEntity, {
             id: `sysnotif-reject-${completion.id}`,
             type: 'QuestRejected',
-            message: `${rejecter.gameName} rejected your completion of "${completion.quest.title}".`,
+            message: `${actorName} rejected your completion of "${completion.quest.title}".`,
             recipientUserIds: [completion.user.id],
             readByUserIds: [],
             senderId: rejecterId,

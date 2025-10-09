@@ -1,3 +1,4 @@
+
 const { dataSource } = require('../data-source');
 const { UserEntity, ModifierDefinitionEntity, QuestEntity, AppliedModifierEntity, RewardTypeDefinitionEntity, ChronicleEventEntity, SystemNotificationEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -103,7 +104,7 @@ const apply = async (userIds, modifierDefinitionId, reason, appliedById, overrid
                                 const currentAmount = target[reward.rewardTypeId] || 0;
                                 const changeAmount = effect.type === 'GRANT_REWARDS' ? reward.amount : -reward.amount;
                                 
-                                if (effect.type === 'DEDUCT_REWARDS' && (overrides as any)?.allowSubstitution && (currentAmount + changeAmount < 0)) {
+                                if (effect.type === 'DEDUCT_REWARDS' && overrides && overrides.allowSubstitution && (currentAmount + changeAmount < 0)) {
                                     let deficitInPrimaryUnit = Math.abs(currentAmount + changeAmount);
                                     target[reward.rewardTypeId] = 0;
 

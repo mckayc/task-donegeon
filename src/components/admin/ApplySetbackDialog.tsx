@@ -9,6 +9,9 @@ import RewardInputGroup from '../forms/RewardInputGroup';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
+import UserMultiSelect from '../user-interface/UserMultiSelect';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
+import NumberInput from '../user-interface/NumberInput';
 
 interface ApplyModifierDialogProps {
     setback: ModifierDefinition;
@@ -23,9 +26,10 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     const { addNotification } = useNotificationsDispatch();
     
     const [formData, setFormData] = useState<ModifierDefinition>(() => JSON.parse(JSON.stringify(modifier)));
-    const [selectedUserId, setSelectedUserId] = useState<string>('');
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [reason, setReason] = useState('');
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+    const [allowSubstitution, setAllowSubstitution] = useState(true);
 
     const redemptionQuests = useMemo(() => {
         return quests.filter(q => q.kind === QuestKind.Redemption);
@@ -33,7 +37,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
 
     const handleAddEffect = () => {
         const newEffect: ModifierEffect = formData.category === 'Trial'
-            ? { type: ModifierEffectType.CloseMarket, marketIds: [], durationHours: 24 }
+            ? { type: ModifierEffectType.DeductRewards, rewards: [] }
             : { type: ModifierEffectType.GrantRewards, rewards: [] };
         setFormData((prev: ModifierDefinition) => ({
             ...prev,
@@ -56,7 +60,6 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                 case ModifierEffectType.OpenMarket: newEffect = { type: newType, marketIds: [], durationHours: 24 }; break;
                 case ModifierEffectType.MarketDiscount: newEffect = { type: newType, marketId: '', discountPercent: 10, durationHours: 24 }; break;
                 default:
-                    // Should not happen, but as a fallback, keep the old effect
                     newEffect = newEffects[effectIndex];
             }
             newEffects[effectIndex] = newEffect;
@@ -119,8 +122,8 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedUserId) {
-            addNotification({ type: 'error', message: 'Please select a user.' });
+        if (selectedUserIds.length === 0) {
+            addNotification({ type: 'error', message: 'Please select at least one user.' });
             return;
         }
         if (!reason.trim()) {
@@ -128,7 +131,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
             return;
         }
 
-        const overrides: Partial<ModifierDefinition> = {};
+        const overrides: Partial<ModifierDefinition> & { allowSubstitution?: boolean } = {};
         if (formData.name !== modifier.name) overrides.name = formData.name;
         if (formData.description !== modifier.description) overrides.description = formData.description;
         if (formData.icon !== modifier.icon) overrides.icon = formData.icon;
@@ -138,11 +141,15 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
         if (formData.defaultRedemptionQuestId !== modifier.defaultRedemptionQuestId) {
             overrides.defaultRedemptionQuestId = formData.defaultRedemptionQuestId;
         }
+        
+        if (formData.category === 'Trial') {
+            overrides.allowSubstitution = allowSubstitution;
+        }
 
-        const success = await applyModifier(selectedUserId, modifier.id, reason, Object.keys(overrides).length > 0 ? overrides : undefined);
+        const success = await applyModifier(selectedUserIds, modifier.id, reason, Object.keys(overrides).length > 0 ? overrides : undefined);
 
         if (success) {
-            addNotification({ type: 'success', message: `"${modifier.name}" applied.` });
+            addNotification({ type: 'success', message: `"${modifier.name}" applied to ${selectedUserIds.length} user(s).` });
             onClose();
         }
     };
@@ -154,12 +161,12 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] flex flex-col">
                 <h2 className="text-3xl font-medieval text-emerald-400 mb-6">Apply Modifier</h2>
                 <form id="apply-setback-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-2">
-                    <Input as="select" label="User to Apply To" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} required>
-                        <option value="" disabled>Select a user...</option>
-                        {users.map(user => (
-                            <option key={user.id} value={user.id}>{user.gameName}</option>
-                        ))}
-                    </Input>
+                    <UserMultiSelect
+                        allUsers={users.filter(u => u.role !== Role.DonegeonMaster)}
+                        selectedUserIds={selectedUserIds}
+                        onSelectionChange={setSelectedUserIds}
+                        label="User(s) to Apply To"
+                    />
                     <Input as="textarea" label="Reason" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g., Missed curfew, broke a house rule." rows={3} required />
                     
                     <div className="pt-4 border-t border-stone-700/60">
@@ -198,13 +205,24 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                         <Button type="button" variant="destructive" size="sm" onClick={() => handleRemoveEffect(index)}>Remove</Button>
                                     </div>
                                     {(effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) && (
-                                        <RewardInputGroup 
-                                            category={effect.type === ModifierEffectType.DeductRewards ? 'setbacks' : 'rewards'} 
-                                            items={effect.rewards} 
-                                            onChange={handleRewardChange(index)} 
-                                            onAdd={handleAddRewardToEffect(index)} 
-                                            onRemove={handleRemoveRewardFromEffect(index)}
-                                        />
+                                        <>
+                                            <RewardInputGroup 
+                                                category={effect.type === ModifierEffectType.DeductRewards ? 'setbacks' : 'rewards'} 
+                                                items={effect.rewards} 
+                                                onChange={handleRewardChange(index)} 
+                                                onAdd={handleAddRewardToEffect(index)} 
+                                                onRemove={handleRemoveRewardFromEffect(index)}
+                                            />
+                                            {effect.type === ModifierEffectType.DeductRewards && (
+                                                <div className="pl-4">
+                                                    <ToggleSwitch
+                                                        enabled={allowSubstitution}
+                                                        setEnabled={setAllowSubstitution}
+                                                        label="Allow substituting other rewards if user balance is low"
+                                                    />
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {(effect.type === ModifierEffectType.CloseMarket || effect.type === ModifierEffectType.OpenMarket) && (
@@ -220,7 +238,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                                     {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                                                 </select>
                                             </div>
-                                            <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
+                                            <NumberInput label="Duration (Hours)" min={1} value={effect.durationHours} onChange={newValue => handleEffectPropChange(index, 'durationHours', newValue)} />
                                         </div>
                                     )}
                                     {effect.type === ModifierEffectType.MarketDiscount && (
@@ -229,8 +247,8 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                                 <option value="" disabled>Select...</option>
                                                 {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                                             </Input>
-                                            <Input label="Discount (%)" type="number" min="1" max="100" value={effect.discountPercent} onChange={e => handleEffectPropChange(index, 'discountPercent', parseInt(e.target.value) || 1)} />
-                                            <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
+                                            <NumberInput label="Discount (%)" min={1} max={100} value={effect.discountPercent} onChange={newValue => handleEffectPropChange(index, 'discountPercent', newValue)} />
+                                            <NumberInput label="Duration (Hours)" min={1} value={effect.durationHours} onChange={newValue => handleEffectPropChange(index, 'durationHours', newValue)} />
                                         </div>
                                     )}
                                 </div>

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
@@ -28,6 +29,7 @@ const CHRONICLE_EVENT_TYPES = [
     ChronicleEventType.AdminAssetManagement,
     ChronicleEventType.GiftReceived,
     ChronicleEventType.Trade,
+    ChronicleEventType.Exchange,
     ChronicleEventType.Crafting,
     ChronicleEventType.System,
     ChronicleEventType.Announcement,

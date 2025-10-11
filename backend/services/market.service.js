@@ -149,12 +149,13 @@ const exchange = async (userId, payItem, receiveItem, guildId) => {
         const updatedUser = await manager.getRepository('User').save(updateTimestamps(Object.assign(user, userUpdatePayload)));
 
         const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+        const rewardsText = `-${totalCost}${fromReward.icon} → +${receiveItem.amount}${toReward.icon}`;
         const eventData = {
             id: `chron-exchange-${Date.now()}`,
             originalId: `exchange-${Date.now()}`,
             date: new Date().toISOString(),
             type: 'Exchange',
-            title: `Exchanged for ${receiveItem.amount} ${toReward.name}`,
+            title: `Exchanged ${totalCost} ${fromReward.name} for ${receiveItem.amount} ${toReward.name}`,
             status: 'Exchanged',
             icon: '↔️',
             color: '#a855f7',
@@ -163,6 +164,7 @@ const exchange = async (userId, payItem, receiveItem, guildId) => {
             actorId: userId,
             actorName: user.gameName,
             guildId: guildId || undefined,
+            rewardsText,
         };
         const newEvent = chronicleRepo.create(eventData);
         await manager.save(updateTimestamps(newEvent, true));

@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.78 - Approval Stability Fix",
-  "version": "0.5.78",
-  "description": "Resolves a critical server error that could occur when approving or rejecting a quest completion.",
+  "name": "Task Donegeon 2.0 - 0.5.79 - Chronicle Exchange Details",
+  "version": "0.5.79",
+  "description": "Improves the Chronicles by adding detailed logging for currency and XP exchanges.",
   "requestFramePermissions": [
     "camera"
   ],

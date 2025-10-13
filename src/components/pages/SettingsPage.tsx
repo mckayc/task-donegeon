@@ -16,6 +16,47 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { PlusIcon, TrashIcon } from '../user-interface/Icons';
 
+const GeneralSettings: React.FC<{
+    settings: AppSettings;
+    onSettingChange: (key: keyof AppSettings, value: any) => void;
+}> = ({ settings, onSettingChange }) => {
+    
+    const handleSecurityChange = (key: keyof AppSettings['security'], value: boolean) => {
+        onSettingChange('security', { ...settings.security, [key]: value });
+    };
+
+    return (
+        <div className="space-y-4">
+            <ToggleSwitch
+                enabled={settings.security.requirePinForUsers}
+                setEnabled={val => handleSecurityChange('requirePinForUsers', val)}
+                label="Require PIN for user login"
+            />
+             <ToggleSwitch
+                enabled={settings.security.requirePasswordForAdmin}
+                setEnabled={val => handleSecurityChange('requirePasswordForAdmin', val)}
+                label="Require Password for Admin/Gatekeeper login"
+            />
+             <ToggleSwitch
+                enabled={settings.security.allowProfileEditing}
+                setEnabled={val => handleSecurityChange('allowProfileEditing', val)}
+                label="Allow users to edit their own profiles"
+            />
+            <ToggleSwitch
+                enabled={settings.security.allowAdminSelfApproval}
+                setEnabled={val => handleSecurityChange('allowAdminSelfApproval', val)}
+                label="Allow Admins to approve their own quests (if they are the only admin)"
+            />
+             <ToggleSwitch
+                enabled={settings.loginNotifications.enabled}
+                setEnabled={val => onSettingChange('loginNotifications', { ...settings.loginNotifications, enabled: val })}
+                label="Show unread announcements on login"
+            />
+        </div>
+    );
+};
+
+
 const TerminologySettings: React.FC<{
     terminology: Terminology;
     onChange: (key: keyof Terminology, value: string) => void;
@@ -283,6 +324,13 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             <Card className="p-0">
+                <CollapsibleSection title="General">
+                    <GeneralSettings
+                        settings={localSettings}
+                        onSettingChange={(key, value) => setLocalSettings(p => ({ ...p, [key]: value }))}
+                    />
+                </CollapsibleSection>
+                
                 <CollapsibleSection title="Terminology">
                     <TerminologySettings
                         terminology={localSettings.terminology}
@@ -320,31 +368,6 @@ export const SettingsPage: React.FC = () => {
                             }));
                         }}
                     />
-                </CollapsibleSection>
-                
-                 <CollapsibleSection title="Security">
-                    <div className="space-y-4">
-                        <ToggleSwitch
-                            enabled={localSettings.security.requirePinForUsers}
-                            setEnabled={val => setLocalSettings(p => ({ ...p, security: { ...p.security, requirePinForUsers: val } }))}
-                            label="Require PIN for user login"
-                        />
-                         <ToggleSwitch
-                            enabled={localSettings.security.requirePasswordForAdmin}
-                            setEnabled={val => setLocalSettings(p => ({ ...p, security: { ...p.security, requirePasswordForAdmin: val } }))}
-                            label="Require Password for Admin/Gatekeeper login"
-                        />
-                         <ToggleSwitch
-                            enabled={localSettings.security.allowProfileEditing}
-                            setEnabled={val => setLocalSettings(p => ({ ...p, security: { ...p.security, allowProfileEditing: val } }))}
-                            label="Allow users to edit their own profiles"
-                        />
-                        <ToggleSwitch
-                            enabled={localSettings.security.allowAdminSelfApproval}
-                            setEnabled={val => setLocalSettings(p => ({ ...p, security: { ...p.security, allowAdminSelfApproval: val } }))}
-                            label="Allow Admins to approve their own quests (if they are the only admin)"
-                        />
-                    </div>
                 </CollapsibleSection>
                 
                 <CollapsibleSection title="Shared / Kiosk Mode">

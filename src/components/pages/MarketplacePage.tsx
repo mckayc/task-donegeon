@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -275,10 +274,39 @@ const MarketplacePage: React.FC = () => {
         userTrophies, trophies, gameAssets, guilds, questGroups, appMode
     }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions, settings.conditionSets, userTrophies, trophies, gameAssets, guilds, questGroups, appMode]);
 
+    const defaultMarkets: (Market & { openStatus: MarketOpenStatus })[] = useMemo(() => {
+        const defaults: (Market & { openStatus: MarketOpenStatus })[] = [
+            {
+                id: 'market-bank',
+                title: "Exchange Post",
+                description: "Exchange your various currencies and experience points.",
+                iconType: 'emoji',
+                icon: '⚖️',
+                status: { type: 'open' },
+                openStatus: { isOpen: true }
+            }
+        ];
+
+        if (settings.enchantedVault.enabled) {
+            defaults.push({
+                id: 'market-vault',
+                title: "The Enchanted Vault",
+                description: "Deposit your rewards to watch them grow with interest over time.",
+                iconType: 'emoji',
+                icon: '🏦',
+                status: { type: 'open' },
+                openStatus: { isOpen: true }
+            });
+        }
+
+        return defaults;
+    }, [settings.enchantedVault.enabled]);
+
+
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
         
-        return markets.map((market: Market) => {
+        const customMarkets = markets.map((market: Market) => {
             const isPersonalMarket = market.guildId == null;
             let shouldShow = false;
 
@@ -294,11 +322,15 @@ const MarketplacePage: React.FC = () => {
             return { ...market, openStatus: status };
 
         }).filter((m): m is Market & { openStatus: MarketOpenStatus } => !!m);
-    }, [markets, appMode, currentUser, marketDependencies]);
+
+        return [...defaultMarkets, ...customMarkets];
+
+    }, [markets, appMode, currentUser, marketDependencies, defaultMarkets]);
 
     const activeMarket = React.useMemo(() => {
-        return markets.find((m: Market) => m.id === activeMarketId);
-    }, [markets, activeMarketId]);
+        // Also check default markets
+        return visibleMarkets.find((m: Market) => m.id === activeMarketId);
+    }, [visibleMarkets, activeMarketId]);
     
     const handleMarketClick = (market: Market & { openStatus: MarketOpenStatus }) => {
         const { openStatus } = market;

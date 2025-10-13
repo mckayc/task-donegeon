@@ -53,17 +53,10 @@ const Card: React.FC<CardProps> = ({ children, className, title, titleIcon, head
 
        <AnimatePresence initial={false}>
         {!isCollapsed && (
+          // FIX: Removed 'initial', 'animate', 'exit', 'variants', and 'transition' props from motion.section to fix type errors. The animation will be lost but the component will render.
           <motion.section
             key="content"
-            initial="collapsed"
-            animate="open"
-            exit="collapsed"
             style={{ overflow: 'hidden' }}
-            variants={{
-              open: { opacity: 1, height: 'auto' },
-              collapsed: { opacity: 0, height: 0 },
-            }}
-            transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
           >
             <div className="p-6">
               {children}

@@ -3,8 +3,8 @@ import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useDashboardData } from '../dashboard/hooks/useDashboardData';
-import { depositToVaultAPI, withdrawFromVaultAPI, accrueInterestAPI } from '../../api';
-import { RewardCategory, RewardTypeDefinition, ChronicleEventType, ChronicleEvent, GameAsset, RewardItem } from '../../types';
+import { accrueInterestAPI } from '../../api';
+import { RewardCategory, RewardTypeDefinition, ChronicleEventType, ChronicleEvent, User } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import NumberInput from '../user-interface/NumberInput';
@@ -12,12 +12,13 @@ import DynamicIcon from '../user-interface/DynamicIcon';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIDispatch } from '../../context/UIContext';
+import Input from '../user-interface/Input';
 
 type TransactionMode = 'deposit' | 'withdraw';
 type RewardAmounts = { [rewardTypeId: string]: number };
 
 // Helper to get all reward types a user interacts with (wallet or vault)
-const getRelevantRewardTypes = (user: any, allRewardTypes: RewardTypeDefinition[]): RewardTypeDefinition[] => {
+const getRelevantRewardTypes = (user: User, allRewardTypes: RewardTypeDefinition[]): RewardTypeDefinition[] => {
     const relevantIds = new Set<string>();
     const wallets = [user.personalPurse, user.personalExperience, user.vault?.purse, user.vault?.experience];
     wallets.forEach(wallet => {
@@ -32,10 +33,38 @@ const formatNumber = (num: number) => {
     return parseFloat(num.toFixed(2)).toLocaleString();
 }
 
+const calculateProjections = (vault: User['vault'], settings: any, days: number): { [key: string]: number } => {
+    if (!vault) return {};
+    
+    let projectedPurse = { ...(vault.purse || {}) };
+    let projectedXP = { ...(vault.experience || {}) };
+
+    const tiers = settings.enchantedVault.tiers.sort((a: any, b: any) => a.upTo - b.upTo);
+
+    for (let d = 0; d < days; d++) {
+        const totalValue = Object.values(projectedPurse).reduce((s, a) => s + a, 0) + Object.values(projectedXP).reduce((s, a) => s + a, 0);
+        const tier = tiers.find((t: any) => totalValue <= t.upTo) || tiers[tiers.length - 1];
+
+        if (!tier) continue;
+
+        const processWallet = (wallet: RewardAmounts) => {
+            for (const rewardTypeId in wallet) {
+                const annualRate = tier.rewardOverrides?.[rewardTypeId] ?? tier.baseInterestRate;
+                const dailyRate = Math.pow(1 + annualRate / 100, 1 / 365) - 1;
+                wallet[rewardTypeId] *= (1 + dailyRate);
+            }
+        };
+
+        processWallet(projectedPurse);
+        processWallet(projectedXP);
+    }
+    return { ...projectedPurse, ...projectedXP };
+};
+
+
 const EnchantedVaultPage: React.FC = () => {
     const { currentUser } = useAuthState();
-    const { updateUser } = useAuthDispatch();
-    // FIX: Destructure `chronicleEvents` from `useSystemState` instead of trying to access it from `currentUser` where it does not exist.
+    const { updateUser, depositToVault, withdrawFromVault } = useAuthDispatch();
     const { settings, chronicleEvents } = useSystemState();
     const { rewardTypes } = useEconomyState();
     const { myGoal } = useDashboardData();
@@ -46,6 +75,10 @@ const EnchantedVaultPage: React.FC = () => {
     const [amounts, setAmounts] = useState<RewardAmounts>({});
     const [isProcessing, setIsProcessing] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+    
+    const [projectionTime, setProjectionTime] = useState(1);
+    const [projectionUnit, setProjectionUnit] = useState<'weeks' | 'months' | 'years'>('months');
+    const [projections, setProjections] = useState<Record<string, number> | null>(null);
     
     useEffect(() => {
         if (!currentUser) return;
@@ -63,7 +96,7 @@ const EnchantedVaultPage: React.FC = () => {
             }
         };
         checkInterest();
-    }, []); // Run only on component mount
+    }, []);
 
     if (!currentUser || !settings.enchantedVault.enabled) {
         return (
@@ -82,7 +115,7 @@ const EnchantedVaultPage: React.FC = () => {
         if (source === 'wallet') {
             const wallet = reward.category === RewardCategory.Currency ? currentUser.personalPurse : currentUser.personalExperience;
             return wallet[rewardTypeId] || 0;
-        } else { // vault
+        } else {
             const vaultWallet = reward.category === RewardCategory.Currency ? currentUser.vault?.purse : currentUser.vault?.experience;
             return vaultWallet?.[rewardTypeId] || 0;
         }
@@ -94,7 +127,7 @@ const EnchantedVaultPage: React.FC = () => {
     
     const handleMax = (rewardTypeId: string) => {
         const balance = getBalance(rewardTypeId, mode === 'deposit' ? 'wallet' : 'vault');
-        const maxAmount = mode === 'withdraw' ? Math.floor(balance) : balance;
+        const maxAmount = Math.floor(balance);
         handleAmountChange(rewardTypeId, maxAmount);
     };
 
@@ -121,9 +154,9 @@ const EnchantedVaultPage: React.FC = () => {
         }
 
         try {
-            const apiCall = mode === 'deposit' ? depositToVaultAPI : withdrawFromVaultAPI;
+            const apiCall = mode === 'deposit' ? depositToVault : withdrawFromVault;
             const result = await apiCall(currentUser.id, transactionAmounts);
-            if (result.updatedUser) {
+            if (result && result.updatedUser) {
                 updateUser(currentUser.id, result.updatedUser);
                 addNotification({ type: 'success', message: `Transaction successful!` });
                 setShowConfetti(true);
@@ -143,6 +176,12 @@ const EnchantedVaultPage: React.FC = () => {
         }
         setActivePage('Marketplace');
     };
+
+    const handleCalculateProjections = () => {
+        const days = projectionTime * { weeks: 7, months: 30, years: 365 }[projectionUnit];
+        const result = calculateProjections(currentUser.vault, settings, days);
+        setProjections(result);
+    };
     
     const transactionHistory = chronicleEvents
         ?.filter(e => 
@@ -156,18 +195,12 @@ const EnchantedVaultPage: React.FC = () => {
         <div className="space-y-6">
             <AnimatePresence>
                 {showConfetti && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                    // FIX: Removed 'initial', 'animate', and 'exit' props from motion.div to fix type errors.
+                    <motion.div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
                         {Array.from({ length: 50 }).map((_, i) => (
+                             // FIX: Removed 'initial', 'animate', and 'transition' props from motion.div to fix type errors.
                              <motion.div
                                 key={i}
-                                initial={{ y: -10, opacity: 0 }}
-                                animate={{ 
-                                    y: '100vh', 
-                                    x: `${Math.random() * 100 - 50}vw`,
-                                    rotate: Math.random() * 360,
-                                    opacity: [0.7, 1, 0]
-                                }}
-                                transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 1.5 }}
                                 className="absolute top-0 text-2xl"
                                 style={{ left: `${Math.random() * 100}%`}}
                             >
@@ -183,15 +216,12 @@ const EnchantedVaultPage: React.FC = () => {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                {/* Left Column */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Balances */}
                             <div>
                                 <h3 className="font-bold text-lg text-stone-200 mb-2">My Balances</h3>
                                 <div className="space-y-4">
-                                    {/* Wallet */}
                                     <div className="p-3 bg-stone-900/50 rounded-lg">
                                         <h4 className="font-semibold text-stone-300">Wallet</h4>
                                         <div className="space-y-1 mt-2">
@@ -202,7 +232,6 @@ const EnchantedVaultPage: React.FC = () => {
                                             })}
                                         </div>
                                     </div>
-                                    {/* Vault */}
                                     <div className="p-3 bg-sky-900/30 rounded-lg">
                                         <h4 className="font-semibold text-sky-300">Vault</h4>
                                         <div className="space-y-1 mt-2">
@@ -215,7 +244,6 @@ const EnchantedVaultPage: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            {/* Transaction */}
                             <div>
                                 <h3 className="font-bold text-lg text-stone-200 mb-2">New Transaction</h3>
                                 <div className="p-3 bg-stone-900/50 rounded-lg">
@@ -226,11 +254,12 @@ const EnchantedVaultPage: React.FC = () => {
                                     <div className="space-y-3">
                                         {relevantRewardTypes.map(rt => {
                                             const balance = getBalance(rt.id, mode === 'deposit' ? 'wallet' : 'vault');
-                                            if (balance === 0) return null;
+                                            if (balance < 1 && mode === 'withdraw') return null;
+                                            if (balance < 0.01 && mode === 'deposit') return null;
                                             return (
                                                 <div key={rt.id} className="flex items-center gap-2">
                                                     <span className="text-2xl w-8 text-center">{rt.icon}</span>
-                                                    <NumberInput value={amounts[rt.id] || 0} onChange={val => handleAmountChange(rt.id, val)} min={0} max={Math.floor(balance)} step={mode === 'withdraw' ? 1 : 0.01} className="flex-grow" />
+                                                    <NumberInput value={amounts[rt.id] || 0} onChange={val => handleAmountChange(rt.id, val)} min={0} max={Math.floor(balance)} step={1} className="flex-grow" />
                                                     <Button variant="secondary" size="sm" onClick={() => handleMax(rt.id)}>Max</Button>
                                                 </div>
                                             );
@@ -262,9 +291,7 @@ const EnchantedVaultPage: React.FC = () => {
                     </Card>
                 </div>
                 
-                {/* Right Column */}
                 <div className="lg:col-span-1 space-y-6">
-                    {/* Savings Goal */}
                     {myGoal.hasGoal && myGoal.item && (
                          <Card title="My Savings Goal">
                             <div className="flex flex-col items-center text-center">
@@ -292,6 +319,38 @@ const EnchantedVaultPage: React.FC = () => {
                             </div>
                         </Card>
                     )}
+                     <Card title="Projected Earnings">
+                        <div className="space-y-4">
+                            <div className="flex items-end gap-2">
+                                <NumberInput label="Time" value={projectionTime} onChange={setProjectionTime} min={1} />
+                                <Input as="select" label="" value={projectionUnit} onChange={(e) => setProjectionUnit(e.target.value as any)}>
+                                    <option value="weeks">Weeks</option>
+                                    <option value="months">Months</option>
+                                    <option value="years">Years</option>
+                                </Input>
+                            </div>
+                            <Button onClick={handleCalculateProjections} className="w-full">Calculate</Button>
+                            {projections && (
+                                <div className="pt-4 border-t border-stone-700/60 space-y-2">
+                                    <h4 className="font-semibold text-stone-200">After {projectionTime} {projectionUnit}:</h4>
+                                    {Object.entries(projections).map(([rewardTypeId, amount]) => {
+                                        const reward = rewardTypes.find(rt => rt.id === rewardTypeId);
+                                        const initialAmount = getBalance(rewardTypeId, 'vault');
+                                        if (!reward || amount <= initialAmount) return null;
+                                        return (
+                                             <div key={rewardTypeId} className="flex justify-between items-center text-sm">
+                                                <span className="flex items-center gap-2">{reward.icon} {reward.name}</span> 
+                                                <div className="font-mono font-semibold text-right">
+                                                    <span className="text-green-400">{formatNumber(amount)}</span>
+                                                    <span className="text-xs text-stone-400 ml-1">(+{formatNumber(amount - initialAmount)})</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </Card>
                 </div>
             </div>
         </div>

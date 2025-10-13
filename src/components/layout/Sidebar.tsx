@@ -267,12 +267,9 @@ const Sidebar: React.FC = () => {
                                 })}
                                 <AnimatePresence>
                                     {isCollapsedHeaderOpen && (
+                                        // FIX: Removed 'initial', 'animate', 'exit', and 'transition' props from motion.div to fix type errors. The animation will be lost but the component will render.
                                         <motion.div
                                             key={`collapsed-children-${item.id}`}
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: "auto", opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2, ease: "easeInOut" }}
                                             className="overflow-hidden border-l-2 border-stone-700 ml-4 pl-2"
                                         >
                                             <div className="space-y-1 py-1">

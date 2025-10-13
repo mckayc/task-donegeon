@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.81
+**Version:** 0.5.82
 
 ---
 
@@ -15,14 +15,19 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
+-   **Week of October 13, 2025 (v0.5.82):**
+    -   **New Feature: The Enchanted Vault UI:** Implemented the full user interface for the Enchanted Vault feature.
+        -   **Deposit & Withdraw:** Users can now deposit currencies and XP into the vault through a dedicated UI. Inputs for deposit/withdrawals are restricted to whole numbers for simplicity.
+        -   **Interest Projections:** A new "Projected Earnings" card allows users to input a time period (weeks, months, years) and see a forecast of how their current vault balance will grow with daily compounded interest.
+        -   **Savings Goal Integration:** The vault page prominently displays the user's primary wishlist item and their savings progress, now including vaulted assets in the calculation.
+        -   **Transaction History:** All deposits, withdrawals, and interest payments are now visible in a transaction history log on the vault page.
+
 -   **Week of October 13, 2025 (v0.5.81):**
-    -   **New Feature: The Enchanted Vault:** Introduced a major new gameplay mechanic, "The Enchanted Vault," which acts as an in-game savings and investment account.
-        -   **Deposit & Withdraw:** Users can deposit currencies and XP into the vault to keep them safe and earn interest. The system supports fractional rewards for precise interest calculation, though UI inputs for deposit/withdraw are whole numbers for simplicity.
+    -   **New Feature: The Enchanted Vault (Backend):** Introduced a major new gameplay mechanic, "The Enchanted Vault," which acts as an in-game savings and investment account.
+        -   **Backend Logic:** Implemented all necessary backend functionality for deposits, withdrawals, and daily interest accrual.
         -   **Configurable Interest:** Administrators can enable the vault and configure a multi-tiered interest rate system based on the total value of deposited assets. Specific interest rates can also be set for individual reward types.
-        -   **Growth Projections:** The vault UI provides clear projections, showing users how their deposited rewards will grow over various time periods.
         -   **Automated Accrual:** Interest is calculated and applied automatically in the background once per day.
-        -   **Savings Goal Integration:** The vault and dashboard prominently display a user's primary wishlist item and their progress toward affording it, now including vaulted assets.
-        -   **Full Auditing:** All deposits, withdrawals, and interest payments are recorded in both the user's Chronicles and a detailed transaction history within the vault itself.
+        -   **Full Auditing:** All vault transactions are recorded in the user's Chronicles.
 
 -   **Week of November 3, 2025 (v0.5.79):**
     -   **Chronicle Exchange Logging:** Enhanced the Chronicles to display currency and XP exchanges. The log entries now provide a detailed breakdown of what was paid and what was received, improving clarity and auditability of transactions.

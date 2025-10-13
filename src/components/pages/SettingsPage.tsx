@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { AppSettings, Terminology } from '../../types';
@@ -27,7 +28,7 @@ const TerminologySettings: React.FC<{
             'Quest Types': ['recurringTask', 'recurringTasks', 'singleTask', 'singleTasks', 'journey', 'journeys'],
             'Economy': ['store', 'stores', 'shoppingCenter'],
             'Progression': ['level', 'levels', 'award', 'awards'],
-            'Social': ['group', 'groups', 'history', 'chronicles'],
+            'Social': ['group', 'groups', 'history'],
             'Roles': ['admin', 'moderator', 'user', 'users'],
             'Penalties': ['negativePoint', 'negativePoints'],
             'Sidebar Links': Object.keys(terminology).filter(k => k.startsWith('link_')) as (keyof Terminology)[]

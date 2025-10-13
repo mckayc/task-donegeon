@@ -288,7 +288,7 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
@@ -414,13 +414,26 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] },
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
-
-export {
-  INITIAL_MAIN_SIDEBAR_CONFIG,
-  INITIAL_SETTINGS,
-  INITIAL_QUEST_GROUPS,
-  INITIAL_REWARD_TYPES,
-  INITIAL_RANKS,
-  INITIAL_THEMES,
-  INITIAL_TROPHIES,
-};
+export const createInitialUsers = (): User[] => [];
+export const createInitialQuests = (): Quest[] => [];
+export const createInitialMarkets = (): Market[] => [];
+export const createInitialGameAssets = (): GameAsset[] => [];
+export const createInitialGuilds = (): Guild[] => [];
+export const createInitialUserTrophies = (): any[] => [];
+// FIX: Removed duplicate export of 'createInitialQuestCompletions'.
+export const createInitialAdminAdjustments = (): any[] => [];
+export const createInitialSystemLogs = (): any[] => [];
+export const createInitialSystemNotifications = (): any[] => [];
+export const createInitialScheduledEvents = (): any[] => [];
+export const createInitialChatMessages = (): any[] => [];
+export const createInitialBugReports = (): any[] => [];
+export const createInitialModifierDefinitions = (): any[] => [];
+export const createInitialAppliedModifiers = (): any[] => [];
+export const createInitialRotations = (): any[] => [];
+export const createInitialTradeOffers = (): any[] => [];
+export const createInitialGifts = (): any[] => [];
+export const createInitialChronicleEvents = (): any[] => [];
+export const createInitialMinigames = (): any[] => [];
+export const createInitialGameScores = (): any[] => [];
+export const createInitialAITutors = (): any[] => [];
+export const createInitialAITutorSessionLogs = (): any[] => [];

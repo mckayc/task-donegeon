@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const { asyncMiddleware } = require('../utils/helpers');
 const {
@@ -11,6 +12,9 @@ const {
     getPendingItemsForUser,
     generateRewardToken,
     claimRewardToken,
+    depositToVault,
+    withdrawFromVault,
+    accrueInterest,
 } = require('../controllers/users.controller');
 
 const router = express.Router();
@@ -26,5 +30,11 @@ router.get('/:userId/pending-items', asyncMiddleware(getPendingItemsForUser));
 router.post('/adjust', asyncMiddleware(applyManualAdjustment));
 router.post('/generate-reward-token', asyncMiddleware(generateRewardToken));
 router.post('/claim-reward-token', asyncMiddleware(claimRewardToken));
+
+// --- Enchanted Vault ---
+router.post('/vault/deposit', asyncMiddleware(depositToVault));
+router.post('/vault/withdraw', asyncMiddleware(withdrawFromVault));
+router.post('/vault/accrue-interest', asyncMiddleware(accrueInterest));
+
 
 module.exports = router;

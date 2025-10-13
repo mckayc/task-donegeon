@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.80
+**Version:** 0.5.81
 
 ---
 
@@ -15,13 +15,13 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
--   **Week of October 13, 2025 (v0.5.80):**
+-   **Week of October 13, 2025 (v0.5.81):**
     -   **New Feature: The Enchanted Vault:** Introduced a major new gameplay mechanic, "The Enchanted Vault," which acts as an in-game savings and investment account.
-        -   **Deposit & Withdraw:** Users can deposit currencies and XP into the vault to keep them safe and earn interest. The system supports fractional rewards for precise interest calculation, though UI displays are rounded for clarity.
+        -   **Deposit & Withdraw:** Users can deposit currencies and XP into the vault to keep them safe and earn interest. The system supports fractional rewards for precise interest calculation, though UI inputs for deposit/withdraw are whole numbers for simplicity.
         -   **Configurable Interest:** Administrators can enable the vault and configure a multi-tiered interest rate system based on the total value of deposited assets. Specific interest rates can also be set for individual reward types.
-        -   **Growth Projections:** The vault UI provides clear projections, showing users how their deposited rewards will grow over 1 week, 2 weeks, 1 month, 2 months, and 6 months.
-        -   **Automated Accrual:** Interest is calculated and applied automatically once per day in the background.
-        -   **Savings Goal Integration:** The vault prominently displays a user's primary wishlist item and their progress toward affording it.
+        -   **Growth Projections:** The vault UI provides clear projections, showing users how their deposited rewards will grow over various time periods.
+        -   **Automated Accrual:** Interest is calculated and applied automatically in the background once per day.
+        -   **Savings Goal Integration:** The vault and dashboard prominently display a user's primary wishlist item and their progress toward affording it, now including vaulted assets.
         -   **Full Auditing:** All deposits, withdrawals, and interest payments are recorded in both the user's Chronicles and a detailed transaction history within the vault itself.
 
 -   **Week of November 3, 2025 (v0.5.79):**

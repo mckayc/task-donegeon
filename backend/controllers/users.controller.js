@@ -68,6 +68,24 @@ const claimRewardToken = async (req, res) => {
     res.status(200).json(result);
 };
 
+const depositToVault = async (req, res) => {
+    const { userId, amounts } = req.body;
+    const result = await userService.depositToVault(userId, amounts);
+    res.json(result);
+};
+
+const withdrawFromVault = async (req, res) => {
+    const { userId, amounts } = req.body;
+    const result = await userService.withdrawFromVault(userId, amounts);
+    res.json(result);
+};
+
+const accrueInterest = async (req, res) => {
+    const { userId } = req.body;
+    const result = await userService.accrueInterestForUser(userId);
+    res.json(result);
+};
+
 module.exports = {
     getAllUsers,
     createUser,
@@ -78,4 +96,7 @@ module.exports = {
     getPendingItemsForUser,
     generateRewardToken,
     claimRewardToken,
+    depositToVault,
+    withdrawFromVault,
+    accrueInterest,
 };

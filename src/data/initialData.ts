@@ -4,10 +4,7 @@ import { RewardTypeDefinition, RewardCategory } from '../types';
 import { Rank } from '../components/ranks/types';
 import { Trophy, TrophyRequirementType } from '../components/trophies/types';
 import { QuestType, Quest, QuestGroup, QuestCompletion } from '../components/quests/types';
-import { Market } from '../types';
-import { Guild } from '../components/guilds/types';
-import { AppSettings, SidebarConfigItem, Terminology } from '../types/app';
-import { GameAsset } from '../components/items/types';
+import { AppSettings, SidebarConfigItem } from '../types/app';
 import { ThemeDefinition, ThemeStyle } from '../components/themes/types';
 
 export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
@@ -241,7 +238,85 @@ export const INITIAL_SETTINGS: AppSettings = {
     bugReportTemplates: [],
 };
 
-// ... (rest of the file remains the same)
+export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
+    { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
+    { id: 'qg-school', name: 'School & Learning', description: 'Quests related to homework, studying, and educational activities.', icon: '📚' },
+    { id: 'qg-personal', name: 'Personal Goals', description: 'Quests for self-improvement, habits, and personal projects.', icon: '🎯' },
+    { id: 'qg-health', name: 'Health & Wellness', description: 'Tasks for physical and mental well-being, like exercise and hygiene.', icon: '❤️‍🩹' },
+    { id: 'qg-family', name: 'Family & Social', description: 'Quests that involve spending time with or helping family and friends.', icon: '👨‍👩‍👧‍👦' },
+    { id: 'qg-creative', name: 'Creative & Hobbies', description: 'Quests for art, music, building, and other creative pursuits.', icon: '🎨' },
+    { id: 'qg-outdoor', name: 'Outdoor & Adventure', description: 'Tasks related to yard work, playing outside, and exploring nature.', icon: '🌳' },
+    { id: 'qg-kindness', name: 'Kindness & Service', description: 'Quests focused on helping others, showing appreciation, and community service.', icon: '💖' },
+];
+
+export const INITIAL_REWARD_TYPES: RewardTypeDefinition[] = [
+    { id: 'core-gold', name: 'Gold Coins', category: RewardCategory.Currency, description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 0.20 },
+    { id: 'core-gems', name: 'Gems', category: RewardCategory.Currency, description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 1.00 },
+    { id: 'core-crystal', name: 'Crystals', category: RewardCategory.Currency, description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 0.10 },
+    { id: 'core-token', name: 'Game Token', category: RewardCategory.Currency, description: 'Used to play minigames in The Arcade.', isCore: true, iconType: 'emoji', icon: '🪙', baseValue: 0.25 },
+    { id: 'core-strength', name: 'Strength', category: RewardCategory.XP, description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 0.05 },
+    { id: 'core-diligence', name: 'Diligence', category: RewardCategory.XP, description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 0.05 },
+    { id: 'core-wisdom', name: 'Wisdom', category: RewardCategory.XP, description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 0.05 },
+    { id: 'core-skill', name: 'Skill', category: RewardCategory.XP, description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯', baseValue: 0.05 },
+    { id: 'core-creative', name: 'Creativity', category: RewardCategory.XP, description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨', baseValue: 0.05 },
+];
+
+const rankNames = [
+    "Novice", "Initiate", "Apprentice", "Journeyman", "Adept", 
+    "Squire", "Knight", "Guardian", "Sentinel", "Champion", 
+    "Vanguard", "Paladin", "Myrmidon", "Justicar", "Marshal", 
+    "Baron", "Viscount", "Earl", "Marquess", "Duke", 
+    "Warlord", "Conqueror", "Highlord", "Overlord", "Master",
+    "Grandmaster", "Elder", "Mystic", "Sage", "Archsage", 
+    "Shadow", "Phantom", "Spectre", "Wraith", "Lich", 
+    "Paragon", "Exemplar", "Titan", "Colossus", "Behemoth",
+    "Celestial", "Empyrean", "Astral", "Ethereal", "Cosmic",
+    "Demigod", "Ascendant", "Immortal", "Transcendent", "The Absolute"
+];
+
+const rankIcons = [
+    '🔰', '🌱', '🛠️', '🧭', '🔥', '🛡️', '⚔️', '🏰', '🔭', '🏆',
+    '🎖️', '⚜️', '💠', '⚖️', '👑', '🌍', '🚀', '🌌', '🌟', '✨',
+    '🔥', '💥', '💫', '☄️', '🪐', '⭐', '🥇', '🏅', '🎖️', '🏆',
+    '👻', '💀', '☠️', '🎃', '👽', '💎', '💍', '👑', '🔱', '⚡',
+    '🌈', '🌊', '🌋', '🏔️', '🌪️', '☀️', '🌕', '🌠', '🎇', '💥'
+];
+
+
+export const INITIAL_RANKS: Rank[] = Array.from({ length: 50 }, (_, i) => ({
+    id: `rank-${i + 1}`,
+    name: rankNames[i] || `Level ${i + 1}`,
+    xpThreshold: Math.floor(i * (50 + i * 5)),
+    iconType: 'emoji',
+    icon: rankIcons[i] || '❓',
+}));
+
+const rawThemes: { [key: string]: Partial<ThemeStyle> } = {
+  emerald: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "224 71% 4%", '--color-bg-secondary-hsl': "224 39% 10%", '--color-bg-tertiary-hsl': "240 10% 19%", '--color-text-primary-hsl': "240 8% 90%", '--color-text-secondary-hsl': "240 6% 65%", '--color-border-hsl': "240 6% 30%", '--color-primary-hue': "158", '--color-primary-saturation': "84%", '--color-primary-lightness': "39%", '--color-accent-hue': "158", '--color-accent-saturation': "75%", '--color-accent-lightness': "58%", '--color-accent-light-hue': "158", '--color-accent-light-saturation': "70%", '--color-accent-light-lightness': "45%" },
+  rose: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "334 27% 10%", '--color-bg-secondary-hsl': "334 20% 15%", '--color-bg-tertiary-hsl': "334 15% 22%", '--color-text-primary-hsl': "346 33% 94%", '--color-text-secondary-hsl': "346 20% 70%", '--color-border-hsl': "346 15% 40%", '--color-primary-hue': "346", '--color-primary-saturation': "84%", '--color-primary-lightness': "59%", '--color-accent-hue': "346", '--color-accent-saturation': "91%", '--color-accent-lightness': "71%", '--color-accent-light-hue': "346", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "60%" },
+  sky: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "217 33% 12%", '--color-bg-secondary-hsl': "217 28% 17%", '--color-bg-tertiary-hsl': "217 25% 25%", '--color-text-primary-hsl': "210 40% 98%", '--color-text-secondary-hsl': "215 25% 75%", '--color-border-hsl': "215 20% 40%", '--color-primary-hue': "204", '--color-primary-saturation': "85%", '--color-primary-lightness': "54%", '--color-accent-hue': "202", '--color-accent-saturation': "90%", '--color-accent-lightness': "70%", '--color-accent-light-hue': "202", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "60%" },
+  sapphire: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "217 33% 12%", '--color-bg-secondary-hsl': "217 28% 17%", '--color-bg-tertiary-hsl': "217 25% 25%", '--color-text-primary-hsl': "210 40% 98%", '--color-text-secondary-hsl': "215 25% 75%", '--color-border-hsl': "215 20% 40%", '--color-primary-hue': "217", '--color-primary-saturation': "90%", '--color-primary-lightness': "61%", '--color-accent-hue': "217", '--color-accent-saturation': "85%", '--color-accent-lightness': "75%", '--color-accent-light-hue': "217", '--color-accent-light-saturation': "95%", '--color-accent-light-lightness': "85%" },
+  arcane: { '--font-display': "'Uncial Antiqua', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "265 39% 12%", '--color-bg-secondary-hsl': "265 30% 18%", '--color-bg-tertiary-hsl': "265 25% 25%", '--color-text-primary-hsl': "271 67% 93%", '--color-text-secondary-hsl': "271 25% 75%", '--color-border-hsl': "271 20% 45%", '--color-primary-hue': "265", '--color-primary-saturation': "60%", '--color-primary-lightness': "55%", '--color-accent-hue': "265", '--color-accent-saturation': "70%", '--color-accent-lightness': "75%", '--color-accent-light-hue': "45", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "65%" },
+  cartoon: { '--font-display': "'Comic Neue', cursive", '--font-body': "'Comic Neue', cursive", '--font-label': "'Comic Neue', cursive", '--font-span': "'Comic Neue', cursive", '--font-button': "'Comic Neue', cursive", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "214 53% 15%", '--color-bg-secondary-hsl': "214 43% 22%", '--color-bg-tertiary-hsl': "214 38% 30%", '--color-text-primary-hsl': "210 40% 96%", '--color-text-secondary-hsl': "210 30% 75%", '--color-border-hsl': "210 25% 45%", '--color-primary-hue': "25", '--color-primary-saturation': "95%", '--color-primary-lightness': "55%", '--color-accent-hue': "200", '--color-accent-saturation': "85%", '--color-accent-lightness': "60%", '--color-accent-light-hue': "200", '--color-accent-light-saturation': "90%", '--color-accent-light-lightness': "70%" },
+  forest: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 25% 10%", '--color-bg-secondary-hsl': "120 20% 15%", '--color-bg-tertiary-hsl': "120 15% 22%", '--color-text-primary-hsl': "90 30% 90%", '--color-text-secondary-hsl': "90 15% 65%", '--color-border-hsl': "120 10% 35%", '--color-primary-hue': "130", '--color-primary-saturation': "60%", '--color-primary-lightness': "40%", '--color-accent-hue': "90", '--color-accent-saturation': "50%", '--color-accent-lightness': "65%", '--color-accent-light-hue': "40", '--color-accent-light-saturation': "50%", '--color-accent-light-lightness': "55%" },
+  ocean: { '--font-display': "'Uncial Antiqua', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "200 100% 10%", '--color-bg-secondary-hsl': "200 80% 18%", '--color-bg-tertiary-hsl': "200 70% 25%", '--color-text-primary-hsl': "190 70% 95%", '--color-text-secondary-hsl': "190 40% 75%", '--color-border-hsl': "190 40% 40%", '--color-primary-hue': '180', '--color-primary-saturation': '85%', '--color-primary-lightness': '45%', '--color-accent-hue': '190', '--color-accent-saturation': '80%', '--color-accent-lightness': '60%', '--color-accent-light-hue': '190', '--color-accent-light-saturation': '70%', '--color-accent-light-lightness': '70%' },
+  vulcan: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "10 50% 8%", '--color-bg-secondary-hsl': "10 40% 12%", '--color-bg-tertiary-hsl': "10 35% 18%", '--color-text-primary-hsl': "10 10% 90%", '--color-text-secondary-hsl': "10 5% 65%", '--color-border-hsl': "10 10% 35%", '--color-primary-hue': "0", '--color-primary-saturation': "85%", '--color-primary-lightness': "50%", '--color-accent-hue': "25", '--color-accent-saturation': "90%", '--color-accent-lightness': "60%", '--color-accent-light-hue': "45", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "65%" },
+  royal: { '--font-display': "'Uncial Antiqua', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "250 40% 10%", '--color-bg-secondary-hsl': "250 30% 16%", '--color-bg-tertiary-hsl': "250 25% 24%", '--color-text-primary-hsl': "250 50% 92%", '--color-text-secondary-hsl': "250 25% 70%", '--color-border-hsl': "250 20% 40%", '--color-primary-hue': "250", '--color-primary-saturation': "60%", '--color-primary-lightness': "50%", '--color-accent-hue': "45", '--color-accent-saturation': "80%", '--color-accent-lightness': "60%", '--color-accent-light-hue': "45", '--color-accent-light-saturation': "85%", '--color-accent-light-lightness': "70%" },
+  winter: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "205 30% 15%", '--color-bg-secondary-hsl': "205 25% 22%", '--color-bg-tertiary-hsl': "205 20% 30%", '--color-text-primary-hsl': "205 60% 95%", '--color-text-secondary-hsl': "205 30% 75%", '--color-border-hsl': "205 20% 45%", '--color-primary-hue': "205", '--color-primary-saturation': "70%", '--color-primary-lightness': "50%", '--color-accent-hue': "195", '--color-accent-saturation': "80%", '--color-accent-lightness': "65%", '--color-accent-light-hue': "215", '--color-accent-light-saturation': "60%", '--color-accent-light-lightness': "55%" },
+  sunset: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "20 50% 10%", '--color-bg-secondary-hsl': "20 40% 15%", '--color-bg-tertiary-hsl': "20 35% 22%", '--color-text-primary-hsl': "30 80% 90%", '--color-text-secondary-hsl': "30 40% 70%", '--color-border-hsl': "30 20% 40%", '--color-primary-hue': "15", '--color-primary-saturation': "90%", '--color-primary-lightness': "60%", '--color-accent-hue': "35", '--color-accent-saturation': "95%", '--color-accent-lightness': "65%", '--color-accent-light-hue': "340", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "70%" },
+  cyberpunk: { '--font-display': "'Press Start 2P', cursive", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "260 50% 5%", '--color-bg-secondary-hsl': "280 40% 10%", '--color-bg-tertiary-hsl': "300 30% 15%", '--color-text-primary-hsl': "320 100% 95%", '--color-text-secondary-hsl': "300 50% 75%", '--color-border-hsl': "300 30% 35%", '--color-primary-hue': "320", '--color-primary-saturation': "100%", '--color-primary-lightness': "60%", '--color-accent-hue': "180", '--color-accent-saturation': "100%", '--color-accent-lightness': "50%", '--color-accent-light-hue': "55", '--color-accent-light-saturation': "100%", '--color-accent-light-lightness': "50%" },
+  steampunk: { '--font-display': "'IM Fell English SC', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "30 20% 12%", '--color-bg-secondary-hsl': "30 15% 18%", '--color-bg-tertiary-hsl': "30 10% 25%", '--color-text-primary-hsl': "35 30% 85%", '--color-text-secondary-hsl': "35 20% 65%", '--color-border-hsl': "35 15% 40%", '--color-primary-hue': "30", '--color-primary-saturation': "60%", '--color-primary-lightness': "50%", '--color-accent-hue': "190", '--color-accent-saturation': "40%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "20", '--color-accent-light-saturation': "30%", '--color-accent-light-lightness': "60%" },
+  parchment: { '--font-display': "'IM Fell English SC', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "40 30% 85%", '--color-bg-secondary-hsl': "40 25% 90%", '--color-bg-tertiary-hsl': "40 20% 95%", '--color-text-primary-hsl': "35 40% 15%", '--color-text-secondary-hsl': "35 30% 35%", '--color-border-hsl': "35 20% 70%", '--color-primary-hue': "20", '--color-primary-saturation': "50%", '--color-primary-lightness': "40%", '--color-accent-hue': "0", '--color-accent-saturation': "50%", '--color-accent-lightness': "45%", '--color-accent-light-hue': "10", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
+  eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
+};
+
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
+  id,
+  name: id.charAt(0).toUpperCase() + id.slice(1),
+  isCustom: false,
+  styles: styles as ThemeStyle,
+}));
+
 export const createInitialQuestCompletions = (): QuestCompletion[] => {
     return [];
 };
@@ -362,11 +437,22 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
 
-// FIX: Removed redundant export block causing redeclaration errors. The variables are already exported inline.
-export * from './initialContent';
-export {
-  INITIAL_THEMES,
-  INITIAL_RANKS,
-  INITIAL_REWARD_TYPES,
-  INITIAL_QUEST_GROUPS,
+export const createInitialUsers = (): User[] => {
+    return [];
+};
+
+export const createInitialGuilds = (): Guild[] => {
+    return [];
+};
+
+export const createInitialMarkets = (): Market[] => {
+    return [];
+};
+
+export const createInitialGameAssets = (): GameAsset[] => {
+    return [];
+};
+
+export const createInitialQuests = (): Quest[] => {
+    return [];
 };

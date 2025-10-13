@@ -44,6 +44,27 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>Enchanted Vault</h3>
+        <p>
+            The Enchanted Vault is a new default market that acts as an in-game savings and investment account, designed to teach the value of long-term saving in an engaging way.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Deposits & Withdrawals:</strong> Users can deposit any amount of their currencies and XP. The system supports fractional rewards on the backend for precise interest calculation. For simplicity, withdrawals from the UI are in whole numbers, but any remaining "dust" (e.g., 0.9 Wisdom) stays in the vault and continues to accrue interest.
+            </li>
+            <li>
+                <strong>Interest Projections:</strong> Before making a deposit, users can see a clear forecast of how their rewards will grow over various time periods (1 week, 2 weeks, 1 month, 2 months, and 6 months), providing a clear incentive to save.
+            </li>
+            <li>
+                <strong>Configurable Interest Tiers:</strong> Administrators have full control over the vault's mechanics via the Settings page. They can enable/disable the feature, create multiple interest rate tiers based on the total amount saved (e.g., 0-100 rewards gets X%, 101-500 gets Y%), and set specific interest rates for individual reward types that can override the tier's base rate.
+            </li>
+            <li>
+                <strong>Automated Accrual & Auditing:</strong> Interest is calculated and applied automatically once per day. All deposits, withdrawals, and interest payments are recorded in both the user's Chronicles and a detailed transaction history within the vault itself for complete transparency.
+            </li>
+            <li>
+                <strong>Savings Goal Integration:</strong> The vault prominently displays a user's primary wishlist item from the Marketplace and shows their progress toward affording it with clear progress bars that update as their savings grow.
+            </li>
+        </ul>
         <h3>Triumphs & Trials</h3>
         <p>
             The "Apply Modifier" functionality has been enhanced for greater flexibility and efficiency.

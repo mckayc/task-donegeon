@@ -41,6 +41,11 @@ export interface User {
       experience: { [rewardTypeId: string]: number };
     }
   };
+  vault?: {
+    purse: { [rewardTypeId: string]: number }; // Can be decimal
+    experience: { [rewardTypeId: string]: number }; // Can be decimal
+  };
+  lastVaultInterestAccrued?: string; // ISO date string
   theme?: string; // Theme ID
   ownedThemes: string[]; // Array of Theme IDs
   hasBeenOnboarded?: boolean;

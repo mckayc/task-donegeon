@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, RewardItem, User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -44,7 +45,8 @@ export interface EconomyDispatch {
   rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void>;
   cancelPurchaseRequest: (requestId: string) => Promise<void>;
   revertPurchase: (purchaseId: string, adminId: string) => Promise<void>;
-  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
+  // FIX: Updated payItem type to include pooledRewardTypeIds for exchange functionality.
+  executeExchange: (userId: string, payItem: RewardItem & { pooledRewardTypeIds: string[] }, receiveItem: RewardItem, guildId?: string) => Promise<void>;
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
   acceptTrade: (tradeId: string) => Promise<void>;

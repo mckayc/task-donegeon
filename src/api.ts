@@ -35,6 +35,8 @@ export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalEx
 export const updateUserAPI = (id: string, data: Partial<User>) => apiRequest('PUT', `/api/users/${id}`, data);
 export const deleteUsersAPI = (ids: string[], actorId?: string) => apiRequest('DELETE', '/api/users', { ids, actorId });
 export const completeFirstRunAPI = (adminUserData: any) => apiRequest('POST', '/api/data/first-run', { adminUserData });
+export const depositToVaultAPI = (userId: string, amounts: { purse: { [key: string]: number }, experience: { [key: string]: number } }) => apiRequest('POST', `/api/users/vault/deposit`, { userId, amounts });
+export const withdrawFromVaultAPI = (userId: string, amounts: { purse: { [key: string]: number }, experience: { [key: string]: number } }) => apiRequest('POST', `/api/users/vault/withdraw`, { userId, amounts });
 
 
 // --- Community API ---
@@ -58,7 +60,7 @@ export const approvePurchaseRequestAPI = (id: string, approverId: string) => api
 export const rejectPurchaseRequestAPI = (id: string, rejecterId: string) => apiRequest('POST', `/api/markets/reject-purchase/${id}`, { rejecterId });
 export const cancelPurchaseRequestAPI = (id: string) => apiRequest('POST', `/api/markets/cancel-purchase/${id}`);
 export const revertPurchaseAPI = (id: string, adminId: string) => apiRequest('POST', `/api/markets/revert-purchase/${id}`, { adminId });
-export const executeExchangeAPI = (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('POST', '/api/markets/exchange', { userId, payItem, receiveItem, guildId });
+export const executeExchangeAPI = (userId: string, payItem: RewardItem & { pooledRewardTypeIds: string[] }, receiveItem: RewardItem, guildId?: string) => apiRequest('POST', '/api/markets/exchange', { userId, payItem, receiveItem, guildId });
 export const proposeTradeAPI = (recipientId: string, guildId: string, initiatorId: string) => apiRequest('POST', '/api/trades/propose', { recipientId, guildId, initiatorId });
 export const updateTradeOfferAPI = (id: string, updates: Partial<TradeOffer>) => apiRequest('PUT', `/api/trades/${id}`, updates);
 export const acceptTradeAPI = (id: string) => apiRequest('POST', `/api/trades/accept/${id}`);
@@ -149,7 +151,7 @@ export const deleteBugReportsAPI = (ids: string[]) => apiRequest('DELETE', '/api
 export const importBugReportsAPI = (reports: BugReport[], mode: 'merge' | 'replace') => apiRequest('POST', '/api/bug-reports/import', { reports, mode });
 export const addModifierDefinitionAPI = (data: Omit<ModifierDefinition, 'id'>) => apiRequest('POST', '/api/setbacks', data);
 export const updateModifierDefinitionAPI = (data: ModifierDefinition) => apiRequest('PUT', `/api/setbacks/${data.id}`, data);
-export const applyModifierAPI = (userIds: string[], modifierId: string, reason: string, appliedById: string, overrides?: Partial<ModifierDefinition>) => apiRequest('POST', '/api/applied-modifiers/apply', { userIds, modifierDefinitionId: modifierId, reason, appliedById, overrides });
+export const applyModifierAPI = (userIds: string[], modifierId: string, reason: string, appliedById: string, overrides?: Partial<ModifierDefinition> & { allowSubstitution?: boolean }) => apiRequest('POST', '/api/applied-modifiers/apply', { userIds, modifierDefinitionId: modifierId, reason, appliedById, overrides });
 export const deleteAppliedModifiersAPI = (ids: string[]) => apiRequest('DELETE', '/api/applied-modifiers', { ids });
 export const cloneUserAPI = (userId: string) => apiRequest('POST', `/api/users/clone/${userId}`);
 export const sendMessageAPI = (data: { senderId: string; recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; }) => apiRequest('POST', '/api/chat/send', data);

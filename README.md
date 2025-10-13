@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.79
+**Version:** 0.5.80
 
 ---
 
@@ -15,11 +15,20 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Weekly Summaries
 
+-   **Week of October 13, 2025 (v0.5.80):**
+    -   **New Feature: The Enchanted Vault:** Introduced a major new gameplay mechanic, "The Enchanted Vault," which acts as an in-game savings and investment account.
+        -   **Deposit & Withdraw:** Users can deposit currencies and XP into the vault to keep them safe and earn interest. The system supports fractional rewards for precise interest calculation, though UI displays are rounded for clarity.
+        -   **Configurable Interest:** Administrators can enable the vault and configure a multi-tiered interest rate system based on the total value of deposited assets. Specific interest rates can also be set for individual reward types.
+        -   **Growth Projections:** The vault UI provides clear projections, showing users how their deposited rewards will grow over 1 week, 2 weeks, 1 month, 2 months, and 6 months.
+        -   **Automated Accrual:** Interest is calculated and applied automatically once per day in the background.
+        -   **Savings Goal Integration:** The vault prominently displays a user's primary wishlist item and their progress toward affording it.
+        -   **Full Auditing:** All deposits, withdrawals, and interest payments are recorded in both the user's Chronicles and a detailed transaction history within the vault itself.
+
 -   **Week of November 3, 2025 (v0.5.79):**
     -   **Chronicle Exchange Logging:** Enhanced the Chronicles to display currency and XP exchanges. The log entries now provide a detailed breakdown of what was paid and what was received, improving clarity and auditability of transactions.
 
 -   **Week of October 27, 2025 (v0.5.78):**
-    -   **Approvals Stability Fix:** Resolved a critical server error that could occur when an administrator approved or rejected a quest completion. The issue was caused by a missing check for the administrator's user object, leading to a crash if their account was deleted or in an inconsistent state. The backend is now more resilient and handles this edge case gracefully.
+    -   **Approvals Stability Fix:** Resolved a critical server error that could occur when an administrator approved or rejected a quest completion. The issue was caused by a missing check for the administrator's user object, leading to a crash if their account was in an inconsistent state. The backend is now more resilient and handles this edge case gracefully.
 
 -   **Week of October 20, 2025 (v0.5.77):**
     -   **Enhanced Modifier Application:** Overhauled the "Apply Modifier" dialog in the Triumphs & Trials page. Administrators can now apply a single Triumph or Trial to **multiple users at once**. Additionally, for Trials that deduct rewards, a new **"Allow Substitution"** toggle has been added. When enabled, if a user has an insufficient balance of the specified reward, the system will automatically deduct other currencies or XP of equivalent value to cover the deficit.

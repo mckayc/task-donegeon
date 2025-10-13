@@ -47,4 +47,5 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Manage Condition Sets': lazy(() => import('../pages/management/ManageConditionSetsPage')),
     'Manage Minigames': lazy(() => import('../pages/management/ManageMinigamesPage')),
     'Statistics': lazy(() => import('../pages/management/StatsPage')),
+    'Enchanted Vault': lazy(() => import('../pages/EnchantedVaultPage')),
 };

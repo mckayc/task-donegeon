@@ -159,16 +159,24 @@ export const useDashboardData = () => {
             return { hasGoal: false, item: null, progress: [], isAffordable: false };
         }
         
-        const balances = appMode.mode === 'personal'
-            ? { ...(currentUser.personalPurse || {}), ...(currentUser.personalExperience || {}) }
-            : { ...((currentUser.guildBalances || {})[appMode.guildId]?.purse || {}), ...((currentUser.guildBalances || {})[appMode.guildId]?.experience || {}) };
+        const personalPurse = appMode.mode === 'personal' ? currentUser.personalPurse || {} : (currentUser.guildBalances?.[appMode.guildId]?.purse || {});
+        const personalXP = appMode.mode === 'personal' ? currentUser.personalExperience || {} : (currentUser.guildBalances?.[appMode.guildId]?.experience || {});
+        
+        const vaultPurse = currentUser.vault?.purse || {};
+        const vaultXP = currentUser.vault?.experience || {};
 
         const costGroup = goalItem.costGroups[0] || [];
         const progress: any[] = costGroup.map(cost => {
             const rewardDef = rewardTypes.find(rt => rt.id === cost.rewardTypeId);
+            let currentBalance = 0;
+            if (rewardDef?.category === RewardCategory.Currency) {
+                currentBalance = (personalPurse[cost.rewardTypeId] || 0) + (vaultPurse[cost.rewardTypeId] || 0);
+            } else if (rewardDef?.category === RewardCategory.XP) {
+                currentBalance = (personalXP[cost.rewardTypeId] || 0) + (vaultXP[cost.rewardTypeId] || 0);
+            }
             return {
-                ...cost, // Add all properties from RewardItem
-                current: balances[cost.rewardTypeId] || 0,
+                ...cost,
+                current: currentBalance,
                 icon: rewardDef?.icon || '❓',
                 name: rewardDef?.name || 'Unknown'
             };
@@ -194,7 +202,6 @@ export const useDashboardData = () => {
             mostRecentTrophy: null,
             quickActionQuests: [],
             weeklyProgressData: [],
-            // FIX: Add myGoal to the return object for the case when there is no current user.
             myGoal: { hasGoal: false, item: null, progress: [], isAffordable: false },
             terminology: settings.terminology
         };

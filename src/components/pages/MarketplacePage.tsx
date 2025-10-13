@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useSystemState } from '../../context/SystemContext';
@@ -13,7 +11,7 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { toYMD } from '../../utils/quests';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useNotificationsDispatch } from '../../context/NotificationsDispatch';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
@@ -267,7 +265,7 @@ const MarketplacePage: React.FC = () => {
     const { currentUser } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
     const { appMode, activeMarketId } = useUIState();
-    const { setActiveMarketId } = useUIDispatch();
+    const { setActiveMarketId, setActivePage } = useUIDispatch();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const [viewingConditionsForMarket, setViewingConditionsForMarket] = useState<Market | null>(null);
     
@@ -300,6 +298,27 @@ const MarketplacePage: React.FC = () => {
     const activeMarket = React.useMemo(() => {
         return markets.find((m: Market) => m.id === activeMarketId);
     }, [markets, activeMarketId]);
+    
+    const handleMarketClick = (market: Market & { openStatus: MarketOpenStatus }) => {
+        const { openStatus } = market;
+        if (openStatus.isOpen === false) {
+            if (openStatus.reason === 'CONDITIONAL') {
+                setViewingConditionsForMarket(market);
+            } else {
+                let message = openStatus.message;
+                if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
+                    message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
+                }
+                addNotification({ type: 'error', message, duration: 8000 });
+            }
+        } else {
+            if (market.id === 'market-vault') {
+                setActivePage('Enchanted Vault');
+            } else {
+                setActiveMarketId(market.id);
+            }
+        }
+    };
 
 
     if (activeMarket) {
@@ -331,21 +350,7 @@ const MarketplacePage: React.FC = () => {
                         return (
                             <button 
                                 key={market.id} 
-                                onClick={() => {
-                                    if (openStatus.isOpen === false) {
-                                        if (openStatus.reason === 'CONDITIONAL') {
-                                            setViewingConditionsForMarket(market);
-                                        } else {
-                                            let message = openStatus.message;
-                                            if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
-                                                message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
-                                            }
-                                            addNotification({ type: 'error', message, duration: 8000 });
-                                        }
-                                    } else {
-                                        setActiveMarketId(market.id);
-                                    }
-                                }}
+                                onClick={() => handleMarketClick(market)}
                                 disabled={isTrulyDisabled}
                                 className={`text-left group ${isTrulyDisabled ? 'cursor-not-allowed' : ''}`}
                             >

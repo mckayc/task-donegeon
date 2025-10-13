@@ -17,7 +17,7 @@ export type Page =
   | 'Suggestion Engine' | 'Object Exporter' | 'Asset Manager' | 'Backup & Import'
   | 'Asset Library' | 'Appearance' | 'Settings' | 'About' | 'Help Guide' | 'Themes'
   | 'Bug Tracker' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames'
-  | 'Statistics' | 'Manage AI Tutors';
+  | 'Statistics' | 'Manage AI Tutors' | 'Enchanted Vault';
 
 export interface Terminology {
   appName: string;
@@ -104,6 +104,21 @@ export type SidebarConfigItem =
 export type SidebarLink = Extract<SidebarConfigItem, { type: 'link' }>;
 export type SidebarHeader = Extract<SidebarConfigItem, { type: 'header' }>;
 
+export interface EnchantedVaultTier {
+    id: string;
+    upTo: number; // The upper bound for this tier
+    baseInterestRate: number; // Annual Percentage Rate (e.g., 5 for 5%)
+    rewardOverrides?: {
+        [rewardTypeId: string]: number; // Specific APR for a reward type
+    };
+}
+
+export interface EnchantedVaultSettings {
+    enabled: boolean;
+    tiers: EnchantedVaultTier[];
+}
+
+
 export interface AppSettings {
     contentVersion: number;
     favicon: string;
@@ -127,7 +142,6 @@ export interface AppSettings {
         requiresApproval: boolean;
         isOptional: boolean;
         isActive: boolean;
-        // FIX: Added missing 'allowSetbackSubstitution' property to questDefaults.
         allowSetbackSubstitution?: boolean;
     };
     security: {
@@ -176,6 +190,7 @@ export interface AppSettings {
     };
     conditionSets: ConditionSet[];
     bugReportTemplates: BugReportTemplate[];
+    enchantedVault: EnchantedVaultSettings;
 }
 
 export interface BackupSchedule {

@@ -27,6 +27,9 @@ export enum ChronicleEventType {
     QuestClaimCancelled = 'QuestClaimCancelled',
     QuestUnclaimed = 'QuestUnclaimed',
     PrizeWon = 'PrizeWon',
+    VaultDeposit = 'VaultDeposit',
+    VaultWithdrawal = 'VaultWithdrawal',
+    VaultInterest = 'VaultInterest',
 }
 
 export type ChronicleEvent = {

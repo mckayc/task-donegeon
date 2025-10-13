@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.80 - Enchanted Vault",
-  "version": "0.5.80",
+  "name": "Task Donegeon 2.0 - 0.5.81 - Enchanted Vault",
+  "version": "0.5.81",
   "description": "Introduces the Enchanted Vault, a new feature for saving and growing rewards with interest.",
   "requestFramePermissions": [
     "camera"

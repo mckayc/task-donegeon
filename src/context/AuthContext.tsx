@@ -1,9 +1,8 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
-import { addUserAPI, updateUserAPI, deleteUsersAPI, completeFirstRunAPI } from '../api';
+import { addUserAPI, updateUserAPI, deleteUsersAPI, completeFirstRunAPI, depositToVaultAPI, withdrawFromVaultAPI, accrueInterestAPI } from '../api';
 
 // State managed by this context
 export interface AuthState {
@@ -30,6 +29,9 @@ interface AuthDispatch {
   setIsSwitchingUser: (isSwitching: boolean) => void;
   setTargetedUserForLogin: (user: User | null) => void;
   completeFirstRun: (adminUserData: any) => void;
+  depositToVault: (userId: string, amounts: { purse: { [key: string]: number; }; experience: { [key: string]: number; }; }) => Promise<{ updatedUser: User; } | null>;
+  withdrawFromVault: (userId: string, amounts: { purse: { [key: string]: number; }; experience: { [key: string]: number; }; }) => Promise<{ updatedUser: User; } | null>;
+  accrueInterest: (userId: string) => Promise<{ updatedUser: User, interestApplied: number } | null>;
 }
 
 const AuthStateContext = createContext<AuthState | undefined>(undefined);
@@ -153,6 +155,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addNotification({ type: 'error', message: error instanceof Error ? error.message : 'First run setup failed.' });
       }
   }, [addNotification]);
+
+    const depositToVault = useCallback(async (userId: string, amounts: { purse: { [key: string]: number }, experience: { [key: string]: number } }) => {
+        return await depositToVaultAPI(userId, amounts) as any;
+    }, []);
+
+    const withdrawFromVault = useCallback(async (userId: string, amounts: { purse: { [key: string]: number }, experience: { [key: string]: number } }) => {
+        return await withdrawFromVaultAPI(userId, amounts) as any;
+    }, []);
+    
+    const accrueInterest = useCallback(async (userId: string) => {
+        return await accrueInterestAPI(userId) as any;
+    }, []);
   
   const dispatch = useMemo(() => ({
       setUsers,
@@ -167,10 +181,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsSwitchingUser,
       setTargetedUserForLogin,
       completeFirstRun,
+      depositToVault,
+      withdrawFromVault,
+      accrueInterest,
   }), [
       setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, logout,
       markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, 
-      completeFirstRun
+      completeFirstRun, depositToVault, withdrawFromVault, accrueInterest
   ]);
 
   const stateValue: AuthState = {

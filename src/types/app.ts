@@ -44,6 +44,7 @@ export interface Terminology {
   stores: string;
   groups: string;
   levels: string;
+  ranks: string;
   awards: string;
   points: string;
   negativePoints: string;

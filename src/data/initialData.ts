@@ -150,14 +150,16 @@ export const INITIAL_SETTINGS: AppSettings = {
       stores: 'Markets',
       groups: 'Guilds',
       levels: 'Ranks',
+      // FIX: Add missing 'ranks' property to satisfy the Terminology type.
+      ranks: 'Ranks',
       awards: 'Trophies',
       points: 'Rewards',
       negativePoints: 'Setbacks',
+      users: 'Explorers',
       // Roles
       admin: 'Donegeon Master',
       moderator: 'Gatekeeper',
       user: 'Explorer',
-      users: 'Explorers',
       // Sidebar Links
       link_dashboard: 'Dashboard',
       link_quests: 'Quests',
@@ -232,7 +234,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       calendarId: '',
     },
     developerMode: {
-      enabled: false,
+        enabled: false,
     },
     conditionSets: [],
     bugReportTemplates: [],
@@ -436,23 +438,3 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] },
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
-
-export const createInitialUsers = (): User[] => {
-    return [];
-};
-
-export const createInitialGuilds = (): Guild[] => {
-    return [];
-};
-
-export const createInitialMarkets = (): Market[] => {
-    return [];
-};
-
-export const createInitialGameAssets = (): GameAsset[] => {
-    return [];
-};
-
-export const createInitialQuests = (): Quest[] => {
-    return [];
-};

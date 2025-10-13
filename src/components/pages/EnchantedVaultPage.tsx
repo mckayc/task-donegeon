@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
@@ -33,13 +34,30 @@ const formatNumber = (num: number) => {
     return parseFloat(num.toFixed(2)).toLocaleString();
 }
 
-const calculateProjections = (vault: User['vault'], settings: any, days: number): { [key: string]: number } => {
-    if (!vault) return {};
+const calculateProjections = (
+    baseVault: User['vault'],
+    settings: any,
+    days: number,
+    potentialTransaction?: { purse: RewardAmounts, experience: RewardAmounts }
+): { [key: string]: number } => {
     
-    let projectedPurse = { ...(vault.purse || {}) };
-    let projectedXP = { ...(vault.experience || {}) };
+    let projectedPurse: RewardAmounts = { ...(baseVault?.purse || {}) };
+    let projectedXP: RewardAmounts = { ...(baseVault?.experience || {}) };
 
+    if (potentialTransaction) {
+        // Add potential deposits to the starting balance
+        for (const id in potentialTransaction.purse) {
+            projectedPurse[id] = (projectedPurse[id] || 0) + potentialTransaction.purse[id];
+        }
+        for (const id in potentialTransaction.experience) {
+            projectedXP[id] = (projectedXP[id] || 0) + potentialTransaction.experience[id];
+        }
+    }
+    
+    if (!settings.enchantedVault.enabled) return {};
+    
     const tiers = settings.enchantedVault.tiers.sort((a: any, b: any) => a.upTo - b.upTo);
+    if (tiers.length === 0) return {};
 
     for (let d = 0; d < days; d++) {
         const totalValue = Object.values(projectedPurse).reduce((s, a) => s + a, 0) + Object.values(projectedXP).reduce((s, a) => s + a, 0);
@@ -96,7 +114,7 @@ const EnchantedVaultPage: React.FC = () => {
             }
         };
         checkInterest();
-    }, []);
+    }, [currentUser, updateUser, addNotification]);
 
     if (!currentUser || !settings.enchantedVault.enabled) {
         return (
@@ -179,7 +197,23 @@ const EnchantedVaultPage: React.FC = () => {
 
     const handleCalculateProjections = () => {
         const days = projectionTime * { weeks: 7, months: 30, years: 365 }[projectionUnit];
-        const result = calculateProjections(currentUser.vault, settings, days);
+        let potentialTransaction: { purse: RewardAmounts, experience: RewardAmounts } | undefined = undefined;
+
+        if (mode === 'deposit') {
+            const transactionAmounts: { purse: RewardAmounts, experience: RewardAmounts } = { purse: {}, experience: {} };
+            Object.entries(amounts).forEach(([rewardTypeId, amount]) => {
+                if (amount > 0) {
+                    const reward = rewardTypes.find(rt => rt.id === rewardTypeId);
+                    if (reward) {
+                        const target = reward.category === RewardCategory.Currency ? transactionAmounts.purse : transactionAmounts.experience;
+                        target[rewardTypeId] = amount;
+                    }
+                }
+            });
+            potentialTransaction = transactionAmounts;
+        }
+
+        const result = calculateProjections(currentUser.vault, settings, days, potentialTransaction);
         setProjections(result);
     };
     
@@ -192,17 +226,18 @@ const EnchantedVaultPage: React.FC = () => {
         .slice(0, 20);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-4xl mx-auto">
             <AnimatePresence>
                 {showConfetti && (
-                    // FIX: Removed 'initial', 'animate', and 'exit' props from motion.div to fix type errors.
                     <motion.div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
                         {Array.from({ length: 50 }).map((_, i) => (
-                             // FIX: Removed 'initial', 'animate', and 'transition' props from motion.div to fix type errors.
                              <motion.div
                                 key={i}
                                 className="absolute top-0 text-2xl"
                                 style={{ left: `${Math.random() * 100}%`}}
+                                initial={{ y: -50, opacity: 1 }}
+                                animate={{ y: '100vh', rotate: Math.random() * 720, opacity: [1, 1, 0] }}
+                                transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 0.5, ease: "linear" }}
                             >
                                 {['💰', '💎', '⭐', '✨'][i % 4]}
                             </motion.div>
@@ -215,144 +250,139 @@ const EnchantedVaultPage: React.FC = () => {
                 <p className="text-stone-300">Welcome, brave adventurer, to a place of safekeeping and growth. Store your hard-earned rewards here, and watch as they magically multiply over time. The longer they remain, the greater they shall become!</p>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div className="lg:col-span-2 space-y-6">
-                    <Card>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="font-bold text-lg text-stone-200 mb-2">My Balances</h3>
-                                <div className="space-y-4">
-                                    <div className="p-3 bg-stone-900/50 rounded-lg">
-                                        <h4 className="font-semibold text-stone-300">Wallet</h4>
-                                        <div className="space-y-1 mt-2">
-                                            {relevantRewardTypes.map(rt => {
-                                                const balance = getBalance(rt.id, 'wallet');
-                                                if (balance === 0) return null;
-                                                return <div key={rt.id} className="flex justify-between items-center text-sm"><span className="flex items-center gap-2">{rt.icon} {rt.name}</span> <span className="font-mono font-semibold text-stone-200">{formatNumber(balance)}</span></div>
-                                            })}
-                                        </div>
-                                    </div>
-                                    <div className="p-3 bg-sky-900/30 rounded-lg">
-                                        <h4 className="font-semibold text-sky-300">Vault</h4>
-                                        <div className="space-y-1 mt-2">
-                                            {relevantRewardTypes.map(rt => {
-                                                const balance = getBalance(rt.id, 'vault');
-                                                if (balance === 0) return null;
-                                                return <div key={rt.id} className="flex justify-between items-center text-sm"><span className="flex items-center gap-2">{rt.icon} {rt.name}</span> <span className="font-mono font-semibold text-sky-200">{formatNumber(balance)}</span></div>
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-lg text-stone-200 mb-2">New Transaction</h3>
-                                <div className="p-3 bg-stone-900/50 rounded-lg">
-                                    <div className="flex space-x-1 p-1 bg-stone-700/50 rounded-lg mb-4">
-                                        <button onClick={() => setMode('deposit')} className={`flex-1 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'deposit' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>Deposit</button>
-                                        <button onClick={() => setMode('withdraw')} className={`flex-1 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'withdraw' ? 'bg-sky-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>Withdraw</button>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {relevantRewardTypes.map(rt => {
-                                            const balance = getBalance(rt.id, mode === 'deposit' ? 'wallet' : 'vault');
-                                            if (balance < 1 && mode === 'withdraw') return null;
-                                            if (balance < 0.01 && mode === 'deposit') return null;
-                                            return (
-                                                <div key={rt.id} className="flex items-center gap-2">
-                                                    <span className="text-2xl w-8 text-center">{rt.icon}</span>
-                                                    <NumberInput value={amounts[rt.id] || 0} onChange={val => handleAmountChange(rt.id, val)} min={0} max={Math.floor(balance)} step={1} className="flex-grow" />
-                                                    <Button variant="secondary" size="sm" onClick={() => handleMax(rt.id)}>Max</Button>
-                                                </div>
-                                            );
-                                        })}
-                                        <Button onClick={handleSubmit} disabled={isProcessing} className="w-full capitalize !mt-4">{isProcessing ? 'Processing...' : mode}</Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
-
-                    <Card title="Transaction History">
-                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                            {transactionHistory && transactionHistory.length > 0 ? (
-                                transactionHistory.map(event => (
-                                    <div key={event.id} className="grid grid-cols-3 gap-2 items-center text-sm p-2 bg-stone-900/40 rounded-md">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xl">{event.icon}</span>
-                                            <span className="font-semibold text-stone-300">{event.title}</span>
-                                        </div>
-                                        <div className="text-center font-mono font-semibold" style={{ color: event.color }}>{event.rewardsText}</div>
-                                        <div className="text-right text-xs text-stone-400">{new Date(event.date).toLocaleString()}</div>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-stone-400 text-center">No transactions yet.</p>
-                            )}
-                        </div>
-                    </Card>
-                </div>
-                
-                <div className="lg:col-span-1 space-y-6">
-                    {myGoal.hasGoal && myGoal.item && (
-                         <Card title="My Savings Goal">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-24 h-24 mb-3 bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden">
-                                    <DynamicIcon iconType={myGoal.item.iconType} icon={myGoal.item.icon} imageUrl={myGoal.item.imageUrl} className="w-full h-full object-contain text-5xl" />
-                                </div>
-                                <h4 className="font-bold text-lg text-amber-300">{myGoal.item.name}</h4>
-                                <div className="w-full space-y-3 mt-4 text-left">
-                                    {myGoal.progress.map((p: any) => {
-                                        const percentage = Math.min(100, (p.current / p.amount) * 100);
-                                        return (
-                                            <div key={p.rewardTypeId}>
-                                                <div className="flex justify-between items-center text-xs mb-1">
-                                                    <span className="font-semibold text-stone-300 flex items-center gap-1">{p.icon} {p.name}</span>
-                                                    <span className="font-mono">{formatNumber(p.current)} / {formatNumber(p.amount)}</span>
-                                                </div>
-                                                <div className="w-full bg-stone-700 rounded-full h-2.5">
-                                                    <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <Button onClick={handleViewInMarket} size="sm" className="mt-4">View in Market</Button>
-                            </div>
-                        </Card>
-                    )}
-                     <Card title="Projected Earnings">
+            <Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 className="font-bold text-lg text-stone-200 mb-2">My Balances</h3>
                         <div className="space-y-4">
-                            <div className="flex items-end gap-2">
-                                <NumberInput label="Time" value={projectionTime} onChange={setProjectionTime} min={1} />
-                                <Input as="select" label="" value={projectionUnit} onChange={(e) => setProjectionUnit(e.target.value as any)}>
-                                    <option value="weeks">Weeks</option>
-                                    <option value="months">Months</option>
-                                    <option value="years">Years</option>
-                                </Input>
-                            </div>
-                            <Button onClick={handleCalculateProjections} className="w-full">Calculate</Button>
-                            {projections && (
-                                <div className="pt-4 border-t border-stone-700/60 space-y-2">
-                                    <h4 className="font-semibold text-stone-200">After {projectionTime} {projectionUnit}:</h4>
-                                    {Object.entries(projections).map(([rewardTypeId, amount]) => {
-                                        const reward = rewardTypes.find(rt => rt.id === rewardTypeId);
-                                        const initialAmount = getBalance(rewardTypeId, 'vault');
-                                        if (!reward || amount <= initialAmount) return null;
-                                        return (
-                                             <div key={rewardTypeId} className="flex justify-between items-center text-sm">
-                                                <span className="flex items-center gap-2">{reward.icon} {reward.name}</span> 
-                                                <div className="font-mono font-semibold text-right">
-                                                    <span className="text-green-400">{formatNumber(amount)}</span>
-                                                    <span className="text-xs text-stone-400 ml-1">(+{formatNumber(amount - initialAmount)})</span>
-                                                </div>
-                                            </div>
-                                        )
+                            <div className="p-3 bg-stone-900/50 rounded-lg">
+                                <h4 className="font-semibold text-stone-300">Wallet</h4>
+                                <div className="space-y-1 mt-2">
+                                    {relevantRewardTypes.map(rt => {
+                                        const balance = getBalance(rt.id, 'wallet');
+                                        if (balance === 0 && getBalance(rt.id, 'vault') === 0) return null;
+                                        return <div key={rt.id} className="flex justify-between items-center text-sm"><span className="flex items-center gap-2">{rt.icon} {rt.name}</span> <span className="font-mono font-semibold text-stone-200">{formatNumber(balance)}</span></div>
                                     })}
                                 </div>
-                            )}
+                            </div>
+                            <div className="p-3 bg-sky-900/30 rounded-lg">
+                                <h4 className="font-semibold text-sky-300">Vault</h4>
+                                <div className="space-y-1 mt-2">
+                                    {relevantRewardTypes.map(rt => {
+                                        const balance = getBalance(rt.id, 'vault');
+                                        if (balance === 0 && getBalance(rt.id, 'wallet') === 0) return null;
+                                        return <div key={rt.id} className="flex justify-between items-center text-sm"><span className="flex items-center gap-2">{rt.icon} {rt.name}</span> <span className="font-mono font-semibold text-sky-200">{formatNumber(balance)}</span></div>
+                                    })}
+                                </div>
+                            </div>
                         </div>
-                    </Card>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-lg text-stone-200 mb-2">New Transaction</h3>
+                        <div className="p-3 bg-stone-900/50 rounded-lg">
+                            <div className="flex space-x-1 p-1 bg-stone-700/50 rounded-lg mb-4">
+                                <button onClick={() => setMode('deposit')} className={`flex-1 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'deposit' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>Deposit</button>
+                                <button onClick={() => setMode('withdraw')} className={`flex-1 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'withdraw' ? 'bg-sky-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>Withdraw</button>
+                            </div>
+                            <div className="space-y-3">
+                                {relevantRewardTypes.map(rt => {
+                                    const balance = getBalance(rt.id, mode === 'deposit' ? 'wallet' : 'vault');
+                                    if (balance < 1 && mode === 'withdraw') return null;
+                                    if (balance < 0.01 && mode === 'deposit') return null;
+                                    return (
+                                        <div key={rt.id} className="flex items-center gap-2">
+                                            <span className="text-2xl w-8 text-center">{rt.icon}</span>
+                                            <NumberInput value={amounts[rt.id] || 0} onChange={val => handleAmountChange(rt.id, val)} min={0} max={Math.floor(balance)} step={1} className="flex-grow" />
+                                            <Button variant="secondary" size="sm" onClick={() => handleMax(rt.id)}>Max</Button>
+                                        </div>
+                                    );
+                                })}
+                                <Button onClick={handleSubmit} disabled={isProcessing} className="w-full capitalize !mt-4">{isProcessing ? 'Processing...' : mode}</Button>
+                            </div>
+                        </div>
+                         <div className="pt-4 mt-4 border-t border-stone-700/60">
+                            <h3 className="font-bold text-lg text-stone-200 mb-2">Projected Earnings</h3>
+                             <div className="space-y-4 p-3 bg-stone-900/50 rounded-lg">
+                                <div className="flex items-end gap-2">
+                                    <NumberInput label="Time" value={projectionTime} onChange={setProjectionTime} min={1} />
+                                    <Input as="select" label="" value={projectionUnit} onChange={(e) => setProjectionUnit(e.target.value as any)}>
+                                        <option value="weeks">Weeks</option>
+                                        <option value="months">Months</option>
+                                        <option value="years">Years</option>
+                                    </Input>
+                                </div>
+                                <Button onClick={handleCalculateProjections} className="w-full">Calculate</Button>
+                                {projections && (
+                                    <div className="pt-4 border-t border-stone-700/60 space-y-2">
+                                        <h4 className="font-semibold text-stone-200">After {projectionTime} {projectionUnit}:</h4>
+                                        {Object.entries(projections).map(([rewardTypeId, amount]) => {
+                                            const reward = rewardTypes.find(rt => rt.id === rewardTypeId);
+                                            const initialAmount = getBalance(rewardTypeId, 'vault') + (mode === 'deposit' ? (amounts[rewardTypeId] || 0) : 0);
+                                            if (!reward || amount <= initialAmount) return null;
+                                            return (
+                                                <div key={rewardTypeId} className="flex justify-between items-center text-sm">
+                                                    <span className="flex items-center gap-2">{reward.icon} {reward.name}</span> 
+                                                    <div className="font-mono font-semibold text-right">
+                                                        <span className="text-green-400">{formatNumber(amount)}</span>
+                                                        <span className="text-xs text-stone-400 ml-1">(+{formatNumber(amount - initialAmount)})</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </Card>
+
+            {myGoal.hasGoal && myGoal.item && (
+                 <Card title="My Savings Goal">
+                    <div className="flex flex-col items-center text-center">
+                        <div className="w-24 h-24 mb-3 bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden">
+                            <DynamicIcon iconType={myGoal.item.iconType} icon={myGoal.item.icon} imageUrl={myGoal.item.imageUrl} className="w-full h-full object-contain text-5xl" />
+                        </div>
+                        <h4 className="font-bold text-lg text-amber-300">{myGoal.item.name}</h4>
+                        <div className="w-full space-y-3 mt-4 text-left max-w-md mx-auto">
+                            {myGoal.progress.map((p: any) => {
+                                const percentage = Math.min(100, (p.current / p.amount) * 100);
+                                return (
+                                    <div key={p.rewardTypeId}>
+                                        <div className="flex justify-between items-center text-xs mb-1">
+                                            <span className="font-semibold text-stone-300 flex items-center gap-1">{p.icon} {p.name}</span>
+                                            <span className="font-mono">{formatNumber(p.current)} / {formatNumber(p.amount)}</span>
+                                        </div>
+                                        <div className="w-full bg-stone-700 rounded-full h-2.5">
+                                            <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <Button onClick={handleViewInMarket} size="sm" className="mt-4">View in Market</Button>
+                    </div>
+                </Card>
+            )}
+
+            <Card title="Transaction History">
+                 <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                    {transactionHistory && transactionHistory.length > 0 ? (
+                        transactionHistory.map(event => (
+                            <div key={event.id} className="grid grid-cols-3 gap-2 items-center text-sm p-2 bg-stone-900/40 rounded-md">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xl">{event.icon}</span>
+                                    <span className="font-semibold text-stone-300">{event.title}</span>
+                                </div>
+                                <div className="text-center font-mono font-semibold" style={{ color: event.color }}>{event.rewardsText}</div>
+                                <div className="text-right text-xs text-stone-400">{new Date(event.date).toLocaleString()}</div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-stone-400 text-center">No transactions yet.</p>
+                    )}
+                </div>
+            </Card>
         </div>
     );
 };

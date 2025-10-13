@@ -1,8 +1,6 @@
-
-
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
-import { AppSettings, Terminology } from '../../types';
+import { AppSettings, Terminology, EnchantedVaultSettings, EnchantedVaultTier, RewardTypeDefinition, RewardCategory } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -15,6 +13,8 @@ import UserMultiSelect from '../user-interface/UserMultiSelect';
 import ServiceWorkerLogger from '../settings/ServiceWorkerLogger';
 import NumberInput from '../user-interface/NumberInput';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { PlusIcon, TrashIcon } from '../user-interface/Icons';
 
 const TerminologySettings: React.FC<{
     terminology: Terminology;
@@ -77,6 +77,106 @@ const TerminologySettings: React.FC<{
         </div>
     );
 };
+
+const EnchantedVaultSettingsComponent: React.FC<{
+    settings: EnchantedVaultSettings;
+    onChange: (newVaultSettings: EnchantedVaultSettings) => void;
+}> = ({ settings, onChange }) => {
+    const { rewardTypes } = useEconomyState();
+
+    const handleTierChange = (tierId: string, field: keyof EnchantedVaultTier, value: any) => {
+        const newTiers = settings.tiers.map(tier => 
+            tier.id === tierId ? { ...tier, [field]: value } : tier
+        );
+        onChange({ ...settings, tiers: newTiers });
+    };
+
+    const addTier = () => {
+        const lastTier = settings.tiers[settings.tiers.length - 1];
+        const newTier: EnchantedVaultTier = {
+            id: `tier-${Date.now()}`,
+            upTo: (lastTier?.upTo || 0) + 1000,
+            baseInterestRate: lastTier?.baseInterestRate || 5,
+            rewardOverrides: {},
+        };
+        onChange({ ...settings, tiers: [...settings.tiers, newTier] });
+    };
+    
+    const removeTier = (tierId: string) => {
+        onChange({ ...settings, tiers: settings.tiers.filter(t => t.id !== tierId) });
+    };
+
+    const handleOverrideChange = (tierId: string, rewardTypeId: string, rate: number) => {
+        const newTiers = settings.tiers.map(tier => {
+            if (tier.id === tierId) {
+                return { ...tier, rewardOverrides: { ...(tier.rewardOverrides || {}), [rewardTypeId]: rate } };
+            }
+            return tier;
+        });
+        onChange({ ...settings, tiers: newTiers });
+    };
+
+    const addOverride = (tierId: string) => {
+        const firstCurrency = rewardTypes.find(rt => rt.category === RewardCategory.Currency);
+        if (!firstCurrency) return;
+        handleOverrideChange(tierId, firstCurrency.id, settings.tiers.find(t => t.id === tierId)?.baseInterestRate || 5);
+    };
+
+    const removeOverride = (tierId: string, rewardTypeId: string) => {
+        const newTiers = settings.tiers.map(tier => {
+            if (tier.id === tierId) {
+                const newOverrides = { ...(tier.rewardOverrides || {}) };
+                delete newOverrides[rewardTypeId];
+                return { ...tier, rewardOverrides: newOverrides };
+            }
+            return tier;
+        });
+        onChange({ ...settings, tiers: newTiers });
+    };
+
+    return (
+        <div className="space-y-4">
+            <ToggleSwitch
+                enabled={settings.enabled}
+                setEnabled={val => onChange({ ...settings, enabled: val })}
+                label="Enable Enchanted Vault"
+            />
+            {settings.enabled && (
+                <div className="space-y-4">
+                    {settings.tiers.map((tier, index) => (
+                        <div key={tier.id} className="p-4 bg-stone-900/50 rounded-lg space-y-4 border border-stone-700/60">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-semibold text-stone-200">Tier {index + 1}</h4>
+                                {settings.tiers.length > 1 && <Button variant="destructive" size="sm" onClick={() => removeTier(tier.id)}>Remove Tier</Button>}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <NumberInput label="Applies Up To (Total Rewards)" value={tier.upTo} onChange={val => handleTierChange(tier.id, 'upTo', val)} min={(settings.tiers[index-1]?.upTo || -1) + 1} />
+                                <NumberInput label="Base Annual Interest Rate (%)" value={tier.baseInterestRate} onChange={val => handleTierChange(tier.id, 'baseInterestRate', val)} min={0} step={0.1} />
+                            </div>
+                             <div>
+                                <h5 className="text-sm font-semibold text-stone-300 mb-2">Reward-Specific Rates (Optional Overrides)</h5>
+                                <div className="space-y-2">
+                                    {Object.entries(tier.rewardOverrides || {}).map(([rewardId, rate]) => (
+                                        <div key={rewardId} className="flex items-end gap-2">
+                                            <Input as="select" label="" value={rewardId} onChange={e => handleOverrideChange(tier.id, e.target.value, rate)} className="flex-grow">
+                                                {rewardTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.icon} {rt.name}</option>)}
+                                            </Input>
+                                            <NumberInput label="" value={rate} onChange={val => handleOverrideChange(tier.id, rewardId, val)} min={0} step={0.1} />
+                                            <Button variant="destructive" size="icon" className="h-10 w-10" onClick={() => removeOverride(tier.id, rewardId)}><TrashIcon className="w-4 h-4"/></Button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <Button variant="secondary" size="sm" onClick={() => addOverride(tier.id)} className="mt-2"><PlusIcon className="w-4 h-4 mr-2"/> Add Override</Button>
+                            </div>
+                        </div>
+                    ))}
+                    <Button onClick={addTier} className="w-full justify-center"><PlusIcon className="w-4 h-4 mr-2"/> Add Tier</Button>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 export const SettingsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -208,6 +308,18 @@ export const SettingsPage: React.FC = () => {
                             {apiKeyError && !isTestingApiKey && <span className="text-red-400 text-sm">{apiKeyError}</span>}
                         </div>
                     </div>
+                </CollapsibleSection>
+                
+                 <CollapsibleSection title="Enchanted Vault">
+                     <EnchantedVaultSettingsComponent
+                        settings={localSettings.enchantedVault}
+                        onChange={(newVaultSettings) => {
+                            setLocalSettings(p => ({
+                                ...p,
+                                enchantedVault: newVaultSettings
+                            }));
+                        }}
+                    />
                 </CollapsibleSection>
                 
                  <CollapsibleSection title="Security">

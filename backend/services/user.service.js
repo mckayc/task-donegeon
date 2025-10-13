@@ -1,4 +1,3 @@
-
 const { dataSource } = require('../data-source');
 const { UserEntity, QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserTrophyEntity, PendingRewardEntity, SettingEntity, GuildEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -313,7 +312,7 @@ const accrueInterestForUser = async (userId) => {
         }
 
         let totalInterestApplied = 0;
-        const interestRewards: { rewardTypeId: string; amount: number }[] = [];
+        const interestRewards = [];
         const tiers = settings.enchantedVault.tiers.sort((a, b) => a.upTo - b.upTo);
         const totalValue = Object.values(user.vault.purse || {}).reduce((s, a) => s + a, 0) + Object.values(user.vault.experience || {}).reduce((s, a) => s + a, 0);
         const tier = tiers.find(t => totalValue <= t.upTo) || tiers[tiers.length - 1];

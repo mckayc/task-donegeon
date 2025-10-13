@@ -37,6 +37,7 @@ export const deleteUsersAPI = (ids: string[], actorId?: string) => apiRequest('D
 export const completeFirstRunAPI = (adminUserData: any) => apiRequest('POST', '/api/data/first-run', { adminUserData });
 export const depositToVaultAPI = (userId: string, amounts: { purse: { [key: string]: number }, experience: { [key: string]: number } }) => apiRequest('POST', `/api/users/vault/deposit`, { userId, amounts });
 export const withdrawFromVaultAPI = (userId: string, amounts: { purse: { [key: string]: number }, experience: { [key: string]: number } }) => apiRequest('POST', `/api/users/vault/withdraw`, { userId, amounts });
+export const accrueInterestAPI = (userId: string) => apiRequest('POST', `/api/users/vault/accrue-interest`, { userId });
 
 
 // --- Community API ---

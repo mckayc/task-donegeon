@@ -43,6 +43,11 @@ const craftItem = async (req, res) => {
     res.json(result);
 };
 
+const bulkUpdateAvailability = async (req, res) => {
+    await assetService.bulkUpdateAvailability(req.body.ids, req.body.isAvailable);
+    res.status(204).send();
+};
+
 module.exports = {
     getAllAssets,
     createAsset,
@@ -51,4 +56,5 @@ module.exports = {
     deleteAssets,
     useItem,
     craftItem,
+    bulkUpdateAvailability,
 };

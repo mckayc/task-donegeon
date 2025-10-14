@@ -15,6 +15,7 @@ const create = async (assetData) => {
             id: `gameasset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             creatorId: assetData.actorId || 'system',
             purchaseCount: 0,
+            isAvailable: assetData.isAvailable !== false,
         };
         const saved = await manager.getRepository('GameAsset').save(updateTimestamps(newAsset, true));
         await logAdminAssetAction(manager, { actorId: assetData.actorId, actionType: 'create', assetType: 'Game Asset', assetCount: 1, assetName: saved.name, guildId: saved.guildId });
@@ -114,6 +115,14 @@ const craft = async (assetId, userId) => {
     return { updatedUser };
 };
 
+const bulkUpdateAvailability = async (ids, isAvailable) => {
+    const result = await dataSource.getRepository('GameAsset').update(ids, { isAvailable });
+    if (result.affected && result.affected > 0) {
+        updateEmitter.emit('update');
+    }
+    return result;
+};
+
 
 module.exports = {
     getAll,
@@ -123,4 +132,5 @@ module.exports = {
     deleteMany,
     use,
     craft,
+    bulkUpdateAvailability,
 };

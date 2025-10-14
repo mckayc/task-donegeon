@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon 2.0 - 0.5.82 - Enchanted Vault UI",
-  "version": "0.5.82",
-  "description": "Introduces the Enchanted Vault, a new feature for saving and growing rewards with interest.",
+  "name": "Task Donegeon 2.0 - 0.5.83 - Out of Stock Toggle",
+  "version": "0.5.83",
+  "description": "Adds an availability toggle to goods, allowing them to be marked as 'Out of Stock' instead of being deleted.",
   "requestFramePermissions": [
     "camera"
   ],

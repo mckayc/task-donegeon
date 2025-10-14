@@ -1,4 +1,3 @@
-
 const { dataSource } = require('../data-source');
 const { PurchaseRequestEntity, UserEntity, GameAssetEntity, RewardTypeDefinitionEntity, SettingEntity, ChronicleEventEntity, MarketEntity, SystemNotificationEntity } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
@@ -17,6 +16,10 @@ const create = async (assetId, userId, costGroupIndex, guildId, marketId) => {
         const asset = await assetRepo.findOneBy({ id: assetId });
         const market = await marketRepo.findOneBy({ id: marketId });
         if (!user || !asset || !market) return null;
+
+        if (asset.isAvailable === false) {
+            throw new Error(`"${asset.name}" is currently out of stock.`);
+        }
 
         const cost = asset.costGroups[costGroupIndex];
         if (!cost) return null;

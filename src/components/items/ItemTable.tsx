@@ -74,6 +74,7 @@ const ItemTable: React.FC<ItemTableProps> = ({
                         <th className="p-4 font-semibold">Category</th>
                         <th className="p-4 font-semibold">Cost</th>
                         <th className="p-4 font-semibold">For Sale</th>
+                        <th className="p-4 font-semibold">Availability</th>
                         <th className="p-4 font-semibold">Actions</th>
                     </tr>
                 </thead>
@@ -138,6 +139,13 @@ const ItemTable: React.FC<ItemTableProps> = ({
                                         {asset.isForSale ? 'Yes' : 'No'}
                                     </span>
                                     {isOrphaned && <p className="text-xs text-amber-400 mt-1">Orphaned</p>}
+                                </td>
+                                <td className="p-4">
+                                    {asset.isForSale && (
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${asset.isAvailable !== false ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+                                            {asset.isAvailable !== false ? 'Available' : 'Out of Stock'}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="p-4">
                                      <div className="flex items-center gap-1">

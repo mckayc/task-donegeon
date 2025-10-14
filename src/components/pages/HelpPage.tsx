@@ -44,6 +44,12 @@ const FeaturesContent: React.FC = () => {
 
 const FunctionalSpecificationsContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
+        <h3>Goods Management</h3>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>Out of Stock Toggle:</strong> Administrators can now mark any "For Sale" item as "Available" or "Unavailable" via a toggle in the Edit Asset dialog. This allows for temporary removal from sale without deleting the item. Unavailable items are displayed in the Marketplace as "Out of Stock" and cannot be purchased. Bulk actions are also available on the management page to quickly update the status of multiple items.
+            </li>
+        </ul>
         <h3>Enchanted Vault</h3>
         <p>
             The Enchanted Vault is a new default market that acts as an in-game savings and investment account, designed to teach the value of long-term saving in an engaging way.

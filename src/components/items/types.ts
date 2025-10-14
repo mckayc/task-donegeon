@@ -13,6 +13,7 @@ export interface GameAsset {
   category: string;
   avatarSlot?: string;
   isForSale: boolean;
+  isAvailable?: boolean;
   costGroups: RewardItem[][];
   payouts?: RewardItem[];
   marketIds: string[];

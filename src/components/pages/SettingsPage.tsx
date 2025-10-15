@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { AppSettings, Terminology, EnchantedVaultSettings, EnchantedVaultTier, RewardTypeDefinition, RewardCategory } from '../../types';
@@ -52,6 +53,14 @@ const GeneralSettings: React.FC<{
                 setEnabled={val => onSettingChange('loginNotifications', { ...settings.loginNotifications, enabled: val })}
                 label="Show unread announcements on login"
             />
+            <div className="pt-4 border-t border-stone-700/60">
+                <ToggleSwitch
+                    enabled={settings.gracePeriod.isGlobalGracePeriodActive}
+                    setEnabled={val => onSettingChange('gracePeriod', { ...settings.gracePeriod, isGlobalGracePeriodActive: val })}
+                    label="Enable Global Grace Period (Vacation Mode)"
+                />
+                <p className="text-xs text-stone-400 mt-1 pl-12">When enabled, all quest deadlines and time-based penalties are paused for all users.</p>
+            </div>
         </div>
     );
 };

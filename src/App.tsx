@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect, useMemo } from 'react';
 import { useAuthState } from './context/AuthContext';
 import { useUIState, useUIDispatch } from './context/UIContext';
@@ -78,9 +75,11 @@ const App: React.FC = () => {
                 {activeGame && <GameOverlay gameId={activeGame} onClose={() => setActiveGame(null)} />}
                 <AnimatePresence>
                     {isScreenDimmed && (
-                        // FIX: Removed 'initial', 'animate', and 'exit' props to resolve TypeScript error. The animation will be lost but the component will render. This suggests an issue with framer-motion version or types.
                         <motion.div
-                            style={{ opacity: screenDimOverride ?? settings.sharedMode.autoDimLevel ?? 0.8 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: screenDimOverride ?? settings.sharedMode.autoDimLevel ?? 0.8 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.5 }}
                             className="fixed inset-0 bg-black pointer-events-none z-[9998]"
                         />
                     )}

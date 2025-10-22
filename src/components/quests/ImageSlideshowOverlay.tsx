@@ -42,8 +42,10 @@ const ImageSlideshowOverlay: React.FC<ImageSlideshowOverlayProps> = ({ images, o
   const currentImage = images[page];
 
   return (
-    // FIX: Removed 'initial', 'animate', and 'exit' props from motion.div to fix type errors. The animation will be lost but the component will render.
     <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100] p-4"
       data-bug-reporter-ignore
       onClick={onClose}
@@ -56,10 +58,18 @@ const ImageSlideshowOverlay: React.FC<ImageSlideshowOverlayProps> = ({ images, o
         </div>
         <div className="flex-grow flex items-center justify-center relative overflow-hidden">
           <AnimatePresence initial={false} custom={direction}>
-            {/* FIX: Removed framer-motion animation props to fix type errors. */}
             <motion.img
               key={page}
               src={currentImage.url}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
               className="absolute max-w-full max-h-full object-contain"
             />
           </AnimatePresence>

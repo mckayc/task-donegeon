@@ -68,8 +68,10 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
-            // FIX: Removed 'initial', 'animate', and 'exit' props from motion.div to fix type errors. The animation will be lost but the component will render.
             <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
                 className="relative bg-stone-900/80 border border-stone-700/60 rounded-xl shadow-lg max-w-2xl w-full max-h-[80vh] flex flex-col backdrop-blur-sm"
             >
                 <div className="px-6 py-4 border-b border-stone-700/60 flex items-center justify-between rounded-t-xl flex-shrink-0">

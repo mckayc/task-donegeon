@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -415,7 +413,6 @@ const Dashboard: React.FC = () => {
                          const card = renderCard(cardId, 'main', controls);
                          if (!card) return null;
                          return (
-                            // FIX: Removed 'dragListener' prop from Reorder.Item as it's not recognized in the current framer-motion version, which causes a type error.
                             <Reorder.Item key={cardId} value={cardId} dragControls={controls}>
                                 {card}
                             </Reorder.Item>
@@ -435,7 +432,6 @@ const Dashboard: React.FC = () => {
                             const card = renderCard(cardId, 'side', controls);
                             if (!card) return null;
                             return (
-                                // FIX: Removed 'dragListener' prop from Reorder.Item as it's not recognized in the current framer-motion version, which causes a type error.
                                 <Reorder.Item key={cardId} value={cardId} dragControls={controls}>
                                     {card}
                                 </Reorder.Item>

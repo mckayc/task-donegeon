@@ -18,6 +18,10 @@ const settingService = require('../services/setting.service');
 const userService = require('../services/user.service');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { isAiConfigured } = require('../controllers/ai.controller');
+const automationService = require('./automation.service');
+
+let lastSetbackCheck = 0;
+const SETBACK_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 
 const getDeltaAppData = async (manager, lastSync) => {
@@ -81,6 +85,14 @@ const getDeltaAppData = async (manager, lastSync) => {
 const syncData = async (lastSync) => {
     const newSyncTimestamp = new Date().toISOString();
     const manager = dataSource.manager;
+
+    const now = Date.now();
+    if (now - lastSetbackCheck > SETBACK_CHECK_INTERVAL) {
+        lastSetbackCheck = now;
+        automationService.checkIncompleteQuests(manager).catch(err => {
+            console.error('[System Service] Error during automated setback check:', err);
+        });
+    }
 
     if (!lastSync) {
         const userCount = await manager.count(UserEntity);

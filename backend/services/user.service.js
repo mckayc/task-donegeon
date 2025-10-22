@@ -1,3 +1,4 @@
+
 const { dataSource } = require('../data-source');
 const { UserEntity, QuestCompletionEntity, PurchaseRequestEntity, ChronicleEventEntity, RewardTypeDefinitionEntity, TrophyEntity, UserTrophyEntity, PendingRewardEntity, SettingEntity, GuildEntity } = require('../entities');
 const { In } = require("typeorm");
@@ -10,7 +11,7 @@ const grantRewards = async (manager, details) => {
     const { 
         userId, rewards = [], setbacks = [], trophyId, actorId,
         chronicleTitle, chronicleNote, chronicleType, chronicleIcon, chronicleColor,
-        originalId
+        originalId, guildId
     } = details;
     
     const userRepo = manager.getRepository(UserEntity);
@@ -19,7 +20,13 @@ const grantRewards = async (manager, details) => {
 
     user.personalPurse = user.personalPurse || {};
     user.personalExperience = user.personalExperience || {};
-    const balances = { purse: user.personalPurse, experience: user.personalExperience };
+    if (guildId) {
+        user.guildBalances = user.guildBalances || {};
+        user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} };
+    }
+    
+    const isGuildScope = !!guildId;
+    const balances = isGuildScope ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
 
     const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
     const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
@@ -49,14 +56,19 @@ const grantRewards = async (manager, details) => {
             const userTrophyRepo = manager.getRepository(UserTrophyEntity);
             const newTrophyData = {
                 id: `usertrophy-${Date.now()}-${Math.random()}`,
-                userId, trophyId, awardedAt: new Date().toISOString(), guildId: undefined
+                userId, trophyId, awardedAt: new Date().toISOString(),
+                guildId: guildId || undefined,
             };
             manuallyAwardedTrophy = await userTrophyRepo.save(updateTimestamps(userTrophyRepo.create(newTrophyData), true));
             rewardsText += ` 🏆 ${trophy.name}`;
         }
     }
     
-    const updatedUser = await userRepo.save(updateTimestamps(user));
+    if (isGuildScope) {
+        user.guildBalances[guildId] = balances;
+    }
+    const userUpdatePayload = isGuildScope ? { guildBalances: user.guildBalances } : { personalPurse: balances.purse, personalExperience: balances.experience };
+    const updatedUser = await userRepo.save(updateTimestamps({ ...user, ...userUpdatePayload }));
     
     const actor = await userRepo.findOneBy({ id: actorId });
 
@@ -75,12 +87,12 @@ const grantRewards = async (manager, details) => {
         userName: user.gameName,
         actorId,
         actorName: actor?.gameName || 'System',
-        guildId: undefined, // Personal only for now
+        guildId: guildId || undefined,
         rewardsText: rewardsText.trim() || undefined,
     };
     await manager.save(chronicleRepo.create(updateTimestamps(eventData, true)));
     
-    const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, userId, undefined);
+    const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, userId, guildId);
     if (manuallyAwardedTrophy) newUserTrophies.push(manuallyAwardedTrophy);
 
     return { updatedUser, newUserTrophies, newNotifications };
@@ -161,13 +173,14 @@ const deleteMany = async (ids, actorId) => {
 
 const adjust = async (adjustmentData) => {
     return await dataSource.transaction(async manager => {
-        const { userId, adjusterId, reason, rewards, setbacks, trophyId } = adjustmentData;
+        const { userId, adjusterId, reason, rewards, setbacks, trophyId, guildId } = adjustmentData;
         const isPrize = reason?.startsWith('Reward from');
         const grantDetails = {
             userId, rewards, setbacks, trophyId, actorId: adjusterId,
             chronicleTitle: isPrize ? 'Prize Won' : 'Manual Adjustment',
             chronicleNote: reason, chronicleType: isPrize ? 'PrizeWon' : 'AdminAdjustment',
-            chronicleIcon: isPrize ? '🏆' : '⚖️', chronicleColor: isPrize ? '#facc15' : '#a855f7'
+            chronicleIcon: isPrize ? '🏆' : '⚖️', chronicleColor: isPrize ? '#facc15' : '#a855f7',
+            guildId
         };
         const { updatedUser, newUserTrophies, newNotifications } = await grantRewards(manager, grantDetails);
         const newAdjustment = await adminAdjustmentRepository.create({ ...adjustmentData, adjustedAt: new Date().toISOString() });

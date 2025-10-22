@@ -1,6 +1,6 @@
 
 const { dataSource } = require('../data-source');
-const { QuestEntity, UserEntity, QuestCompletionEntity, SystemLogEntity, ScheduledEventEntity } = require('../entities');
+const { QuestEntity, UserEntity, QuestCompletionEntity, SystemLogEntity, ScheduledEventEntity, SystemNotificationEntity } = require('../entities');
 const { In, Between } = require("typeorm");
 const { updateTimestamps } = require('../utils/helpers');
 const userService = require('./user.service');
@@ -78,6 +78,7 @@ const checkIncompleteQuests = async (manager) => {
                 chronicleColor: '#ef4444',
                 originalId: `incomplete-${quest.id}-${todayYMD}-${user.id}`,
                 guildId: quest.guildId,
+                allowSetbackSubstitution: quest.allowSetbackSubstitution,
             };
             await userService.grantRewards(manager, grantDetails);
             
@@ -90,6 +91,22 @@ const checkIncompleteQuests = async (manager) => {
                 setbacksApplied: quest.incompleteSetbacks
             });
             await manager.save(updateTimestamps(newLog, true));
+
+            // Create a notification for the user
+            const notificationRepo = manager.getRepository(SystemNotificationEntity);
+            const newNotification = notificationRepo.create({
+                id: `sysnotif-incomplete-${quest.id}-${user.id}-${Date.now()}`,
+                type: 'TrialApplied',
+                message: `Setback applied for not completing: "${quest.title}"`,
+                recipientUserIds: [user.id],
+                readByUserIds: [],
+                senderId: 'system',
+                timestamp: now.toISOString(),
+                link: 'Chronicles',
+                icon: '⚖️',
+                guildId: quest.guildId || undefined,
+            });
+            await manager.save(updateTimestamps(newNotification, true));
         }
     }
 };

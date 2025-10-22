@@ -11,7 +11,7 @@ const grantRewards = async (manager, details) => {
     const { 
         userId, rewards = [], setbacks = [], trophyId, actorId,
         chronicleTitle, chronicleNote, chronicleType, chronicleIcon, chronicleColor,
-        originalId, guildId
+        originalId, guildId, allowSetbackSubstitution
     } = details;
     
     const userRepo = manager.getRepository(UserEntity);
@@ -30,26 +30,65 @@ const grantRewards = async (manager, details) => {
 
     const rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
     const getRewardInfo = (id) => rewardTypes.find(rt => rt.id === id) || { name: '?', icon: '?' };
-    let rewardsText = '';
     
-    const allChanges = [
-        ...rewards.map(r => ({ ...r, amount: r.amount })),
-        ...setbacks.map(s => ({ ...s, amount: -s.amount }))
-    ];
+    const actualChanges = [];
 
-    allChanges.forEach(reward => {
+    // 1. Process positive rewards (additions)
+    rewards.forEach(reward => {
         const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
         if (rewardDef) {
             const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-            const currentAmount = target[reward.rewardTypeId] || 0;
-            target[reward.rewardTypeId] = Math.max(0, currentAmount + reward.amount);
-            
-            if (reward.amount > 0) rewardsText += `+${reward.amount}${getRewardInfo(reward.rewardTypeId).icon} `;
-            else if (reward.amount < 0) rewardsText += `${reward.amount}${getRewardInfo(reward.rewardTypeId).icon} `;
+            target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+            actualChanges.push({ rewardTypeId: reward.rewardTypeId, amount: reward.amount });
         }
     });
 
+    // 2. Process setbacks with potential substitution
+    for (const setback of setbacks) {
+        const rewardDef = rewardTypes.find(rt => rt.id === setback.rewardTypeId);
+        if (!rewardDef) continue;
+        
+        const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+        const currentBalance = target[setback.rewardTypeId] || 0;
+        const amountToDeduct = Math.min(currentBalance, setback.amount);
+        
+        if (amountToDeduct > 0) {
+            target[setback.rewardTypeId] -= amountToDeduct;
+            actualChanges.push({ rewardTypeId: setback.rewardTypeId, amount: -amountToDeduct });
+        }
+        
+        const deficit = setback.amount - amountToDeduct;
+        if (deficit > 0 && allowSetbackSubstitution) {
+            let valueToCover = deficit * (rewardDef.baseValue || 0);
+            if (valueToCover > 0) {
+                const substitutableRewards = rewardTypes
+                    .filter(rt => rt.baseValue > 0 && rt.id !== setback.rewardTypeId && rt.isExchangeable !== false)
+                    .sort((a, b) => b.baseValue - a.baseValue); // From most valuable to least valuable
+
+                for (const subReward of substitutableRewards) {
+                    if (valueToCover <= 0) break;
+                    
+                    const subTarget = subReward.category === 'Currency' ? balances.purse : balances.experience;
+                    const subBalance = subTarget[subReward.id] || 0;
+                    
+                    if (subBalance > 0) {
+                        const amountOfSubToDeductInValue = Math.min(subBalance * subReward.baseValue, valueToCover);
+                        const amountOfSubToDeductInUnits = Math.ceil(amountOfSubToDeductInValue / subReward.baseValue);
+                        const actualAmountToDeduct = Math.min(subBalance, amountOfSubToDeductInUnits);
+                        
+                        if (actualAmountToDeduct > 0) {
+                            subTarget[subReward.id] -= actualAmountToDeduct;
+                            actualChanges.push({ rewardTypeId: subReward.id, amount: -actualAmountToDeduct });
+                            valueToCover -= actualAmountToDeduct * subReward.baseValue;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     let manuallyAwardedTrophy = null;
+    let awardedTrophyName = '';
     if (trophyId) {
         const trophy = await manager.getRepository(TrophyEntity).findOneBy({ id: trophyId });
         if (trophy) {
@@ -60,7 +99,7 @@ const grantRewards = async (manager, details) => {
                 guildId: guildId || undefined,
             };
             manuallyAwardedTrophy = await userTrophyRepo.save(updateTimestamps(userTrophyRepo.create(newTrophyData), true));
-            rewardsText += ` 🏆 ${trophy.name}`;
+            awardedTrophyName = trophy.name;
         }
     }
     
@@ -73,6 +112,14 @@ const grantRewards = async (manager, details) => {
     const actor = await userRepo.findOneBy({ id: actorId });
 
     const chronicleRepo = manager.getRepository(ChronicleEventEntity);
+    let rewardsText = actualChanges.map(change => 
+        `${change.amount > 0 ? '+' : ''}${change.amount}${getRewardInfo(change.rewardTypeId).icon}`
+    ).join(' ');
+
+    if (manuallyAwardedTrophy) {
+        rewardsText += ` 🏆 ${awardedTrophyName}`;
+    }
+
     const eventData = {
         id: `chron-${chronicleType.toLowerCase()}-${userId}-${Date.now()}`,
         originalId: originalId || `reward-grant-${Date.now()}`,

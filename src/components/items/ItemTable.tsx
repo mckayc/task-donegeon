@@ -5,6 +5,8 @@ import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { ItemManagerIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';
 import DynamicIcon from '../user-interface/DynamicIcon';
+// FIX: Import ToggleSwitch component.
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface ItemTableProps {
     assets: GameAsset[];
@@ -20,6 +22,9 @@ interface ItemTableProps {
     terminology: Terminology;
     onCreate: () => void;
     rewardTypes: RewardTypeDefinition[];
+    // FIX: Add missing props for toggling sale and availability status.
+    onToggleForSale: (asset: GameAsset, isForSale: boolean) => void;
+    onToggleAvailability: (asset: GameAsset, isAvailable: boolean) => void;
 }
 
 const ItemTable: React.FC<ItemTableProps> = ({
@@ -36,6 +41,9 @@ const ItemTable: React.FC<ItemTableProps> = ({
     terminology,
     onCreate,
     rewardTypes,
+    // FIX: Destructure new props.
+    onToggleForSale,
+    onToggleAvailability,
 }) => {
     if (isLoading) {
         return (
@@ -135,16 +143,22 @@ const ItemTable: React.FC<ItemTableProps> = ({
                                     })()}
                                 </td>
                                 <td className="p-4">
-                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${asset.isForSale ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
-                                        {asset.isForSale ? 'Yes' : 'No'}
-                                    </span>
+                                    {/* FIX: Replaced span with a functional ToggleSwitch. */}
+                                    <ToggleSwitch
+                                        enabled={asset.isForSale}
+                                        setEnabled={(value) => onToggleForSale(asset, value)}
+                                        label=""
+                                    />
                                     {isOrphaned && <p className="text-xs text-amber-400 mt-1">Orphaned</p>}
                                 </td>
                                 <td className="p-4">
+                                    {/* FIX: Replaced span with a functional ToggleSwitch. */}
                                     {asset.isForSale && (
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${asset.isAvailable !== false ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-                                            {asset.isAvailable !== false ? 'Available' : 'Out of Stock'}
-                                        </span>
+                                        <ToggleSwitch
+                                            enabled={asset.isAvailable !== false}
+                                            setEnabled={(value) => onToggleAvailability(asset, value)}
+                                            label=""
+                                        />
                                     )}
                                 </td>
                                 <td className="p-4">

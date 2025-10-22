@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, RewardItem, User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -9,7 +8,9 @@ import {
     addGameAssetAPI, updateGameAssetAPI, cloneGameAssetAPI, 
     purchaseMarketItemAPI, approvePurchaseRequestAPI, rejectPurchaseRequestAPI, cancelPurchaseRequestAPI, 
     executeExchangeAPI, proposeTradeAPI, updateTradeOfferAPI, acceptTradeAPI, cancelOrRejectTradeAPI, 
-    sendGiftAPI, useItemAPI, craftItemAPI, revertPurchaseAPI
+    sendGiftAPI, useItemAPI, craftItemAPI, revertPurchaseAPI,
+    // FIX: Add missing import for bulkUpdateAvailabilityAPI.
+    bulkUpdateAvailabilityAPI
 } from '../api';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -54,6 +55,8 @@ export interface EconomyDispatch {
   sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void>;
   useItem: (assetId: string) => Promise<void>;
   craftItem: (assetId: string) => Promise<void>;
+  // FIX: Add bulkUpdateAvailability to the dispatch interface.
+  bulkUpdateAvailability: (assetIds: string[], isAvailable: boolean) => Promise<void>;
 }
 
 const EconomyStateContext = createContext<EconomyState | undefined>(undefined);
@@ -228,6 +231,8 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 updateUser(updatedUser.id, updatedUser);
             }
         },
+        // FIX: Implement the missing bulkUpdateAvailability action.
+        bulkUpdateAvailability: (ids, isAvailable) => apiAction(() => bulkUpdateAvailabilityAPI(ids, isAvailable), `Updated availability for ${ids.length} item(s).`),
     }), [addNotification, apiAction, currentUser, updateUser]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);

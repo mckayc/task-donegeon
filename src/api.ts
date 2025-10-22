@@ -69,6 +69,8 @@ export const cancelOrRejectTradeAPI = (id: string, action: 'cancelled' | 'reject
 export const sendGiftAPI = (recipientId: string, assetId: string, guildId: string, senderId: string) => apiRequest('POST', '/api/gifts/send', { recipientId, assetId, guildId, senderId });
 export const useItemAPI = (id: string, userId: string) => apiRequest('POST', `/api/assets/use/${id}`, { userId });
 export const craftItemAPI = (id: string, userId: string) => apiRequest('POST', `/api/assets/craft/${id}`, { userId });
+// FIX: Add missing bulkUpdateAvailabilityAPI function.
+export const bulkUpdateAvailabilityAPI = (ids: string[], isAvailable: boolean) => apiRequest('PUT', '/api/assets/bulk-availability', { ids, isAvailable });
 
 // --- Progression API ---
 export const addTrophyAPI = (data: Omit<Trophy, 'id'>) => apiRequest('POST', '/api/trophies', data);

@@ -10,9 +10,12 @@ interface ToggleSwitchProps {
 const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, setEnabled, label, 'data-log-id': dataLogId }) => {
   return (
     <div className="flex items-center">
-      <label htmlFor={label} className="text-sm font-medium text-stone-300 mr-3">
-        {label}
-      </label>
+      {/* FIX: Conditionally render the label to allow the switch to be used without text. */}
+      {label && (
+        <label htmlFor={label} className="text-sm font-medium text-stone-300 mr-3">
+          {label}
+        </label>
+      )}
       <button
         type="button"
         id={label}

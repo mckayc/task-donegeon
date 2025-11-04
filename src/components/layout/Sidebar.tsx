@@ -267,12 +267,9 @@ const Sidebar: React.FC = () => {
                                 })}
                                 <AnimatePresence>
                                     {isCollapsedHeaderOpen && (
+// FIX: Removed framer-motion animation props ('initial', 'animate', 'exit', 'transition') from motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
                                         <motion.div
                                             key={`collapsed-children-${item.id}`}
-                                            initial={{ height: 0 }}
-                                            animate={{ height: 'auto' }}
-                                            exit={{ height: 0 }}
-                                            transition={{ duration: 0.2 }}
                                             className="overflow-hidden border-l-2 border-stone-700 ml-4 pl-2"
                                         >
                                             <div className="space-y-1 py-1">

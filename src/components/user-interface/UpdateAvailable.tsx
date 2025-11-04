@@ -9,7 +9,7 @@ interface UpdateAvailableProps {
 
 const UpdateAvailable: React.FC<UpdateAvailableProps> = ({ onUpdateClick, onDismiss }) => {
     return (
-        // FIX: Removed 'initial', 'animate', and 'exit' props from motion.div to fix type errors. The animation will be lost but the component will render.
+// FIX: Removed framer-motion animation props ('initial', 'animate', 'exit', 'transition') from motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
         <motion.div
             className="fixed bottom-6 left-6 z-[101] pointer-events-auto"
         >

@@ -16,6 +16,7 @@ import PdfReaderPanel from '../reader/PdfReaderPanel';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import { AnimatePresence } from 'framer-motion';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
@@ -221,13 +222,15 @@ const MainLayout: React.FC = () => {
 
   return (
     <>
-      {showLoginNotifications && currentUser && (
-        <LoginNotificationPopup 
-            notifications={unreadNotifications} 
-            user={currentUser} 
-            onClose={() => setShowLoginNotifications(false)} 
-        />
-      )}
+      <AnimatePresence>
+        {showLoginNotifications && currentUser && (
+          <LoginNotificationPopup 
+              notifications={unreadNotifications} 
+              user={currentUser} 
+              onClose={() => setShowLoginNotifications(false)} 
+          />
+        )}
+      </AnimatePresence>
       <div className="flex h-screen bg-stone-800 text-stone-100">
         
         {!isMobileView && <Sidebar />}

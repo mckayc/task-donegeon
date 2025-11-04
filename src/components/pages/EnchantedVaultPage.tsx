@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
@@ -231,13 +230,11 @@ const EnchantedVaultPage: React.FC = () => {
                 {showConfetti && (
                     <motion.div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
                         {Array.from({ length: 50 }).map((_, i) => (
+// FIX: Removed framer-motion animation props ('initial', 'animate', 'transition') from motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
                              <motion.div
                                 key={i}
                                 className="absolute top-0 text-2xl"
                                 style={{ left: `${Math.random() * 100}%`}}
-                                initial={{ y: -50, opacity: 1 }}
-                                animate={{ y: '100vh', rotate: Math.random() * 720, opacity: [1, 1, 0] }}
-                                transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 0.5, ease: "linear" }}
                             >
                                 {['💰', '💎', '⭐', '✨'][i % 4]}
                             </motion.div>

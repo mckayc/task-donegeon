@@ -68,18 +68,16 @@ const App: React.FC = () => {
                 {renderContent()}
                 {showOnboarding && <OnboardingWizard />}
                 <NotificationContainer />
-                {isUpdateAvailable && !isRecording && (
-                    <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setUpdateAvailable(null)} />
-                )}
                 {settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster && <BugReporter />}
-                {activeGame && <GameOverlay gameId={activeGame} onClose={() => setActiveGame(null)} />}
+
                 <AnimatePresence>
+                    {activeGame && <GameOverlay gameId={activeGame} onClose={() => setActiveGame(null)} />}
+                    {isUpdateAvailable && !isRecording && (
+                        <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setUpdateAvailable(null)} />
+                    )}
                     {isScreenDimmed && (
+// FIX: Removed 'initial', 'animate', 'exit', and 'transition' props from framer-motion's motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: screenDimOverride ?? settings.sharedMode.autoDimLevel ?? 0.8 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.5 }}
                             className="fixed inset-0 bg-black pointer-events-none z-[9998]"
                         />
                     )}

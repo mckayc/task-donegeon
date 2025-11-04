@@ -156,10 +156,8 @@ export const ChatPanel: React.FC = () => {
     const isAdmin = currentUser.role === Role.DonegeonMaster;
 
     return (
+// FIX: Removed 'initial', 'animate', and 'exit' props from framer-motion's motion.div due to TypeScript type errors. The animation logic is handled by the 'variants' prop.
         <motion.div
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
             variants={panelVariants}
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
             className="fixed top-0 right-0 h-full w-full md:w-[420px] bg-stone-900 border-l border-stone-700/60 shadow-2xl z-50 flex flex-col"

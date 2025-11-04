@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
 import Button from '../../user-interface/Button';
@@ -594,7 +592,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         <span>{userBalance}</span>
                                         <AnimatePresence>
                                         {lastReward && (
-                                            // FIX: Removed framer-motion props to fix type error.
+// FIX: Removed framer-motion props to fix type error.
                                             <motion.span
                                                 key={lastReward.key}
                                                 className="absolute left-full ml-1 text-emerald-400 font-bold"
@@ -619,7 +617,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                     <div className="relative">
                         <AnimatePresence>
                             {powerUpMessage && (
-                                // FIX: Removed framer-motion props to fix type error.
+// FIX: Removed framer-motion props to fix type error.
                                 <motion.div
                                     key={powerUpMessageTimerRef.current}
                                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
@@ -646,7 +644,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                                         {cell.item && <span className="absolute text-3xl">{cell.item === 'life' ? '❤️' : cell.item === 'shield' ? '🛡️' : cell.item === 'freeze' ? '❄️' : cell.item === 'reveal' ? '❓' : cell.item === 'reward' ? (rewardDef?.icon || '🏆') : '❔'}</span>}
                                         <AnimatePresence>
                                             {cell.feedback && (
-                                            // FIX: Removed framer-motion props to fix type error.
+// FIX: Removed framer-motion props to fix type error.
                                             <motion.div
                                                 key={`${x}-${y}-feedback`}
                                                 className="absolute text-3xl pointer-events-none z-10"
@@ -661,7 +659,7 @@ const MathMuncherGame: React.FC<MathMuncherGameProps> = ({ onClose }) => {
                         </div>
                         <AnimatePresence>
                             {(gameState === 'countdown' || gameState === 'game-over' || gameState === 'level-cleared' || gameState === 'get-ready') && (
-                                // FIX: Removed framer-motion props to fix type error.
+// FIX: Removed framer-motion props to fix type error.
                                 <motion.div className="absolute inset-0 bg-black/70 rounded-md flex flex-col items-center justify-center text-white">
                                     {gameState === 'countdown' && <p className="text-6xl font-bold font-medieval text-emerald-400 animate-ping" style={{animationDuration: '0.7s'}}>{countdown > 0 ? countdown : 'GO!'}</p>}
                                     {gameState === 'game-over' && <>

@@ -64,7 +64,6 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ gameId, onClose }) => {
   };
 
   return (
-// FIX: Removed framer-motion animation props ('initial', 'animate', 'exit', 'transition') from motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
     <motion.div
         className="fixed inset-0 bg-stone-900 z-[100]"
         data-bug-reporter-ignore

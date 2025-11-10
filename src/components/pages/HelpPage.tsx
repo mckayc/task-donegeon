@@ -145,6 +145,12 @@ const FunctionalSpecificationsContent: React.FC = () => (
             <li>
                 <strong>Live Data Refresh:</strong> To ensure information like quest deadlines ("Due in...") is always accurate on long-running kiosk screens, the quest list now automatically refreshes its data every minute without requiring a full page reload. This provides up-to-date information without interrupting the user experience.
             </li>
+            <li>
+                <strong>Screen Wake Lock:</strong> To prevent the screen from turning off on always-on shared devices, Kiosk Mode (both the idle screen and active user sessions) now implements a screen wake lock. This ensures the application remains visible and ready for use at all times.
+            </li>
+            <li>
+                <strong>Update Notification:</strong> The Kiosk Mode login screen now features a prominent "Update Available" button in the header when a new version of the application is ready to be installed, allowing for easy one-click updates on shared devices.
+            </li>
         </ul>
         <h3>Quest Timers</h3>
         <p>
@@ -172,6 +178,7 @@ const FunctionalSpecificationsContent: React.FC = () => (
         <ul className="list-disc list-inside space-y-2 mt-2">
             <li><strong>Favicon Fix:</strong> Resolved an issue where the application's browser tab icon (favicon) was missing. The castle icon has been restored.</li>
             <li><strong>Sidebar Navigation:</strong> Fixed several issues with sidebar interactivity. The 'Chat' link now correctly opens the chat panel. In the collapsed view, section headers (e.g., 'Content Management') are now clickable. Clicking a header icon will open a persistent flyout menu with its sub-links, improving usability on both desktop and touch devices. The flyout closes when a link is clicked or when clicking outside of it.</li>
+            <li><strong>UI Cleanup:</strong> Fixed a visual bug where internal code comments were being unintentionally displayed as text within various pop-up dialogs across the application.</li>
         </ul>
         <h3>Exchange Rate Clarity</h3>
         <p>To improve user understanding and transparency in the Exchange Post, the direct conversion rate between the two selected reward types is now prominently displayed.</p>

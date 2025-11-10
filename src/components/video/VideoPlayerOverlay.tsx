@@ -30,7 +30,6 @@ const VideoPlayerOverlay: React.FC<VideoPlayerOverlayProps> = ({ videoUrl, onClo
     const embedUrl = getYouTubeEmbedUrl(videoUrl);
 
     return (
-        // FIX: Removed 'initial', 'animate', and 'exit' props from motion.div to fix type errors. The animation will be lost but the component will render.
         <motion.div
             className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100] p-4"
             data-bug-reporter-ignore

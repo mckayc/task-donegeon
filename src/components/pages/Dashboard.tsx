@@ -413,7 +413,6 @@ const Dashboard: React.FC = () => {
                          const card = renderCard(cardId, 'main', controls);
                          if (!card) return null;
                          return (
-// FIX: The dragControls prop is not a valid prop for Reorder.Item. The drag is initiated by the drag handle inside the Card component, which requires disabling the default drag listener on the item itself.
                             <Reorder.Item key={cardId} value={cardId} dragListener={false}>
                                 {card}
                             </Reorder.Item>
@@ -433,7 +432,6 @@ const Dashboard: React.FC = () => {
                             const card = renderCard(cardId, 'side', controls);
                             if (!card) return null;
                             return (
-// FIX: The dragControls prop is not a valid prop for Reorder.Item. The drag is initiated by the drag handle inside the Card component, which requires disabling the default drag listener on the item itself.
                                 <Reorder.Item key={cardId} value={cardId} dragListener={false}>
                                     {card}
                                 </Reorder.Item>

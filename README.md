@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.5.83
+**Version:** 0.5.84
 
 ---
 
@@ -14,6 +14,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 - [⚙️ Installation and Running](#️-installation-and-running)
 
 ### Weekly Summaries
+
+-   **Week of November 11, 2025 (v0.5.84):**
+    -   **Kiosk Mode Enhancements:** Implemented a screen wake lock for logged-in sessions to prevent the screen from turning off, ensuring the application remains visible on shared devices. Added a prominent, persistent "Update Available" button to the Kiosk Mode login screen for easy, one-click updates.
+    -   **Bug Fixes:** Resolved an issue where internal code comments were unintentionally rendered as visible text in various pop-up dialogs throughout the application.
 
 -   **Week of October 21, 2025 (v0.5.83):**
     -   **Item Availability Toggle:** Added a new "Available for Purchase" toggle for all goods. When toggled off, the item appears as "Out of Stock" in the marketplace instead of being hidden, allowing users to see what might become available later. This provides administrators a way to manage stock without deleting items. Bulk actions to mark items as available or unavailable have also been added to the management page.
@@ -69,4 +73,4 @@ Task Donegeon is a gamified task and chore management application designed for f
     -   **Calendar Completion Logic Fix:** Fixed a critical bug on the Calendar page where users could complete quests on days they were not scheduled or available (e.g., completing a Monday-only Duty on a Tuesday, or completing a quest for a future date). The "Complete" button is now correctly disabled and provides clear feedback in these scenarios.
 
 -   **Week of October 3, 2025 (v0.5.64):**
-    -   **Chronicle Logging for Incomplete Quests:---
+    -   **Chronicle Logging for Incomplete Quests:

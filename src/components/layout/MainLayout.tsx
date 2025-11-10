@@ -18,6 +18,13 @@ import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { AnimatePresence } from 'framer-motion';
 
+interface WakeLockSentinel extends EventTarget {
+  released: boolean;
+  type: 'screen';
+  release(): Promise<void>;
+  onrelease: ((this: WakeLockSentinel, ev: Event) => any) | null;
+}
+
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
   const { activePage, isChatOpen, isMobileView, isSidebarCollapsed, isKioskDevice, readingPdfQuest, activeTimer, timedQuestDetail } = useUIState();
@@ -183,6 +190,61 @@ const MainLayout: React.FC = () => {
           };
       }
   }, [settings.sharedMode.enabled, settings.sharedMode.autoDim, isKioskDevice, resetDimTimer, setScreenDimmed]);
+
+  const wakeLock = useRef<WakeLockSentinel | null>(null);
+
+  // --- Screen Wake Lock for Kiosk Mode ---
+  useEffect(() => {
+      if (!isKioskDevice) {
+          // Ensure any existing lock is released if not in kiosk mode.
+          if (wakeLock.current) {
+              wakeLock.current.release().catch(e => console.error("Could not release wake lock:", e));
+              wakeLock.current = null;
+          }
+          return;
+      }
+  
+      const acquireWakeLock = async () => {
+          if ('wakeLock' in navigator) {
+              try {
+                  const newLock = await (navigator as any).wakeLock.request('screen');
+                  console.log('Screen Wake Lock is active for user session.');
+                  
+                  newLock.addEventListener('release', () => {
+                      console.log('Screen Wake Lock was released by the system during user session.');
+                          if (wakeLock.current === newLock) {
+                          wakeLock.current = null;
+                      }
+                  });
+                  wakeLock.current = newLock;
+              } catch (err: any) {
+                  console.error(`Wake Lock request failed: ${err.name}, ${err.message}`);
+                  wakeLock.current = null;
+              }
+          } else {
+              console.log('Screen Wake Lock API not supported on this browser.');
+          }
+      };
+  
+      const handleVisibilityChange = () => {
+          if (isKioskDevice && wakeLock.current === null && document.visibilityState === 'visible') {
+              acquireWakeLock();
+          }
+      };
+  
+      acquireWakeLock();
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+      // Cleanup function to release the lock when the component unmounts
+      return () => {
+          if (wakeLock.current !== null) {
+              wakeLock.current.release().catch(e => console.error("Could not release wake lock on cleanup:", e));
+              console.log('Screen Wake Lock released on component unmount.');
+              wakeLock.current = null;
+          }
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+  }, [isKioskDevice]);
 
 
   const renderPage = () => {

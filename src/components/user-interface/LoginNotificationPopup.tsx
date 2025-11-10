@@ -68,7 +68,6 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
-// FIX: Removed framer-motion animation props ('initial', 'animate', 'exit') from motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
             <motion.div 
                 className="relative bg-stone-900/80 border border-stone-700/60 rounded-xl shadow-lg max-w-2xl w-full max-h-[80vh] flex flex-col backdrop-blur-sm"
             >

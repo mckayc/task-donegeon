@@ -76,7 +76,6 @@ const App: React.FC = () => {
                         <UpdateAvailable onUpdateClick={installUpdate} onDismiss={() => setUpdateAvailable(null)} />
                     )}
                     {isScreenDimmed && (
-// FIX: Removed 'initial', 'animate', 'exit', and 'transition' props from framer-motion's motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
                         <motion.div
                             className="fixed inset-0 bg-black pointer-events-none z-[9998]"
                         />

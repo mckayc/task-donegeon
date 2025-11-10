@@ -49,7 +49,6 @@ const Notification = ({ notification, onDismiss }: NotificationProps) => {
     }, [notification.id, notification.duration, handleDismiss]);
   
     return (
-// FIX: Removed framer-motion animation props ('layout', 'initial', 'animate', 'exit') from motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
       <motion.div
         className="max-w-sm w-full bg-stone-800 shadow-2xl rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden"
       >

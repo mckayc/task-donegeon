@@ -42,7 +42,6 @@ const ImageSlideshowOverlay: React.FC<ImageSlideshowOverlayProps> = ({ images, o
   const currentImage = images[page];
 
   return (
-// FIX: Removed framer-motion animation props ('initial', 'animate', 'exit') from motion.div due to TypeScript type errors. This resolves the compilation error but will affect animations.
     <motion.div
       className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100] p-4"
       data-bug-reporter-ignore
@@ -56,7 +55,6 @@ const ImageSlideshowOverlay: React.FC<ImageSlideshowOverlayProps> = ({ images, o
         </div>
         <div className="flex-grow flex items-center justify-center relative overflow-hidden">
           <AnimatePresence initial={false} custom={direction}>
-// FIX: Removed framer-motion animation props ('custom', 'initial', 'animate', 'exit', 'transition') from motion.img due to TypeScript type errors. This resolves compilation errors but will break the sliding animation.
             <motion.img
               key={page}
               src={currentImage.url}

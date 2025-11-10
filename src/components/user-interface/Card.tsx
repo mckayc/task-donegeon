@@ -53,7 +53,6 @@ const Card: React.FC<CardProps> = ({ children, className, title, titleIcon, head
 
        <AnimatePresence initial={false}>
         {!isCollapsed && (
-// FIX: Removed 'initial', 'animate', and 'exit' props from framer-motion's motion.section due to TypeScript type errors. The animation logic is handled by the 'variants' prop.
           <motion.section
             key="content"
             variants={{

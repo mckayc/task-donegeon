@@ -143,7 +143,10 @@ const FunctionalSpecificationsContent: React.FC = () => (
                 </ul>
             </li>
             <li>
-                <strong>Live Data Refresh:</strong> To ensure information like quest deadlines ("Due in...") is always accurate on long-running kiosk screens, the quest list now automatically refreshes its data every minute without requiring a full page reload. This provides up-to-date information without interrupting the user experience.
+                <strong>Ambient Realm Screensaver:</strong> When idle, Kiosk Mode can transition into a castle-themed ambient display showing a large medieval clock, today's date, live realm duty accomplishments (completed quests, earned gold and XP), active quest timers, and an Explorer roster with progress bars. Tapping anywhere or touching an Explorer wakes the screen and instantly opens their login prompt. Includes automatic anti-burn-in position drifting for wall tablets and OLED displays.
+            </li>
+            <li>
+                <strong>Live Data Refresh & Manual Sync:</strong> To ensure information like quest deadlines ("Due in...") is always accurate on long-running kiosk screens, the quest list automatically refreshes data every minute. A 1-click manual refresh button in the Kiosk header lets users immediately synchronize state with the server with zero page reload.
             </li>
             <li>
                 <strong>Screen Wake Lock:</strong> To prevent the screen from turning off on always-on shared devices, Kiosk Mode (both the idle screen and active user sessions) now implements a screen wake lock. This ensures the application remains visible and ready for use at all times.
@@ -171,6 +174,24 @@ const FunctionalSpecificationsContent: React.FC = () => (
             </li>
              <li>
                 <strong>Approval Context:</strong> The final time recorded by the timer is displayed on the Approvals page, giving Donegeon Masters clear context to verify the completion.
+            </li>
+        </ul>
+        <h3>Daily Privileges & Weekly Allowance Engine</h3>
+        <p>
+            Task Donegeon supports a direct <strong>"When / Then" Privilege & Allowance Model</strong> (Premack's Principle) in parallel with the traditional coin economy. Instead of purchasing screen time with arbitrary coins, privileges unlock directly once daily non-negotiable duties are completed.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+            <li>
+                <strong>"All Daily Duties Completed" Condition:</strong> Any Condition Set, Quest, or Market can now require that all scheduled duties for today (or a configurable percentage like 80% or 100%) be approved/completed.
+            </li>
+            <li>
+                <strong>Daily Privileges Widget:</strong> Featured on the Explorer Dashboard and Kiosk view. When duties are pending, privileges display as <strong>🔒 Locked</strong> with a live duty progress bar and a list of remaining tasks. Once all duties are finished, they transition into glowing <strong>✨ Unlocked</strong> status with a 1-click button to launch built-in countdown timers (e.g. 45-minute Screen Time).
+            </li>
+            <li>
+                <strong>Automated Weekly Allowance:</strong> Donegeon Masters can configure a weekly allowance target for each child (e.g., $10/week). The engine tracks weekly duty completion rates. On allowance day, a 1-click review calculates the earned payout (pro-rated by duty completion % or pass/fail threshold) and deposits it directly into their purse or Enchanted Vault savings.
+            </li>
+            <li>
+                <strong>Manage Privileges Page:</strong> Accessible under <em>User Management &rarr; Manage Privileges</em> in the sidebar to create, edit, and assign privileges and process weekly payouts.
             </li>
         </ul>
         <h3>Application Shell & PWA</h3>

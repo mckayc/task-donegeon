@@ -74,6 +74,9 @@ const ConditionEditor: React.FC<{
             case ConditionType.UserHasRole:
                 newCondition = { type: newType, role: Role.Explorer, id: condition.id };
                 break;
+            case ConditionType.AllDailyDutiesCompleted:
+                newCondition = { type: newType, minPercentage: 100, requiredStatuses: [QuestCompletionStatus.Approved], id: condition.id };
+                break;
             default: return;
         }
         onUpdate(newCondition);
@@ -105,6 +108,7 @@ const ConditionEditor: React.FC<{
                     <option value={ConditionType.UserDoesNotHaveItem}>User Does Not Have Item</option>
                     <option value={ConditionType.UserIsMemberOfGuild}>User is Member of Guild</option>
                     <option value={ConditionType.UserHasRole}>User Has Role</option>
+                    <option value={ConditionType.AllDailyDutiesCompleted}>All Daily Duties Completed Today</option>
                 </Input>
                 <button type="button" onClick={onRemove} className="mt-7 ml-2 text-red-400 hover:text-red-300">
                     <TrashIcon className="w-5 h-5"/>
@@ -178,7 +182,24 @@ const ConditionEditor: React.FC<{
                     <option value={Role.DonegeonMaster}>Donegeon Master</option>
                 </Input>
             )}
-            {(condition.type === ConditionType.QuestCompleted || condition.type === ConditionType.QuestGroupCompleted) && (
+            {condition.type === ConditionType.AllDailyDutiesCompleted && (
+                <div className="space-y-2">
+                    <Input
+                        type="number"
+                        label="Minimum Duty Completion %"
+                        value={condition.minPercentage ?? 100}
+                        onChange={e => onUpdate({ ...condition, minPercentage: Math.max(1, Math.min(100, Number(e.target.value) || 100)) })}
+                        min={1}
+                        max={100}
+                    />
+                    <p className="text-xs text-stone-400">
+                        {(!condition.minPercentage || condition.minPercentage >= 100)
+                            ? 'Requires 100% of the user\'s scheduled duties for today to be completed.'
+                            : `Requires at least ${condition.minPercentage}% of today\'s scheduled duties to be completed.`}
+                    </p>
+                </div>
+            )}
+            {(condition.type === ConditionType.QuestCompleted || condition.type === ConditionType.QuestGroupCompleted || condition.type === ConditionType.AllDailyDutiesCompleted) && (
                 <div className="mt-2 space-y-2">
                     <label className="block text-sm font-medium text-stone-300">Required Status(es)</label>
                     <div className="flex gap-2 flex-wrap">

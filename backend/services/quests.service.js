@@ -30,7 +30,7 @@ const isVacationActiveOnDate = (date, scheduledEvents, guildId) => {
 };
 
 const getAll = async () => {
-    const quests = await questRepo.find({ relations: ['assignedUsers'] });
+    const quests = await questRepo.find({ relations: { assignedUsers: true } });
     return quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers.map(u => u.id) }));
 };
 
@@ -74,14 +74,14 @@ const create = async (questDataWithUsers, actorId) => {
         }
         
         updateEmitter.emit('update');
-        const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: ['assignedUsers'] });
+        const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: { assignedUsers: true } });
         const { assignedUsers: users, ...rest } = savedWithRelations;
         return { ...rest, assignedUserIds: users.map(u => u.id) };
     });
 };
 
 const clone = async (id) => {
-    const questToClone = await questRepo.findOne({ where: { id }, relations: ['assignedUsers'] });
+    const questToClone = await questRepo.findOne({ where: { id }, relations: { assignedUsers: true } });
     if (!questToClone) return null;
 
     const newQuest = questRepo.create({
@@ -102,7 +102,7 @@ const update = async (id, questDataWithUsers, actorId) => {
         const userRepo = manager.getRepository(UserEntity);
         const notificationRepo = manager.getRepository(SystemNotificationEntity);
 
-        const quest = await questRepo.findOne({ where: { id }, relations: ['assignedUsers'] });
+        const quest = await questRepo.findOne({ where: { id }, relations: { assignedUsers: true } });
         if (!quest) return null;
 
         const oldAssignedIds = new Set(quest.assignedUsers.map(u => u.id));
@@ -142,7 +142,7 @@ const update = async (id, questDataWithUsers, actorId) => {
         
         updateEmitter.emit('update');
         
-        const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: ['assignedUsers'] });
+        const savedWithRelations = await questRepo.findOne({ where: { id: saved.id }, relations: { assignedUsers: true } });
         const { assignedUsers, ...rest } = savedWithRelations;
         return { ...rest, assignedUserIds: assignedUsers.map(u => u.id) };
     });
@@ -163,7 +163,7 @@ const bulkUpdateStatus = async (ids, isActive) => {
 };
 
 const bulkUpdate = async (ids, updates) => {
-    const questsToUpdate = await questRepo.find({ where: { id: In(ids) }, relations: ['assignedUsers'] });
+    const questsToUpdate = await questRepo.find({ where: { id: In(ids) }, relations: { assignedUsers: true } });
     if (questsToUpdate.length === 0) return;
 
     for (const quest of questsToUpdate) {
@@ -281,7 +281,7 @@ const complete = async (completionData) => {
             await manager.save(updateTimestamps(chronicleEvent, true));
         }
 
-        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: savedCompletion.id }, relations: ['user', 'quest'] });
+        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: savedCompletion.id }, relations: { user: true, quest: true } });
         updateEmitter.emit('update');
         return { updatedUser, newCompletion: finalCompletion };
     });
@@ -289,7 +289,7 @@ const complete = async (completionData) => {
 
 const approveQuestCompletion = async (id, approverId, note) => {
     return await dataSource.transaction(async manager => {
-        const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
+        const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: { user: true, quest: true } });
         if (!completion || completion.status !== 'Pending') return null;
 
         const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
@@ -419,7 +419,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
         }
 
         updateEmitter.emit('update');
-        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: ['user', 'quest'] });
+        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: updatedCompletion.id }, relations: { user: true, quest: true } });
         
         return { updatedUser, updatedCompletion: finalCompletion, newUserTrophies, newNotifications };
     });
@@ -427,7 +427,7 @@ const approveQuestCompletion = async (id, approverId, note) => {
 
 const rejectQuestCompletion = async (id, rejecterId, note) => {
     return await dataSource.transaction(async manager => {
-        const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
+        const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: { user: true, quest: true } });
         if (!completion || completion.status !== 'Pending') return null;
         
         const actedAt = new Date().toISOString();
@@ -491,7 +491,7 @@ const revertQuestApproval = async (completionId, adminId) => {
 
         const completion = await completionRepo.findOne({
             where: { id: completionId },
-            relations: ['user', 'quest']
+            relations: { user: true, quest: true }
         });
         
         if (!completion || completion.status !== 'Approved') {
@@ -607,7 +607,7 @@ const markAsTodo = async (questId, userId) => {
             updateEmitter.emit('update');
         }
         
-        const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
+        const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: { assignedUsers: true } });
         if (!updatedQuestWithRelations) return null;
         
         const { assignedUsers, ...rest } = updatedQuestWithRelations;
@@ -627,7 +627,7 @@ const unmarkAsTodo = async (questId, userId) => {
             updateEmitter.emit('update');
         }
 
-        const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
+        const updatedQuestWithRelations = await questRepo.findOne({ where: { id: questId }, relations: { assignedUsers: true } });
         if (!updatedQuestWithRelations) return null;
 
         const { assignedUsers, ...rest } = updatedQuestWithRelations;
@@ -718,10 +718,10 @@ const completeCheckpoint = async (questId, userId) => {
         quest.checkpointCompletionTimestamps[userId][checkpoint.id] = now;
         await manager.save(updateTimestamps(quest));
         
-        const finalUpdatedQuest = await manager.findOne(QuestEntity, { where: { id: questId }, relations: ['assignedUsers'] });
+        const finalUpdatedQuest = await manager.findOne(QuestEntity, { where: { id: questId }, relations: { assignedUsers: true } });
         const { assignedUsers, ...restOfQuest } = finalUpdatedQuest;
         const updatedQuestForFrontend = { ...restOfQuest, assignedUserIds: assignedUsers.map(u => u.id) };
-        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: newCompletion.id }, relations: ['user', 'quest'] });
+        const finalCompletion = await manager.findOne(QuestCompletionEntity, { where: { id: newCompletion.id }, relations: { user: true, quest: true } });
 
         updateEmitter.emit('update');
         return { updatedUser, updatedQuest: updatedQuestForFrontend, newCompletion: finalCompletion, newUserTrophies, newNotifications };
@@ -731,7 +731,7 @@ const completeCheckpoint = async (questId, userId) => {
 const claimQuest = async (questId, userId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
-        const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers']});
+        const quest = await questRepo.findOne({ where: { id: questId }, relations: { assignedUsers: true }});
         if (!quest || !quest.requiresClaim) return null;
 
         if (!quest.pendingClaims) quest.pendingClaims = [];
@@ -758,7 +758,7 @@ const claimQuest = async (questId, userId) => {
 const unclaimQuest = async (questId, userId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
-        const quest = await questRepo.findOne({where: { id: questId }, relations: ['assignedUsers']});
+        const quest = await questRepo.findOne({where: { id: questId }, relations: { assignedUsers: true }});
         if (!quest) return null;
 
         const wasPending = quest.pendingClaims?.some(c => c.userId === userId);
@@ -802,7 +802,7 @@ const unclaimQuest = async (questId, userId) => {
 const approveClaim = async (questId, userId, adminId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
-        const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers']});
+        const quest = await questRepo.findOne({ where: { id: questId }, relations: { assignedUsers: true }});
         if (!quest || !quest.requiresClaim) return null;
         
         const pendingClaim = quest.pendingClaims?.find(c => c.userId === userId);
@@ -833,7 +833,7 @@ const approveClaim = async (questId, userId, adminId) => {
 const rejectClaim = async (questId, userId, adminId) => {
     return await dataSource.transaction(async manager => {
         const questRepo = manager.getRepository(QuestEntity);
-        const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers']});
+        const quest = await questRepo.findOne({ where: { id: questId }, relations: { assignedUsers: true }});
         if (!quest || !quest.requiresClaim || !quest.pendingClaims?.some(c => c.userId === userId)) return null;
 
         quest.pendingClaims = quest.pendingClaims.filter(c => c.userId !== userId);

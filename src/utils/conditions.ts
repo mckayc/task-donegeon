@@ -204,6 +204,36 @@ export const checkCondition = (condition: Condition, user: User, dependencies: C
         case ConditionType.UserHasRole:
             return user.role === condition.role;
 
+        case ConditionType.AllDailyDutiesCompleted: {
+            const requiredStatuses = condition.requiredStatuses?.length ? condition.requiredStatuses : [QuestCompletionStatus.Approved];
+            
+            // Find all active duties scheduled for this user today in this mode
+            const userDutiesToday = dependencies.quests.filter(q => {
+                if (!q.isActive || q.type !== QuestType.Duty) return false;
+                if (q.id === questIdToExclude) return false;
+                if (!isQuestVisibleToUserInMode(q, user.id, dependencies.appMode)) return false;
+                if (!isQuestScheduledForDay(q, now)) return false;
+                return true;
+            });
+
+            if (userDutiesToday.length === 0) {
+                return true;
+            }
+
+            const minPercentage = condition.minPercentage ?? 100;
+            const completedCount = userDutiesToday.filter(duty =>
+                dependencies.questCompletions.some(c =>
+                    c.userId === user.id &&
+                    c.questId === duty.id &&
+                    requiredStatuses.includes(c.status) &&
+                    toYMD(new Date(c.completedAt)) === todayYMD
+                )
+            ).length;
+
+            const actualPercent = (completedCount / userDutiesToday.length) * 100;
+            return actualPercent >= minPercentage;
+        }
+
         default:
             return false;
     }
@@ -328,6 +358,12 @@ export const getConditionDescription = (condition: Condition, dependencies: Cond
 
         case ConditionType.UserHasRole:
             return `Have the role: "${condition.role}"`;
+
+        case ConditionType.AllDailyDutiesCompleted:
+            const percent = condition.minPercentage ?? 100;
+            return percent >= 100 
+                ? 'Complete all daily duties scheduled for today' 
+                : `Complete at least ${percent}% of daily duties scheduled for today`;
 
         default:
             return 'Unknown condition';

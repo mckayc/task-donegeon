@@ -167,7 +167,7 @@ const initializeApp = async () => {
 
 
     // MIGRATION/SYNC: Ensure a default guild exists and all users are members.
-    let defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });
+    let defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: { members: true } });
     if (!defaultGuild) {
         console.log('[Data Sync] No default guild found. Creating one...');
         defaultGuild = manager.create(GuildEntity, {
@@ -320,32 +320,36 @@ const initializeApp = async () => {
     app.use('/api/chronicles', chroniclesRouter);
 
     // === Serve Static Assets ===
-    // Serve the built Vite app
-    const buildPath = path.resolve(__dirname, '..', 'dist');
-    app.use(express.static(buildPath));
     // Serve the 'data/assets' directory for uploads
     app.use('/uploads', express.static(UPLOADS_DIR));
     // Serve the media directory
     app.use('/media', express.static(MEDIA_DIR));
 
-    // For any other request, serve the index.html file to support client-side routing
-    app.get('*', (req, res) => {
+    ensureDefaultAssetPacksExist();
+    startAutomatedBackupScheduler();
+    startAutomatedRotationScheduler();
+
+    return app;
+};
+
+const startServer = async () => {
+    await initializeApp();
+    const buildPath = path.resolve(__dirname, '..', 'dist');
+    app.use(express.static(buildPath));
+    app.use((req, res) => {
         res.sendFile(path.join(buildPath, 'index.html'));
     });
-    
-    // === Error Handling Middleware ===
     app.use((err, req, res, next) => {
       console.error(err.stack);
       res.status(500).send({ error: 'Something went wrong!' });
     });
-
-    // === Start Server ===
     app.listen(port, () => {
         console.log(`Server listening at http://localhost:${port}`);
-        ensureDefaultAssetPacksExist();
-        startAutomatedBackupScheduler();
-        startAutomatedRotationScheduler();
     });
 };
 
-initializeApp().catch(error => console.log(error));
+if (require.main === module) {
+    startServer().catch(error => console.log(error));
+}
+
+module.exports = { app, initializeApp, startServer };

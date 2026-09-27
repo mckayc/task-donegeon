@@ -16,6 +16,8 @@ import NumberInput from '../user-interface/NumberInput';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { PlusIcon, TrashIcon } from '../user-interface/Icons';
+import { KioskScreensaver } from '../kiosk/KioskScreensaver';
+import { AnimatePresence } from 'framer-motion';
 
 const GeneralSettings: React.FC<{
     settings: AppSettings;
@@ -243,6 +245,7 @@ export const SettingsPage: React.FC = () => {
     const [isTestingApiKey, setIsTestingApiKey] = useState(false);
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
     const [apiKeySuccess, setApiKeySuccess] = useState(false);
+    const [isPreviewingScreensaver, setIsPreviewingScreensaver] = useState(false);
 
 
     const hasUnsavedChanges = useMemo(() => {
@@ -393,12 +396,75 @@ export const SettingsPage: React.FC = () => {
                                 onSelectionChange={ids => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, userIds: ids } }))}
                                 label="Users to show on Kiosk login screen"
                             />
-                             <ToggleSwitch
+                            <ToggleSwitch
                                 enabled={localSettings.sharedMode.autoExit}
                                 setEnabled={val => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, autoExit: val } }))}
                                 label="Auto-logout on inactivity (Kiosk Mode only)"
                             />
-                            {localSettings.sharedMode.autoExit && <NumberInput label="Logout after (minutes)" value={localSettings.sharedMode.autoExitMinutes} onChange={val => setLocalSettings(p => ({...p, sharedMode: {...p.sharedMode, autoExitMinutes: val}}))} min={1} />}
+                            {localSettings.sharedMode.autoExit && (
+                                <NumberInput 
+                                    label="Logout after (minutes)" 
+                                    value={localSettings.sharedMode.autoExitMinutes} 
+                                    onChange={val => setLocalSettings(p => ({...p, sharedMode: {...p.sharedMode, autoExitMinutes: val}}))} 
+                                    min={1} 
+                                />
+                            )}
+
+                            {/* Ambient Screensaver Settings */}
+                            <div className="border-t border-stone-700/60 pt-4 space-y-4">
+                                <h4 className="font-semibold text-stone-200 text-sm">Ambient Screensaver & Shared Display</h4>
+                                <ToggleSwitch
+                                    enabled={localSettings.sharedMode.screensaverEnabled !== false}
+                                    setEnabled={val => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, screensaverEnabled: val } }))}
+                                    label="Enable Ambient Screensaver on Inactivity"
+                                />
+                                {localSettings.sharedMode.screensaverEnabled !== false && (
+                                    <>
+                                        <NumberInput
+                                            label="Screensaver timeout (minutes)"
+                                            value={localSettings.sharedMode.screensaverInactivityMinutes ?? 3}
+                                            onChange={val => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, screensaverInactivityMinutes: val } }))}
+                                            min={1}
+                                            max={60}
+                                        />
+                                        <ToggleSwitch
+                                            enabled={localSettings.sharedMode.screensaverShowStats !== false}
+                                            setEnabled={val => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, screensaverShowStats: val } }))}
+                                            label="Show Live Realm Accomplishments & Stats on Screensaver"
+                                        />
+                                        <ToggleSwitch
+                                            enabled={localSettings.sharedMode.screensaverShowUsers !== false}
+                                            setEnabled={val => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, screensaverShowUsers: val } }))}
+                                            label="Show Explorers & Quick-Login Cards on Screensaver"
+                                        />
+                                        <div className="pt-1">
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => setIsPreviewingScreensaver(true)}
+                                            >
+                                                ✨ Preview Ambient Screensaver
+                                            </Button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Power & Dimming */}
+                            <div className="border-t border-stone-700/60 pt-4 space-y-4">
+                                <h4 className="font-semibold text-stone-200 text-sm">Tablet Display & Power Controls</h4>
+                                <ToggleSwitch
+                                    enabled={!!localSettings.sharedMode.showBattery}
+                                    setEnabled={val => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, showBattery: val } }))}
+                                    label="Show Battery Status Indicator in Kiosk Header"
+                                />
+                                <ToggleSwitch
+                                    enabled={!!localSettings.sharedMode.autoDim}
+                                    setEnabled={val => setLocalSettings(p => ({ ...p, sharedMode: { ...p.sharedMode, autoDim: val } }))}
+                                    label="Auto-Dim Screen During Night Hours"
+                                />
+                            </div>
                         </div>
                     </div>
                 </CollapsibleSection>
@@ -433,6 +499,15 @@ export const SettingsPage: React.FC = () => {
                 title="Confirm Action"
                 message={confirmAction ? confirmationMessages[confirmAction] : ''}
             />
+
+            <AnimatePresence>
+                {isPreviewingScreensaver && (
+                    <KioskScreensaver
+                        onWake={() => setIsPreviewingScreensaver(false)}
+                        onSelectUser={() => setIsPreviewingScreensaver(false)}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

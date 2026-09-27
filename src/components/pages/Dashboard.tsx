@@ -29,6 +29,9 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import DynamicIcon from '../user-interface/DynamicIcon';
+import { DailyPrivilegesWidget } from '../privileges/DailyPrivilegesWidget';
+import { AllowanceWidget } from '../privileges/AllowanceWidget';
+import { Role } from '../../types';
 
 interface GoalProgress extends RewardItem {
     current: number;
@@ -401,6 +404,12 @@ const Dashboard: React.FC = () => {
 
     return (
         <>
+            {/* Daily Privileges & Allowance Tracker (Shown for Explorers or when testing) */}
+            <div className="mb-6 space-y-4">
+                <DailyPrivilegesWidget onSelectQuest={handleQuestSelect} />
+                <AllowanceWidget />
+            </div>
+
             <div className={`grid ${gridClasses}`}>
                 <Reorder.Group
                     axis="y"

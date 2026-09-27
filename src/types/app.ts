@@ -7,6 +7,7 @@ import { EconomyState } from '../context/EconomyContext';
 import { ProgressionState } from '../context/ProgressionContext';
 import { CommunityState } from '../context/CommunityContext';
 import { BugReportTemplate } from '../components/dev/types';
+import { PrivilegeItem, AllowanceSettings } from './privileges';
 
 export type Page =
   | 'Dashboard' | 'Quests' | 'Calendar' | 'Marketplace' | 'Avatar' | 'Collection'
@@ -17,7 +18,7 @@ export type Page =
   | 'Suggestion Engine' | 'Object Exporter' | 'Asset Manager' | 'Backup & Import'
   | 'Asset Library' | 'Appearance' | 'Settings' | 'About' | 'Help Guide' | 'Themes'
   | 'Bug Tracker' | 'Test Cases' | 'Manage Condition Sets' | 'Manage Minigames'
-  | 'Statistics' | 'Manage AI Tutors' | 'Enchanted Vault';
+  | 'Statistics' | 'Manage AI Tutors' | 'Enchanted Vault' | 'Manage Privileges';
 
 export interface Terminology {
   appName: string;
@@ -165,6 +166,10 @@ export interface AppSettings {
         autoDimStopTime?: string;
         autoDimInactivitySeconds?: number;
         autoDimLevel?: number;
+        screensaverEnabled?: boolean;
+        screensaverInactivityMinutes?: number;
+        screensaverShowStats?: boolean;
+        screensaverShowUsers?: boolean;
     };
     automatedBackups: {
         enabled: boolean;
@@ -192,6 +197,8 @@ export interface AppSettings {
     conditionSets: ConditionSet[];
     bugReportTemplates: BugReportTemplate[];
     enchantedVault: EnchantedVaultSettings;
+    privileges: PrivilegeItem[];
+    allowance: AllowanceSettings;
 }
 
 export interface BackupSchedule {

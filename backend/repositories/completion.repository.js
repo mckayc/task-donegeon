@@ -11,7 +11,7 @@ const create = (data) => {
 };
 
 const findById = (id) => repo.findOneBy({ id });
-const findByIdWithRelations = (id) => repo.findOne({ where: { id }, relations: ['user', 'quest'] });
+const findByIdWithRelations = (id) => repo.findOne({ where: { id }, relations: { user: true, quest: true } });
 
 const findForUser = (userId, guildId) => {
     const whereClause = { user: { id: userId } };
@@ -20,7 +20,7 @@ const findForUser = (userId, guildId) => {
     } else if (guildId) {
         whereClause.guildId = guildId;
     }
-    return repo.find({ where: whereClause, relations: ['quest'] });
+    return repo.find({ where: whereClause, relations: { quest: true } });
 };
 
 const update = async (id, data) => {

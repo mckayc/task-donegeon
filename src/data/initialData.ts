@@ -29,6 +29,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'header', id: 'header-admin-community', title: 'User Management', emoji: '🛡️', level: 0, role: Role.Gatekeeper, isVisible: true },
   { type: 'link', id: 'Approvals', emoji: '✅', isVisible: true, level: 1, role: Role.Gatekeeper, termKey: 'link_approvals' },
   { type: 'link', id: 'Manage Users', emoji: '👥', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_users' },
+  { type: 'link', id: 'Manage Privileges', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Manage Guilds', emoji: '🏰', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_guilds' },
   { type: 'link', id: 'Triumphs & Trials', emoji: '⚖️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_triumphs_trials' },
 
@@ -109,6 +110,10 @@ export const INITIAL_SETTINGS: AppSettings = {
         autoDimStopTime: '06:00',
         autoDimInactivitySeconds: 30,
         autoDimLevel: 0.8,
+        screensaverEnabled: true,
+        screensaverInactivityMinutes: 3,
+        screensaverShowStats: true,
+        screensaverShowUsers: true,
     },
     automatedBackups: {
         enabled: false,
@@ -238,6 +243,36 @@ export const INITIAL_SETTINGS: AppSettings = {
     },
     conditionSets: [],
     bugReportTemplates: [],
+    privileges: [
+        {
+            id: 'priv-screen-time',
+            title: 'Screen Time (45 Minutes)',
+            description: 'Enjoy 45 minutes of tablet, console, or TV time once today\'s duties are done.',
+            icon: '🎮',
+            assignedUserIds: [],
+            requiresAllDailyDuties: true,
+            minDutyPercentage: 100,
+            type: 'timer',
+            timerDurationMinutes: 45,
+            isActive: true,
+        },
+        {
+            id: 'priv-free-play',
+            title: 'Friend & Free Play Time',
+            description: 'Free time to play with neighborhood friends or free choice activity.',
+            icon: '🛹',
+            assignedUserIds: [],
+            requiresAllDailyDuties: true,
+            minDutyPercentage: 100,
+            type: 'unlock_only',
+            isActive: true,
+        }
+    ],
+    allowance: {
+        enabled: true,
+        userConfigs: [],
+        payoutHistory: [],
+    },
 };
 
 export const INITIAL_QUEST_GROUPS: QuestGroup[] = [

@@ -18,6 +18,7 @@ export enum ConditionType {
     UserDoesNotHaveItem = 'USER_DOES_NOT_HAVE_ITEM',
     UserIsMemberOfGuild = 'USER_IS_MEMBER_OF_GUILD',
     UserHasRole = 'USER_HAS_ROLE',
+    AllDailyDutiesCompleted = 'ALL_DAILY_DUTIES_COMPLETED',
 }
 
 export interface BaseCondition {
@@ -84,6 +85,12 @@ export interface UserHasRoleCondition extends BaseCondition {
     role: Role;
 }
 
+export interface AllDailyDutiesCompletedCondition extends BaseCondition {
+    type: ConditionType.AllDailyDutiesCompleted;
+    minPercentage?: number;
+    requiredStatuses?: QuestCompletionStatus[];
+}
+
 
 export type Condition =
   | MinRankCondition
@@ -96,7 +103,8 @@ export type Condition =
   | UserHasItemCondition
   | UserDoesNotHaveItemCondition
   | UserIsMemberOfGuildCondition
-  | UserHasRoleCondition;
+  | UserHasRoleCondition
+  | AllDailyDutiesCompletedCondition;
 
 
 export interface ConditionSet {

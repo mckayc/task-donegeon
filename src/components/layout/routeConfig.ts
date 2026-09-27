@@ -48,4 +48,5 @@ export const routeConfig: Partial<Record<Page, React.LazyExoticComponent<React.F
     'Manage Minigames': lazy(() => import('../pages/management/ManageMinigamesPage')),
     'Statistics': lazy(() => import('../pages/management/StatsPage')),
     'Enchanted Vault': lazy(() => import('../pages/EnchantedVaultPage')),
+    'Manage Privileges': lazy(() => import('../privileges/ManagePrivilegesPage').then(module => ({ default: module.ManagePrivilegesPage }))),
 };

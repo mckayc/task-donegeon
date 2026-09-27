@@ -163,7 +163,7 @@ const create = async (userData, actorId) => {
         });
         savedUser = await manager.save(updateTimestamps(newUser, true));
         
-        const defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });
+        const defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: { members: true } });
         if (defaultGuild) {
             defaultGuild.members.push(savedUser);
             await manager.save(updateTimestamps(defaultGuild));
@@ -237,7 +237,7 @@ const adjust = async (adjustmentData) => {
 };
 
 const getPendingItems = async (userId) => {
-    const questCompletions = await dataSource.getRepository(QuestCompletionEntity).find({ where: { user: { id: userId }, status: 'Pending' }, relations: ['quest'], order: { completedAt: 'DESC' } });
+    const questCompletions = await dataSource.getRepository(QuestCompletionEntity).find({ where: { user: { id: userId }, status: 'Pending' }, relations: { quest: true }, order: { completedAt: 'DESC' } });
     const purchaseRequests = await dataSource.getRepository(PurchaseRequestEntity).find({ where: { userId, status: 'Pending' }, order: { requestedAt: 'DESC' } });
     return {
         quests: questCompletions.map(c => ({ id: c.id, title: c.quest.title, submittedAt: c.completedAt, questId: c.quest.id })),

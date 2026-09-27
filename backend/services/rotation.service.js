@@ -74,7 +74,7 @@ const run = async (id) => {
             return { message: "Rotation not found." };
         }
         
-        const quests = await questRepo.find({ where: { id: In(rotation.questIds) }, relations: ['assignedUsers'], order: { title: 'ASC' } });
+        const quests = await questRepo.find({ where: { id: In(rotation.questIds) }, relations: { assignedUsers: true }, order: { title: 'ASC' } });
         const users = await userRepo.find({ where: { id: In(rotation.userIds) }, order: { gameName: 'ASC' } });
 
         if (quests.length === 0 || users.length === 0) {

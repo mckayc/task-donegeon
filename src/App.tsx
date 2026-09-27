@@ -77,6 +77,10 @@ const App: React.FC = () => {
                     )}
                     {isScreenDimmed && (
                         <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: screenDimOverride ?? settings.sharedMode.autoDimLevel ?? 0.85 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.5 }}
                             className="fixed inset-0 bg-black pointer-events-none z-[9998]"
                         />
                     )}

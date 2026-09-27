@@ -17,8 +17,9 @@ const ensureDatabaseDirectoryExists = async () => {
 };
 
 const dataSource = new DataSource({
-    type: "sqlite",
-    database: dbPath,
+    type: "sqljs",
+    location: dbPath,
+    autoSave: true,
     entities: allEntities,
     synchronize: true, // Automatically creates/updates schema based on entities.
     logging: false, 

@@ -7,7 +7,7 @@ const repo = dataSource.getRepository(GuildEntity);
 const userRepo = dataSource.getRepository(UserEntity);
 
 const findAllWithMembers = async () => {
-    const guilds = await repo.find({ relations: ['members'] });
+    const guilds = await repo.find({ relations: { members: true } });
     return guilds.map(g => ({ ...g, memberIds: g.members.map(m => m.id) }));
 };
 
@@ -24,7 +24,7 @@ const create = async (data) => {
 };
 
 const update = async (id, data) => {
-    const guild = await repo.findOne({ where: { id }, relations: ['members'] });
+    const guild = await repo.findOne({ where: { id }, relations: { members: true } });
     if (!guild) return null;
 
     const { memberIds, ...guildData } = data;
@@ -38,7 +38,7 @@ const update = async (id, data) => {
 };
 
 const addMember = async (id, userId) => {
-    const guild = await repo.findOne({ where: { id }, relations: ['members'] });
+    const guild = await repo.findOne({ where: { id }, relations: { members: true } });
     const user = await userRepo.findOneBy({ id: userId });
     if (guild && user) {
         guild.members.push(user);

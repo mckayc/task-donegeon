@@ -6,10 +6,11 @@ const { dataSource } = require('../data-source');
 const { QuestEntity, UserEntity, AITutorEntity } = require('../entities');
 
 let ai;
-if (process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall') {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+if (apiKey && apiKey !== 'thiswontworkatall') {
+    ai = new GoogleGenAI({ apiKey });
 } else {
-    console.warn("WARNING: API_KEY environment variable not set or is default. AI features will be disabled.");
+    console.warn("WARNING: GEMINI_API_KEY or API_KEY environment variable not set or is default. AI features will be disabled.");
 }
 
 const activeChats = new Map(); // In-memory store for chat sessions

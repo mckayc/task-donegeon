@@ -16,7 +16,7 @@ export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
 // --- CONTEXT DEFINITIONS ---
 const DataLoadedContext = createContext<boolean>(false);
-const SyncStatusContext = createContext<{ syncStatus: SyncStatus; syncError: string | null; }>({ syncStatus: 'idle', syncError: null });
+const SyncStatusContext = createContext<{ syncStatus: SyncStatus; syncError: string | null; syncData: () => Promise<void>; }>({ syncStatus: 'idle', syncError: null, syncData: async () => {} });
 
 // --- DATA PROVIDER COMPONENT ---
 
@@ -159,12 +159,40 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => eventSource.close();
   }, [syncData]);
   
-  const syncContextValue = useMemo(() => ({ syncStatus, syncError }), [syncStatus, syncError]);
+  const syncContextValue = useMemo(() => ({ syncStatus, syncError, syncData }), [syncStatus, syncError, syncData]);
 
   return (
     <DataLoadedContext.Provider value={isDataLoaded}>
       <SyncStatusContext.Provider value={syncContextValue}>
-        {isDataLoaded ? children : <div className="flex items-center justify-center h-screen bg-stone-900 text-white"><div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div></div>}
+        {isDataLoaded ? (
+          children
+        ) : syncStatus === 'error' ? (
+          <div className="flex items-center justify-center min-h-screen bg-stone-950 text-white p-4">
+            <div className="max-w-md w-full bg-stone-900 border border-stone-800 rounded-xl p-6 text-center shadow-2xl">
+              <div className="text-4xl mb-3">🏰⚡</div>
+              <h2 className="text-xl font-bold text-amber-400 mb-2 font-medieval">Unable to Connect to Realm Server</h2>
+              <p className="text-stone-300 text-sm mb-4">
+                Could not synchronize initial game state with the server.
+              </p>
+              {syncError && (
+                <div className="bg-stone-950 border border-stone-800 rounded p-3 mb-4 text-xs text-rose-400 font-mono text-left break-all">
+                  {syncError}
+                </div>
+              )}
+              <button
+                onClick={() => syncData()}
+                className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
+              >
+                Retry Connection
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-stone-950 text-white gap-4">
+            <div className="animate-spin rounded-full h-14 w-14 border-4 border-emerald-500/20 border-b-emerald-400"></div>
+            <p className="text-stone-400 text-sm font-medium animate-pulse font-medieval">Entering the Task Donegeon...</p>
+          </div>
+        )}
       </SyncStatusContext.Provider>
     </DataLoadedContext.Provider>
   );

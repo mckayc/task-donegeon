@@ -355,61 +355,154 @@ const SharedCalendarPage: React.FC = () => {
     };
 
 
-    return (
-        <div className="overflow-x-auto scrollbar-hide p-4 md:p-8 h-full">
-            <div className="flex space-x-6 min-w-max h-full">
-                {sharedUsers.map(user => {
-                    const userTimer = (activeTimer && activeTimer.userId === user.id) ? activeTimer : null;
-                    const timerQuest = userTimer ? quests.find(q => q.id === userTimer.questId) : null;
+    // Calculate whether all shared users' duties today are 100% complete
+    const isAllRealmDutiesDone = useMemo(() => {
+        if (sharedUsers.length === 0) return false;
+        let totalDuties = 0;
+        let totalCompleted = 0;
 
-                    return (
-                        <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
-                            <div className="flex items-center gap-3 mb-2 flex-shrink-0">
-                                <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
-                                <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
+        const todayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime();
+        const todayEnd = todayStart + 86400000;
+
+        sharedUsers.forEach(user => {
+            const userQuests = questsByUser.get(user.id);
+            if (!userQuests) return;
+            const userCompletionsToday = questCompletions.filter(c => {
+                if (c.userId !== user.id) return false;
+                const compTime = new Date(c.completedAt).getTime();
+                return compTime >= todayStart && compTime < todayEnd && c.status === QuestCompletionStatus.Approved;
+            });
+            const completedIds = new Set(userCompletionsToday.map(c => c.questId));
+            totalDuties += userQuests.duties.length;
+            totalCompleted += userQuests.duties.filter(d => completedIds.has(d.id)).length;
+        });
+
+        return totalDuties > 0 && totalCompleted >= totalDuties;
+    }, [sharedUsers, questsByUser, questCompletions, currentDate]);
+
+    return (
+        <div className="overflow-x-auto scrollbar-hide p-4 md:p-8 h-full flex flex-col">
+            {/* All-Done Celebration Banner */}
+            {isAllRealmDutiesDone && (
+                <div className="mb-4 bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-amber-500/20 border border-amber-500/40 rounded-xl p-3 flex items-center justify-center gap-3 text-amber-300 text-sm font-semibold shadow-lg flex-shrink-0 animate-pulse">
+                    <span className="text-xl">🏆</span>
+                    <span>All Daily Realm Duties Conquered for Today! Outstanding teamwork, Explorers!</span>
+                    <span className="text-xl">✨</span>
+                </div>
+            )}
+
+            {sharedUsers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 my-auto">
+                    <div className="text-5xl mb-3">🛡️</div>
+                    <h3 className="text-xl font-bold text-stone-200 font-medieval mb-2">No Explorers Configured for Kiosk</h3>
+                    <p className="text-stone-400 max-w-md text-sm">
+                        Select which users to display in Kiosk Mode under Settings &rarr; Shared / Kiosk Mode.
+                    </p>
+                </div>
+            ) : (
+                <div className="flex space-x-6 min-w-max h-full flex-grow">
+                    {sharedUsers.map(user => {
+                        const userTimer = (activeTimer && activeTimer.userId === user.id) ? activeTimer : null;
+                        const timerQuest = userTimer ? quests.find(q => q.id === userTimer.questId) : null;
+                        const userQuests = questsByUser.get(user.id);
+
+                        const todayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime();
+                        const todayEnd = todayStart + 86400000;
+                        const userCompletionsToday = questCompletions.filter(c => {
+                            if (c.userId !== user.id) return false;
+                            const compTime = new Date(c.completedAt).getTime();
+                            return compTime >= todayStart && compTime < todayEnd && c.status === QuestCompletionStatus.Approved;
+                        });
+                        const completedIds = new Set(userCompletionsToday.map(c => c.questId));
+                        const dutiesCount = userQuests?.duties.length || 0;
+                        const completedDutiesCount = userQuests ? userQuests.duties.filter(d => completedIds.has(d.id)).length : 0;
+                        const dutyPercent = dutiesCount > 0 ? Math.round((completedDutiesCount / dutiesCount) * 100) : 100;
+
+                        return (
+                            <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
+                                <div className="bg-stone-850/80 border border-stone-700/60 rounded-xl p-3 mb-2 flex-shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
+                                        <div className="flex-grow min-w-0">
+                                            <h2 className="text-lg font-bold text-stone-200 truncate">{user.gameName}</h2>
+                                            <div className="flex items-center justify-between text-xs text-stone-400 font-mono mt-0.5">
+                                                <span>Duties: {completedDutiesCount}/{dutiesCount}</span>
+                                                {dutiesCount > 0 && completedDutiesCount >= dutiesCount ? (
+                                                    <span className="text-[11px] px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">
+                                                        ✓ Done!
+                                                    </span>
+                                                ) : (
+                                                    <span>{dutyPercent}%</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {dutiesCount > 0 && (
+                                        <div className="w-full bg-stone-800 rounded-full h-1.5 overflow-hidden mt-2.5">
+                                            <div
+                                                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.min(100, dutyPercent)}%` }}
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="mt-2 pt-2 border-t border-stone-800 flex items-center justify-between text-xs">
+                                        <span className="text-stone-400 flex items-center gap-1 font-mono text-[11px]">
+                                            <span>🎮</span> Privileges:
+                                        </span>
+                                        {dutyPercent >= 100 ? (
+                                            <span className="font-semibold text-emerald-400 flex items-center gap-1 text-[11px]">
+                                                <span>✨</span> UNLOCKED
+                                            </span>
+                                        ) : (
+                                            <span className="text-amber-400/90 font-mono text-[11px]">
+                                                🔒 {dutiesCount - completedDutiesCount} left
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {userTimer && timerQuest && (
+                                    <KioskTimerWidget
+                                        user={user}
+                                        quest={timerQuest}
+                                        timer={userTimer}
+                                        onPause={pauseTimer}
+                                        onResume={resumeTimer}
+                                        onStopComplete={(duration) => {
+                                            stopTimer();
+                                            proceedWithCompletion(timerQuest, user, duration);
+                                        }}
+                                        onViewDetails={() => setTimedQuestDetail(timerQuest)}
+                                    />
+                                )}
+                                <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide mt-2">
+                                    {(() => {
+                                        if (!userQuests || (userQuests.duties.length === 0 && userQuests.ventures.length === 0)) {
+                                            return <p className="text-center text-stone-500 pt-16">No quests scheduled for today.</p>
+                                        }
+                                        return (
+                                            <>
+                                                {userQuests.duties.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <h4 className="font-bold text-lg text-stone-300">Duties</h4>
+                                                        {userQuests.duties.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} now={currentDate} />)}
+                                                    </div>
+                                                )}
+                                                {userQuests.ventures.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <h4 className="font-bold text-lg text-stone-300 mt-4">Ventures</h4>
+                                                        {userQuests.ventures.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} now={currentDate} />)}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )
+                                    })()}
+                                </div>
                             </div>
-                            {userTimer && timerQuest && (
-                                <KioskTimerWidget
-                                    user={user}
-                                    quest={timerQuest}
-                                    timer={userTimer}
-                                    onPause={pauseTimer}
-                                    onResume={resumeTimer}
-                                    onStopComplete={(duration) => {
-                                        stopTimer();
-                                        proceedWithCompletion(timerQuest, user, duration);
-                                    }}
-                                    onViewDetails={() => setTimedQuestDetail(timerQuest)}
-                                />
-                            )}
-                            <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide mt-2">
-                                {(() => {
-                                    const userQuests = questsByUser.get(user.id);
-                                    if (!userQuests || (userQuests.duties.length === 0 && userQuests.ventures.length === 0)) {
-                                        return <p className="text-center text-stone-500 pt-16">No quests scheduled for today.</p>
-                                    }
-                                    return (
-                                        <>
-                                            {userQuests.duties.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <h4 className="font-bold text-lg text-stone-300">Duties</h4>
-                                                    {userQuests.duties.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} now={currentDate} />)}
-                                                </div>
-                                            )}
-                                            {userQuests.ventures.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <h4 className="font-bold text-lg text-stone-300 mt-4">Ventures</h4>
-                                                    {userQuests.ventures.map(quest => <QuestCardComponent key={quest.id} quest={quest} user={user} now={currentDate} />)}
-                                                </div>
-                                            )}
-                                        </>
-                                    )
-                                })()}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {verifyingQuest && (
                 <PinEntryDialog user={verifyingQuest.user} onClose={() => setVerifyingQuest(null)} onSuccess={onPinSuccess} />

@@ -28,7 +28,7 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
     // Get all necessary data for checks
     const userCompletedQuests = await manager.find(QuestCompletionEntity, {
         where: { user: { id: userId }, guildId: IsNull(), status: 'Approved' },
-        relations: ['quest']
+        relations: { quest: true }
     });
     const userTrophies = await manager.find(UserTrophyEntity, { where: { userId, guildId: IsNull() } });
     const ranks = await manager.find(RankEntity);
@@ -102,10 +102,10 @@ const asyncMiddleware = fn => (req, res, next) => {
 const getFullAppData = async (manager) => {
     const data = {};
     
-    const users = await manager.find(UserEntity, { relations: ['guilds'] });
-    const quests = await manager.find(QuestEntity, { relations: ['assignedUsers'] });
-    const questCompletions = await manager.find(QuestCompletionEntity, { relations: ['user', 'quest'] });
-    const guilds = await manager.find(GuildEntity, { relations: ['members'] });
+    const users = await manager.find(UserEntity, { relations: { guilds: true } });
+    const quests = await manager.find(QuestEntity, { relations: { assignedUsers: true } });
+    const questCompletions = await manager.find(QuestCompletionEntity, { relations: { user: true, quest: true } });
+    const guilds = await manager.find(GuildEntity, { relations: { members: true } });
 
     data.users = users.map(u => {
         const { guilds, ...userData } = u;
@@ -150,7 +150,7 @@ const getFullAppData = async (manager) => {
     data.minigames = await manager.find(MinigameEntity);
     data.gameScores = await manager.find(GameScoreEntity, { order: { playedAt: "DESC" } });
     data.aiTutors = await manager.find(AITutorEntity);
-    data.aiTutorSessionLogs = await manager.find(AITutorSessionLogEntity, { relations: ['completion'] });
+    data.aiTutorSessionLogs = await manager.find(AITutorSessionLogEntity, { relations: { completion: true } });
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     let finalSettings = settingRow ? settingRow.settings : INITIAL_SETTINGS;

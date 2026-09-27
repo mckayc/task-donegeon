@@ -28,7 +28,7 @@ const checkIncompleteQuests = async (manager) => {
     
     const quests = await manager.find(QuestEntity, { 
         where: { type: 'Duty', isActive: true }, 
-        relations: ['assignedUsers'] 
+        relations: { assignedUsers: true } 
     });
 
     const scheduledEvents = await manager.find(ScheduledEventEntity);

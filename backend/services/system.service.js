@@ -34,7 +34,7 @@ const getDeltaAppData = async (manager, lastSync) => {
         ChronicleEvent: 'chronicleEvents', AITutor: 'aiTutors', AITutorSessionLog: 'aiTutorSessionLogs',
     };
 
-    const updatedUsers = await manager.find('User', { where: { updatedAt: MoreThan(lastSync) }, relations: ['guilds'] });
+    const updatedUsers = await manager.find('User', { where: { updatedAt: MoreThan(lastSync) }, relations: { guilds: true } });
     if (updatedUsers.length > 0) {
         updates.users = updatedUsers.map(u => {
             const { guilds, ...userData } = u;
@@ -43,7 +43,7 @@ const getDeltaAppData = async (manager, lastSync) => {
     }
 
     const questRepo = manager.getRepository('Quest');
-    const updatedQuests = await questRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['assignedUsers'] });
+    const updatedQuests = await questRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: { assignedUsers: true } });
     if (updatedQuests.length > 0) {
         updates.quests = updatedQuests.map(q => {
             const { assignedUsers, ...questData } = q;
@@ -52,7 +52,7 @@ const getDeltaAppData = async (manager, lastSync) => {
     }
 
     const qcRepo = manager.getRepository(QuestCompletionEntity);
-    const updatedQCs = await qcRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['user', 'quest'] });
+    const updatedQCs = await qcRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: { user: true, quest: true } });
     if (updatedQCs.length > 0) {
         updates.questCompletions = updatedQCs.filter(qc => qc.user && qc.quest).map(qc => ({
             ...qc, userId: qc.user.id, questId: qc.quest.id, user: undefined, quest: undefined
@@ -60,7 +60,7 @@ const getDeltaAppData = async (manager, lastSync) => {
     }
 
     const guildRepo = manager.getRepository('Guild');
-    const updatedGuilds = await guildRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['members'] });
+    const updatedGuilds = await guildRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: { members: true } });
     if (updatedGuilds.length > 0) {
         updates.guilds = updatedGuilds.map(g => ({ ...g, memberIds: g.members.map(m => m.id) }));
     }
@@ -415,7 +415,7 @@ const importAssetPack = async (assetPack, resolutions, userIdsToAssign, actorId)
         const processUsers = async (usersToImport) => {
             if (!usersToImport || usersToImport.length === 0) return;
             const userRepo = manager.getRepository(UserEntity);
-            const defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });
+            const defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: { members: true } });
             
             for (const userTemplate of usersToImport) {
                 const resolution = resolutions.find(r => r.id === userTemplate.username && r.type === 'users');

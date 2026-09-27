@@ -7,12 +7,12 @@ const repo = dataSource.getRepository(QuestEntity);
 const userRepo = dataSource.getRepository(UserEntity);
 
 const findAllWithRelations = async () => {
-    const quests = await repo.find({ relations: ['assignedUsers'] });
+    const quests = await repo.find({ relations: { assignedUsers: true } });
     return quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers.map(u => u.id) }));
 };
 
 const findById = (id) => repo.findOneBy({ id });
-const findByIdWithRelations = (id) => repo.findOne({ where: { id }, relations: ['assignedUsers'] });
+const findByIdWithRelations = (id) => repo.findOne({ where: { id }, relations: { assignedUsers: true } });
 // FIX: Updated to use `groupIds` which is a simple-array. TypeORM doesn't have a direct `contains` for simple-array, so we have to filter in code. This is inefficient but works for now. A better solution is a many-to-many relation.
 const findByGroupId = (groupId) => repo.find().then(quests => quests.filter(q => q.groupIds?.includes(groupId)));
 const findByIds = (ids) => repo.findBy({ id: In(ids) });

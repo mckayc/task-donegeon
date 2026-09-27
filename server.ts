@@ -24,8 +24,27 @@ async function start() {
     app.use(vite.middlewares);
   } else {
     const buildPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(buildPath));
+
+    // Never cache sw.js so the browser discovers updates immediately
+    app.get('/sw.js', (_req: Request, res: Response) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.sendFile(path.join(buildPath, 'sw.js'));
+    });
+
+    // Static assets (hashed bundles can be cached; HTML must not be)
+    app.use(express.static(buildPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html') || filePath.endsWith('sw.js')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+      }
+    }));
+
+    // Fallback for SPA navigation: index.html must never be cached
     app.use((_req: Request, res: Response) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(path.join(buildPath, 'index.html'));
     });
   }

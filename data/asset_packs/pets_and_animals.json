@@ -1,0 +1,131 @@
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.petsandanimals.v1",
+    "name": "Pets & Animals Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Quests for taking care of pets and some fun animal-themed items.",
+    "emoji": "🐾",
+    "category": "Home & Life"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "pet-quest-1",
+        "title": "Feed the Beast",
+        "description": "Give your pet their morning or evening meal.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🦴",
+        "tags": [
+          "Pets",
+          "Household"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 5
+          }
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "pet-quest-2",
+        "title": "The Great Outdoors",
+        "description": "Take the dog for a walk or let them out in the yard.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🐕",
+        "tags": [
+          "Pets",
+          "Exercise"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 10
+          }
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "pet-quest-3",
+        "title": "Litter Box Duty",
+        "description": "Clean out the cat's litter box.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "💩",
+        "tags": [
+          "Pets",
+          "Cleaning"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          },
+          {
+            "rewardTypeId": "core-gold",
+            "amount": 2
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 50,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      }
+    ]
+  }
+}

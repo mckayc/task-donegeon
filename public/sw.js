@@ -1,18 +1,17 @@
-// v206
-const CACHE_NAME = 'task-donegeon-cache-v206';
+// v209
+const CACHE_NAME = 'task-donegeon-cache-v209';
 const urlsToCache = [
   '/',
   '/index.html',
-  // Note: Add other core assets like CSS, JS bundles if they are not dynamically named
 ];
 
 // Install a service worker
 self.addEventListener('install', event => {
-  // Perform install steps
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('[SW] Opened cache', CACHE_NAME);
         return cache.addAll(urlsToCache);
       })
   );
@@ -27,38 +26,64 @@ self.addEventListener('message', (event) => {
 
 // Cache and return requests
 self.addEventListener('fetch', event => {
-  // Let the browser do its default thing
-  // for non-GET requests.
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Prevent the service worker from intercepting API calls or file uploads
-  if (event.request.url.includes('/api/') || event.request.url.includes('/uploads/')) {
+  // Prevent service worker from intercepting API calls, uploads, or websocket
+  if (
+    event.request.url.includes('/api/') ||
+    event.request.url.includes('/uploads/') ||
+    event.request.url.includes('/socket.io/')
+  ) {
     return;
   }
 
+  const url = new URL(event.request.url);
+  const isNavigationOrHtml =
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document' ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/index.html');
+
+  // NETWORK-FIRST FOR NAVIGATION / HTML:
+  // Ensures user always gets the latest asset hash manifest upon opening or reloading
+  if (isNavigationOrHtml) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then(cached => {
+            return cached || caches.match('/index.html');
+          });
+        })
+    );
+    return;
+  }
+
+  // CACHE-FIRST WITH NETWORK FALLBACK FOR OTHER ASSETS
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Cache hit - return response
         if (response) {
           return response;
         }
 
         return fetch(event.request).then(
           response => {
-            // Check if we received a valid response
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
             const responseToCache = response.clone();
-
             caches.open(CACHE_NAME)
               .then(cache => {
                 cache.put(event.request, responseToCache);
@@ -71,7 +96,7 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Update a service worker
+// Update a service worker & delete obsolete caches
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -79,10 +104,11 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim()) // Force new SW to take control of open clients
+    }).then(() => self.clients.claim())
   );
 });

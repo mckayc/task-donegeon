@@ -1,0 +1,167 @@
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.healthandwellness.v1",
+    "name": "Health & Wellness Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Quests to promote healthy habits like hygiene, exercise, and mindfulness.",
+    "emoji": "❤️‍🩹",
+    "category": "Personal Development"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "health-quest-1",
+        "title": "The Morning Ritual",
+        "description": "Brush your teeth and wash your face before breakfast.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🦷",
+        "tags": [
+          "Health",
+          "Hygiene"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 5
+          }
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "health-quest-2",
+        "title": "The Evening Ritual",
+        "description": "Brush and floss your teeth before bed.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🌙",
+        "tags": [
+          "Health",
+          "Hygiene"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 10
+          }
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "health-quest-3",
+        "title": "Adventurer's Endurance",
+        "description": "Spend at least 30 minutes doing a physical activity like playing outside, riding a bike, or dancing.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🏃",
+        "tags": [
+          "Health",
+          "Exercise"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 30
+          },
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 10
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 100,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "health-quest-4",
+        "title": "Hydration Hero",
+        "description": "Drink a full glass of water with every meal.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "💧",
+        "tags": [
+          "Health"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 5
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      }
+    ]
+  }
+}

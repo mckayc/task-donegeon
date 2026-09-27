@@ -1,0 +1,132 @@
+
+{
+  "manifest": {
+    "id": "com.taskdonegeon.cookingkitchen.v1",
+    "name": "Cooking & Kitchen Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "A recipe book of quests for helping in the kitchen, from prep to cleanup.",
+    "emoji": "🍳",
+    "category": "Home & Life"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "kitchen-quest-1",
+        "title": "The Sous Chef",
+        "description": "Help prepare a part of a meal (e.g., wash vegetables, set the table, measure ingredients).",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧑‍🍳",
+        "tags": [
+          "Kitchen",
+          "Helping"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 100,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "kitchen-quest-2",
+        "title": "Countertop Cleanup",
+        "description": "Wipe down all the kitchen counters after a meal.",
+        "type": "Duty",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🧼",
+        "tags": [
+          "Kitchen",
+          "Cleaning"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 10
+          }
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
+      },
+      {
+        "id": "kitchen-quest-3",
+        "title": "The Baker's Apprentice",
+        "description": "Help bake a treat, like cookies or a cake.",
+        "type": "Venture",
+        "kind": "Personal",
+        "iconType": "emoji",
+        "icon": "🍪",
+        "tags": [
+          "Kitchen",
+          "Baking",
+          "Creative"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 25
+          },
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 10
+          }
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": null,
+        "startTime": null,
+        "endTime": null
+      }
+    ]
+  }
+}

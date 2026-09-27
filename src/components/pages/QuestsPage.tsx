@@ -282,7 +282,7 @@ const QuestsPage: React.FC = () => {
     
     const visibleQuests = useMemo(() => {
         if (!currentUser) return [];
-        const questsForMode = quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode));
+        const questsForMode = quests.filter(q => q.isActive && isQuestVisibleToUserInMode(q, currentUser.id, appMode));
         const uniqueQuests = Array.from(new Map(questsForMode.map(q => [q.id, q])).values());
         return uniqueQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, now));
     }, [quests, currentUser, appMode, questCompletions, scheduledEvents, now]);

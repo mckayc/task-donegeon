@@ -18,7 +18,7 @@ const LiveTimerWidget: React.FC = () => {
 
     const activeQuest = useMemo(() => {
         if (!activeTimer) return null;
-        return quests.find(q => q.id === activeTimer.questId);
+        return quests.find(q => q.id === activeTimer.questId && q.isActive);
     }, [activeTimer, quests]);
 
     useEffect(() => {

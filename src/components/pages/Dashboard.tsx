@@ -160,7 +160,7 @@ const Dashboard: React.FC = () => {
 
     const selectedQuest = useMemo(() => {
         if (!selectedQuestId) return null;
-        return quests.find(q => q.id === selectedQuestId);
+        return quests.find(q => q.id === selectedQuestId && q.isActive);
     }, [selectedQuestId, quests]);
 
     // Dependencies for condition checking

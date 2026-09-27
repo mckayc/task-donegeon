@@ -49,6 +49,8 @@ export const isQuestAvailableForUser = (
   scheduledEvents: ScheduledEvent[],
   appMode: AppMode
 ): boolean => {
+  if (!quest.isActive) return false;
+
   const questUserCompletions = userCompletions.filter(
     (c) => c.questId === quest.id
   );

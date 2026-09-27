@@ -26,7 +26,7 @@ const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) =
     const { currentUser } = useAuthState();
     const now = new Date();
 
-    if (!currentUser) return null;
+    if (!currentUser || !quest.isActive) return null;
 
     const conditionDependencies = useMemo(() => ({
         ranks, trophies, userTrophies, quests, questGroups, questCompletions, gameAssets, guilds, allConditionSets: settings.conditionSets, appMode

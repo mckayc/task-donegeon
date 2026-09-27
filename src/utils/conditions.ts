@@ -25,6 +25,7 @@ export const fromYMD = (ymd: string): Date => {
  * This does not check for completion status, only if it's supposed to be on the calendar for that day.
  */
 export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
+    if (!quest.isActive) return false;
     if (quest.type === QuestType.Journey || quest.type === QuestType.Venture) {
         // A Venture/Journey is "scheduled" for its due date range.
         if (!quest.startDateTime) return false;

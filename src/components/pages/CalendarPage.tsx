@@ -82,7 +82,7 @@ const CalendarPage: React.FC = () => {
     
     const calendarRef = useRef<FullCalendar>(null);
 
-    const viewingQuest = useMemo(() => viewingQuestId ? quests.find(q => q.id === viewingQuestId) : null, [viewingQuestId, quests]);
+    const viewingQuest = useMemo(() => viewingQuestId ? quests.find(q => q.id === viewingQuestId && q.isActive) : null, [viewingQuestId, quests]);
 
     const isViewingQuestCompletable = useMemo(() => {
         if (!viewingQuest || !viewingQuestDate || !currentUser) {
@@ -120,7 +120,7 @@ const CalendarPage: React.FC = () => {
 
         // FIX: Replaced flatMap with a more explicit reduce to avoid TypeScript type inference issues.
         const questEvents: EventInput[] = quests
-            .filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode))
+            .filter(q => q.isActive && isQuestVisibleToUserInMode(q, currentUser.id, appMode))
             .reduce((acc, quest) => {
                 if (quest.type === QuestType.Duty && quest.rrule) {
                     acc.push({

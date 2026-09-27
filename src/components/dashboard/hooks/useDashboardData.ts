@@ -289,6 +289,7 @@ export const useDashboardData = () => {
         const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
 
         const completableQuests = quests.filter(quest => {
+            if (!quest.isActive) return false;
             if (!isQuestVisibleToUserInMode(quest, currentUser.id, appMode)) return false;
             
             if (quest.requiresClaim) {

@@ -158,11 +158,20 @@ const deleteMany = async (ids, actorId) => {
 };
 
 const bulkUpdateStatus = async (ids, isActive) => {
-    await questRepo.update(ids, { isActive });
+    if (!ids || !Array.isArray(ids) || ids.length === 0) return;
+    const questsToUpdate = await questRepo.find({ where: { id: In(ids) } });
+    if (questsToUpdate.length === 0) return;
+
+    for (const quest of questsToUpdate) {
+        quest.isActive = isActive;
+        updateTimestamps(quest);
+    }
+    await questRepo.save(questsToUpdate);
     updateEmitter.emit('update');
 };
 
 const bulkUpdate = async (ids, updates) => {
+    if (!ids || !Array.isArray(ids) || ids.length === 0 || !updates) return;
     const questsToUpdate = await questRepo.find({ where: { id: In(ids) }, relations: { assignedUsers: true } });
     if (questsToUpdate.length === 0) return;
 
@@ -171,15 +180,15 @@ const bulkUpdate = async (ids, updates) => {
         if (typeof updates.isOptional === 'boolean') quest.isOptional = updates.isOptional;
         if (typeof updates.requiresApproval === 'boolean') quest.requiresApproval = updates.requiresApproval;
         if (updates.groupId !== undefined) quest.groupIds = updates.groupId ? [updates.groupId] : [];
-        if (updates.addTags) quest.tags = [...new Set([...quest.tags, ...updates.addTags])];
-        if (updates.removeTags) quest.tags = quest.tags.filter(t => !updates.removeTags.includes(t));
-        if (updates.assignUsers) {
+        if (updates.addTags) quest.tags = [...new Set([...(quest.tags || []), ...updates.addTags])];
+        if (updates.removeTags) quest.tags = (quest.tags || []).filter(t => !updates.removeTags.includes(t));
+        if (updates.assignUsers && updates.assignUsers.length > 0) {
             const usersToAdd = await userRepo.findBy({ id: In(updates.assignUsers) });
-            const existingUserIds = new Set(quest.assignedUsers.map(u => u.id));
+            const existingUserIds = new Set((quest.assignedUsers || []).map(u => u.id));
             quest.assignedUsers.push(...usersToAdd.filter(u => !existingUserIds.has(u.id)));
         }
-        if (updates.unassignUsers) {
-            quest.assignedUsers = quest.assignedUsers.filter(u => !updates.unassignUsers.includes(u.id));
+        if (updates.unassignUsers && updates.unassignUsers.length > 0) {
+            quest.assignedUsers = (quest.assignedUsers || []).filter(u => !updates.unassignUsers.includes(u.id));
         }
     }
     await questRepo.save(questsToUpdate.map(q => updateTimestamps(q)));

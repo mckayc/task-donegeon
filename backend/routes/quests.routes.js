@@ -27,10 +27,10 @@ const router = express.Router();
 router.get('/', asyncMiddleware(getAllQuests));
 router.post('/', asyncMiddleware(createQuest));
 router.post('/clone/:id', asyncMiddleware(cloneQuest));
-router.put('/:id', asyncMiddleware(updateQuest));
 router.delete('/', asyncMiddleware(deleteQuests));
 router.put('/bulk-status', asyncMiddleware(bulkUpdateQuestsStatus));
 router.put('/bulk-update', asyncMiddleware(bulkUpdateQuests));
+router.put('/:id', asyncMiddleware(updateQuest));
 
 // --- Actions ---
 router.post('/complete', asyncMiddleware(completeQuest));

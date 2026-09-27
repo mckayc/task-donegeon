@@ -19,10 +19,10 @@ const router = express.Router();
 
 router.get('/', asyncMiddleware(getAllMarkets));
 router.post('/', asyncMiddleware(createMarket));
-router.put('/:id', asyncMiddleware(updateMarket));
-router.delete('/', asyncMiddleware(deleteMarkets));
 router.post('/clone/:id', asyncMiddleware(cloneMarket));
+router.delete('/', asyncMiddleware(deleteMarkets));
 router.put('/bulk-status', asyncMiddleware(bulkUpdateMarketsStatus));
+router.put('/:id', asyncMiddleware(updateMarket));
 
 // --- Actions ---
 router.post('/purchase', asyncMiddleware(purchaseMarketItem));

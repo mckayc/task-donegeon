@@ -4,6 +4,7 @@ const rewardTypeRepository = require('../repositories/rewardType.repository');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps, logAdminAssetAction } = require('../utils/helpers');
 const { dataSource } = require('../data-source');
+const { In } = require('typeorm');
 
 
 const getAll = () => assetRepository.findAll();
@@ -116,11 +117,16 @@ const craft = async (assetId, userId) => {
 };
 
 const bulkUpdateAvailability = async (ids, isAvailable) => {
-    const result = await dataSource.getRepository('GameAsset').update(ids, { isAvailable });
-    if (result.affected && result.affected > 0) {
-        updateEmitter.emit('update');
+    if (!ids || !Array.isArray(ids) || ids.length === 0) return;
+    const repo = dataSource.getRepository('GameAsset');
+    const assets = await repo.findBy({ id: In(ids) });
+    if (assets.length === 0) return;
+    for (const a of assets) {
+        a.isAvailable = isAvailable;
+        updateTimestamps(a);
     }
-    return result;
+    await repo.save(assets);
+    updateEmitter.emit('update');
 };
 
 

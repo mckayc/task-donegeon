@@ -18,6 +18,7 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { PlusIcon, TrashIcon } from '../user-interface/Icons';
 import { KioskScreensaver } from '../kiosk/KioskScreensaver';
 import { AnimatePresence } from 'framer-motion';
+import FocusModeSettings from '../settings/FocusModeSettings';
 
 const GeneralSettings: React.FC<{
     settings: AppSettings;
@@ -340,6 +341,21 @@ export const SettingsPage: React.FC = () => {
                     <GeneralSettings
                         settings={localSettings}
                         onSettingChange={(key, value) => setLocalSettings(p => ({ ...p, [key]: value }))}
+                    />
+                </CollapsibleSection>
+
+                <CollapsibleSection title="Focus Mode & App Sections" defaultOpen={true}>
+                    <FocusModeSettings
+                        sidebars={localSettings.sidebars}
+                        chat={localSettings.chat}
+                        terminology={localSettings.terminology}
+                        onChange={(updatedSidebars, chatEnabled) => {
+                            setLocalSettings(p => ({
+                                ...p,
+                                sidebars: updatedSidebars,
+                                ...(chatEnabled !== undefined ? { chat: { ...p.chat, enabled: chatEnabled } } : {})
+                            }));
+                        }}
                     />
                 </CollapsibleSection>
                 

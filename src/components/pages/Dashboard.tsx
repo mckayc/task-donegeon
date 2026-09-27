@@ -169,6 +169,7 @@ const Dashboard: React.FC = () => {
     const communityState = useCommunityState();
     const questsState = useQuestsState();
     const systemState = useSystemState();
+    const { settings } = systemState;
 
     const conditionDependencies = useMemo<ConditionDependencies & { allConditionSets: ConditionSet[] }>(() => ({
         ...progressionState, ...economyState, ...communityState, ...questsState, allConditionSets: systemState.settings.conditionSets, appMode
@@ -248,11 +249,22 @@ const Dashboard: React.FC = () => {
 
     const inactiveConditionalCards = useMemo(() => {
         const inactive: string[] = [];
-        if (!myGoal?.hasGoal) {
+        const isMarketplaceVisible = settings.sidebars?.main?.find((i: any) => i.id === 'Marketplace')?.isVisible !== false;
+        const isTrophyVisible = settings.sidebars?.main?.find((i: any) => i.id === 'Trophies')?.isVisible !== false;
+        const isRankVisible = settings.sidebars?.main?.find((i: any) => i.id === 'Ranks')?.isVisible !== false;
+        const isCollectionVisible = settings.sidebars?.main?.find((i: any) => i.id === 'Collection')?.isVisible !== false;
+
+        if (!myGoal?.hasGoal || !isMarketplaceVisible) {
             inactive.push('goal');
         }
-        if (!mostRecentTrophy) {
+        if (!mostRecentTrophy || !isTrophyVisible) {
             inactive.push('trophy');
+        }
+        if (!isRankVisible) {
+            inactive.push('rank');
+        }
+        if (!isCollectionVisible) {
+            inactive.push('inventory');
         }
         if (pendingApprovals.quests.length === 0 && pendingApprovals.purchases.length === 0) {
             inactive.push('pendingApprovals');
@@ -261,7 +273,7 @@ const Dashboard: React.FC = () => {
             inactive.push('readingActivity');
         }
         return inactive;
-    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest]);
+    }, [myGoal, mostRecentTrophy, pendingApprovals, readingQuest, readingPdfQuest, settings.sidebars]);
 
 
     const saveLayout = useCallback((newLayout: DashboardLayout) => {

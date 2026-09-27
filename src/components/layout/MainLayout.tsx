@@ -104,8 +104,15 @@ const MainLayout: React.FC = () => {
     } else if (isPageForGatekeepers && currentUser.role === Role.Explorer) {
       addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
       setActivePage('Dashboard');
+    } else if (currentUser.role === Role.Explorer) {
+      const userConfig = settings.sidebars?.main || [];
+      const configItem = userConfig.find(item => item.id === activePage);
+      if (configItem && configItem.isVisible === false) {
+        addNotification({ type: 'info', message: `${activePage} is currently disabled.` });
+        setActivePage('Dashboard');
+      }
     }
-  }, [activePage, currentUser, setActivePage, addNotification]);
+  }, [activePage, currentUser, setActivePage, addNotification, settings.sidebars]);
 
   // --- Kiosk Mode Auto-Exit Timer ---
   const resetAutoExitTimer = useCallback(() => {

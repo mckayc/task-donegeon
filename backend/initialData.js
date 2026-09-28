@@ -218,6 +218,12 @@ const INITIAL_SETTINGS = {
     },
     conditionSets: [],
     bugReportTemplates: [],
+    privileges: [],
+    allowance: {
+        enabled: true,
+        userConfigs: [],
+        payoutHistory: [],
+    },
 };
 
 const INITIAL_QUEST_GROUPS = [

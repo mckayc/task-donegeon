@@ -10,8 +10,10 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { PrivilegeItem, UserAllowanceConfig, AllowancePayoutRecord, QuestType, QuestCompletionStatus, User, Role } from '../../types';
 import { isQuestScheduledForDay, toYMD } from '../../utils/conditions';
-import { Sparkles, DollarSign, Plus, Trash2, Edit2, Check, Clock, ShieldCheck, PiggyBank, History, Trophy } from 'lucide-react';
-import UserMultiSelect from '../user-interface/UserMultiSelect';
+import { formatPrivilegeSchedule, formatPrivilegeTimeWindow } from '../../utils/privileges';
+import { Sparkles, DollarSign, Plus, Trash2, Edit2, Check, Clock, ShieldCheck, PiggyBank, History, Trophy, Calendar } from 'lucide-react';
+import Avatar from '../user-interface/Avatar';
+import PrivilegeDialog from './PrivilegeDialog';
 
 export const ManagePrivilegesPage: React.FC = () => {
     const { settings } = useSystemState();
@@ -36,27 +38,13 @@ export const ManagePrivilegesPage: React.FC = () => {
     }, [rewardTypes]);
 
     // Save privilege item
-    const handleSavePrivilege = () => {
-        if (!editingPrivilege?.title) return;
-
+    const handleSavePrivilege = (privilegeToSave: PrivilegeItem) => {
         const currentPrivileges = settings.privileges || [];
-        const isNew = !editingPrivilege.id;
-        const privilegeToSave: PrivilegeItem = {
-            id: editingPrivilege.id || `priv-${Date.now()}`,
-            title: editingPrivilege.title,
-            description: editingPrivilege.description || '',
-            icon: editingPrivilege.icon || '🎮',
-            assignedUserIds: editingPrivilege.assignedUserIds || [],
-            requiresAllDailyDuties: editingPrivilege.requiresAllDailyDuties !== false,
-            minDutyPercentage: editingPrivilege.minDutyPercentage ?? 100,
-            type: editingPrivilege.type || 'timer',
-            timerDurationMinutes: editingPrivilege.timerDurationMinutes || 45,
-            isActive: editingPrivilege.isActive !== false,
-        };
+        const isExisting = currentPrivileges.some(p => p.id === privilegeToSave.id);
 
-        const updated = isNew
-            ? [...currentPrivileges, privilegeToSave]
-            : currentPrivileges.map(p => p.id === privilegeToSave.id ? privilegeToSave : p);
+        const updated = isExisting
+            ? currentPrivileges.map(p => p.id === privilegeToSave.id ? privilegeToSave : p)
+            : [...currentPrivileges, privilegeToSave];
 
         updateSettings({ ...settings, privileges: updated });
         setEditingPrivilege(null);
@@ -64,6 +52,12 @@ export const ManagePrivilegesPage: React.FC = () => {
             type: 'success',
             message: `Privilege "${privilegeToSave.title}" saved successfully!`
         });
+    };
+
+    const handleTogglePrivilegeActive = (id: string, isActive: boolean) => {
+        const currentPrivileges = settings.privileges || [];
+        const updated = currentPrivileges.map(p => p.id === id ? { ...p, isActive } : p);
+        updateSettings({ ...settings, privileges: updated });
     };
 
     const handleDeletePrivilege = (id: string) => {
@@ -294,61 +288,114 @@ export const ManagePrivilegesPage: React.FC = () => {
 
                     {/* Privileges List */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(settings.privileges || []).map(privilege => (
-                            <Card key={privilege.id} className="border border-stone-700/80 bg-stone-900/80 p-4 flex flex-col justify-between">
-                                <div>
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-3xl p-2.5 rounded-xl bg-stone-800 border border-stone-700">
-                                                {privilege.icon}
-                                            </span>
-                                            <div>
-                                                <h3 className="font-bold text-stone-100 text-base">
-                                                    {privilege.title}
-                                                </h3>
-                                                <span className="text-xs font-mono text-emerald-400">
-                                                    {privilege.type === 'timer'
-                                                        ? `⏱ ${privilege.timerDurationMinutes || 45} Min Countdown`
-                                                        : '✨ Instant Unlock'}
+                        {(settings.privileges || []).map(privilege => {
+                            const assignedUsers = users.filter(u => privilege.assignedUserIds.includes(u.id));
+
+                            return (
+                                <Card 
+                                    key={privilege.id} 
+                                    className={`border p-4 flex flex-col justify-between transition-all ${
+                                        privilege.isActive !== false 
+                                            ? 'border-stone-700/80 bg-stone-900/90 shadow-md' 
+                                            : 'border-stone-800 bg-stone-950/60 opacity-60'
+                                    }`}
+                                >
+                                    <div>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-3xl p-2.5 rounded-xl bg-stone-800 border border-stone-700 shadow-inner">
+                                                    {privilege.icon}
                                                 </span>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="font-bold text-stone-100 text-base">
+                                                            {privilege.title}
+                                                        </h3>
+                                                        {privilege.isActive === false && (
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-800 text-stone-400 border border-stone-700">
+                                                                Paused
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs font-mono text-emerald-400">
+                                                        {privilege.type === 'timer'
+                                                            ? `⏱ ${privilege.timerDurationMinutes || 45} Min Countdown`
+                                                            : '✨ Status Unlock Only'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() => setEditingPrivilege(privilege)}
+                                                    className="p-1.5 text-stone-400 hover:text-stone-200 hover:bg-stone-800 rounded-lg cursor-pointer transition-colors"
+                                                    title="Edit Privilege"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeletePrivilege(privilege.id)}
+                                                    className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-stone-800 rounded-lg cursor-pointer transition-colors"
+                                                    title="Delete Privilege"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => setEditingPrivilege(privilege)}
-                                                className="p-1.5 text-stone-400 hover:text-stone-200 hover:bg-stone-800 rounded-lg cursor-pointer transition-colors"
-                                                title="Edit"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeletePrivilege(privilege.id)}
-                                                className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-stone-800 rounded-lg cursor-pointer transition-colors"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                        <p className="text-xs text-stone-400 mt-2.5 line-clamp-2">
+                                            {privilege.description || 'No description provided.'}
+                                        </p>
+
+                                        {/* Scheduling & Requirement Badges */}
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                                            <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-emerald-950/70 text-emerald-300 border border-emerald-600/40">
+                                                📅 {formatPrivilegeSchedule(privilege)}
+                                            </span>
+                                            {privilege.timeOfDay && privilege.timeOfDay !== 'any' && (
+                                                <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-sky-950/70 text-sky-300 border border-sky-600/40">
+                                                    {formatPrivilegeTimeWindow(privilege)}
+                                                </span>
+                                            )}
+                                            <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-amber-950/70 text-amber-300 border border-amber-600/40">
+                                                🎯 {privilege.minDutyPercentage ?? 100}% Chores
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <p className="text-xs text-stone-400 mt-3">
-                                        {privilege.description || 'No description provided.'}
-                                    </p>
-                                </div>
+                                    <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs text-stone-400">
+                                        <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                            <span className="text-stone-500 font-medium">Eligible:</span>
+                                            {assignedUsers.length > 0 ? (
+                                                <div className="flex items-center gap-1">
+                                                    <div className="flex -space-x-1.5 overflow-hidden">
+                                                        {assignedUsers.slice(0, 3).map(u => (
+                                                            <Avatar key={u.id} user={u} className="w-5 h-5 rounded-full ring-1 ring-stone-900" />
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-[11px] text-stone-300 truncate max-w-[120px]">
+                                                        {assignedUsers.map(u => u.gameName).join(', ')}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-[11px] font-semibold text-emerald-400">
+                                                    ✨ All Children
+                                                </span>
+                                            )}
+                                        </div>
 
-                                <div className="mt-4 pt-3 border-t border-stone-800 flex items-center justify-between text-xs text-stone-400">
-                                    <span>
-                                        Requires: <strong>{privilege.minDutyPercentage ?? 100}%</strong> today's duties
-                                    </span>
-                                    <span>
-                                        {privilege.assignedUserIds.length === 0
-                                            ? 'All Explorers'
-                                            : `${privilege.assignedUserIds.length} Assigned`}
-                                    </span>
-                                </div>
-                            </Card>
-                        ))}
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <ToggleSwitch
+                                                enabled={privilege.isActive !== false}
+                                                setEnabled={(val) => handleTogglePrivilegeActive(privilege.id, val)}
+                                                label=""
+                                                data-log-id={`toggle-privilege-active-${privilege.id}`}
+                                            />
+                                        </div>
+                                    </div>
+                                </Card>
+                            );
+                        })}
 
                         {(!settings.privileges || settings.privileges.length === 0) && (
                             <div className="col-span-full p-8 text-center bg-stone-900/40 rounded-xl border border-dashed border-stone-800">
@@ -589,98 +636,12 @@ export const ManagePrivilegesPage: React.FC = () => {
 
             {/* Privilege Add/Edit Modal */}
             {editingPrivilege && (
-                <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <Card className="max-w-md w-full border border-stone-700 bg-stone-900 p-6 space-y-4">
-                        <h3 className="text-xl font-medieval text-stone-100 font-bold">
-                            {editingPrivilege.id ? 'Edit Privilege' : 'Create New Privilege'}
-                        </h3>
-
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-4 gap-2">
-                                <div className="col-span-1">
-                                    <label className="block text-xs font-semibold text-stone-300 mb-1">Icon</label>
-                                    <Input
-                                        value={editingPrivilege.icon || '🎮'}
-                                        onChange={e => setEditingPrivilege(p => ({ ...p, icon: e.target.value }))}
-                                        className="text-center text-xl"
-                                    />
-                                </div>
-                                <div className="col-span-3">
-                                    <label className="block text-xs font-semibold text-stone-300 mb-1">Title</label>
-                                    <Input
-                                        placeholder="e.g. Screen Time (45 Mins)"
-                                        value={editingPrivilege.title || ''}
-                                        onChange={e => setEditingPrivilege(p => ({ ...p, title: e.target.value }))}
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-stone-300 mb-1">Description</label>
-                                <Input
-                                    placeholder="Explain when and how this privilege is enjoyed..."
-                                    value={editingPrivilege.description || ''}
-                                    onChange={e => setEditingPrivilege(p => ({ ...p, description: e.target.value }))}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-semibold text-stone-300 mb-1">Type</label>
-                                    <select
-                                        value={editingPrivilege.type || 'timer'}
-                                        onChange={e => setEditingPrivilege(p => ({ ...p, type: e.target.value as any }))}
-                                        className="w-full bg-stone-800 border border-stone-700 rounded-lg p-2.5 text-xs text-stone-200"
-                                    >
-                                        <option value="timer">Countdown Timer</option>
-                                        <option value="unlock_only">Status Unlock Only</option>
-                                    </select>
-                                </div>
-
-                                {editingPrivilege.type !== 'unlock_only' && (
-                                    <div>
-                                        <label className="block text-xs font-semibold text-stone-300 mb-1">Duration (Minutes)</label>
-                                        <Input
-                                            type="number"
-                                            value={editingPrivilege.timerDurationMinutes || 45}
-                                            onChange={e => setEditingPrivilege(p => ({ ...p, timerDurationMinutes: Math.max(1, Number(e.target.value) || 1) }))}
-                                            min={1}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-stone-300 mb-1">
-                                    Required Daily Duty Completion % ({editingPrivilege.minDutyPercentage ?? 100}%)
-                                </label>
-                                <Input
-                                    type="number"
-                                    value={editingPrivilege.minDutyPercentage ?? 100}
-                                    onChange={e => setEditingPrivilege(p => ({ ...p, minDutyPercentage: Math.max(1, Math.min(100, Number(e.target.value) || 100)) }))}
-                                    min={1}
-                                    max={100}
-                                />
-                            </div>
-
-                            <UserMultiSelect
-                                allUsers={explorers}
-                                selectedUserIds={editingPrivilege.assignedUserIds || []}
-                                onSelectionChange={ids => setEditingPrivilege(p => ({ ...p, assignedUserIds: ids }))}
-                                label="Assigned Explorers (empty = all explorers)"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-800">
-                            <Button variant="secondary" onClick={() => setEditingPrivilege(null)}>
-                                Cancel
-                            </Button>
-                            <Button onClick={handleSavePrivilege} disabled={!editingPrivilege.title}>
-                                Save Privilege
-                            </Button>
-                        </div>
-                    </Card>
-                </div>
+                <PrivilegeDialog
+                    privilege={editingPrivilege}
+                    allUsers={users}
+                    onClose={() => setEditingPrivilege(null)}
+                    onSave={handleSavePrivilege}
+                />
             )}
         </div>
     );

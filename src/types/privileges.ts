@@ -1,3 +1,5 @@
+export type PrivilegeTimeOfDay = 'any' | 'morning' | 'afternoon' | 'evening' | 'custom';
+
 export interface PrivilegeItem {
     id: string;
     title: string;
@@ -10,6 +12,11 @@ export interface PrivilegeItem {
     type: 'timer' | 'unlock_only';
     timerDurationMinutes?: number; // e.g. 45
     isActive: boolean;
+    // Scheduling for different days and time slots
+    daysOfWeek?: number[]; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday. Empty/undefined = all days
+    timeOfDay?: PrivilegeTimeOfDay; // 'any' | 'morning' | 'afternoon' | 'evening' | 'custom'
+    startTime?: string; // e.g. "15:30" (24h HH:mm)
+    endTime?: string;   // e.g. "18:00" (24h HH:mm)
 }
 
 export interface UserAllowanceConfig {

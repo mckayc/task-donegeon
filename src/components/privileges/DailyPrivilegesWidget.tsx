@@ -7,6 +7,7 @@ import { useQuestsState } from '../../context/QuestsContext';
 import { useUIDispatch, useUIState } from '../../context/UIContext';
 import { QuestType, QuestCompletionStatus, PrivilegeItem, Quest } from '../../types';
 import { isQuestScheduledForDay, toYMD } from '../../utils/conditions';
+import { isPrivilegeScheduledForDay, isPrivilegeInTimeWindow, formatPrivilegeTimeWindow } from '../../utils/privileges';
 import { Sparkles, Lock, Unlock, Play, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -31,14 +32,17 @@ export const DailyPrivilegesWidget: React.FC<DailyPrivilegesWidgetProps> = ({ on
 
     const [isPendingListOpen, setIsPendingListOpen] = useState(false);
 
-    // Active privileges configured in settings
+    // Active privileges configured in settings that match user AND are scheduled for today (day of week)
     const userPrivileges = useMemo(() => {
         if (!currentUser) return [];
         const allPrivileges: PrivilegeItem[] = settings.privileges || [];
+        const now = new Date();
         return allPrivileges.filter(p => {
             if (!p.isActive) return false;
-            if (!p.assignedUserIds || p.assignedUserIds.length === 0) return true;
-            return p.assignedUserIds.includes(currentUser.id);
+            if (p.assignedUserIds && p.assignedUserIds.length > 0 && !p.assignedUserIds.includes(currentUser.id)) {
+                return false;
+            }
+            return isPrivilegeScheduledForDay(p, now);
         });
     }, [settings.privileges, currentUser]);
 
@@ -262,7 +266,10 @@ export const DailyPrivilegesWidget: React.FC<DailyPrivilegesWidgetProps> = ({ on
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 {userPrivileges.map(privilege => {
                     const requiredPercent = privilege.minDutyPercentage ?? 100;
-                    const isUnlocked = dutyStats.percent >= requiredPercent;
+                    const isDutyMet = dutyStats.percent >= requiredPercent;
+                    const timeStatus = isPrivilegeInTimeWindow(privilege, new Date());
+                    const isInTimeWindow = timeStatus.inWindow;
+                    const isUnlocked = isDutyMet && isInTimeWindow;
 
                     return (
                         <div
@@ -278,10 +285,15 @@ export const DailyPrivilegesWidget: React.FC<DailyPrivilegesWidgetProps> = ({ on
                                     {privilege.icon}
                                 </span>
                                 <div className="min-w-0 flex-grow">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                         <h4 className="font-bold text-stone-200 text-sm truncate">
                                             {privilege.title}
                                         </h4>
+                                        {privilege.timeOfDay && privilege.timeOfDay !== 'any' && (
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-sky-950/70 text-sky-300 border border-sky-600/40">
+                                                {formatPrivilegeTimeWindow(privilege)}
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">
                                         {privilege.description}
@@ -310,6 +322,16 @@ export const DailyPrivilegesWidget: React.FC<DailyPrivilegesWidgetProps> = ({ on
                                                 Ready to enjoy
                                             </span>
                                         )}
+                                    </>
+                                ) : isDutyMet && !isInTimeWindow ? (
+                                    <>
+                                        <span className="text-xs text-sky-400 font-medium flex items-center gap-1">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            {timeStatus.label || 'Coming up'}
+                                        </span>
+                                        <span className="text-[11px] text-stone-400">
+                                            Duties done! Available during window.
+                                        </span>
                                     </>
                                 ) : (
                                     <>

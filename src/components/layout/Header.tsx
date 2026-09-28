@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Corrected import path for types
-import { Page, AppMode, Quest, Role, User } from '../../types';
+import { Page, AppMode, Quest, Role, User, QuestType, QuestCompletionStatus } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -9,9 +9,12 @@ import { ChevronDownIcon, MenuIcon, DeviceDesktopIcon, DevicePhoneMobileIcon, Be
 import RewardDisplay from '../user-interface/RewardDisplay';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useSyncStatus } from '../../context/DataProvider';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState } from '../../context/QuestsContext';
+import { INITIAL_MAIN_SIDEBAR_CONFIG } from '../../data/initialData';
+import { isQuestScheduledForDay } from '../../utils/conditions';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import LiveTimerWidget from './LiveTimerWidget';
@@ -68,12 +71,101 @@ const ViewModeToggle: React.FC = () => {
 
 const Header: React.FC = () => {
   const { settings, isUpdateAvailable } = useSystemState();
-  const { installUpdate } = useSystemDispatch();
+  const { installUpdate, updateSettings } = useSystemDispatch();
+  const { addNotification } = useNotificationsDispatch();
   const { isMobileView, isKioskDevice } = useUIState();
   const { toggleSidebar, setActivePage } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { logout, setIsSwitchingUser } = useAuthDispatch();
-  const { quests } = useQuestsState();
+  const { quests, questCompletions } = useQuestsState();
+
+  const isFocusModeActive = useMemo(() => {
+    if (settings.focusMode?.enabled !== undefined) {
+      return settings.focusMode.enabled;
+    }
+    const main = settings.sidebars?.main || [];
+    const isMarketHidden = main.find(i => i.id === 'Marketplace')?.isVisible === false;
+    const isTrophyHidden = main.find(i => i.id === 'Trophies')?.isVisible === false;
+    return isMarketHidden && isTrophyHidden;
+  }, [settings.focusMode, settings.sidebars?.main]);
+
+  const todayDutyStats = useMemo(() => {
+    if (!currentUser || currentUser.role !== Role.Explorer) {
+      return { total: 0, completed: 0, allDone: false };
+    }
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayEnd = todayStart + 86400000;
+
+    const scheduledDuties = quests.filter(q => {
+      if (!q.isActive || q.type !== QuestType.Duty) return false;
+      if (q.assignedUserIds && q.assignedUserIds.length > 0 && !q.assignedUserIds.includes(currentUser.id)) {
+        return false;
+      }
+      return isQuestScheduledForDay(q, now);
+    });
+
+    if (scheduledDuties.length === 0) {
+      return { total: 0, completed: 0, allDone: true };
+    }
+
+    const userCompletionsToday = questCompletions.filter(c => {
+      if (c.userId !== currentUser.id) return false;
+      const compTime = new Date(c.completedAt).getTime();
+      return compTime >= todayStart && compTime < todayEnd && c.status === QuestCompletionStatus.Approved;
+    });
+
+    const completedQuestIds = new Set(userCompletionsToday.map(c => c.questId));
+    const completedCount = scheduledDuties.filter(d => completedQuestIds.has(d.id)).length;
+    return {
+      total: scheduledDuties.length,
+      completed: completedCount,
+      allDone: completedCount >= scheduledDuties.length,
+    };
+  }, [currentUser, quests, questCompletions]);
+
+  const handleToggleFocusMode = async () => {
+    const nextState = !isFocusModeActive;
+    const userConfig = settings.sidebars?.main || [];
+    const defaultConfig = INITIAL_MAIN_SIDEBAR_CONFIG;
+
+    const updatedMain = defaultConfig.map(item => {
+      const existing = userConfig.find(u => u.id === item.id);
+      const currentVis = existing ? existing.isVisible : item.isVisible;
+
+      if (nextState) {
+        if (['Marketplace', 'Trophies', 'Ranks', 'Progress', 'Avatar', 'Collection', 'Themes', 'Chronicles', 'Chat'].includes(item.id)) {
+          return { ...item, isVisible: false };
+        }
+        return { ...item, isVisible: currentVis };
+      } else {
+        if (['Marketplace', 'Trophies', 'Ranks', 'Progress', 'Avatar', 'Collection', 'Themes', 'Chronicles', 'Chat'].includes(item.id)) {
+          return { ...item, isVisible: true };
+        }
+        return { ...item, isVisible: currentVis };
+      }
+    });
+
+    await updateSettings({
+      ...settings,
+      sidebars: { ...settings.sidebars, main: updatedMain },
+      focusMode: {
+        ...(settings.focusMode || { autoUnlockOnDutiesComplete: false }),
+        enabled: nextState,
+      },
+      chat: {
+        ...settings.chat,
+        enabled: nextState ? false : true,
+      }
+    });
+
+    addNotification({
+      type: nextState ? 'info' : 'success',
+      message: nextState
+        ? '🎯 Focus Mode activated! Non-chore tabs hidden for children.'
+        : '🛡️ Full RPG Realm restored! All features accessible.',
+    });
+  };
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [pendingDropdownOpen, setPendingDropdownOpen] = useState(false);
@@ -169,6 +261,45 @@ const Header: React.FC = () => {
       
       {/* Right Group */}
       <div className="flex items-center gap-2 md:gap-4">
+        {/* Focus Mode Quick Control / Status */}
+        {currentUser.role === Role.DonegeonMaster && (
+            <button
+                type="button"
+                onClick={handleToggleFocusMode}
+                title={isFocusModeActive ? "Focus Mode is ON. Click to restore Full RPG Realm." : "Focus Mode is OFF. Click to activate Focus Mode (hide non-chore distractions)."}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all shadow-sm ${
+                    isFocusModeActive
+                        ? 'bg-amber-950/80 border-amber-500/80 text-amber-300 hover:bg-amber-900/80 ring-1 ring-amber-500/50'
+                        : 'bg-stone-800/80 border-stone-700 text-stone-300 hover:bg-stone-700/60 hover:text-white'
+                }`}
+                data-log-id="header-quick-toggle-focus-mode"
+            >
+                <span>🎯</span>
+                <span className="hidden sm:inline">Focus Mode:</span>
+                <span className={isFocusModeActive ? 'text-amber-400 font-extrabold' : 'text-stone-400'}>
+                    {isFocusModeActive ? 'ON' : 'OFF'}
+                </span>
+            </button>
+        )}
+
+        {currentUser.role === Role.Explorer && isFocusModeActive && (
+            <div 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-sm ${
+                    todayDutyStats.allDone
+                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
+                        : 'bg-amber-950/80 border-amber-500/70 text-amber-300'
+                }`}
+                title={todayDutyStats.allDone ? "All duties complete! The Realm is unlocked for today." : `${todayDutyStats.completed} of ${todayDutyStats.total} duties complete.`}
+            >
+                <span>{todayDutyStats.allDone ? '✨' : '🎯'}</span>
+                <span className="hidden md:inline">
+                    {todayDutyStats.allDone 
+                        ? 'Realm Unlocked!' 
+                        : `Focus: ${todayDutyStats.completed}/${todayDutyStats.total} Done`}
+                </span>
+            </div>
+        )}
+
         {isMobileView && <BatteryStatus />}
         <ViewModeToggle />
         <FullscreenToggle />

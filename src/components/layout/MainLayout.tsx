@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState, useRef, Suspense, useCallback } fr
 import Sidebar from './Sidebar';
 import Header from './Header';
 // FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
-import { Role, Page, Quest, AITutorSessionLog, SystemNotification } from '../../types';
+import { Role, Page, Quest, AITutorSessionLog, SystemNotification, QuestType, QuestCompletionStatus } from '../../types';
 import GraceModeBanner from '../settings/GraceModeBanner';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -16,6 +16,7 @@ import PdfReaderPanel from '../reader/PdfReaderPanel';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import { isQuestScheduledForDay } from '../../utils/conditions';
 import { AnimatePresence } from 'framer-motion';
 
 interface WakeLockSentinel extends EventTarget {
@@ -105,14 +106,39 @@ const MainLayout: React.FC = () => {
       addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
       setActivePage('Dashboard');
     } else if (currentUser.role === Role.Explorer) {
-      const userConfig = settings.sidebars?.main || [];
-      const configItem = userConfig.find(item => item.id === activePage);
-      if (configItem && configItem.isVisible === false) {
-        addNotification({ type: 'info', message: `${activePage} is currently disabled.` });
-        setActivePage('Dashboard');
+      let isUnlocked = false;
+      if (settings.focusMode?.autoUnlockOnDutiesComplete) {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todayEnd = todayStart + 86400000;
+        const scheduledDuties = quests.filter(q => {
+          if (!q.isActive || q.type !== QuestType.Duty) return false;
+          if (q.assignedUserIds && q.assignedUserIds.length > 0 && !q.assignedUserIds.includes(currentUser.id)) {
+            return false;
+          }
+          return isQuestScheduledForDay(q, now);
+        });
+        if (scheduledDuties.length > 0) {
+          const userCompletionsToday = questCompletions.filter(c => {
+            if (c.userId !== currentUser.id) return false;
+            const compTime = new Date(c.completedAt).getTime();
+            return compTime >= todayStart && compTime < todayEnd && c.status === QuestCompletionStatus.Approved;
+          });
+          const completedQuestIds = new Set(userCompletionsToday.map(c => c.questId));
+          isUnlocked = scheduledDuties.every(d => completedQuestIds.has(d.id));
+        }
+      }
+
+      if (!isUnlocked) {
+        const userConfig = settings.sidebars?.main || [];
+        const configItem = userConfig.find(item => item.id === activePage);
+        if (configItem && configItem.isVisible === false) {
+          addNotification({ type: 'info', message: `${activePage} is currently disabled in Focus Mode.` });
+          setActivePage('Dashboard');
+        }
       }
     }
-  }, [activePage, currentUser, setActivePage, addNotification, settings.sidebars]);
+  }, [activePage, currentUser, setActivePage, addNotification, settings.sidebars, settings.focusMode, quests, questCompletions]);
 
   // --- Kiosk Mode Auto-Exit Timer ---
   const resetAutoExitTimer = useCallback(() => {

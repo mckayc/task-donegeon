@@ -186,6 +186,10 @@ export interface AppSettings {
     sidebars: {
         main: SidebarConfigItem[];
     };
+    focusMode?: {
+        enabled: boolean;
+        autoUnlockOnDutiesComplete?: boolean;
+    };
     googleCalendar: {
         enabled: boolean;
         apiKey: string;

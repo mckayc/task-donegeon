@@ -204,6 +204,10 @@ const INITIAL_SETTINGS = {
     sidebars: {
         main: INITIAL_MAIN_SIDEBAR_CONFIG,
     },
+    focusMode: {
+        enabled: false,
+        autoUnlockOnDutiesComplete: false,
+    },
     googleCalendar: {
       enabled: false,
       apiKey: '',

@@ -348,12 +348,14 @@ export const SettingsPage: React.FC = () => {
                     <FocusModeSettings
                         sidebars={localSettings.sidebars}
                         chat={localSettings.chat}
+                        focusMode={localSettings.focusMode}
                         terminology={localSettings.terminology}
-                        onChange={(updatedSidebars, chatEnabled) => {
+                        onChange={(updatedSidebars, chatEnabled, updatedFocusMode) => {
                             setLocalSettings(p => ({
                                 ...p,
                                 sidebars: updatedSidebars,
-                                ...(chatEnabled !== undefined ? { chat: { ...p.chat, enabled: chatEnabled } } : {})
+                                ...(chatEnabled !== undefined ? { chat: { ...p.chat, enabled: chatEnabled } } : {}),
+                                ...(updatedFocusMode !== undefined ? { focusMode: updatedFocusMode } : {})
                             }));
                         }}
                     />

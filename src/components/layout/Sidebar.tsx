@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Role, QuestCompletionStatus, PurchaseRequestStatus, Page, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
+import { Role, QuestCompletionStatus, PurchaseRequestStatus, Page, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage, QuestType, Quest } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -8,6 +8,7 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useSystemState } from '../../context/SystemContext';
 import { INITIAL_MAIN_SIDEBAR_CONFIG } from '../../data/initialData';
+import { isQuestScheduledForDay } from '../../utils/conditions';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const NavLink: React.FC<{ 
@@ -101,7 +102,7 @@ const Sidebar: React.FC = () => {
     const { activePage, isSidebarCollapsed, isMobileView } = useUIState();
     const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
     const { currentUser } = useAuthState();
-    const { questCompletions } = useQuestsState();
+    const { quests, questCompletions } = useQuestsState();
     const { purchaseRequests, tradeOffers } = useEconomyState();
     const { guilds } = useCommunityState();
     const { settings, chatMessages } = useSystemState();
@@ -206,6 +207,34 @@ const Sidebar: React.FC = () => {
 
     if (!currentUser) return null;
 
+    const isUnlockedByDutyCompletion = useMemo(() => {
+        if (!settings.focusMode?.autoUnlockOnDutiesComplete || !currentUser || currentUser.role !== Role.Explorer) {
+            return false;
+        }
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todayEnd = todayStart + 86400000;
+
+        const scheduledDuties = quests.filter((q: Quest) => {
+            if (!q.isActive || q.type !== QuestType.Duty) return false;
+            if (q.assignedUserIds && q.assignedUserIds.length > 0 && !q.assignedUserIds.includes(currentUser.id)) {
+                return false;
+            }
+            return isQuestScheduledForDay(q, now);
+        });
+
+        if (scheduledDuties.length === 0) return false;
+
+        const userCompletionsToday = questCompletions.filter(c => {
+            if (c.userId !== currentUser.id) return false;
+            const compTime = new Date(c.completedAt).getTime();
+            return compTime >= todayStart && compTime < todayEnd && c.status === QuestCompletionStatus.Approved;
+        });
+
+        const completedQuestIds = new Set(userCompletionsToday.map(c => c.questId));
+        return scheduledDuties.every((d: Quest) => completedQuestIds.has(d.id));
+    }, [settings.focusMode?.autoUnlockOnDutiesComplete, currentUser, quests, questCompletions]);
+
     const roleOrder = [Role.Explorer, Role.Gatekeeper, Role.DonegeonMaster];
     const userRoleIndex = roleOrder.indexOf(currentUser.role);
     
@@ -213,7 +242,7 @@ const Sidebar: React.FC = () => {
         if (item.id === 'Guild' || item.id === 'Manage Guilds') {
             return false;
         }
-        if (!item.isVisible) return false;
+        if (!item.isVisible && !isUnlockedByDutyCompletion) return false;
         const itemRoleIndex = roleOrder.indexOf(item.role as Role);
         return userRoleIndex >= itemRoleIndex;
     });

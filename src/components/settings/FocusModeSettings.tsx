@@ -7,8 +7,9 @@ import { INITIAL_MAIN_SIDEBAR_CONFIG } from '../../data/initialData';
 interface FocusModeSettingsProps {
     sidebars: AppSettings['sidebars'];
     chat: AppSettings['chat'];
+    focusMode?: AppSettings['focusMode'];
     terminology: Terminology;
-    onChange: (updatedSidebars: AppSettings['sidebars'], chatEnabled?: boolean) => void;
+    onChange: (updatedSidebars: AppSettings['sidebars'], chatEnabled?: boolean, updatedFocusMode?: AppSettings['focusMode']) => void;
 }
 
 interface ModuleItemMeta {
@@ -70,9 +71,12 @@ const MODULE_META: Record<string, ModuleItemMeta> = {
 export const FocusModeSettings: React.FC<FocusModeSettingsProps> = ({
     sidebars,
     chat,
+    focusMode,
     terminology,
     onChange,
 }) => {
+    const isAutoUnlockEnabled = focusMode?.autoUnlockOnDutiesComplete ?? false;
+
     // Merge user sidebars config with default config to ensure all items exist
     const mergedItems = useMemo(() => {
         const userConfig = sidebars?.main || [];
@@ -152,7 +156,7 @@ export const FocusModeSettings: React.FC<FocusModeSettingsProps> = ({
     }, [visibilityMap, chat.enabled]);
 
     // Apply updates to the sidebar config and optional chat setting
-    const updateVisibility = (updates: Record<string, boolean>) => {
+    const updateVisibility = (updates: Record<string, boolean>, newFocusMode?: AppSettings['focusMode']) => {
         let chatToggled: boolean | undefined = undefined;
 
         const updated = mergedItems.map(item => {
@@ -165,7 +169,7 @@ export const FocusModeSettings: React.FC<FocusModeSettingsProps> = ({
             return item;
         });
 
-        onChange({ ...sidebars, main: updated }, chatToggled);
+        onChange({ ...sidebars, main: updated }, chatToggled, newFocusMode);
     };
 
     const toggleSingle = (id: string, isVisible: boolean) => {
@@ -187,6 +191,9 @@ export const FocusModeSettings: React.FC<FocusModeSettingsProps> = ({
             'Themes': false,
             'Chronicles': false,
             'Chat': false,
+        }, {
+            enabled: true,
+            autoUnlockOnDutiesComplete: isAutoUnlockEnabled,
         });
     };
 
@@ -204,6 +211,9 @@ export const FocusModeSettings: React.FC<FocusModeSettingsProps> = ({
             'Progress': false,
             'Chronicles': false,
             'Chat': false,
+        }, {
+            enabled: false,
+            autoUnlockOnDutiesComplete: isAutoUnlockEnabled,
         });
     };
 
@@ -221,6 +231,9 @@ export const FocusModeSettings: React.FC<FocusModeSettingsProps> = ({
             'Themes': true,
             'Chronicles': true,
             'Chat': true,
+        }, {
+            enabled: false,
+            autoUnlockOnDutiesComplete: false,
         });
     };
 
@@ -392,6 +405,39 @@ export const FocusModeSettings: React.FC<FocusModeSettingsProps> = ({
                                 All features, shop, avatar dressing, themes, and chat enabled.
                             </p>
                         </button>
+                    </div>
+                </div>
+
+                {/* Smart Chore Automation */}
+                <div className="mt-4 pt-4 border-t border-stone-700/60">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-stone-800/80 rounded-lg border border-amber-500/30">
+                        <div className="pr-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl">✨</span>
+                                <span className="font-semibold text-sm text-stone-100">
+                                    Auto-Unlock Realm when Today's Duties are Finished
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-amber-900/40 text-amber-300 border border-amber-600/50">
+                                    Smart Reward
+                                </span>
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1 max-w-xl">
+                                When enabled, as soon as an Explorer completes 100% of their scheduled daily duties for today, the Marketplace and extra tabs automatically unlock for them as an instant reward!
+                            </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                            <ToggleSwitch
+                                enabled={isAutoUnlockEnabled}
+                                setEnabled={(val) => {
+                                    onChange(sidebars, undefined, {
+                                        enabled: focusMode?.enabled ?? (currentMode === 'focus'),
+                                        autoUnlockOnDutiesComplete: val,
+                                    });
+                                }}
+                                label=""
+                                data-log-id="toggle-auto-unlock-on-duties"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

@@ -9,7 +9,7 @@ import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 // FIX: Corrected type imports to use the main types barrel file by adjusting the relative path.
 import { Role, QuestType, Quest, QuestKind, QuestCompletionStatus, ConditionSet, QuestGroup } from '../../types';
 import { isQuestAvailableForUser, questSorter, getAvailabilityText, formatTimeRemaining } from '../../utils/quests';
-import { getQuestLockStatus, QuestLockStatus, ConditionDependencies, isQuestVisibleToUserInMode, toYMD } from '../../utils/conditions';
+import { getQuestLockStatus, QuestLockStatus, ConditionDependencies, isQuestVisibleToUserInMode, toYMD, isQuestScheduledForDay } from '../../utils/conditions';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -291,6 +291,42 @@ const QuestsPage: React.FC = () => {
     
     const ventureQuests = useMemo(() => visibleQuests.filter(q => q.type === QuestType.Venture || q.type === QuestType.Journey), [visibleQuests]);
 
+    const isFocusModeActive = useMemo(() => {
+        if (settings.focusMode?.enabled !== undefined) {
+            return settings.focusMode.enabled;
+        }
+        const main = settings.sidebars?.main || [];
+        return main.find(i => i.id === 'Marketplace')?.isVisible === false;
+    }, [settings.focusMode, settings.sidebars]);
+
+    const scheduledDutiesToday = useMemo(() => {
+        if (!currentUser) return [];
+        return dutyQuests.filter(q => {
+            if (q.assignedUserIds && q.assignedUserIds.length > 0 && !q.assignedUserIds.includes(currentUser.id)) {
+                return false;
+            }
+            return isQuestScheduledForDay(q, now);
+        });
+    }, [dutyQuests, currentUser, now]);
+
+    const completedDutiesTodayCount = useMemo(() => {
+        if (!currentUser) return 0;
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todayEnd = todayStart + 86400000;
+
+        const userCompletionsToday = questCompletions.filter(c => {
+            if (c.userId !== currentUser.id) return false;
+            const compTime = new Date(c.completedAt).getTime();
+            return compTime >= todayStart && compTime < todayEnd && c.status === QuestCompletionStatus.Approved;
+        });
+
+        const completedQuestIds = new Set(userCompletionsToday.map(c => c.questId));
+        return scheduledDutiesToday.filter(d => completedQuestIds.has(d.id)).length;
+    }, [questCompletions, currentUser, scheduledDutiesToday, now]);
+
+    const isAllDutiesDone = scheduledDutiesToday.length > 0 && completedDutiesTodayCount >= scheduledDutiesToday.length;
+    const dutyPercent = scheduledDutiesToday.length > 0 ? Math.round((completedDutiesTodayCount / scheduledDutiesToday.length) * 100) : 100;
+
     const groupedVentureQuests = useMemo(() => {
         const groups: Record<string, { group: QuestGroup | {id: string; name: string; icon: string; description: string;}; quests: Quest[] }> = {};
 
@@ -384,6 +420,45 @@ const QuestsPage: React.FC = () => {
                     <Button onClick={() => setIsCreateQuestOpen(true)}>
                         Create New {settings.terminology.task}
                     </Button>
+                </div>
+            )}
+
+            {/* Focus Mode Motivation Banner for Explorers */}
+            {currentUser.role === Role.Explorer && isFocusModeActive && scheduledDutiesToday.length > 0 && (
+                <div className="mb-8 p-5 bg-gradient-to-r from-amber-950/40 via-stone-900 to-amber-950/40 border border-amber-500/40 rounded-xl shadow-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <span className="text-3xl select-none">{isAllDutiesDone ? '🎉' : '🎯'}</span>
+                            <div>
+                                <h3 className="font-medieval text-lg text-amber-300">
+                                    {isAllDutiesDone 
+                                        ? "Awesome job! All of today's duties are finished!"
+                                        : "Focus Mode: Today's Duties Checklist"
+                                    }
+                                </h3>
+                                <p className="text-xs text-stone-300 mt-0.5">
+                                    {isAllDutiesDone
+                                        ? (settings.focusMode?.autoUnlockOnDutiesComplete 
+                                            ? "✨ The Marketplace and extra tabs are now unlocked for you today!" 
+                                            : "You have completed all scheduled tasks for the day!")
+                                        : `${completedDutiesTodayCount} of ${scheduledDutiesToday.length} duties completed (${dutyPercent}%)`
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-sm font-bold font-mono text-amber-400">
+                                {dutyPercent}%
+                            </span>
+                        </div>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full bg-stone-700/60 rounded-full h-2.5 mt-3 overflow-hidden">
+                        <div 
+                            className="bg-gradient-to-r from-amber-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                            style={{ width: `${dutyPercent}%` }}
+                        />
+                    </div>
                 </div>
             )}
 

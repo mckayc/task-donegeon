@@ -344,6 +344,157 @@ const generateStory = async (req, res) => {
     }
 };
 
+const planArchitect = async (req, res) => {
+    if (!ai) {
+        return res.status(400).json({ error: 'AI features are not configured on the server. Please check your Gemini API key.' });
+    }
+
+    const {
+        goal,
+        purpose,
+        children = [],
+        style = 'balanced',
+        availableRewardTypes = [],
+        refinementInstructions = '',
+        existingPlan = null
+    } = req.body;
+
+    if (!goal || !goal.trim()) {
+        return res.status(400).json({ error: 'A goal description is required.' });
+    }
+
+    const rewardNames = availableRewardTypes.length > 0
+        ? availableRewardTypes.map(r => r.name).join(', ')
+        : 'Gold, Experience (XP)';
+
+    const childrenInfo = children.length > 0
+        ? children.map(c => `- ${c.name} (${c.age ? `Age ${c.age}` : 'Age unspecified'}${c.aboutMe ? `, Interests: ${c.aboutMe}` : ''})`).join('\n')
+        : 'Family kids / explorers (general ages 6-13)';
+
+    let prompt = `You are "The Quest Architect", an expert family behavioral strategist and game designer for a gamified task app called "Task Donegeon".
+A parent is seeking your assistance to create a structured plan of quests, duties, and incentives for their children.
+
+PARENT'S INPUT:
+- Goal (What they want their kids to do): "${goal}"
+- Purpose & Why (Why this matters to the family): "${purpose || 'Build consistency, independence, and positive habits'}"
+- Target Children:
+${childrenInfo}
+- Strategy Tone Preference: ${style} (e.g. habit_builder = gentle progressive steps; epic_adventure = RPG lore and ranks; speed_efficiency = sprint timers; balanced = well-rounded mix)
+- Available Economy Reward Types: ${rewardNames}
+
+CRITICAL RULES:
+1. Provide exactly TWO distinct plans (Plan A and Plan B) offering contrasting, realistic approaches to solving the parent's goal (e.g., one could be a Collaborative Co-Op split between the children, and the other could be a Progressive Milestone Arc).
+2. Each plan should have 2 to 4 actionable Quests (Duties for recurring habits, or Ventures for one-time/weekend projects).
+3. For each quest, provide 2 to 4 micro-checkpoints (concrete bite-sized steps that prevent kids from feeling overwhelmed).
+4. Assign rewards responsibly: reward amounts MUST be small integers between 1 and 5 (e.g. 2 Gold, 10 XP).
+5. If the parent specified a time (morning, evening, etc.), set timeOfDay accordingly.
+6. Provide an optional suggested privilege that unlocks when kids stick to the plan (e.g. 45 min game time or weekend treat).`;
+
+    if (refinementInstructions && existingPlan) {
+        prompt += `\n\nUSER REFINEMENT REQUEST:
+The user previously reviewed this plan:
+"${existingPlan.title}: ${existingPlan.philosophy}"
+The user wants you to modify and adapt the plan with these specific instructions:
+"${refinementInstructions}"
+Please incorporate their feedback into both updated plans.`;
+    }
+
+    const planSchema = {
+        type: Type.OBJECT,
+        properties: {
+            plans: {
+                type: Type.ARRAY,
+                description: 'Exactly 2 distinct strategic plans',
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING, description: 'plan-a or plan-b' },
+                        title: { type: Type.STRING, description: 'Catchy, creative title for this plan' },
+                        strategyStyle: { type: Type.STRING, description: 'Short strategy style label (e.g. "Collaborative Co-Op", "Progressive Habit Ladder")' },
+                        philosophy: { type: Type.STRING, description: '2-3 sentences explaining why this strategy fulfills the parent purpose and avoids chore friction' },
+                        gamificationHook: { type: Type.STRING, description: 'How motivation is maintained (e.g. streaks, team badge, leveling up)' },
+                        suggestedGroupName: { type: Type.STRING, description: 'Suggested Quest Group name (e.g. "🐾 Canine Companionship Arc")' },
+                        suggestedPrivilege: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: { type: Type.STRING, description: 'Reward privilege name' },
+                                description: { type: Type.STRING, description: 'When and how this privilege is enjoyed' },
+                                icon: { type: Type.STRING, description: 'Single emoji' },
+                                type: { type: Type.STRING, description: 'timer or unlock_only' },
+                                durationMinutes: { type: Type.INTEGER, description: 'Duration in minutes if timer type' },
+                                minDutyPercentage: { type: Type.INTEGER, description: 'Required completion percentage (e.g. 100)' }
+                            },
+                            required: ['title', 'icon', 'type']
+                        },
+                        quests: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING, description: 'Quest title' },
+                                    description: { type: Type.STRING, description: 'One or two sentence encouraging description' },
+                                    icon: { type: Type.STRING, description: 'Single relevant emoji' },
+                                    type: { type: Type.STRING, description: 'Duty (recurring) or Venture (one-off/project)' },
+                                    timeOfDay: { type: Type.STRING, description: 'any, morning, afternoon, or evening' },
+                                    timerMode: { type: Type.STRING, description: 'none, countdown, or stopwatch' },
+                                    timerDurationSeconds: { type: Type.INTEGER, description: 'Timer duration in seconds (e.g. 600 for 10m)' },
+                                    checkpoints: {
+                                        type: Type.ARRAY,
+                                        description: '2 to 4 micro-steps for the child to check off',
+                                        items: { type: Type.STRING }
+                                    },
+                                    suggestedRewardTypeName: { type: Type.STRING, description: 'Name of the reward type from available list' },
+                                    suggestedRewardAmount: { type: Type.INTEGER, description: 'Integer between 1 and 5' },
+                                    suggestedChildName: { type: Type.STRING, description: 'Target child name or All' }
+                                },
+                                required: ['title', 'description', 'icon', 'type', 'checkpoints', 'suggestedRewardTypeName', 'suggestedRewardAmount']
+                            }
+                        }
+                    },
+                    required: ['id', 'title', 'strategyStyle', 'philosophy', 'gamificationHook', 'suggestedGroupName', 'quests']
+                }
+            }
+        },
+        required: ['plans']
+    };
+
+    const modelsToTry = ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-flash-latest'];
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+        try {
+            const response = await ai.models.generateContent({
+                model: modelName,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: planSchema,
+                    temperature: 0.7,
+                }
+            });
+
+            const parsed = JSON.parse(response.text);
+            return res.json(parsed);
+        } catch (err) {
+            console.warn(`Gemini Plan Architect attempt with ${modelName} failed:`, err.message);
+            lastError = err;
+        }
+    }
+
+    console.error("All Gemini model attempts failed for Plan Architect:", lastError);
+    let userMsg = 'Failed to generate strategic quest plans. Please try again.';
+    if (lastError && lastError.message) {
+        try {
+            const parsed = JSON.parse(lastError.message);
+            if (parsed.error && parsed.error.message) {
+                userMsg = parsed.error.message;
+            }
+        } catch (_) {
+            userMsg = lastError.message;
+        }
+    }
+    res.status(500).json({ error: userMsg });
+};
 
 module.exports = {
     testApiKey: asyncMiddleware(testApiKey),
@@ -353,5 +504,6 @@ module.exports = {
     generateFinalQuiz: asyncMiddleware(generateFinalQuiz),
     generateStory: asyncMiddleware(generateStory),
     suggestHolidays: asyncMiddleware(suggestHolidays),
+    planArchitect: asyncMiddleware(planArchitect),
     isAiConfigured: () => !!ai,
 };

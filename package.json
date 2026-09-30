@@ -1,7 +1,7 @@
 {
   "name": "task-donegeon",
   "private": true,
-  "version": "0.5.84",
+  "version": "0.5.85",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",

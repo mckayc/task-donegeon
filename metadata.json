@@ -1,6 +1,6 @@
 {
   "name": "Task Donegeon 2.0 - 0.5.84 - Kiosk Mode Fixes",
-  "version": "0.5.84",
+  "version": "0.5.85",
   "description": "Adds a screen wake lock to Kiosk mode, an update button, and fixes a UI bug with stray text.",
   "requestFramePermissions": [
     "camera"

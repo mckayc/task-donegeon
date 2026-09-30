@@ -11,9 +11,11 @@ import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
 import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
+import QuestArchitectDialog from '../../quests/QuestArchitectDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { QuestTable } from '../../quests/QuestTable';
 import { ArrowLeftIcon, ArrowRightIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { Sparkles } from 'lucide-react';
 import { useUIState } from '../../../context/UIContext';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useEconomyState } from '../../../context/EconomyContext';
@@ -102,6 +104,7 @@ const ManageQuestsPage: React.FC = () => {
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [isArchitectOpen, setIsArchitectOpen] = useState(false);
     const [isBulkEditDialogOpen, setIsBulkEditDialogOpen] = useState(false);
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
@@ -267,9 +270,20 @@ const ManageQuestsPage: React.FC = () => {
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
              {isAiAvailable && (
-                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary" data-log-id="manage-quests-create-with-ai">
-                    Create with AI
-                </Button>
+                <>
+                    <Button 
+                        size="sm" 
+                        onClick={() => setIsArchitectOpen(true)} 
+                        className="!bg-gradient-to-r !from-emerald-700 !to-teal-700 hover:!from-emerald-600 hover:!to-teal-600 text-emerald-100 shadow-sm border border-emerald-500/40 flex items-center gap-1.5"
+                        data-log-id="manage-quests-quest-architect"
+                    >
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+                        Quest Architect
+                    </Button>
+                    <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary" data-log-id="manage-quests-create-with-ai">
+                        Quick Ideas
+                    </Button>
+                </>
             )}
             <Button size="sm" onClick={handleCreate} data-log-id="manage-quests-create-new">Create New {settings.terminology.task}</Button>
         </div>
@@ -284,6 +298,33 @@ const ManageQuestsPage: React.FC = () => {
                     </p>
                 </div>
             )}
+
+            {isAiAvailable && (
+                <div className="bg-gradient-to-r from-emerald-950/60 via-stone-900 to-teal-950/50 border border-emerald-600/40 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-900/80 border border-emerald-500/50 flex items-center justify-center flex-shrink-0 shadow-inner">
+                            <Sparkles className="w-5 h-5 text-emerald-300" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-emerald-200">
+                                Need a custom routine, chore system, or behavior plan?
+                            </h3>
+                            <p className="text-xs text-stone-300">
+                                Describe your goal & purpose to the <strong>Quest Architect</strong>. It formulates multi-step strategies with micro-checkpoints ready to modify and launch.
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={() => setIsArchitectOpen(true)}
+                        className="!bg-emerald-600 hover:!bg-emerald-500 text-white font-semibold flex-shrink-0 shadow-sm flex items-center gap-1.5"
+                    >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Open Quest Architect
+                    </Button>
+                </div>
+            )}
+
             <Card
                 title={`All Created ${settings.terminology.tasks}`}
                 headerAction={headerActions}
@@ -406,6 +447,15 @@ const ManageQuestsPage: React.FC = () => {
             {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
             
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
+
+            <QuestArchitectDialog
+                isOpen={isArchitectOpen}
+                onClose={() => setIsArchitectOpen(false)}
+                onPlanDeployed={(groupId) => {
+                    const group = questGroups.find(g => g.id === groupId);
+                    if (group) setActiveTab(group.name);
+                }}
+            />
 
             {isBulkEditDialogOpen && <BulkEditQuestsDialog questIds={selectedQuests} onClose={() => setIsBulkEditDialogOpen(false)} onSave={(updates) => bulkUpdateQuests(selectedQuests, updates)} />}
 
